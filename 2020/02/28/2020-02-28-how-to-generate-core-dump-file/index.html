@@ -9,32 +9,32 @@
   <meta name="description" content="问题描述Linux上运行C程序发生段错误后，没有core文件生成，调试不便。 生成core文件步骤 敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置 敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： 123ulimit -c 1024        设置core文件最大为1024Kulim">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linux下生成core dump文件">
-<meta property="og:url" content="http://pcj600.github.io/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/index.html">
+<meta property="og:url" content="http://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/index.html">
 <meta property="og:site_name" content="Hexo">
 <meta property="og:description" content="问题描述Linux上运行C程序发生段错误后，没有core文件生成，调试不便。 生成core文件步骤 敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置 敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： 123ulimit -c 1024        设置core文件最大为1024Kulim">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://pcj600.github.io/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png">
-<meta property="og:image" content="http://pcj600.github.io/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image2.png">
-<meta property="og:image" content="http://pcj600.github.io/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image3.png">
+<meta property="og:image" content="http://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png">
+<meta property="og:image" content="http://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image2.png">
+<meta property="og:image" content="http://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image3.png">
 <meta property="article:published_time" content="2020-02-28T13:07:41.000Z">
 <meta property="article:modified_time" content="2024-08-17T13:51:58.337Z">
 <meta property="article:author" content="peter">
 <meta property="article:tag" content="Linux">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://pcj600.github.io/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png">
+<meta name="twitter:image" content="http://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png">
   
-    <link rel="alternate" href="/project/atom.xml" title="Hexo" type="application/atom+xml">
-  
-  
-    <link rel="shortcut icon" href="/project/favicon.png">
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
   
   
+    <link rel="shortcut icon" href="/favicon.png">
   
-<link rel="stylesheet" href="/project/css/style.css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
 
   
     
-<link rel="stylesheet" href="/project/fancybox/jquery.fancybox.min.css">
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
 
   
   
@@ -48,7 +48,7 @@
   <div id="header-outer" class="outer">
     <div id="header-title" class="inner">
       <h1 id="logo-wrap">
-        <a href="/project/" id="logo">Hexo</a>
+        <a href="/" id="logo">Hexo</a>
       </h1>
       
     </div>
@@ -56,20 +56,20 @@
       <nav id="main-nav">
         <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
         
-          <a class="main-nav-link" href="/project/">Home</a>
+          <a class="main-nav-link" href="/">Home</a>
         
-          <a class="main-nav-link" href="/project/archives">Archives</a>
+          <a class="main-nav-link" href="/archives">Archives</a>
         
       </nav>
       <nav id="sub-nav">
         
         
-          <a class="nav-icon" href="/project/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
         
         <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
       </nav>
       <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://pcj600.github.io/project"></form>
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://pcj600.github.io"></form>
       </div>
     </div>
   </div>
@@ -78,7 +78,7 @@
       <div class="outer">
         <section id="main"><article id="post-2020-02-28-how-to-generate-core-dump-file" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/" class="article-date">
+    <a href="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/" class="article-date">
   <time class="dt-published" datetime="2020-02-28T13:07:41.000Z" itemprop="datePublished">2020-02-28</time>
 </a>
     
@@ -100,23 +100,23 @@
       
         <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
 <h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
-<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img src="/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png"></li>
+<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png"></li>
 <li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
-<li>运行C程序，段错误后，在当前目录生成core文件。<br><img src="/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image2.png"></li>
+<li>运行C程序，段错误后，在当前目录生成core文件。<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image2.png"></li>
 </ol>
 <p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
-<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img src="/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
+<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
 <p><strong>指定core文件的输出格式和路径</strong></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://pcj600.github.io/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/" data-id="clzy768ri0000oovwag3j841i" data-title="Linux下生成core dump文件" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="http://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/" data-id="clzy7fv2k0000q0vwh15t9ldf" data-title="Linux下生成core dump文件" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/project/tags/Linux/" rel="tag">Linux</a></li></ul>
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li></ul>
 
     </footer>
   </div>
@@ -125,7 +125,7 @@
 <nav id="article-nav">
   
   
-    <a href="/project/2020/01/01/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="/2020/01/01/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Older</strong>
       <div class="article-nav-title">Hello Hexo</div>
     </a>
@@ -147,7 +147,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/project/tags/Linux/" rel="tag">Linux</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li></ul>
     </div>
   </div>
 
@@ -157,7 +157,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/project/tags/Linux/" style="font-size: 10px;">Linux</a>
+      <a href="/tags/Linux/" style="font-size: 10px;">Linux</a>
     </div>
   </div>
 
@@ -166,7 +166,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/project/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/project/archives/2020/01/">January 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">February 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/01/">January 2020</a></li></ul>
     </div>
   </div>
 
@@ -179,11 +179,11 @@
       <ul>
         
           <li>
-            <a href="/project/2020/02/28/2020-02-28-how-to-generate-core-dump-file/">Linux下生成core dump文件</a>
+            <a href="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/">Linux下生成core dump文件</a>
           </li>
         
           <li>
-            <a href="/project/2020/01/01/hello-world/">Hello Hexo</a>
+            <a href="/2020/01/01/hello-world/">Hello Hexo</a>
           </li>
         
       </ul>
@@ -208,25 +208,25 @@
     </div>
     <nav id="mobile-nav">
   
-    <a href="/project/" class="mobile-nav-link">Home</a>
+    <a href="/" class="mobile-nav-link">Home</a>
   
-    <a href="/project/archives" class="mobile-nav-link">Archives</a>
+    <a href="/archives" class="mobile-nav-link">Archives</a>
   
 </nav>
     
 
 
-<script src="/project/js/jquery-3.6.4.min.js"></script>
+<script src="/js/jquery-3.6.4.min.js"></script>
 
 
 
   
-<script src="/project/fancybox/jquery.fancybox.min.js"></script>
+<script src="/fancybox/jquery.fancybox.min.js"></script>
 
 
 
 
-<script src="/project/js/script.js"></script>
+<script src="/js/script.js"></script>
 
 
 
