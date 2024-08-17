@@ -4,14 +4,19 @@
   <meta charset="utf-8">
   
   
-  <title>Hexo</title>
+  <title>标准IO库的缓冲模式 | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="https://pcj600.github.io/index.html">
+  <meta name="description" content="问题描述有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。 写文件的时候，明明成功执行了fwrite, fprintf语句，文件却没有写入相应的内容。 想搞清楚这些问题产生的原因，需要了解标准I&#x2F;O库的缓冲模式。 标准I&#x2F;O与unbuffered I&#x2F;Olinux对I&#x2F;O文件操作分为不带缓存I&#x2F;O(unbuffered I&amp;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="标准IO库的缓冲模式">
+<meta property="og:url" content="https://pcj600.github.io/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="问题描述有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。 写文件的时候，明明成功执行了fwrite, fprintf语句，文件却没有写入相应的内容。 想搞清楚这些问题产生的原因，需要了解标准I&#x2F;O库的缓冲模式。 标准I&#x2F;O与unbuffered I&#x2F;Olinux对I&#x2F;O文件操作分为不带缓存I&#x2F;O(unbuffered I&amp;">
 <meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-03-22T14:09:56.000Z">
+<meta property="article:modified_time" content="2024-08-17T14:12:49.616Z">
 <meta property="article:author" content="peter">
+<meta property="article:tag" content="Linux">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
@@ -67,9 +72,7 @@
 </header>
 
       <div class="outer">
-        <section id="main">
-  
-    <article id="post-2020-03-22-buffered-mode-of-standard-IO-lib" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+        <section id="main"><article id="post-2020-03-22-buffered-mode-of-standard-IO-lib" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/" class="article-date">
   <time class="dt-published" datetime="2020-03-22T14:09:56.000Z" itemprop="datePublished">2020-03-22</time>
@@ -82,8 +85,8 @@
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/">标准IO库的缓冲模式</a>
+    <h1 class="p-name article-title" itemprop="headline name">
+      标准IO库的缓冲模式
     </h1>
   
 
@@ -153,112 +156,19 @@
     </footer>
   </div>
   
-</article>
-
-
-
+    
+<nav id="article-nav">
   
-    <article id="post-2020-02-28-how-to-generate-core-dump-file" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/" class="article-date">
-  <time class="dt-published" datetime="2020-02-28T13:07:41.000Z" itemprop="datePublished">2020-02-28</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/">Linux下生成core dump文件</a>
-    </h1>
+    <a href="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Linux下生成core dump文件</div>
+    </a>
   
+</nav>
 
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
-<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
-<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png"></li>
-<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
-<li>运行C程序，段错误后，在当前目录生成core文件。<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image2.png"></li>
-</ol>
-<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
-<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
-<p><strong>指定core文件的输出格式和路径</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/" data-id="clzy7wyqr00003gvwfmb3fi7w" data-title="Linux下生成core dump文件" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li></ul>
-
-    </footer>
-  </div>
   
 </article>
-
-
-
-  
-    <article id="post-hello-world" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2020/01/01/hello-world/" class="article-date">
-  <time class="dt-published" datetime="2019-12-31T16:00:00.000Z" itemprop="datePublished">2020-01-01</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2020/01/01/hello-world/">Hello Hexo</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://pcj600.github.io/2020/01/01/hello-world/" data-id="clzy7wyqy00033gvwb5scha0g" data-title="Hello Hexo" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-
-  
 
 
 </section>
