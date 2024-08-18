@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="问题描述ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？ 在Stackoverflow上发现类似的讨论：https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;30904718&#x2F;range-of-immediate-values-in-armv8-a64-assembly">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ARMv8 A64汇编中立即数范围问题分析">
+<meta property="og:url" content="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/index.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="问题描述ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？ 在Stackoverflow上发现类似的讨论：https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;30904718&#x2F;range-of-immediate-values-in-armv8-a64-assembly">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image1.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image2.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image3.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image4.png">
+<meta property="article:published_time" content="2021-11-21T12:21:19.000Z">
+<meta property="article:modified_time" content="2024-08-18T12:23:59.942Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="troubleshooting">
+<meta property="article:tag" content="Assembly">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image1.png">
+
+<link rel="canonical" href="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>ARMv8 A64汇编中立即数范围问题分析 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Life is short, Play more!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ARMv8 A64汇编中立即数范围问题分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-21 20:21:19" itemprop="dateCreated datePublished" datetime="2021-11-21T20:21:19+08:00">2021-11-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Assembly/" itemprop="url" rel="index"><span itemprop="name">Assembly</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Assembly/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？</strong></p>
+<p>在Stackoverflow上发现类似的讨论：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly">https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly</a></p>
+<span id="more"></span>
+
+<p>问题复现：（环境： <code>Linux debian 4.19.0-10-amd64</code>)</p>
+<p>1、编写 <code>hello.s</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ADD X12, X10, 0xFEF</span><br><span class="line">AND X12, X10, 0xFEF</span><br></pre></td></tr></table></figure>
+
+<p>如果你是<code>x86_64</code>环境，需先安装<code>aarch64</code>编译工具：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get install binutils-aarch64-linux-gnu</span><br></pre></td></tr></table></figure>
+
+<p>2、编译<code>hello.s</code>，发现对于相同立即数<code>0xFEF</code>，<font color='red'>AND指令编译出<code>immediate out of range</code>错，但ADD指令编译却不出错，<strong>为什么？？?</strong></font></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># aarch64-linux-gnu-as hello.s -o hello.o</span><br><span class="line">hello.s: Assembler messages:</span><br><span class="line">hello.s:1: Error: immediate out of range at operand 3 -- `and x12,x10,0xfef&#x27;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>查询ARMv8指令集手册(<code>C4.1 A64 instruction set encoding</code>)，先来看下A64 指令集编码格式：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image1.png"></p>
+<p>可以看出<strong>A64指令长度固定为32位，其中op0(占4位)用于区分不同类型的指令，剩下的28位也不可能全用于表示立即数</strong>。因此，和x86&#x2F;x64这种变长指令集对比，A64中立即数表示范围非常有限。</p>
+<p>解释这个问题，需要查询指令集手册，对比ADD, AND指令的立即数编码格式差异。</p>
+<h3 id="ADD-immediate"><a href="#ADD-immediate" class="headerlink" title="ADD(immediate)"></a>ADD(immediate)</h3><p>ADD指令的编码格式和伪码，可以参考手册 <code>C6.2.4 ADD(immediate)</code>，或下图：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image2.png"></p>
+<ul>
+<li><p><code>imm12</code>表示立即数，长度12位，范围0~4095，共4096种取值。</p>
+</li>
+<li><p>读伪代码可知，<code>sh</code>取值为1时，将<code>imm12</code>左移12位得到立即数。因此又有0 &lt;&lt; 12, 1 &lt;&lt; 12, 2 &lt;&lt; 12, … 4095 &lt;&lt; 12 共4096种取值。前后加起来一共8192种取值。</p>
+</li>
+<li><p>此例中<font color = 'red'><strong>0xFEF &#x3D; 4079，显然落在0~4095范围内，所以ADD指令编译不出问题。</strong></font></p>
+</li>
+</ul>
+<p>利用<code>objdump</code>查看<code>ADD X12, X10, 0xFEF</code> 指令的二进制码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># aarch64-linux-gnu-objdump -d hello.o</span><br><span class="line">Disassembly of section .text:</span><br><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   913fbd4c        add     x12, x10, #0xfef</span><br></pre></td></tr></table></figure>
+
+<p> <code>0x913fbd4c</code> &#x3D; <code>1001 0001 0011 1111 1011 1101 0100 1100</code> b， 可以看出这条ADD指令的编码和指令集手册规定的编码格式是一致的。（各字段对应的关系参考上图）</p>
+<h3 id="AND-immediate"><a href="#AND-immediate" class="headerlink" title="AND(immediate)"></a>AND(immediate)</h3><p>AND指令的编码格式和伪码参考手册 <code>C6.2.12 AND(immediate)</code>，或下图：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image3.png"><br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image4.png"></p>
+<p>AND指令的伪码不是很直观，详细解释参考老外的这篇<a target="_blank" rel="noopener" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">文章</a>，非常清楚（参考<code>Logical Immediates</code>小节）</p>
+<p><strong>这里给出直观的结论：</strong></p>
+<p>AND指令支持的立即数个数为5334个，结果参考：<a target="_blank" rel="noopener" href="https://gist.github.com/dinfuehr/51a01ac58c0b23e4de9aac313ed6a06a">full output</a></p>
+<p>对于AND指令支持的立即数a，必定能通过如下方式得到：</p>
+<ul>
+<li><p>首先，一定能找到一个长度为n的二进制模式串s（n要求必须是2 , 4,  8, 16, 32, 64 中的一个）。</p>
+</li>
+<li><p>且模式串s必须由 m个连续的1组成的二进制串(这个串长度也是n，m要求必须在[1, n - 1]之间) 通过循环右移任意次数得到。</p>
+</li>
+<li><p>最后将这个n位的模式串s拼接 64 &#x2F; n 次，得到1个64位的二进制串，它的值等于a。</p>
+</li>
+</ul>
+<p><strong>N, imms, immr字段的作用：</strong></p>
+<p><code>N</code> 和 <code>imms</code>共同决定<strong>二进制模式串s的长度</strong>，以及<strong>模式串s有几个连续的1</strong>。</p>
+<p><code>immr</code>： r即rotate，表示模式串s的循环右移次数，范围 0 ~ 63。</p>
+<p>N和imms的取值组合参考下表：</p>
+<table>
+<thead>
+<tr>
+<th>N</th>
+<th>imms</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th>模式串长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>x</td>
+<td>2 位</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>x</td>
+<td>x</td>
+<td>4 位</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>8 位</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>16 位</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>32 位</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>64 位</td>
+</tr>
+</tbody></table>
+<p>对于给定的<code>N</code>和<code>imms</code>，<strong>x可以取0或1，但不允许所有的x同时取1</strong>，因此对于n位的模式串，x的取值组合有 n - 1种情况。</p>
+<p>以下举几个例子帮助理解：</p>
+<ul>
+<li><p><code>N</code> &#x3D; 0 <code>imms</code> &#x3D; <strong>1 1 1 0</strong> <font color = 'red'><strong>1 0</strong></font>， 表示模式串长度为4，且模式串中连续1的个数为 10 ‘b + 1 &#x3D; 3，即 0111。此时<code>immr</code>的范围[0, 3]</p>
+<ul>
+<li><code>immr</code> &#x3D; 0， 表示立即数为 0111 0111 0111 0111  0111 0111 0111 0111  0111 0111 0111 0111  0111 0111 0111 0111 &#x3D; 0x7777777777777777</li>
+<li><code>immr</code> &#x3D; 2, 表示模式串循坏右移2次 （0111 -&gt; 1101)，立即数为 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 &#x3D; 0xdddddddddddd</li>
+</ul>
+</li>
+<li><p><code>N</code> &#x3D; 0 <code>imms</code> &#x3D; <strong>1 1 1 1 0</strong> <font color = 'red'><strong>0</strong></font>，表示模式串长度为2，且模式串中连续1的个数为 0 ‘b + 1 &#x3D; 1，即 01。此时<code>immr</code>的范围[0, 1]</p>
+<ul>
+<li><code>immr</code> &#x3D; 0，表示立即数 01 01 …… 01 b(连续32个01组成)，即 0x5555555555555555</li>
+<li><code>immr</code> &#x3D; 1，表示模式串循坏右移1次（01 -&gt; 10），立即数 10 10 ……  10 b(连续32个10组成)，即 0xaaaaaaaaaaaaaaaa</li>
+</ul>
+</li>
+</ul>
+<p>可以看出：</p>
+<ul>
+<li><p>对于长度为n位的模式串，连续1的个数可以是[1, n - 1]，又因为s位模式串循环右移任意次数是[0, n -1]，所以一共拼接出 n * (n - 1)个不同的立即数。</p>
+</li>
+<li><p>长度n的取值由N和imms共同决定，取值范围 {2, 4, 8, 16, 32, 64}</p>
+</li>
+</ul>
+<p>综上， AND指令支持的立即数总数为 2 * 1 + 4 * 3 + 8 * 7 + …… + 64 * 63 &#x3D; 5334。</p>
+<p>可以手撕代码，打印出这5334个符合条件的立即数，参考：<a target="_blank" rel="noopener" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/</a></p>
+<p>回到问题， 0xfef的二进制串为1111 1110 1111，你会发现 <font color ='red'><strong>N, imms, immr不管取什么值，都无法得到1111 1110 1111这个串，所以AND指令的编译会报错</strong></font>。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener" href="https://developer.arm.com/documentation/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">《ARM Architecture Reference Manual, for ARMv8-A architecture profile》</a></p>
+<p>【2】  <a target="_blank" rel="noopener" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">ENCODING OF IMMEDIATE VALUES ON AARCH64</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/troubleshooting/" rel="tag"><i class="fa fa-tag"></i> troubleshooting</a>
+              <a href="/tags/Assembly/" rel="tag"><i class="fa fa-tag"></i> Assembly</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/" rel="prev" title="如何查看Redis订阅的模式字符串">
+      <i class="fa fa-chevron-left"></i> 如何查看Redis订阅的模式字符串
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/11/30/2021-11-30-redis-key-expired-case/" rel="next" title="Hiredis查询失败时出现key丢失问题定位">
+      Hiredis查询失败时出现key丢失问题定位 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%9B%A0%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">原因分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ADD-immediate"><span class="nav-number">2.1.</span> <span class="nav-text">ADD(immediate)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AND-immediate"><span class="nav-number">2.2.</span> <span class="nav-text">AND(immediate)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">40</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">148k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">2:14</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>

@@ -391,24 +391,6 @@
       </tags>
   </entry>
   <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>CSAPP 二进制炸弹实验</title>
     <url>/2020/07/26/2020-07-26-csapp-bomblab/</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>二进制炸弹是一个作为目标代码提供的程序。运行时提示用户输入6个不同的字符串，如其中一个字符串不正确，炸弹会引爆并打印一条错误信息。需要通过反汇编确定输入的6个字符串，从而拆除炸弹。</p>
@@ -876,6 +858,24 @@
       </tags>
   </entry>
   <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Linux内核模块编译方法</title>
     <url>/2020/08/15/2020-08-15-how-to-compile-kernel-module/</url>
     <content><![CDATA[<h3 id="运行环境"><a href="#运行环境" class="headerlink" title="运行环境"></a>运行环境</h3><p><code>Linux debian 4.19.0-10-amd64</code></p>
@@ -1028,106 +1028,6 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>sem_open打开信号量失败案例分析</title>
-    <url>/2020/11/14/2020-11-14-sem-open-failure-case/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
-<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
-<p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
-<span id="more"></span>
-
-<h4 id="为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？"><a href="#为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？" class="headerlink" title="为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？"></a>为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
-<ul>
-<li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
-<li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
-</ul>
-<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
-<p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
-
-<p>写法参考如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis学习笔记(五)——整数集合</title>
-    <url>/2020/12/06/2020-12-06-redis-note-05-intset/</url>
-    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
-<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
-<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3><span id="more"></span>
-
-<h4 id="1-1-数据结构设计"><a href="#1-1-数据结构设计" class="headerlink" title="1.1 数据结构设计"></a>1.1 数据结构设计</h4><p>以Redis6.0源码为例，整数集合由<code>intset.c/intset</code>结构定义，数据结构设计如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> encoding;			<span class="comment">// 编码方式</span></span><br><span class="line">    <span class="type">uint32_t</span> length;			<span class="comment">// 集合中的元素个数</span></span><br><span class="line">    <span class="type">int8_t</span> contents[];			<span class="comment">// 用于保存集合中的元素</span></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>length属性表示整数集合中元素的个数。</li>
-<li>集合中所有元素以<strong>有序、无重复</strong>的方式保存在contents数组。</li>
-<li><strong>虽然contents是int8_t类型，但它本身不保存int8_t类型的元素</strong>。实际上，contents数组保存的元素类型由encoding属性决定，encoding属性有以下3种取值：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// intset.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
-
-<p>举例，如encoding取值为<code>INTSET_ENC_INT32</code>，表示contents数组保存的每个元素都是int32_t类型的整数。</p>
-<p>下图表示一个包含3个类型为uint16_t的元素的整数集合：<br><img src="/2020/12/06/2020-12-06-redis-note-05-intset/image1.png"></p>
-<p>当创建空的整数集合时，为了节约内存，默认的encoding取值为<code>INTSET_ENC_INT16</code>(参考<code>intset.c/intsetNew</code>的实现)</p>
-<h4 id="1-2-升级操作"><a href="#1-2-升级操作" class="headerlink" title="1.2 升级操作"></a>1.2 升级操作</h4><p>考虑插入新元素a到整数集合S的场景：如果新元素所占字节大小大于整数集合中现有的任意一个元素所占字节大小(即<code>sizeof(a) &gt; S.encoding</code>），就需要先对整数集合执行<strong>升级</strong>操作后，再执行插入操作。</p>
-<p>升级操作的要点如下：</p>
-<ul>
-<li>根据新元素类型，计算扩展后的整数集合需要分配的空间大小，并调用realloc分配空间。</li>
-<li>将原整数集合中所有元素类型转换为和新元素相同，并将所有转化后的元素有序地放到正确的位置上。</li>
-<li>将新元素添加到整数集合。<strong>升级后新元素放置的位置要么在最开头，要么在最结尾</strong>，其原因在于：<strong>能引发升级的新元素，它的值要么小于先前整数集合中的所有元素，要么大于所有元素。</strong></li>
-</ul>
-<p>升级操作的源码实现参考<code>intset.c/intsetUpgradeAndAdd</code>, 如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> intset *<span class="title function_">intsetUpgradeAndAdd</span><span class="params">(intset *is, <span class="type">int64_t</span> value)</span> &#123;</span><br><span class="line">    <span class="type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);</span><br><span class="line">    <span class="type">uint8_t</span> newenc = _intsetValueEncoding(value);</span><br><span class="line">    <span class="type">int</span> length = intrev32ifbe(is-&gt;length);</span><br><span class="line">    <span class="type">int</span> prepend = value &lt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* First set new encoding and resize */</span></span><br><span class="line">    is-&gt;encoding = intrev32ifbe(newenc);</span><br><span class="line">    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span></span><br><span class="line"><span class="comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span></span><br><span class="line"><span class="comment">     * space at either the beginning or the end of the intset. */</span></span><br><span class="line">    <span class="keyword">while</span>(length--)</span><br><span class="line">        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the value at the beginning or the end. */</span></span><br><span class="line">    <span class="keyword">if</span> (prepend)</span><br><span class="line">        _intsetSet(is,<span class="number">0</span>,value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        _intsetSet(is,intrev32ifbe(is-&gt;length),value);</span><br><span class="line">    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> is;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>另外，Redis中的整数集合不支持降级操作。</p>
-<h3 id="2-整数集合的API"><a href="#2-整数集合的API" class="headerlink" title="2. 整数集合的API"></a>2. 整数集合的API</h3><table>
-<thead>
-<tr>
-<th align="left">API</th>
-<th align="left">功能</th>
-<th align="left">复杂度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">intset *intsetNew(void);</td>
-<td align="left">创建空的整数集合</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">intset *intsetAdd(intset *is, int64_t value, uint8_t *success);</td>
-<td align="left">插入新元素到整数集合</td>
-<td align="left">O(N)</td>
-</tr>
-<tr>
-<td align="left">intset *intsetRemove(intset *is, int64_t value, int *success);</td>
-<td align="left">删除整数集合中的指定元素</td>
-<td align="left">O(N)</td>
-</tr>
-<tr>
-<td align="left">uint8_t intsetFind(intset *is, int64_t value);</td>
-<td align="left">查询元素是否在整数集合中。用二分查找法实现</td>
-<td align="left">O(logN)</td>
-</tr>
-</tbody></table>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》 —— 第6章 整数集合</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -1360,6 +1260,37 @@
       </tags>
   </entry>
   <entry>
+    <title>sem_open打开信号量失败案例分析</title>
+    <url>/2020/11/14/2020-11-14-sem-open-failure-case/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
+<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
+<p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
+<span id="more"></span>
+
+<h4 id="为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？"><a href="#为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？" class="headerlink" title="为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？"></a>为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
+<ul>
+<li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
+<li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
+</ul>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
+<p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
+
+<p>写法参考如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>设计跳表, C语言实现</title>
     <url>/2020/12/05/2020-12-05-design-skiplist-by-c/</url>
     <content><![CDATA[<h3 id="跳跃表简介"><a href="#跳跃表简介" class="headerlink" title="跳跃表简介"></a>跳跃表简介</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。其性能和红黑树相当，且跳跃表实现更为简单。</p>
@@ -1448,6 +1379,75 @@
       <tags>
         <tag>C</tag>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis学习笔记(五)——整数集合</title>
+    <url>/2020/12/06/2020-12-06-redis-note-05-intset/</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
+<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
+<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3><span id="more"></span>
+
+<h4 id="1-1-数据结构设计"><a href="#1-1-数据结构设计" class="headerlink" title="1.1 数据结构设计"></a>1.1 数据结构设计</h4><p>以Redis6.0源码为例，整数集合由<code>intset.c/intset</code>结构定义，数据结构设计如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> encoding;			<span class="comment">// 编码方式</span></span><br><span class="line">    <span class="type">uint32_t</span> length;			<span class="comment">// 集合中的元素个数</span></span><br><span class="line">    <span class="type">int8_t</span> contents[];			<span class="comment">// 用于保存集合中的元素</span></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>length属性表示整数集合中元素的个数。</li>
+<li>集合中所有元素以<strong>有序、无重复</strong>的方式保存在contents数组。</li>
+<li><strong>虽然contents是int8_t类型，但它本身不保存int8_t类型的元素</strong>。实际上，contents数组保存的元素类型由encoding属性决定，encoding属性有以下3种取值：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// intset.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
+
+<p>举例，如encoding取值为<code>INTSET_ENC_INT32</code>，表示contents数组保存的每个元素都是int32_t类型的整数。</p>
+<p>下图表示一个包含3个类型为uint16_t的元素的整数集合：<br><img src="/2020/12/06/2020-12-06-redis-note-05-intset/image1.png"></p>
+<p>当创建空的整数集合时，为了节约内存，默认的encoding取值为<code>INTSET_ENC_INT16</code>(参考<code>intset.c/intsetNew</code>的实现)</p>
+<h4 id="1-2-升级操作"><a href="#1-2-升级操作" class="headerlink" title="1.2 升级操作"></a>1.2 升级操作</h4><p>考虑插入新元素a到整数集合S的场景：如果新元素所占字节大小大于整数集合中现有的任意一个元素所占字节大小(即<code>sizeof(a) &gt; S.encoding</code>），就需要先对整数集合执行<strong>升级</strong>操作后，再执行插入操作。</p>
+<p>升级操作的要点如下：</p>
+<ul>
+<li>根据新元素类型，计算扩展后的整数集合需要分配的空间大小，并调用realloc分配空间。</li>
+<li>将原整数集合中所有元素类型转换为和新元素相同，并将所有转化后的元素有序地放到正确的位置上。</li>
+<li>将新元素添加到整数集合。<strong>升级后新元素放置的位置要么在最开头，要么在最结尾</strong>，其原因在于：<strong>能引发升级的新元素，它的值要么小于先前整数集合中的所有元素，要么大于所有元素。</strong></li>
+</ul>
+<p>升级操作的源码实现参考<code>intset.c/intsetUpgradeAndAdd</code>, 如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> intset *<span class="title function_">intsetUpgradeAndAdd</span><span class="params">(intset *is, <span class="type">int64_t</span> value)</span> &#123;</span><br><span class="line">    <span class="type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);</span><br><span class="line">    <span class="type">uint8_t</span> newenc = _intsetValueEncoding(value);</span><br><span class="line">    <span class="type">int</span> length = intrev32ifbe(is-&gt;length);</span><br><span class="line">    <span class="type">int</span> prepend = value &lt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* First set new encoding and resize */</span></span><br><span class="line">    is-&gt;encoding = intrev32ifbe(newenc);</span><br><span class="line">    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span></span><br><span class="line"><span class="comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span></span><br><span class="line"><span class="comment">     * space at either the beginning or the end of the intset. */</span></span><br><span class="line">    <span class="keyword">while</span>(length--)</span><br><span class="line">        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the value at the beginning or the end. */</span></span><br><span class="line">    <span class="keyword">if</span> (prepend)</span><br><span class="line">        _intsetSet(is,<span class="number">0</span>,value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        _intsetSet(is,intrev32ifbe(is-&gt;length),value);</span><br><span class="line">    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> is;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>另外，Redis中的整数集合不支持降级操作。</p>
+<h3 id="2-整数集合的API"><a href="#2-整数集合的API" class="headerlink" title="2. 整数集合的API"></a>2. 整数集合的API</h3><table>
+<thead>
+<tr>
+<th align="left">API</th>
+<th align="left">功能</th>
+<th align="left">复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">intset *intsetNew(void);</td>
+<td align="left">创建空的整数集合</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">intset *intsetAdd(intset *is, int64_t value, uint8_t *success);</td>
+<td align="left">插入新元素到整数集合</td>
+<td align="left">O(N)</td>
+</tr>
+<tr>
+<td align="left">intset *intsetRemove(intset *is, int64_t value, int *success);</td>
+<td align="left">删除整数集合中的指定元素</td>
+<td align="left">O(N)</td>
+</tr>
+<tr>
+<td align="left">uint8_t intsetFind(intset *is, int64_t value);</td>
+<td align="left">查询元素是否在整数集合中。用二分查找法实现</td>
+<td align="left">O(logN)</td>
+</tr>
+</tbody></table>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》 —— 第6章 整数集合</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -2227,12 +2227,12 @@
     <title>配置Git代理，解决下载龟速问题</title>
     <url>/2021/06/05/2021-06-05-git-download-too-slow/</url>
     <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
-<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p><strong><font color='red'>首先，你的本地机器必须有socks5代理^_^</font></strong></p>
+<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>首先，你的本地机器必须有socks5代理</p>
 <p>进<code>git bash</code>，敲如下命令：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global http.sslverify false</span><br><span class="line">git config -l</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
 
-<h4 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h4><p>git clone报错：<font color='red'>fatal: unable to access XXX.git: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443</p>
+<h4 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h4><p>git clone报错: fatal: unable to access XXX.git: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443</p>
 <h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><p>StackOverFlow上能搜到同样问题，参考：<a href="https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error">https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error</a></p>
 <p>进<code>git bash</code>，敲如下命令：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global --add remote.origin.proxy &quot;127.0.0.1:1087&quot;</span><br></pre></td></tr></table></figure>
@@ -2244,6 +2244,895 @@
       </categories>
       <tags>
         <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Leetcode 664 奇怪的打印机</title>
+    <url>/2021/08/15/2021-08-15-leetcode-664-weird-printer/</url>
+    <content><![CDATA[<h3 id="题目描述"><a href="#题目描述" class="headerlink" title="题目描述"></a>题目描述</h3><p><a href="https://leetcode-cn.com/problems/strange-printer">https://leetcode-cn.com/problems/strange-printer</a></p>
+<span id="more"></span>
+
+<h3 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h3><p>贪心法找不到明显思路，尝试动态规划求解。</p>
+<p><strong>1、 先明确动归问题的定义：</strong></p>
+<p>记f[i][j]为完成第i个字符到第j个字符的最少打印次数。记字符串s长度为n，则f[0][n-1]即为所求。</p>
+<p><strong>2、 将问题拆分成子问题，推导递推方程：</strong></p>
+<p>可以将区间[i, j]分解成[i, k]，[k + 1, j] （其中i &lt;&#x3D; k &lt; j)，完成[i, j]打印问题转化为分别完成[i, k], [k + 1, j]两部分打印， k取值一共有j - i种可能，取最小的即可。递推方程：f[i][j] &#x3D; min (k &#x3D; i, k &lt; j) f[i][k] + f[k+1][j]</p>
+<p><strong>3 、再考虑边界条件，缩小问题规模：</strong></p>
+<ul>
+<li><p>对于长度为1的区间，只需打印一次。对所有i都有，f[i][i] &#x3D; 1</p>
+</li>
+<li><p>对于区间[i, j]，如果第i个字符和第j个字符相等，可以在打印第i个字符时，顺便打印到右侧第j个字符，此时有f[i][j] &#x3D; f[i][j - 1]</p>
+</li>
+</ul>
+<p>最终推导出状态转移方程：<br><img src="/2021/08/15/2021-08-15-leetcode-664-weird-printer/image1.png"></p>
+<h3 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h3><p>可以用记忆化搜索，或者自底向上法，代码如下：</p>
+<h4 id="记忆化搜索"><a href="#记忆化搜索" class="headerlink" title="记忆化搜索"></a>记忆化搜索</h4><p>套路就是用一个数组，在首次求解子问题时，保存（记忆）这个子问题的解，当再次求解相同子问题时，直接从数组里读取，避免重复递归。代码参考：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> N_MAX 100</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> g_strlen;</span><br><span class="line"><span class="type">int</span> dp[N_MAX][N_MAX];						<span class="comment">// 套路: 用一个数组，记录所有子问题的解</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">Dfs</span><span class="params">(<span class="type">char</span> *s, <span class="type">int</span> i, <span class="type">int</span> j)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (i == j) &#123;</span><br><span class="line">        <span class="keyword">return</span> dp[i][i];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (s[i] == s[j]) &#123;</span><br><span class="line">        <span class="keyword">if</span> (dp[i][j - <span class="number">1</span>] == <span class="number">0</span>) &#123;</span><br><span class="line">            dp[i][j - <span class="number">1</span>] = Dfs(s, i, j - <span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> dp[i][j - <span class="number">1</span>];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> minT = <span class="number">0x3f3f3f3f</span>;						<span class="comment">// s[i] != s[j], 取所有j-i中可能中最小的解</span></span><br><span class="line">    <span class="type">int</span> tmp;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> k = i; k &lt; j; ++k) &#123;</span><br><span class="line">        <span class="keyword">if</span> (dp[i][k] == <span class="number">0</span>) &#123;</span><br><span class="line">            dp[i][k] = Dfs(s, i, k);			<span class="comment">// 如子问题(i, k)已经求解过，直接从数组读取</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (dp[k + <span class="number">1</span>][j] == <span class="number">0</span>) &#123;</span><br><span class="line">            dp[k + <span class="number">1</span>][j] = Dfs(s, k + <span class="number">1</span>, j);	<span class="comment">// 如子问题(k + 1, j)已经求解过，直接从数组读取</span></span><br><span class="line">        &#125;</span><br><span class="line">        tmp = dp[i][k] + dp[k + <span class="number">1</span>][j];</span><br><span class="line">        <span class="keyword">if</span> (tmp &lt; minT) &#123;</span><br><span class="line">            minT = tmp;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> minT;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">strangePrinter</span><span class="params">(<span class="type">char</span> * s)</span>&#123;</span><br><span class="line">    g_strlen = <span class="built_in">strlen</span>(s);</span><br><span class="line">    <span class="built_in">memset</span>(dp, <span class="number">0</span>, <span class="keyword">sizeof</span>(dp));</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N_MAX; ++i) &#123;</span><br><span class="line">        dp[i][i] = <span class="number">1</span>;					<span class="comment">// 边界条件，长度为1的区间，只需打印一次</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> Dfs(s, <span class="number">0</span>, g_strlen - <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="自底向上法"><a href="#自底向上法" class="headerlink" title="自底向上法"></a>自底向上法</h4><p>相比记忆化搜索，自底向上法还需要<strong>考虑每个子问题的求解顺序</strong>。根据递推式，这里需从大到小去遍历i, 从小到大遍历j，就可以保证计算f[i][j]时，f[i][k] + f[k + 1][j]都被计算过。</p>
+<p><strong>优化点</strong>：s[i] !&#x3D; s[j]时剪枝，只有s[i]和s[k]相等时才计算，进一步压缩空间。代码参考：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> N_MAX 100</span></span><br><span class="line"><span class="type">int</span> dp[N_MAX][N_MAX];</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">strangePrinter</span><span class="params">(<span class="type">char</span> * s)</span>&#123;</span><br><span class="line">    <span class="type">int</span> str_len = <span class="built_in">strlen</span>(s);</span><br><span class="line">    <span class="built_in">memset</span>(dp, <span class="number">0x3f</span>, <span class="keyword">sizeof</span>(dp));</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> tmp;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = str_len - <span class="number">1</span>; i &gt;= <span class="number">0</span>; --i) &#123;</span><br><span class="line">        dp[i][i] = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> j = i + <span class="number">1</span>; j &lt; str_len; ++j) &#123;</span><br><span class="line">            <span class="keyword">if</span> (s[i] == s[j]) &#123;</span><br><span class="line">                dp[i][j] = dp[i][j - <span class="number">1</span>];</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> k = i; k &lt; j; ++k) &#123;</span><br><span class="line">                <span class="keyword">if</span> (s[i] != s[k]) &#123;			<span class="comment">// 剪枝，只有s[i]和s[k]相等时才计算，进一步压缩空间。</span></span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                tmp = dp[i][k] + dp[k + <span class="number">1</span>][j];</span><br><span class="line">                <span class="keyword">if</span> (tmp &lt; dp[i][j]) &#123;</span><br><span class="line">                    dp[i][j] = tmp;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dp[<span class="number">0</span>][str_len - <span class="number">1</span>];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>LeetCode官方题解：<a href="https://leetcode-cn.com/problems/strange-printer/solution/qi-guai-de-da-yin-ji-by-leetcode-solutio-ogbu/">https://leetcode-cn.com/problems/strange-printer/solution/qi-guai-de-da-yin-ji-by-leetcode-solutio-ogbu/</a></p>
+]]></content>
+      <categories>
+        <category>LeetCode</category>
+      </categories>
+      <tags>
+        <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>修改Docker容器的存储路径</title>
+    <url>/2021/10/16/2021-10-16-modify-docker-image-path/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>docker拉取的镜像默认存储在根路径(<code>/var/lib/docker</code>)，但根路径存储空间有限。我们可以通过挂载更大的磁盘，将docker数据迁移到挂载磁盘上, 以解决空间不足问题。具体方法如下：</p>
+<span id="more"></span>
+
+<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>假设挂载磁盘在<code>/usr1</code>，需要将docker数据迁移到路径<code>/usr1</code>下。步骤如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">service docker stop 				# 停止容器</span><br><span class="line">mv /var/lib/docker /usr1/docker 	# 迁移docker数据到新路径，新路径只需保证在/usr1下即可</span><br><span class="line">ln -s /usr1/docker /var/lib/docker  # 创建软连接</span><br><span class="line">service docker start				# 重新启动docker</span><br></pre></td></tr></table></figure>
+
+<p>通过 <code>df -h</code>命令可确认修改生效。</p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用GDB修改二进制文件</title>
+    <url>/2021/10/16/2021-10-16-use-gdb-to-modify-binary-file/</url>
+    <content><![CDATA[<h3 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h3><p>GDB不仅可以用来调试程序，还可以直接修改被调试程序的二进制文件。这种方式相比于改源码重新编译、<code>gdb attach</code>有什么优势呢？考虑以下企业生产环境中的几个调试场景：</p>
+<ul>
+<li><strong>需要修改的二进制文件是其他领域的，你没有源码和编译工程</strong>，让相关领域出调试对接件比较费时，但你只想临时改一行别人的代码，几分钟内完成验证。</li>
+<li><strong>调试环境上，使用gdb attach进程方式有困难</strong>：<ul>
+<li>被调试的服务（进程）没有启动断点(可定位性很差)，或者gdb手动拉起的方法非常复杂，等服务正常启动后再attach已经赶不上打断点的时机。</li>
+<li>长时间gdb挂住业务进程导致触发丢心跳复位。</li>
+<li>你不确定修改的二进制文件同时被几个进程加载，但你诉求很明确，就是直接改文件，对所有进程生效。</li>
+</ul>
+</li>
+</ul>
+<p>以下举一个简单的例子，介绍GDB修改程序二进制文件的技巧：</p>
+<span id="more"></span>
+
+<h3 id="问题举例"><a href="#问题举例" class="headerlink" title="问题举例"></a>问题举例</h3><p>有一个需修改的二进制文件，C码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> grade = <span class="number">65</span>;</span><br><span class="line">    <span class="keyword">if</span> (grade &lt;= <span class="number">60</span>) &#123;			<span class="comment">// 这里写错了，需要修改成 &gt;= 60及格</span></span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;pass\n&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;fail\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>程序执行结果如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># gcc main.c -o main &amp;&amp; ./main</span><br><span class="line">fail</span><br></pre></td></tr></table></figure>
+
+<p><font color = 'red'>【问题】</font>这里需要将<code>grade &lt;= 60</code> 要改成 <code>grade &gt; 60</code>。只通过GDB修改二进制文件的方式怎么实现？</p>
+<h3 id="技巧-解决步骤"><a href="#技巧-解决步骤" class="headerlink" title="技巧&amp;解决步骤"></a>技巧&amp;解决步骤</h3><p>1、缺省情况下，<code>gdb</code>是以只读方式加载程序的。需要先通过命令行指定加载方式为可写，再通过file命令加载二进制文件：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) set write on</span><br><span class="line">(gdb) show write</span><br><span class="line">Writing into executable and core files is on.</span><br><span class="line">(gdb) file main</span><br><span class="line">Reading symbols from main...(no debugging symbols found)...done.</span><br></pre></td></tr></table></figure>
+
+<p>2、结合C码和汇编代码，定位出需修改的汇编指令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble /mr main</span><br><span class="line">Dump of assembler code for function main:</span><br><span class="line">   0x0000000000001135 &lt;+0&gt;:     55                      push   %rbp</span><br><span class="line">   0x0000000000001136 &lt;+1&gt;:     48 89 e5                mov    %rsp,%rbp</span><br><span class="line">   0x0000000000001139 &lt;+4&gt;:     48 83 ec 10             sub    $0x10,%rsp</span><br><span class="line">   0x000000000000113d &lt;+8&gt;:     c7 45 fc 41 00 00 00    movl   $0x41,-0x4(%rbp)</span><br><span class="line">   0x0000000000001144 &lt;+15&gt;:    83 7d fc 3c             cmpl   $0x3c,-0x4(%rbp)        # 0x3c = 60, 对应C码：grade &lt;= 60</span><br><span class="line">   0x0000000000001148 &lt;+19&gt;:    7f 0e                   jg     0x1158 &lt;main+35&gt;</span><br><span class="line">   0x000000000000114a &lt;+21&gt;:    48 8d 3d b3 0e 00 00    lea    0xeb3(%rip),%rdi        # 0x2004</span><br><span class="line">   0x0000000000001151 &lt;+28&gt;:    e8 da fe ff ff          callq  0x1030 &lt;puts@plt&gt;</span><br><span class="line">   0x0000000000001156 &lt;+33&gt;:    eb 0c                   jmp 0x1164 &lt;main+47&gt;</span><br><span class="line">   0x0000000000001158 &lt;+35&gt;:    48 8d 3d aa 0e 00 00    lea    0xeaa(%rip),%rdi        # 0x2009</span><br><span class="line">   0x000000000000115f &lt;+42&gt;:    e8 cc fe ff ff          callq  0x1030 &lt;puts@plt&gt;</span><br><span class="line">   0x0000000000001164 &lt;+47&gt;:    b8 00 00 00 00          mov    $0x0,%eax</span><br><span class="line">   0x0000000000001169 &lt;+52&gt;:    c9                      leaveq</span><br><span class="line">   0x000000000000116a &lt;+53&gt;:    c3                      retq</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>不难发现， <code>if (grade &lt;= 60)</code> 对应的指令为：<code>0x1148 &lt;+19&gt;: 7f 0e jg 0x1158 &lt;main+35&gt;</code>， 这里只需要将<code>jg</code>指令改<code>jle</code>指令即可。</p>
+<p>3、<code>jg</code>, <code>jle</code>指令格式参考<a href="https://www.intel.cn/content/www/cn/zh/architecture-and-technology/64-ia-32-architectures-software-developer-vol-2a-manual.html">指令集手册</a>，如下：<br><img src="/2021/10/16/2021-10-16-use-gdb-to-modify-binary-file/image1.png"><br>所以只需要将 <code>7f 0e</code> 改成<code>7e 0e</code>即可。</p>
+<p>4、修改二进制代码（注意大小端和指令长度），用<code>gdb</code>的<code>set</code>命令修改地址处的内容，方法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble /mr main</span><br><span class="line">Dump of assembler code for function main:</span><br><span class="line">   ...</span><br><span class="line">   0x0000000000001148 &lt;+19&gt;:    7f 0e   jg     0x1158 &lt;main+35&gt;</span><br><span class="line">   ...</span><br><span class="line">(gdb) set *(short *)0x1148 = 0xe7e  (指令长度为2个字节，这里是小端序)</span><br><span class="line">(gdb) disassemble /mr main</span><br><span class="line">Dump of assembler code for function main:</span><br><span class="line">   ...</span><br><span class="line">   0x0000000000001148 &lt;+19&gt;:    7e 0e   jle    0x1158 &lt;main+35&gt;</span><br><span class="line">   ...</span><br><span class="line">End of assembler dump.</span><br></pre></td></tr></table></figure>
+
+<p>退出<code>gdb</code>, 执行<code>main</code>程序输出pass，说明修改生效：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># ./main</span><br><span class="line">pass</span><br></pre></td></tr></table></figure>
+
+<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><p>如果改成70分以上及格，如何修改？如果是aarch64格式的二进制呢？</p>
+<p>注意：涉及到立即数的修改，x86_64和aarch64差异很大。aarch64中不同的汇编指令，对立即数的存储方式和表示范围都不同，具体操作时需查询对应的指令集手册。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】<a href="https://wizardforcel.gitbooks.io/100-gdb-tips/content/">《100个gdb小技巧》</a></p>
+<p>【2】<a href="https://developer.arm.com/documentation/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">《ARM Architecture Reference Manual, for ARMv8-A architecture profile》</a></p>
+<p>【3】<a href="https://www.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-software-developer-vol-2a-manual.html">《64-ia-32-architectures-software-developer-vol-2a-manual》</a></p>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用wget批量下载指定类型文件</title>
+    <url>/2021/10/16/2021-10-16-use-wget-to-download-file/</url>
+    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
+
+<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
+
+
+]]></content>
+      <categories>
+        <category>wget</category>
+      </categories>
+      <tags>
+        <tag>wget</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis抓包分析案例</title>
+    <url>/2021/11/06/2021-11-06-one-redis-case/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
+<p><strong>问题：</strong> 仿真设备启动中，<strong>概率出现Redis的某个字符串键被不符合预期地改写成空串</strong>，导致客户端Docker从Redis获取的数据有问题。<strong>需要定位是哪个Docker上的哪个进程改写了Redis数据库。</strong></p>
+<span id="more"></span>
+
+<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><ul>
+<li>先尝试排查客户端代码。但此案例中涉及业务代码过多(200w+行代码)，且Redis客户端的形式也很多（有<code>goredis</code>, <code>redis-py</code>, <code>hiredis</code>, <code>redis-cli</code>等）。看来肉眼扫描代码的笨方法不靠谱，而且这种<strong>寄希望于碰运气蒙混过关</strong>的思考方式实在不像是一个程序员。</li>
+</ul>
+<p>那么既然排查客户端有困难，能不能换个角度思考，比如说从服务端入手？以下给出第二种思路：</p>
+<ul>
+<li><strong>通过在服务端抓包，得到所有对这个字符串键做set操作的报文，再根据报文中的IP和端口号得到进程ID</strong>。听起来可行，下面举一个简化的案例介绍具体的操作方法。</li>
+</ul>
+<h2 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h2><p>利用tcpdump，在Redis服务端后台抓取对这个字符串键做set操作的报文，再根据报文中的IP和端口号确认进程即可。</p>
+<p>如下图所示，使用命令<code>tcpdump -i any port 6379 | grep set | grep [key]</code> ，得到客户端IP是localhost,端口号是44880。 </p>
+<p><img src="/2021/11/06/2021-11-06-one-redis-case/image1.png"></p>
+<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image2.png"></p>
+<h4 id="思考："><a href="#思考：" class="headerlink" title="思考："></a>思考：</h4><p>如果我只需要抓取将某个特定字符串键（比如”hello”）写成<strong>某个特定值</strong>（比如写成空串）的报文，怎么做？</p>
+<p>除了<code>grep</code>，下面再给出一种方法，利用<strong>tcpdump的根据报文特征过滤</strong>的技巧：</p>
+<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image3.png"></p>
+<p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
+
+<p>协议内容的解析参考<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
+<ul>
+<li>*3 表示数组长度为3， 数组元素依次为 [“set” “hello” “world”]</li>
+<li>$3 表示字符串 “set” 的长度</li>
+<li>第一个 $5 表示字符串 “hello” 的长度。</li>
+<li>第二个 $5 表示字符串 “world” 的长度。</li>
+</ul>
+<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image4.png"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
+<p>【2】<a href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ARMv8 A64汇编中立即数范围问题分析</title>
+    <url>/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？</strong></p>
+<p>在Stackoverflow上发现类似的讨论：<a href="https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly">https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly</a></p>
+<span id="more"></span>
+
+<p>问题复现：（环境： <code>Linux debian 4.19.0-10-amd64</code>)</p>
+<p>1、编写 <code>hello.s</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ADD X12, X10, 0xFEF</span><br><span class="line">AND X12, X10, 0xFEF</span><br></pre></td></tr></table></figure>
+
+<p>如果你是<code>x86_64</code>环境，需先安装<code>aarch64</code>编译工具：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt-get install binutils-aarch64-linux-gnu</span><br></pre></td></tr></table></figure>
+
+<p>2、编译<code>hello.s</code>，发现对于相同立即数<code>0xFEF</code>，<font color='red'>AND指令编译出<code>immediate out of range</code>错，但ADD指令编译却不出错，<strong>为什么？？?</strong></font></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># aarch64-linux-gnu-as hello.s -o hello.o</span><br><span class="line">hello.s: Assembler messages:</span><br><span class="line">hello.s:1: Error: immediate out of range at operand 3 -- `and x12,x10,0xfef&#x27;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>查询ARMv8指令集手册(<code>C4.1 A64 instruction set encoding</code>)，先来看下A64 指令集编码格式：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image1.png"></p>
+<p>可以看出<strong>A64指令长度固定为32位，其中op0(占4位)用于区分不同类型的指令，剩下的28位也不可能全用于表示立即数</strong>。因此，和x86&#x2F;x64这种变长指令集对比，A64中立即数表示范围非常有限。</p>
+<p>解释这个问题，需要查询指令集手册，对比ADD, AND指令的立即数编码格式差异。</p>
+<h3 id="ADD-immediate"><a href="#ADD-immediate" class="headerlink" title="ADD(immediate)"></a>ADD(immediate)</h3><p>ADD指令的编码格式和伪码，可以参考手册 <code>C6.2.4 ADD(immediate)</code>，或下图：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image2.png"></p>
+<ul>
+<li><p><code>imm12</code>表示立即数，长度12位，范围0~4095，共4096种取值。</p>
+</li>
+<li><p>读伪代码可知，<code>sh</code>取值为1时，将<code>imm12</code>左移12位得到立即数。因此又有0 &lt;&lt; 12, 1 &lt;&lt; 12, 2 &lt;&lt; 12, … 4095 &lt;&lt; 12 共4096种取值。前后加起来一共8192种取值。</p>
+</li>
+<li><p>此例中<font color = 'red'><strong>0xFEF &#x3D; 4079，显然落在0~4095范围内，所以ADD指令编译不出问题。</strong></font></p>
+</li>
+</ul>
+<p>利用<code>objdump</code>查看<code>ADD X12, X10, 0xFEF</code> 指令的二进制码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># aarch64-linux-gnu-objdump -d hello.o</span><br><span class="line">Disassembly of section .text:</span><br><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   913fbd4c        add     x12, x10, #0xfef</span><br></pre></td></tr></table></figure>
+
+<p> <code>0x913fbd4c</code> &#x3D; <code>1001 0001 0011 1111 1011 1101 0100 1100</code> b， 可以看出这条ADD指令的编码和指令集手册规定的编码格式是一致的。（各字段对应的关系参考上图）</p>
+<h3 id="AND-immediate"><a href="#AND-immediate" class="headerlink" title="AND(immediate)"></a>AND(immediate)</h3><p>AND指令的编码格式和伪码参考手册 <code>C6.2.12 AND(immediate)</code>，或下图：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image3.png"><br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image4.png"></p>
+<p>AND指令的伪码不是很直观，详细解释参考老外的这篇<a href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">文章</a>，非常清楚（参考<code>Logical Immediates</code>小节）</p>
+<p><strong>这里给出直观的结论：</strong></p>
+<p>AND指令支持的立即数个数为5334个，结果参考：<a href="https://gist.github.com/dinfuehr/51a01ac58c0b23e4de9aac313ed6a06a">full output</a></p>
+<p>对于AND指令支持的立即数a，必定能通过如下方式得到：</p>
+<ul>
+<li><p>首先，一定能找到一个长度为n的二进制模式串s（n要求必须是2 , 4,  8, 16, 32, 64 中的一个）。</p>
+</li>
+<li><p>且模式串s必须由 m个连续的1组成的二进制串(这个串长度也是n，m要求必须在[1, n - 1]之间) 通过循环右移任意次数得到。</p>
+</li>
+<li><p>最后将这个n位的模式串s拼接 64 &#x2F; n 次，得到1个64位的二进制串，它的值等于a。</p>
+</li>
+</ul>
+<p><strong>N, imms, immr字段的作用：</strong></p>
+<p><code>N</code> 和 <code>imms</code>共同决定<strong>二进制模式串s的长度</strong>，以及<strong>模式串s有几个连续的1</strong>。</p>
+<p><code>immr</code>： r即rotate，表示模式串s的循环右移次数，范围 0 ~ 63。</p>
+<p>N和imms的取值组合参考下表：</p>
+<table>
+<thead>
+<tr>
+<th>N</th>
+<th>imms</th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th>模式串长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>x</td>
+<td>2 位</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>x</td>
+<td>x</td>
+<td>4 位</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>8 位</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>16 位</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>32 位</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>x</td>
+<td>64 位</td>
+</tr>
+</tbody></table>
+<p>对于给定的<code>N</code>和<code>imms</code>，<strong>x可以取0或1，但不允许所有的x同时取1</strong>，因此对于n位的模式串，x的取值组合有 n - 1种情况。</p>
+<p>以下举几个例子帮助理解：</p>
+<ul>
+<li><p><code>N</code> &#x3D; 0 <code>imms</code> &#x3D; <strong>1 1 1 0</strong> <font color = 'red'><strong>1 0</strong></font>， 表示模式串长度为4，且模式串中连续1的个数为 10 ‘b + 1 &#x3D; 3，即 0111。此时<code>immr</code>的范围[0, 3]</p>
+<ul>
+<li><code>immr</code> &#x3D; 0， 表示立即数为 0111 0111 0111 0111  0111 0111 0111 0111  0111 0111 0111 0111  0111 0111 0111 0111 &#x3D; 0x7777777777777777</li>
+<li><code>immr</code> &#x3D; 2, 表示模式串循坏右移2次 （0111 -&gt; 1101)，立即数为 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 &#x3D; 0xdddddddddddd</li>
+</ul>
+</li>
+<li><p><code>N</code> &#x3D; 0 <code>imms</code> &#x3D; <strong>1 1 1 1 0</strong> <font color = 'red'><strong>0</strong></font>，表示模式串长度为2，且模式串中连续1的个数为 0 ‘b + 1 &#x3D; 1，即 01。此时<code>immr</code>的范围[0, 1]</p>
+<ul>
+<li><code>immr</code> &#x3D; 0，表示立即数 01 01 …… 01 b(连续32个01组成)，即 0x5555555555555555</li>
+<li><code>immr</code> &#x3D; 1，表示模式串循坏右移1次（01 -&gt; 10），立即数 10 10 ……  10 b(连续32个10组成)，即 0xaaaaaaaaaaaaaaaa</li>
+</ul>
+</li>
+</ul>
+<p>可以看出：</p>
+<ul>
+<li><p>对于长度为n位的模式串，连续1的个数可以是[1, n - 1]，又因为s位模式串循环右移任意次数是[0, n -1]，所以一共拼接出 n * (n - 1)个不同的立即数。</p>
+</li>
+<li><p>长度n的取值由N和imms共同决定，取值范围 {2, 4, 8, 16, 32, 64}</p>
+</li>
+</ul>
+<p>综上， AND指令支持的立即数总数为 2 * 1 + 4 * 3 + 8 * 7 + …… + 64 * 63 &#x3D; 5334。</p>
+<p>可以手撕代码，打印出这5334个符合条件的立即数，参考：<a href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/</a></p>
+<p>回到问题， 0xfef的二进制串为1111 1110 1111，你会发现 <font color ='red'><strong>N, imms, immr不管取什么值，都无法得到1111 1110 1111这个串，所以AND指令的编译会报错</strong></font>。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://developer.arm.com/documentation/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">《ARM Architecture Reference Manual, for ARMv8-A architecture profile》</a></p>
+<p>【2】  <a href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">ENCODING OF IMMEDIATE VALUES ON AARCH64</a></p>
+]]></content>
+      <categories>
+        <category>Assembly</category>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何查看Redis订阅的模式字符串</title>
+    <url>/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><code>pubsub channels</code>可以查看Redis中被订阅的频道(<strong>channel</strong>)：</p>
+<span id="more"></span>
+<p><img src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image1.png"></p>
+<p><code>pubsub numpat</code>可以查看被订阅的模式(<strong>pattern</strong>)数量：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># redis-cli pubsub numpat</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题：</strong></p>
+<p>除了查看被订阅模式的数量，我还需要<font color = 'red'><strong>获取每个订阅模式字符串的内容</strong></font>，怎么做 ?</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>google没搜到现成的命令，决定自己修改<code>redis-server</code>源码，打印模式链表的内容，用时3~5分钟，需要了解：</p>
+<ul>
+<li><p>Redis源码编译方法，参考<a href="https://github.com/redis/redis">官网</a>或本人的<a href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
+</li>
+<li><p>Redis服务器将所有模式的订阅信息保存在服务器状态的<code>pubsub_patterns</code>链表中。</p>
+</li>
+</ul>
+<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// pubsub.c</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">myPubsubPatternsPrint</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">list</span> *l = server.pubsub_patterns;</span><br><span class="line">    listNode *cur = l-&gt;head;</span><br><span class="line">    serverLog(LL_NOTICE, <span class="string">&quot;[DEBUG] ALL PUBSUB PATTERNS: &quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        pubsubPattern *pp = (pubsubPattern *)(cur-&gt;value);</span><br><span class="line">        robj *obj = pp-&gt;pattern;</span><br><span class="line">        <span class="type">char</span> *pattern = (<span class="type">char</span> *)obj-&gt;ptr;</span><br><span class="line">        serverLog(LL_NOTICE, <span class="string">&quot;%s&quot;</span>, pattern);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2、重新编译并安装redis-server，后台gdb call一下自定义的打印函数<code>myPubsubPatternsPrint</code>得到模式链表的内容，如下图所示：<br><img src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image2.png"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第18章 发布与订阅</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hiredis查询失败时出现key丢失问题定位</title>
+    <url>/2021/11/30/2021-11-30-redis-key-expired-case/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>hiredis查询key失败后，出现key丢失的问题。</p>
+<p>REDIS版本及源码：<a href="https://github.com/redis/redis/releases/tag/6.0.10">6.0.10</a></p>
+<p>hiredis版本及源码：<a href="https://github.com/redis/hiredis/releases/tag/v1.0.2">v1.0.2</a></p>
+<span id="more"></span>
+
+<p><strong>案例描述：</strong></p>
+<p>REDIS中预先写入1个字符串键”hello”，客户端代码基于hiredis，创建100个读线程和100个写线程，每个线程里发起一次短连接读写key，代码参考：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;hiredis/hiredis.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SERV_IP <span class="string">&quot;127.0.0.1&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SERV_PORT 6379</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NUM_READER 100</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NUM_WRITER 100</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">int</span> OK = <span class="number">0</span>;</span><br><span class="line"><span class="type">pthread_mutex_t</span> mutex = PTHREAD_MUTEX_INITIALIZER;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">DBGetString</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *key, <span class="type">char</span> *value)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">tv</span>;</span></span><br><span class="line">    tv.tv_sec = <span class="number">5</span>; tv.tv_usec = <span class="number">0</span>;</span><br><span class="line">    redisContext *c = redisConnectWithTimeout(SERV_IP, SERV_PORT, tv);</span><br><span class="line">    assert(c != <span class="literal">NULL</span> &amp;&amp; !c-&gt;err);</span><br><span class="line"></span><br><span class="line">    <span class="type">char</span> cmd[<span class="number">256</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(cmd, <span class="string">&quot;GET %s&quot;</span>, key);</span><br><span class="line">    redisReply *reply = (redisReply *)redisCommand(c, cmd);</span><br><span class="line">    assert(reply-&gt;str != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">strcpy</span>(value, reply-&gt;str);</span><br><span class="line">    freeReplyObject(reply);</span><br><span class="line">    redisFree(c);</span><br><span class="line">    <span class="keyword">return</span> OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">DBSetString</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *key, <span class="type">const</span> <span class="type">char</span> *value)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">tv</span>;</span></span><br><span class="line">    tv.tv_sec = <span class="number">5</span>; tv.tv_usec = <span class="number">0</span>;</span><br><span class="line">    redisContext *c = redisConnectWithTimeout(SERV_IP, SERV_PORT, tv);</span><br><span class="line">    assert(c != <span class="literal">NULL</span> &amp;&amp; !c-&gt;err);</span><br><span class="line"></span><br><span class="line">    <span class="type">char</span> cmd[<span class="number">256</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(cmd, <span class="string">&quot;SET %s %s&quot;</span>, key, value);</span><br><span class="line">    redisReply *reply = (redisReply *)redisCommand(c, cmd);</span><br><span class="line">    freeReplyObject(reply);</span><br><span class="line">    redisFree(c);</span><br><span class="line">    <span class="keyword">return</span> OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> *<span class="title function_">Reader</span><span class="params">(<span class="type">void</span> *args)</span> &#123;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">256</span>];</span><br><span class="line">    DBGetString(<span class="string">&quot;hello&quot;</span>, buf);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%s\n&quot;</span>, buf);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> *<span class="title function_">Writer</span><span class="params">(<span class="type">void</span> *args)</span> &#123;</span><br><span class="line">    DBSetString(<span class="string">&quot;hello&quot;</span>, <span class="string">&quot;world&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">testcase</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">time_t</span> t1 = time(<span class="literal">NULL</span>);</span><br><span class="line">    <span class="type">pthread_t</span> wid[NUM_WRITER];</span><br><span class="line">    <span class="type">pthread_t</span> rid[NUM_READER];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_WRITER; ++i) &#123;</span><br><span class="line">        pthread_create(&amp;wid[i], <span class="literal">NULL</span>, Writer, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_READER; ++i) &#123;</span><br><span class="line">        pthread_create(&amp;rid[i], <span class="literal">NULL</span>, Reader, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_WRITER; ++i) &#123;</span><br><span class="line">        pthread_join(wid[i], <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_READER; ++i) &#123;</span><br><span class="line">        pthread_join(rid[i], <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">time_t</span> t2 = time(<span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%ld s\n&quot;</span>, t2 - t1);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    testcase();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h3><p>Redis key丢失一般有如下原因：</p>
+<ul>
+<li>key被客户端删除。</li>
+<li>key是过期键，到期自动删除。</li>
+<li>因为内存不足导致key被逐出。</li>
+</ul>
+<p>本案例中的客户端只有get,set，没有删除操作，未设置键的过期时间，且机器内存也足够（4G以上）。初步分析不出原因，只能结合REDIS源码正向定位，于是有了第二种思路：</p>
+<p><em><strong>REDIS是基于内存的数据库，字符串键肯定在REDIS-SERVER进程中的某个内存地址处，key丢失时这个地址的内容肯定被改写，这时只需要GDB打个数据断点，看下调用栈即可分析原因。</strong></em></p>
+<p>以下给出详细的定位过程。</p>
+<h3 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h3><p>1、使用GCC的-g -O0编译选项，重新编译redis-server, hiredis源代码。（这一步非必要，目的是更方便调试）</p>
+<p>2、GDB打数据断点<br><img src="/2021/11/30/2021-11-30-redis-key-expired-case/image1.png"></p>
+<p>3、断点触发，观察调用栈<br><img src="/2021/11/30/2021-11-30-redis-key-expired-case/image2.png"></p>
+<p>观察第5帧，<code>freeMemoryIfNeeded</code>，说明触发了REDIS的内存淘汰机制，GDB打印出的REDIS配置项<code>maxmemory</code>仅为1048576字节(表示内存大小为1M)，且内存淘汰机制为<code>allkeys-lru</code>，这个机制会导致key被回收。</p>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>修改redis配置项maxmemory，内存给多点。（这里给1073741824，表示1G内存）</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis学习笔记(一)——简单动态字符串</title>
+    <url>/2021/12/11/2021-12-11-redis-note-01-sds/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Redis是用C语言开发的，但并没有直接使用C语言数组去表示字符串，而是使用简单动态字符串(Simple dynamic String，简称SDS)作为字符串的底层实现。</p>
+<p>以下给出SDS相关的一些常见问题，通过源码分析和实际验证，思考这些问题的答案，了解实现原理和设计思路。</p>
+<span id="more"></span>
+
+<p><strong>源码版本：</strong></p>
+<p><a href="https://github.com/redis/redis/releases/tag/3.0.0">Redis 3.0.0</a></p>
+<p><a href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+<h2 id="思考问题"><a href="#思考问题" class="headerlink" title="思考问题"></a>思考问题<span id="jump0"></span></h2><ul>
+<li><a href="#jump1">SDS的数据结构，字符串如何表示的</a><ul>
+<li><a href="#jump2">SDS结构体各成员的作用</a></li>
+<li><a href="#jump3">创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少</a></li>
+</ul>
+</li>
+<li><a href="#jump4">SDS相较于C风格字符串的优点</a><ul>
+<li><a href="#jump5">SDS的空间分配策略是如何杜绝缓冲区溢出问题的</a></li>
+<li><a href="#jump6">SDS是如何减少修改字符串时带来的内存重分配次数</a><ul>
+<li><a href="#jump7">字符串增长场景，SDS扩容策略</a></li>
+<li><a href="#jump8">字符串缩短场景，SDS空间释放策略</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#jump9">SDS最大长度是多少</a></li>
+<li><a href="#jump10">字符串键的三种编码方式</a><ul>
+<li><a href="#jump11">int编码</a></li>
+<li><a href="#jump12">embstr编码</a></li>
+<li><a href="#jump13">raw编码</a></li>
+<li><a href="#jump14">设计embstr编码的用意是什么</a></li>
+<li><a href="#jump15">三种编码之间的转换规则</a></li>
+</ul>
+</li>
+<li><a href="#jump16">对于很短的字符串，并不需要4字节表示长度，REDIS 3.2中的SDS实现是如何优化，节约内存的</a><ul>
+<li><a href="#jump17">给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？</a></li>
+</ul>
+</li>
+<li><a href="#jump18">REDIS字符串命令</a></li>
+</ul>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><h3 id="SDS的数据结构，字符串是如何表示的"><a href="#SDS的数据结构，字符串是如何表示的" class="headerlink" title="SDS的数据结构，字符串是如何表示的 "></a>SDS的数据结构，字符串是如何表示的 <span id="jump1"></span></h3><p>REDIS 3.0中，SDS的数据结构：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">	<span class="type">int</span> len;		<span class="comment">// 字符串长度，即对C风格字符串调用strlen的结果</span></span><br><span class="line">	<span class="type">int</span> <span class="built_in">free</span>;		<span class="comment">// buf数组中的未使用字节数</span></span><br><span class="line">	<span class="type">char</span> buf[];		<span class="comment">// &#x27;\0&#x27;结尾</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>注意sizeof(struct sdshdr)的结果等于8，不是9；这里的buf为柔性数组成员。至于为什么用柔性数组成员可以参考这篇文章：<a href="https://www.cnblogs.com/davygeek/p/5748852.html">https://www.cnblogs.com/davygeek/p/5748852.html</a></p>
+<h4 id="SDS结构体各成员的作用"><a href="#SDS结构体各成员的作用" class="headerlink" title="SDS结构体各成员的作用"></a>SDS结构体各成员的作用<span id="jump2"></span></h4><ul>
+<li>len: 表示buf数组中已使用的字节数(<strong>不包括’\0’</strong>)，即字符串长度。好处是获取字符串长度时间为O(1)</li>
+<li>free: 表示buf数组中未使用的字节数。</li>
+<li>buf: 用于保存字符串，遵循C风格字符串原则，以’\0’结尾。</li>
+</ul>
+<h4 id="创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？"><a href="#创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？" class="headerlink" title="创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？"></a>创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？<span id="jump3"></span></h4><p><strong>思考问题</strong>：写入一个字符串键key, 值为长度为5的字符串”Redis”，它的SDS表示中len, free, buf成员值各是多少？</p>
+<p><strong>源码分析：</strong></p>
+<p>1、Redis调用<code>sdsnew</code>创建一个包含给定C字符串的SDS，这里的initlen &#x3D; strlen(“Redis”) &#x3D; 5。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">sds <span class="title function_">sdsnew</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *init)</span> &#123;</span><br><span class="line">    <span class="type">size_t</span> initlen = (init == <span class="literal">NULL</span>) ? <span class="number">0</span> : <span class="built_in">strlen</span>(init);	<span class="comment">// 调用strlen获取长度</span></span><br><span class="line">    <span class="keyword">return</span> sdsnewlen(init, initlen);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2、再调用<code>sdsnewlen</code>，返回SDS。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">sds <span class="title function_">sdsnewlen</span><span class="params">(<span class="type">const</span> <span class="type">void</span> *init, <span class="type">size_t</span> initlen)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// sds遵循C风格字符串原则，以&#x27;\0&#x27;结尾，额外1字节不计数len</span></span><br><span class="line">    <span class="keyword">if</span> (init) &#123;</span><br><span class="line">        sh = zmalloc(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+initlen+<span class="number">1</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        sh = zcalloc(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+initlen+<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (sh == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    sh-&gt;len = initlen;			<span class="comment">// len = strlen(init)</span></span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = <span class="number">0</span>;				<span class="comment">// 创建一个包含C字符串SDS场景，free = 0</span></span><br><span class="line">    <span class="keyword">if</span> (initlen &amp;&amp; init)</span><br><span class="line">        <span class="built_in">memcpy</span>(sh-&gt;buf, init, initlen);</span><br><span class="line">    sh-&gt;buf[initlen] = <span class="string">&#x27;\0&#x27;</span>;	<span class="comment">// sds遵循C风格字符串原则，以&#x27;\0&#x27;结尾，额外1字节不计入len</span></span><br><span class="line">    <span class="keyword">return</span> (<span class="type">char</span>*)sh-&gt;buf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，创建给定C字符串的SDS场景：</p>
+<ul>
+<li><p>len的值为strlen(“Redis”) &#x3D; 5</p>
+</li>
+<li><p>free的值为0</p>
+</li>
+<li><p>buf的内容为 “Redis”, 以’\0’结尾，6字节大小</p>
+</li>
+</ul>
+<p>SDS实例图：<br><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image1.png"></p>
+<p><strong>思考问题：</strong> 初始化SDS时free为啥给0？—— 平时使用字符串还是只读场景偏多，这样能节约空间。</p>
+<p><strong>GDB验证：</strong></p>
+<p>Redis是基于内存的数据库，可以通过GDB打印内存，查看这个key对应的SDS结构体，是否和源码分析结果一致：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) p server.db[0].dict.ht[0]</span><br><span class="line">$1 = &#123;table = 0x7f3008d40900, size = 4, sizemask = 3, used = 1&#125;</span><br><span class="line"></span><br><span class="line">(gdb) p *(struct redisObject *) (server.db[0].dict.ht[0].table[0].v)</span><br><span class="line">$2 = &#123;type = 0, encoding = 8, lru = 11494144, refcount = 1, ptr = 0x7f3008d40838&#125;</span><br><span class="line"># type = REDIS_STRING(0), encoding = REDIS_ENCODING_EMBSTR(8)</span><br><span class="line"></span><br><span class="line">(gdb) p  (*(robj *)server.db[0].dict.ht[0].table[0].v).ptr</span><br><span class="line">$3 = (void *) 0x7f3008d40838</span><br><span class="line"></span><br><span class="line">(gdb) p  (sds) 0x7f3008d40838</span><br><span class="line">$4 = (sds) 0x7f3008d40838 &quot;redis&quot;		# 存储字符串键的值</span><br><span class="line"></span><br><span class="line">(gdb) p *(struct sdshdr *)(0x7f3008d40838 - 0x8)			# len 4字节， free 4字节，减去8字节正好是struct sdshdr的首地址</span><br><span class="line">$5 = &#123;len = 5, free = 0, buf = 0x7f3008d40838 &quot;Redis&quot;&#125;  	# 和以上源码分析的SDS结构体内容一致</span><br></pre></td></tr></table></figure>
+
+<p><strong>上述GDB调试操作的依据说明：</strong></p>
+<ul>
+<li><p>Redis将所有数据库保存在服务器状态<code>server</code>变量中，默认创建16个数据库，默认目标数据库为0号(db[0])</p>
+</li>
+<li><p>dict为数据库键空间，保存所有键值对，底层实现为哈希表，其中ht[0]存储key-value，ht[1]用于rehash</p>
+</li>
+<li><p>table类型为<code>dictEntry **</code>, 链地址法实现哈希表，table[0]不为NULL，说明这个key的hashcode % size的结果为0</p>
+</li>
+<li><p>ptr类型为void *。对于字符串键而言，ptr实际类型为char *，存储内容为”Redis”串，而不是struct sdshdr的首地址。</p>
+</li>
+</ul>
+<p><strong>注：</strong>Redis并没有直接使用sds, list这些基本数据结构去实现数据库，而是在这些基本数据结构上构筑了一个<strong>对象系统</strong>，统一使用redisObject对象：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisObject</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> type:<span class="number">4</span>;			    <span class="comment">// 类型</span></span><br><span class="line">    <span class="type">unsigned</span> encoding:<span class="number">4</span>;			<span class="comment">// 编码</span></span><br><span class="line">    <span class="type">unsigned</span> lru:<span class="number">24</span>;				<span class="comment">// 记录对象最后一次被命令程序访问的时间</span></span><br><span class="line">    <span class="type">int</span> refcount;					<span class="comment">// 引用计数</span></span><br><span class="line">    <span class="type">void</span> *ptr;						<span class="comment">// 指向底层实现数据结构的指针</span></span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>ptr为void *泛型指针，指向底层实现的数据结构。void *是C语言实现泛型编程的常用手段。</p>
+</li>
+<li><p>type为对象类型。type属性设计目的很简单，因为仅通过ptr这个泛型指针无法获取这个对象真正的类型。对于字符串键，type值取0（REDIS_STRING）</p>
+</li>
+<li><p>encoding为编码类型。encoding属性设计目的在于，根据不同场景，为对象设置不同的底层数据结构实现来优化性能。此例中，encoding值取8(REDIS_ENCODING_EMBSTR)，表示编码方式为embstr。</p>
+</li>
+</ul>
+<h3 id="SDS相较于C风格字符串的优点"><a href="#SDS相较于C风格字符串的优点" class="headerlink" title="SDS相较于C风格字符串的优点"></a>SDS相较于C风格字符串的优点<span id="jump4"></span></h3><ul>
+<li><p>获取字符串长度的时间复杂度为O(1) （对于SDS来说，获取长度只需访问len成员）</p>
+</li>
+<li><p>杜绝缓冲区溢出问题</p>
+</li>
+<li><p>减少字符串修改时导致的内存重分配次数</p>
+</li>
+<li><p>二进制安全，除了能保存文本数据，还可以保存二进制数据</p>
+</li>
+</ul>
+<h4 id="SDS的空间分配策略是如何杜绝缓冲区溢出问题的？"><a href="#SDS的空间分配策略是如何杜绝缓冲区溢出问题的？" class="headerlink" title="SDS的空间分配策略是如何杜绝缓冲区溢出问题的？"></a>SDS的空间分配策略是如何杜绝缓冲区溢出问题的？<span id="jump5"></span></h4><p>以SDS拼接函数<code>sdscat</code>为例，源码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">sds <span class="title function_">sdscat</span><span class="params">(sds s, <span class="type">const</span> <span class="type">char</span> *t)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> sdscatlen(s, t, <span class="built_in">strlen</span>(t));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">sds <span class="title function_">sdscatlen</span><span class="params">(sds s, <span class="type">const</span> <span class="type">void</span> *t, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span>;</span></span><br><span class="line">    <span class="type">size_t</span> curlen = sdslen(s);		<span class="comment">// 得到源字符串长度</span></span><br><span class="line"></span><br><span class="line">    s = sdsMakeRoomFor(s,len);		<span class="comment">// 拼接前检查s的剩余空间是否足够，如空间不足需先扩展空间</span></span><br><span class="line">    <span class="keyword">if</span> (s == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    sh = (<span class="type">void</span>*) (s-(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)));</span><br><span class="line">    <span class="built_in">memcpy</span>(s+curlen, t, len);</span><br><span class="line">    sh-&gt;len = curlen+len;</span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = sh-&gt;<span class="built_in">free</span>-len;</span><br><span class="line">    s[curlen+len] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    <span class="keyword">return</span> s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，<code>sdscat</code>拼接字符串前，会先通过<code>sdsMakeRoomFor</code>检查s的剩余空间是否足够，<strong>如果空间不足，会先调用<code>realloc</code>扩展出足够空间后</strong>，再通过<code>memcpy</code>拼接字符串。 所以杜绝了缓冲区溢出问题。</p>
+<h4 id="SDS是如何减少修改字符串时带来的内存重分配次数"><a href="#SDS是如何减少修改字符串时带来的内存重分配次数" class="headerlink" title="SDS是如何减少修改字符串时带来的内存重分配次数"></a>SDS是如何减少修改字符串时带来的内存重分配次数<span id="jump6"></span></h4><p>对于C字符串，每次增长或缩短操作，都会导致一次内存重分配，性能较差。</p>
+<p>SDS中引入free属性，通过未使用空间，优化字符串的增长或缩短操作，减少内存重分配次数。</p>
+<h4 id="字符串增长场景，SDS扩容策略"><a href="#字符串增长场景，SDS扩容策略" class="headerlink" title="字符串增长场景，SDS扩容策略"></a>字符串增长场景，SDS扩容策略<span id="jump7"></span></h4><p>对于字符串增长场景，REDIS采用空间预分配的思想，即不仅分配修改后的SDS必需的空间，<strong>还会额外分配一定的未使用空间</strong>。源码参考<code>sdsMakeRoomFor</code></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_MAX_PREALLOC (1024 * 1024)</span></span><br><span class="line">sds <span class="title function_">sdsMakeRoomFor</span><span class="params">(sds s, <span class="type">size_t</span> addlen)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span>, *<span class="title">newsh</span>;</span></span><br><span class="line">    <span class="type">size_t</span> <span class="built_in">free</span> = sdsavail(s);</span><br><span class="line">    <span class="type">size_t</span> len, newlen;</span><br><span class="line">	<span class="keyword">if</span> (<span class="built_in">free</span> &gt;= addlen) <span class="keyword">return</span> s;			<span class="comment">// 如果剩余空间足够直接返回</span></span><br><span class="line">	len = sdslen(s);</span><br><span class="line">	sh = (<span class="type">void</span>*) (s-(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)));</span><br><span class="line">	newlen = (len+addlen);</span><br><span class="line">	<span class="keyword">if</span> (newlen &lt; SDS_MAX_PREALLOC)			<span class="comment">// 如修改后的SDS长度小于1M,realloc重新分配两倍空间</span></span><br><span class="line">   		newlen *= <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">    	newlen += SDS_MAX_PREALLOC;			<span class="comment">// 如修改后的SDS长度大于等于1M, realloc重新分配1M的空间</span></span><br><span class="line">	newsh = zrealloc(sh, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+newlen+<span class="number">1</span>);</span><br><span class="line">	<span class="keyword">if</span> (newsh == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">	newsh-&gt;<span class="built_in">free</span> = newlen - len;</span><br><span class="line">	<span class="keyword">return</span> newsh-&gt;buf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，额外分配的未使用空间大小由修改后的SDS长度决定：</p>
+<ul>
+<li>如果对SDS修改后，SDS长度(即len属性的值)小于1MB，REDIS会额外分配len个字节的空间。例如，给定SDS串s(“hello”)，调用sdscat(s, “world”)之后，len &#x3D; 10，free &#x3D; 10, buf数组大小变为 10 + 10 + 1 &#x3D; 21字节。</li>
+<li>如果对SDS修改后，SDS长度大于等于1MB， REDIS只额外分配1MB的空间，目的是避免内存出现太大的浪费。</li>
+</ul>
+<p>相比C风格字符串，<strong>SDS的扩容策略将增长N次字符串需要的内存重分配次数从N次降低为最多N次</strong>。</p>
+<p>GDB验证结果如下，和分析源码得出的结论一致：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key hello</span><br><span class="line">[OOK</span><br><span class="line">(gdb) p *(struct sdshdr *)((*(robj *)server.db[0].dict.ht[0].table[3].v).ptr - 0x8)</span><br><span class="line">$1 = &#123;len = 5, free = 0, buf = 0x7f571f1407f8 &quot;hello&quot;&#125;</span><br><span class="line"></span><br><span class="line">127.0.0.1:6379&gt; APPEND key world</span><br><span class="line">(integer) 10</span><br><span class="line">(gdb) p *(struct sdshdr *)((*(robj *)server.db[0].dict.ht[0].table[3].v).ptr - 0x8)</span><br><span class="line">$2 = &#123;len = 10, free = 10, buf = 0x7f571f1407e8 &quot;helloworld&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="字符串缩短场景，SDS空间释放策略"><a href="#字符串缩短场景，SDS空间释放策略" class="headerlink" title="字符串缩短场景，SDS空间释放策略"></a>字符串缩短场景，SDS空间释放策略<span id="jump8"></span></h4><p>对于字符串缩短场景，REDIS采用惰性空间释放策略，即并不立即回收空闲内存，而是仅使用free属性记录空闲字节数，如果将来需对SDS做增长操作，可以直接使用这部分空闲内存，无需做内存重分配。</p>
+<p>源码分析：<code>sdsclear</code>用于清空SDS保存的字符串内容，采用惰性空闲释放策略，复杂度仅为O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">sdsclear</span><span class="params">(sds s)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span> =</span> (<span class="type">void</span>*) (s-(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)));</span><br><span class="line">    sh-&gt;<span class="built_in">free</span> += sh-&gt;len;</span><br><span class="line">    sh-&gt;len = <span class="number">0</span>;</span><br><span class="line">    sh-&gt;buf[<span class="number">0</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同时，REDIS提供API <code>sdsRemoveFreeSpace</code>，通过realloc仅分配实际大小的内存，真正地回收空闲内存，解决惰性空间释放策略带来的内存浪费问题。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">sds <span class="title function_">sdsRemoveFreeSpace</span><span class="params">(sds s)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span>;</span></span><br><span class="line">    sh = (<span class="type">void</span>*) (s-(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)));</span><br><span class="line">    sh = zrealloc(sh, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+sh-&gt;len+<span class="number">1</span>);	<span class="comment">// 仅分配实际大小的内存</span></span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = <span class="number">0</span>;										<span class="comment">// free写0</span></span><br><span class="line">    <span class="keyword">return</span> sh-&gt;buf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="SDS最大长度是多少？"><a href="#SDS最大长度是多少？" class="headerlink" title="SDS最大长度是多少？"></a>SDS最大长度是多少？<span id="jump9"></span></h3><p>Redis 3.0</p>
+<ul>
+<li><p>struct sdshdr的len成员记录SDS长度，类型为int，4字节，理论上最大长度 2^32 &#x2F; 2^10 &#x2F; 2^10 &#x3D; 4096MB</p>
+</li>
+<li><p>在set, append操作中通过硬编码写死字符串的最大长度为512MB，超过这个长度会报错，源码参考<code>checkStringLength</code>。</p>
+</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">checkStringLength</span><span class="params">(redisClient *c, <span class="type">long</span> <span class="type">long</span> size)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (size &gt; <span class="number">512</span>*<span class="number">1024</span>*<span class="number">1024</span>) &#123;</span><br><span class="line">        addReplyError(c,<span class="string">&quot;string exceeds maximum allowed size (512MB)&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> REDIS_ERR;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> REDIS_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>综上， Redis 3.0中SDS最大长度为 512MB。</p>
+<p>Redis 6.0.10</p>
+<ul>
+<li>通过配置项<code>proto-max-bulk-len</code>指定SDS长度，默认是512MB，用户可以自行配置这个值，这点和Redis 3.0有区别。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">checkStringLength</span><span class="params">(client *c, <span class="type">long</span> <span class="type">long</span> size)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!(c-&gt;flags &amp; CLIENT_MASTER) &amp;&amp; size &gt; server.proto_max_bulk_len) &#123;</span><br><span class="line">        addReplyError(c,<span class="string">&quot;string exceeds maximum allowed size (proto-max-bulk-len)&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> C_ERR;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> C_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>综上， Redis 6.0中SDS最大长度默认为512MB，用户可以自行配置这个值。</p>
+<h3 id="字符串键的三种编码方式"><a href="#字符串键的三种编码方式" class="headerlink" title="字符串键的三种编码方式"></a>字符串键的三种编码方式<span id="jump10"></span></h3><p>Redis中字符串对象有三种编码，分别是int , embstr, raw。以下分别介绍这三种编码：</p>
+<h4 id="int编码"><a href="#int编码" class="headerlink" title="int编码"></a>int编码<span id="jump11"></span></h4><p>如果一个字符串对象保存的内容是整数值，且这个整数可以用long表示，Redis就把它的编码设置为int</p>
+<p>举例：执行 set key “123”命令，会创建一个int编码的字符串对象</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key 123</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;int&quot;</span><br></pre></td></tr></table></figure>
+
+<p>内存中的<code>redisObject</code>对象内容如下：</p>
+<p><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image2.png"></p>
+<p>int类型编码的字符串，要求整数落在long的范围内。在64位环境上，long范围：-9223372036854775808～+9223372036854775807，不同的键值和编码结果参考下表：</p>
+<table>
+<thead>
+<tr>
+<th align="left">键值</th>
+<th align="left">编码</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">+123</td>
+<td align="left">embstr</td>
+</tr>
+<tr>
+<td align="left">-123</td>
+<td align="left">int</td>
+</tr>
+<tr>
+<td align="left">–123</td>
+<td align="left">embstr</td>
+</tr>
+<tr>
+<td align="left">-9223372036854775808</td>
+<td align="left">int</td>
+</tr>
+<tr>
+<td align="left">-9223372036854775809</td>
+<td align="left">embstr</td>
+</tr>
+<tr>
+<td align="left">9223372036854775807</td>
+<td align="left">int</td>
+</tr>
+<tr>
+<td align="left">9223372036854775808</td>
+<td align="left">embstr</td>
+</tr>
+</tbody></table>
+<p><strong>源码分析：</strong></p>
+<p><code>createStringObjectFromLongLong</code>根据传入的long long类型的整数值，创建一个字符串对象。如果入参在long范围之内，就创建int编码的字符串对象，源码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> REDIS_SHARED_INTEGERS 10000</span></span><br><span class="line">robj *<span class="title function_">createStringObjectFromLongLong</span><span class="params">(<span class="type">long</span> <span class="type">long</span> value)</span> &#123;</span><br><span class="line">    robj *o;</span><br><span class="line">    <span class="comment">// value 的大小在 0 - 10000之间，直接返回一个共享对象</span></span><br><span class="line">    <span class="keyword">if</span> (value &gt;= <span class="number">0</span> &amp;&amp; value &lt; REDIS_SHARED_INTEGERS) &#123;</span><br><span class="line">        incrRefCount(shared.integers[value]);</span><br><span class="line">        o = shared.integers[value];</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="comment">// 如果在long范围内，就创建编码为int的字符串</span></span><br><span class="line">        <span class="keyword">if</span> (value &gt;= LONG_MIN &amp;&amp; value &lt;= LONG_MAX) &#123;</span><br><span class="line">            o = createObject(REDIS_STRING, <span class="literal">NULL</span>);</span><br><span class="line">            o-&gt;encoding = REDIS_ENCODING_INT;</span><br><span class="line">            o-&gt;ptr = (<span class="type">void</span>*)((<span class="type">long</span>)value);	<span class="comment">// ptr实际指向一个long类型的value</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果在long之外，就创建一个编码为embstr的字符串</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            o = createObject(REDIS_STRING,sdsfromlonglong(value));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="REDIS中的对象共享机制"><a href="#REDIS中的对象共享机制" class="headerlink" title="REDIS中的对象共享机制"></a>REDIS中的对象共享机制</h4><p>Redis服务器初始化的时候，会预先创建1万个字符串对象 (0 ~ 9999), 当服务器需要使用值为 0 - 9999的字符串对象时，服务器会直接使用这些共享对象，而不是去新创建一个对象。这个用意在于节约内存。</p>
+<p><strong>举例：</strong></p>
+<p>创建字符串键A，B，值都写“1”, 那么这两个键共享同一个redisObject对象，且这个redisObject对象的ptr指向的内容为1</p>
+<p><strong>GDB验证结果：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb)  p *(robj *)server.db[0].dict.ht[0].table[0].v</span><br><span class="line">$15 = &#123;type = 0, encoding = 1, lru = 11668863, refcount = 3, ptr = 0x1&#125;</span><br><span class="line">(gdb)  p *(robj *)server.db[0].dict.ht[0].table[2].v</span><br><span class="line">$16 = &#123;type = 0, encoding = 1, lru = 11668863, refcount = 3, ptr = 0x1&#125;</span><br><span class="line">(gdb)  p &amp;(*(robj *)server.db[0].dict.ht[0].table[0].v)</span><br><span class="line">$17 = (robj *) 0x7fa7c1457360</span><br><span class="line">(gdb)  p &amp;(*(robj *)server.db[0].dict.ht[0].table[2].v)</span><br><span class="line">$18 = (robj *) 0x7fa7c1457360		# 和$17相同，都是0x7fa7c1457360，说明这是一个共享对象</span><br></pre></td></tr></table></figure>
+
+<p>此时，两个key和共享字符串对象的内存示意图：</p>
+<p><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image3.png"></p>
+<h4 id="raw编码"><a href="#raw编码" class="headerlink" title="raw编码"></a>raw编码<span id="jump13"></span></h4><p>如果字符串对象保存的是一个字符串值，且这个字符串长度大于39个字节，REDIS就使用SDS存储这个字符串，并设置编码类型为raw。</p>
+<p><strong>举例：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key 1234567891234567891234567891234567891234</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding ket</span><br><span class="line">&quot;raw&quot;</span><br><span class="line">127.0.0.1:6379&gt; strlen key</span><br><span class="line">(integer) 40</span><br></pre></td></tr></table></figure>
+
+<p>raw编码的字符串示意图：</p>
+<p><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image4.png"></p>
+<p><strong>源码分析：</strong></p>
+<p><code>createStringObject</code>用于创建一个SDS表示的字符串对象。当字符串长度大于39字节时使用raw编码， 否则用embstr编码，源码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* The current limit of 39 is chosen so that the biggest string object</span></span><br><span class="line"><span class="comment"> * we allocate as EMBSTR will still fit into the 64 byte arena of jemalloc. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> REDIS_ENCODING_EMBSTR_SIZE_LIMIT 39</span></span><br><span class="line">robj *<span class="title function_">createStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (len &lt;= REDIS_ENCODING_EMBSTR_SIZE_LIMIT)</span><br><span class="line">        <span class="keyword">return</span> createEmbeddedStringObject(ptr,len);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> createRawStringObject(ptr,len);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">robj *<span class="title function_">createRawStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> createObject(REDIS_STRING,sdsnewlen(ptr,len));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">robj *<span class="title function_">createObject</span><span class="params">(<span class="type">int</span> type, <span class="type">void</span> *ptr)</span> &#123;</span><br><span class="line">    robj *o = zmalloc(<span class="keyword">sizeof</span>(*o));</span><br><span class="line">    o-&gt;type = type;</span><br><span class="line">    o-&gt;encoding = REDIS_ENCODING_RAW;	<span class="comment">// 设置编码类型为raw</span></span><br><span class="line">    o-&gt;ptr = ptr;</span><br><span class="line">    o-&gt;refcount = <span class="number">1</span>;</span><br><span class="line">    o-&gt;lru = LRU_CLOCK();</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="embstr编码"><a href="#embstr编码" class="headerlink" title="embstr编码"></a>embstr编码<span id="jump12"></span></h4><p>如果字符串对象保存的是一个字符串值，且这个字符串长度小于等于39个字节，REDIS就使用SDS存储这个字符串，并设置编码类型为embstr，<strong>embstr是专门用于保存短字符串的一种优化编码方式。</strong></p>
+<p><strong>举例：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key hello</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;embstr&quot;</span><br></pre></td></tr></table></figure>
+
+<p>和raw编码类似，embstr编码也使用<code>redisObject</code>和<code>sdshdr</code>保存字符串，但差别在于：</p>
+<ul>
+<li>raw编码需调用<strong>2</strong>次malloc创建<code>redisObject</code>和<code>sdshdr</code>对象，且<code>redisObject</code>和<code>sdshdr</code>内存不连续</li>
+<li>而embstr编码只需<strong>1</strong>次malloc创建<code>redisObject</code>和<code>sdshdr</code>对象，且<code>redisObject</code>和<code>sdshdr</code>内存是连续的</li>
+</ul>
+<p>GDB查看embstr编码字符串的内存：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) p &amp;(*(robj *)server.db[0].dict.ht[0].table[3].v)</span><br><span class="line">$1 = (robj *) 0x7f43ebd3b9c0</span><br><span class="line">(gdb) p *(robj *)server.db[0].dict.ht[0].table[3].v</span><br><span class="line">$2 = &#123;type = 0, encoding = 8, lru = 11755503, refcount = 1, ptr = 0x7f43ebd3b9d8&#125;</span><br><span class="line">(gdb) p *(struct sdshdr *)0x7f43ebd3b9d0</span><br><span class="line">$3 = &#123;len = 5, free = 0, buf = 0x7f43ebd3b9d8 &quot;hello&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>观察结果发现robj和sdshdr内存确实是连续的，embstr编码的内存示意图：</p>
+<p><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image5.png"></p>
+<p><strong>源码分析：</strong></p>
+<p><code>createEmbeddedStringObject</code>用于创建一个embstr编码的字符串</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">robj *<span class="title function_">createEmbeddedStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    robj *o = zmalloc(<span class="keyword">sizeof</span>(robj)+<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+len+<span class="number">1</span>); <span class="comment">// 仅1次malloc</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span> =</span> (<span class="type">void</span>*)(o+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    o-&gt;type = REDIS_STRING;</span><br><span class="line">    o-&gt;encoding = REDIS_ENCODING_EMBSTR;</span><br><span class="line">    o-&gt;ptr = sh+<span class="number">1</span>;</span><br><span class="line">    o-&gt;refcount = <span class="number">1</span>;</span><br><span class="line">    o-&gt;lru = LRU_CLOCK();</span><br><span class="line"></span><br><span class="line">    sh-&gt;len = len;</span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (ptr) &#123;</span><br><span class="line">        <span class="built_in">memcpy</span>(sh-&gt;buf,ptr,len);</span><br><span class="line">        sh-&gt;buf[len] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">memset</span>(sh-&gt;buf,<span class="number">0</span>,len+<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="设计embstr编码的用意是什么"><a href="#设计embstr编码的用意是什么" class="headerlink" title="设计embstr编码的用意是什么"></a>设计embstr编码的用意是什么<span id="jump14"></span></h4><p>相比于raw编码，embstr编码存储短字符串的优点：</p>
+<ul>
+<li><p>创建字符串对象时，malloc次数从2次变为1次，释放字符串对象时，free次数从2次变成1次。</p>
+</li>
+<li><p>embstr编码中，<code>redisObject</code>和<code>sdshdr</code>内存连续，可以更好利用缓存，提升效率。</p>
+</li>
+</ul>
+<h4 id="三种编码之间的转换规则"><a href="#三种编码之间的转换规则" class="headerlink" title="三种编码之间的转换规则"></a>三种编码之间的转换规则<span id="jump15"></span></h4><p><strong>规则1：</strong> embstr对象执行修改命令后，总是会变成一个raw编码对象。</p>
+<p><strong>规则2：</strong> 对于int对象，如果在这个对象执行的操作导致其保存的值不在long范围内，这个对象编码总是变成raw</p>
+<p><strong>源码分析：</strong></p>
+<p>以APPEND命令为例，源码参考<code>appendCommand</code>，此函数最终调用<code>dbUnshareStringValue</code>，总是创建一个raw编码的对象。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">appendCommand</span><span class="params">(redisClient *c)</span> &#123;</span><br><span class="line">    <span class="type">size_t</span> totlen;</span><br><span class="line">    robj *o, *append;</span><br><span class="line">    o = lookupKeyWrite(c-&gt;db,c-&gt;argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">if</span> (o == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="comment">// 键值对不存在就创建一个新的 ......</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 键值对存在 ......</span></span><br><span class="line">        <span class="comment">/* &quot;append&quot; is an argument, so always an sds */</span></span><br><span class="line">        append = c-&gt;argv[<span class="number">2</span>];</span><br><span class="line">        totlen = stringObjectLen(o)+sdslen(append-&gt;ptr);</span><br><span class="line">        <span class="keyword">if</span> (checkStringLength(c,totlen) != REDIS_OK)</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        <span class="comment">/* Append the value */</span></span><br><span class="line">        o = dbUnshareStringValue(c-&gt;db,c-&gt;argv[<span class="number">1</span>],o);</span><br><span class="line">        o-&gt;ptr = sdscatlen(o-&gt;ptr,append-&gt;ptr,sdslen(append-&gt;ptr));</span><br><span class="line">        totlen = sdslen(o-&gt;ptr);</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// ......</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">robj *<span class="title function_">dbUnshareStringValue</span><span class="params">(redisDb *db, robj *key, robj *o)</span> &#123;</span><br><span class="line">    redisAssert(o-&gt;type == REDIS_STRING);</span><br><span class="line">    <span class="keyword">if</span> (o-&gt;refcount != <span class="number">1</span> || o-&gt;encoding != REDIS_ENCODING_RAW) &#123;</span><br><span class="line">        robj *decoded = getDecodedObject(o);</span><br><span class="line">        o = createRawStringObject(decoded-&gt;ptr, sdslen(decoded-&gt;ptr)); <span class="comment">// embstr对象执行修改命令后，总是会变成一个raw编码对象。</span></span><br><span class="line">        decrRefCount(decoded);</span><br><span class="line">        dbOverwrite(db,key,o);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证结果：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key &quot;hello&quot;</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;embstr&quot;</span><br><span class="line">127.0.0.1:6379&gt; append key &quot; world!&quot;</span><br><span class="line">(integer) 12</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;raw&quot;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="REDIS3-2中的SDS实现"><a href="#REDIS3-2中的SDS实现" class="headerlink" title="REDIS3.2中的SDS实现"></a>REDIS3.2中的SDS实现<span id="jump16"></span></h4><p>REDIS 3.2中，根据SDS的长度又细分为5类，对于不同长度的字符串，用不同的sdshdrX结构体存储，实现节约内存的目的。</p>
+<p>以REDIS 6.0.10源码为例，sdshdr结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="type">char</span> *sds;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Note: sdshdr5 is never used, we just access the flags byte directly.</span></span><br><span class="line"><span class="comment"> * However is here to document the layout of type 5 SDS strings. */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr5</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, and 5 msb of string length */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr8</span> &#123;</span></span><br><span class="line">    <span class="type">uint8_t</span> len; <span class="comment">/* used */</span></span><br><span class="line">    <span class="type">uint8_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr16</span> &#123;</span></span><br><span class="line">    <span class="type">uint16_t</span> len; <span class="comment">/* used */</span></span><br><span class="line">    <span class="type">uint16_t</span> alloc; <span class="comment">/* excluding the he</span></span><br><span class="line"><span class="comment">    ader and null terminator */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr32</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> len; <span class="comment">/* used */</span></span><br><span class="line">    <span class="type">uint32_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr64</span> &#123;</span></span><br><span class="line">    <span class="type">uint64_t</span> len; <span class="comment">/* used */</span></span><br><span class="line">    <span class="type">uint64_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>各结构体成员作用：</strong></p>
+<ul>
+<li><p>len表示字符串实际长度。</p>
+</li>
+<li><p>alloc表示为sds分配的大小，不包括’\0’。</p>
+</li>
+<li><p>flags表示sdshdr类型，用于判断sds的类型。flags本身是char类型有8位，其中高5位保留，只用低3位足以这表示5种sdshdr类型，参考源码：</p>
+</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_5  0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_8  1</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_16 2</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_32 3</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_64 4</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_MASK 7</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_BITS 3</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>__attribute__ ((__packed__))</code>作用？</strong></p>
+<p><code>__attribute__ ((__packed__))</code>是GCC特有的语法，作用是取消结构体的字节对齐，采用内存紧凑模式排列。</p>
+<p>这里给出加上或不加关键字时，各sdshdr结构体的大小：</p>
+<table>
+<thead>
+<tr>
+<th align="left">结构体</th>
+<th align="left">加GCC关键字<code>__attribute__ ((__packed__))</code></th>
+<th align="left">不加关键字</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">sdshdr5</td>
+<td align="left">1字节</td>
+<td align="left">1</td>
+</tr>
+<tr>
+<td align="left">sdshdr8</td>
+<td align="left">3</td>
+<td align="left">3</td>
+</tr>
+<tr>
+<td align="left">sdshdr16</td>
+<td align="left">5</td>
+<td align="left">6</td>
+</tr>
+<tr>
+<td align="left">sdshdr32</td>
+<td align="left">9</td>
+<td align="left">12</td>
+</tr>
+<tr>
+<td align="left">sdshdr64</td>
+<td align="left">17</td>
+<td align="left">24</td>
+</tr>
+</tbody></table>
+<p><strong>问题思考</strong>：取消结构体字节对齐的用意是什么，有什么优点？</p>
+<ul>
+<li>1个好处是节约了内存，时间换空间。</li>
+<li>另1个好处是使得<strong>通过内存直接访问结构体内部变量非常方便</strong>，比如通过buf[-1]这种骚操作可以直接访问到<code>flags</code>成员，从而判断sds类型，实现非常简洁。源码参考如下：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">sds s;</span><br><span class="line"><span class="type">char</span> type = s[<span class="number">-1</span>] &amp; SDS_TYPE_MASK;</span><br></pre></td></tr></table></figure>
+
+<h4 id="给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？"><a href="#给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？" class="headerlink" title="给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？"></a>给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？<span id="jump17"></span></h4><p>以REDIS 6.0.10源码为例，参考<code>sdsReqType</code>的实现：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">char</span> <span class="title function_">sdsReqType</span><span class="params">(<span class="type">size_t</span> string_size)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (string_size &lt; <span class="number">32</span>)</span><br><span class="line">        <span class="keyword">return</span> SDS_TYPE_5;</span><br><span class="line">    <span class="keyword">if</span> (string_size &lt; <span class="number">0xff</span>)</span><br><span class="line">        <span class="keyword">return</span> SDS_TYPE_8;</span><br><span class="line">    <span class="keyword">if</span> (string_size &lt; <span class="number">0xffff</span>)</span><br><span class="line">        <span class="keyword">return</span> SDS_TYPE_16;</span><br><span class="line">    <span class="keyword">if</span> (string_size &lt; <span class="number">0xffffffff</span>)</span><br><span class="line">        <span class="keyword">return</span> SDS_TYPE_32;</span><br><span class="line">    <span class="keyword">return</span> SDS_TYPE_64;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>得出如下结论：</p>
+<ul>
+<li>SDS长度小于32，用sdshdr5类型表示</li>
+<li>SDS长度在 [32, 255），用sdshdr8类型表示</li>
+<li>依次类推 ……</li>
+</ul>
+<p><strong>思考问题：</strong><code>set key hello</code>， 键key和值hello都是用sdshdr5表示的吗？</p>
+<p>详细分析过程参考文章：<a href="https://segmentfault.com/a/1190000017450295">https://segmentfault.com/a/1190000017450295</a></p>
+<p>以下仅给出结论和验证结果：</p>
+<p><strong>结论：</strong></p>
+<ul>
+<li><p><strong>对于长度小于32的字符串键和值，键通过sdshdr5表示，而值通过sdshdr8表示</strong></p>
+</li>
+<li><p>对于值，使用<code>createEmbeddedStringObject</code>总是创建一个sdshdr8类型的对象。</p>
+</li>
+<li><p>对于键，通过调用链<code>setGenericCommand--&gt;genericSetKey--&gt;dbAdd</code>，最终调用<code>sdsdup</code>，创建一个sdshdr5类型的对象。调用栈参考：</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) bt</span><br><span class="line">#0  dbAdd (db=0x557b1c4d9690, key=0x557b1c4f5720, val=0x557b1c4f4730) at db.c:185</span><br><span class="line">#1  0x0000557b1b95751d in genericSetKey (c=c@entry=0x557b1c4ecfa0, db=0x557b1c4d9690, key=key@entry=0x557b1c4f5720,</span><br><span class="line">    val=val@entry=0x557b1c4f4730, keepttl=keepttl@entry=0, signal=signal@entry=1) at db.c:252</span><br><span class="line">#2  0x0000557b1b9649e7 in setGenericCommand (c=c@entry=0x557b1c4ecfa0, flags=flags@entry=0, key=0x557b1c4f5720,</span><br><span class="line">    val=0x557b1c4f4730, expire=expire@entry=0x0, unit=unit@entry=0, ok_reply=0x0, abort_reply=0x0) at t_string.c:87</span><br><span class="line">#3  0x0000557b1b964c51 in setCommand (c=0x557b1c4ecfa0) at t_string.c:146</span><br><span class="line">#4  0x0000557b1b93bd5e in call (c=0x557b1c4ecfa0, flags=15) at server.c:3368</span><br><span class="line">#5  0x0000557b1b93c7a5 in processCommand (c=c@entry=0x557b1c4ecfa0) at server.c:3797</span><br><span class="line">#6  0x0000557b1b94a7b0 in processCommandAndResetClient (c=c@entry=0x557b1c4ecfa0) at networking.c:1895</span><br><span class="line">#7  0x0000557b1b94f09a in processInputBuffer (c=0x557b1c4ecfa0) at networking.c:1978</span><br><span class="line">#8  0x0000557b1b9cbd48 in callHandler (handler=&lt;optimized out&gt;, conn=0x557b1c4fdd60) at connhelpers.h:79</span><br><span class="line">#9  connSocketEventHandler (el=&lt;optimized out&gt;, fd=&lt;optimized out&gt;, clientData=0x557b1c4fdd60, mask=&lt;optimized out&gt;)</span><br><span class="line">    at connection.c:296</span><br><span class="line">#10 0x0000557b1b9356c7 in aeProcessEvents (eventLoop=eventLoop@entry=0x557b1c479aa0, flags=flags@entry=27) at ae.c:479</span><br><span class="line">#11 0x0000557b1b935a0d in aeMain (eventLoop=0x557b1c479aa0) at ae.c:539</span><br><span class="line">#12 0x0000557b1b932216 in main (argc=2, argv=0x7ffe8e366c18) at server.c:5498</span><br></pre></td></tr></table></figure>
+
+<p><strong>GDB验证结果：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) x/tb ((*(robj *)server.db[0].dict.ht[0].table[1].v).ptr - 1) // value</span><br><span class="line">0x557b1c4f4742: 00000001	// 注意value的最后三位为001，表示SDS_TYPE_8</span><br><span class="line">$2 = &#123;len = 5 &#x27;\005&#x27;, alloc = 5 &#x27;\005&#x27;, flags = 1 &#x27;\001&#x27;, buf = 0x557b1c4f4743 &quot;hello&quot;&#125;</span><br><span class="line"></span><br><span class="line">(gdb) p (sds)server.db[0].dict.ht[0].table[1].key</span><br><span class="line">$3 = (sds) 0x557b1c502f61 &quot;key&quot;</span><br><span class="line">(gdb) x/tb 0x557b1c502f61 - 0x1</span><br><span class="line">0x557b1c502f60: 00011000	// 注意key的最后三位为000，表示SDS_TYPE_5</span><br></pre></td></tr></table></figure>
+
+<p><strong>思考问题</strong>：对于短字符串，为什么键底层类型为sdshdr5，值底层类型设置却成sdshdr8？</p>
+<p>个人分析：实际应用场景中，通常键的更新次数远小于值的更新次数。所以对键采用最小的内存存储，以节省空间；对值用更大的内存存储，减少内存重分配的次数，提高性能。</p>
+<h4 id="REDIS字符串命令"><a href="#REDIS字符串命令" class="headerlink" title="REDIS字符串命令"></a>REDIS字符串命令<span id="jump18"></span></h4><p>REDIS 字符串命令参考官方网站：<a href="https://redis.io/commands#string">https://redis.io/commands#string</a></p>
+<p>以下仅给出几个最常用的命令:</p>
+<ul>
+<li>set key value</li>
+<li>get key</li>
+<li>append key value</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》第2章 简单动态字符串，第8章 对象</p>
+<p>【2】<a href="https://blog.huangz.me/diary/2014/how-to-read-redis-source-code.html">如何阅读Redis源码</a></p>
+<p>【3】<a href="https://segmentfault.com/a/1190000017450295">【Redis源码分析】一个对SDSHDR5是否使用的疑问</a></p>
+<p>【4】<a href="https://www.cnblogs.com/davygeek/p/5748852.html">柔性数组</a></p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis学习笔记(二)——链表</title>
+    <url>/2021/12/12/2021-12-12-redis-note-02-linkedlist/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>链表在Redis中的应用非常广泛，链表是列表键的底层实现之一，发布订阅，慢查询，监视器等功能也用到了链表。</p>
+<p>以下给出Redis中链表相关的一些思考问题，通过源码分析，给出问题的答案，掌握链表的底层实现原理和设计思路。</p>
+<p>源码版本：<a href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+<span id="more"></span>
+
+<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>C语言中如何设计一个通用的泛型链表？</p>
+<ul>
+<li><p><a href="#jump1">Redis中的链表和链表节点的实现</a></p>
+<ul>
+<li><a href="#jump2">节点值的类型是void *，这样设计有什么好处？</a></li>
+<li><a href="#jump3">仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表？</a></li>
+<li><a href="#jump4">为什么用双向链表，不用单链表？</a></li>
+</ul>
+</li>
+<li><p><a href="#jump5">双向链表API实现分析</a></p>
+<ul>
+<li><a href="#jump6">链表创建</a></li>
+<li><a href="#jump7">链表销毁</a></li>
+<li><a href="#jump8">头部插入节点</a></li>
+<li><a href="#jump9">尾部插入节点</a></li>
+<li><a href="#jump10">指定位置前后插入节点</a></li>
+<li><a href="#jump11">删除指定节点</a></li>
+<li><a href="#jump12">链表迭代器的设计实现</a></li>
+<li><a href="#jump13">查找指定节点</a></li>
+<li><a href="#jump14">复制链表</a></li>
+<li><a href="#jump15">表头节点移动到表尾</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="链表和链表节点的实现"><a href="#链表和链表节点的实现" class="headerlink" title="链表和链表节点的实现"></a>链表和链表节点的实现<span id="jump1"></span></h3><p>以REDIS 6.0.10源码为例，链表的实现参考<code>adlist.h</code>, <code>adlist.c</code></p>
+<p>链表节点通过listNode结构体实现，定义如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">void</span> *value;</span><br><span class="line">&#125; listNode;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出这是一个双向链表，value存储节点值，其类型为void *</p>
+<h4 id="节点值的类型为void-，这样设计有什么好处？"><a href="#节点值的类型为void-，这样设计有什么好处？" class="headerlink" title="节点值的类型为void *，这样设计有什么好处？"></a>节点值的类型为void *，这样设计有什么好处？<span id="jump2"></span></h4><p>节点值设置void *类型，目的是实现一个通用的泛型链表，提高代码复用性。（类似C++的STL容器，多态思想）</p>
+<p>考虑实际应用场景中，链表节点值的类型可以是int, float, double等基本类型, 或者是自定义结构体类型，如果简单将value定义为某个具体类型，就只能为每个节点类型定义一个listNodeXX的结构体，同时需额外为每个节点类型新增一套增、删、改、查的API，实现非常繁琐，如下所示：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeInt</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">int</span> value;</span><br><span class="line">&#125; listNodeInt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeDouble</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">double</span> value;</span><br><span class="line">&#125; listNodeDouble;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 增加一个节点到链表头部</span></span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadInt</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> value)</span>;</span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadDouble</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">double</span> value)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，这种实现方式的问题在于<strong>代码重复度过高，难以维护，且扩展性差，每支持一个新的节点类型都要新增代码</strong>，这显然是不能接受的。所以节点值类型要设计为void *</p>
+<h4 id="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？"><a href="#仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？" class="headerlink" title="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？"></a>仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？<span id="jump3"></span></h4><p>Redis中额外使用list结构，用于持有链表，简化操作。list结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">list</span> &#123;</span></span><br><span class="line">    listNode *head;</span><br><span class="line">    listNode *tail;</span><br><span class="line">    <span class="type">void</span> *(*dup)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">void</span> (*<span class="built_in">free</span>)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">int</span> (*match)(<span class="type">void</span> *ptr, <span class="type">void</span> *key);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">&#125; <span class="built_in">list</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>head, tail用于记录表头指针和表尾指针，好处是获取表头节点或表尾节点的时间复杂度为O(1)</p>
+</li>
+<li><p>len类型用于记录链表长度， 好处是获取链表节点总数的时间复杂度为O(1)</p>
+</li>
+<li><p>dup, free, match成员用于实现多态链表，对于不同类型的节点，挂接不同的函数钩子，设置特定的复制、释放、比较操作。</p>
+<ul>
+<li>dup函数用于复制节点值</li>
+<li>free函数用于释放节点值</li>
+<li>match函数用于比较两个节点值是否相等</li>
+</ul>
+</li>
+</ul>
+<p><strong>举例</strong>：一个长度为2的双向链表示意图：<br><img src="/2021/12/12/2021-12-12-redis-note-02-linkedlist/image1.png"></p>
+<h3 id="为什么用双向链表，不用单链表？"><a href="#为什么用双向链表，不用单链表？" class="headerlink" title="为什么用双向链表，不用单链表？"></a>为什么用双向链表，不用单链表？<span id="jump4"></span></h3><p>双向链表相较于单链表，有如下优点：</p>
+<ul>
+<li>支持双向查找节点，且查找给定节点的前驱节点的时间复杂度为O(1)</li>
+<li>尾部插入节点快，时间复杂度为O(1)</li>
+</ul>
+<h3 id="双向链表API实现分析"><a href="#双向链表API实现分析" class="headerlink" title="双向链表API实现分析"></a>双向链表API实现分析<span id="jump5"></span></h3><h4 id="链表创建"><a href="#链表创建" class="headerlink" title="链表创建"></a>链表创建<span id="jump6"></span></h4><p>调用<code>listCreate</code>，创建一个空的双向链表，时间复杂度O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listCreate</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list</span> *<span class="title">list</span>;</span></span><br><span class="line">    <span class="keyword">if</span> ((<span class="built_in">list</span> = zmalloc(<span class="keyword">sizeof</span>(*<span class="built_in">list</span>))) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;dup = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;<span class="built_in">free</span> = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;match = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">list</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="链表销毁"><a href="#链表销毁" class="headerlink" title="链表销毁"></a>链表销毁<span id="jump7"></span></h4><p>调用<code>listRelease</code>，释放链表，时间复杂度O(N)，N为链表长度</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRelease</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    listEmpty(<span class="built_in">list</span>);</span><br><span class="line">    zfree(<span class="built_in">list</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listEmpty</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">    listNode *current, *next;</span><br><span class="line"></span><br><span class="line">    current = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    len = <span class="built_in">list</span>-&gt;len;</span><br><span class="line">    <span class="keyword">while</span>(len--) &#123;</span><br><span class="line">        next = current-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">list</span>-&gt;<span class="built_in">free</span>) <span class="built_in">list</span>-&gt;<span class="built_in">free</span>(current-&gt;value);	<span class="comment">// 不同的节点类型，挂接不同的free函数钩子，实现多态链表的释放操作。</span></span><br><span class="line">        zfree(current);</span><br><span class="line">        current = next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="头部插入节点"><a href="#头部插入节点" class="headerlink" title="头部插入节点"></a>头部插入节点<span id="jump8"></span></h4><p>调用<code>listAddNodeHead</code>，在链表头部插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeHead(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = NULL;</span><br><span class="line">        node-&gt;next = list-&gt;head;</span><br><span class="line">        list-&gt;head-&gt;prev = node;</span><br><span class="line">        list-&gt;head = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="尾部插入节点"><a href="#尾部插入节点" class="headerlink" title="尾部插入节点"></a>尾部插入节点<span id="jump9"></span></h4><p>调用<code>listAddNodeTail</code>, 在链表尾部插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeTail(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = list-&gt;tail;</span><br><span class="line">        node-&gt;next = NULL;</span><br><span class="line">        list-&gt;tail-&gt;next = node;</span><br><span class="line">        list-&gt;tail = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="指定位置前后插入节点"><a href="#指定位置前后插入节点" class="headerlink" title="指定位置前后插入节点"></a>指定位置前后插入节点<span id="jump10"></span></h4><p>调用<code>listInsertNode</code>，在指定位置之前或之后插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listInsertNode(list *list, listNode *old_node, void *value, int after) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (after) &#123;</span><br><span class="line">        node-&gt;prev = old_node;</span><br><span class="line">        node-&gt;next = old_node-&gt;next;</span><br><span class="line">        if (list-&gt;tail == old_node) &#123;</span><br><span class="line">            list-&gt;tail = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;next = old_node;</span><br><span class="line">        node-&gt;prev = old_node-&gt;prev;</span><br><span class="line">        if (list-&gt;head == old_node) &#123;</span><br><span class="line">            list-&gt;head = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;prev != NULL) &#123;</span><br><span class="line">        node-&gt;prev-&gt;next = node;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;next != NULL) &#123;</span><br><span class="line">        node-&gt;next-&gt;prev = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>after等于1时，在给定old_node节点之后插入，否则在给定节点前插入。</p>
+<h4 id="删除指定节点"><a href="#删除指定节点" class="headerlink" title="删除指定节点"></a>删除指定节点<span id="jump11"></span></h4><p>调用<code>listDelNode</code>， 删除指定节点，时间复杂度为O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">void listDelNode(list *list, listNode *node) &#123;</span><br><span class="line">    if (node-&gt;prev)</span><br><span class="line">        node-&gt;prev-&gt;next = node-&gt;next;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;head = node-&gt;next;</span><br><span class="line">    if (node-&gt;next)</span><br><span class="line">        node-&gt;next-&gt;prev = node-&gt;prev;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;tail = node-&gt;prev;</span><br><span class="line">    if (list-&gt;free) list-&gt;free(node-&gt;value);</span><br><span class="line">    zfree(node);</span><br><span class="line">    list-&gt;len--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="链表迭代器的设计实现"><a href="#链表迭代器的设计实现" class="headerlink" title="链表迭代器的设计实现"></a>链表迭代器的设计实现<span id="jump12"></span></h4><p>定义<code>struct listIter</code>结构体实现链表的迭代器，支持双向迭代。(类似C++容器的begin()和rbegin()操作)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Directions for iterators */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_HEAD 0			<span class="comment">// 正向迭代, head -&gt; tail</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_TAIL 1			<span class="comment">// 反向迭代，tail -&gt; head</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listIter</span> &#123;</span></span><br><span class="line">    listNode *next;</span><br><span class="line">    <span class="type">int</span> direction;	<span class="comment">// 取值有两种，AL_START_HEAD或AL_START_TAIL，支持双向迭代。</span></span><br><span class="line">&#125; listIter;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listGetIterator</code>，创建一个正向&#x2F;反向迭代器：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listIter *<span class="title function_">listGetIterator</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> direction)</span> &#123;</span><br><span class="line">    listIter *iter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((iter = zmalloc(<span class="keyword">sizeof</span>(*iter))) == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (direction == AL_START_HEAD)		<span class="comment">// 正向迭代器</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;tail;		<span class="comment">// 反向迭代器</span></span><br><span class="line">    iter-&gt;direction = direction;</span><br><span class="line">    <span class="keyword">return</span> iter;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重置迭代器, 通过<code>listRewind</code>和<code>listRewindTail</code>方法：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRewind</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    li-&gt;direction = AL_START_HEAD;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listRewindTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    li-&gt;direction = AL_START_TAIL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listNext</code>，访问迭代器中的下一个元素：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listNode *<span class="title function_">listNext</span><span class="params">(listIter *iter)</span> &#123;</span><br><span class="line">    listNode *current = iter-&gt;next;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (current != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (iter-&gt;direction == AL_START_HEAD)</span><br><span class="line">            iter-&gt;next = current-&gt;next;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            iter-&gt;next = current-&gt;prev;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> current;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump13"></span></h4><p>调用<code>listSearchKey</code>，查找指定节点，平均时间复杂度O(N)，N为链表长度。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">listNode *listSearchKey(list *list, void *key) &#123;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    listRewind(list, &amp;iter);</span><br><span class="line">    while((node = listNext(&amp;iter)) != NULL) &#123;</span><br><span class="line">        if (list-&gt;match) &#123;</span><br><span class="line">            if (list-&gt;match(node-&gt;value, key)) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if (key == node-&gt;value) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return NULL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="复制链表"><a href="#复制链表" class="headerlink" title="复制链表"></a>复制链表<span id="jump14"></span></h4><p>调用<code>listDup</code>，复制链表，时间复杂度O(N)，N为链表长度。</p>
+<p><strong>实现技巧分析</strong>：通过迭代器隐藏链表内部实现，简化链表遍历操作；通过dup函数指针，统一了不同类型链表节点的复制流程，实现简洁优雅，值得一学。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listDup</span><span class="params">(<span class="built_in">list</span> *orig)</span> &#123;</span><br><span class="line">    <span class="built_in">list</span> *copy;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((copy = listCreate()) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    copy-&gt;dup = orig-&gt;dup;</span><br><span class="line">    copy-&gt;<span class="built_in">free</span> = orig-&gt;<span class="built_in">free</span>;</span><br><span class="line">    copy-&gt;match = orig-&gt;match;</span><br><span class="line">    listRewind(orig, &amp;iter);</span><br><span class="line">    <span class="keyword">while</span>((node = listNext(&amp;iter)) != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="type">void</span> *value;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (copy-&gt;dup) &#123;</span><br><span class="line">            value = copy-&gt;dup(node-&gt;value);</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                listRelease(copy);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span></span><br><span class="line">            value = node-&gt;value;</span><br><span class="line">        <span class="keyword">if</span> (listAddNodeTail(copy, value) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            listRelease(copy);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="表头节点移动到表尾"><a href="#表头节点移动到表尾" class="headerlink" title="表头节点移动到表尾"></a>表头节点移动到表尾<span id="jump15"></span></h4><p>通过<code>listRotateHeadToTail</code>，实现表头节点移动到表尾，时间复杂度为O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateHeadToTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    listNode *head = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="comment">/* Detach current head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head = head-&gt;next;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as tail */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = head;</span><br><span class="line">    head-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    head-&gt;prev = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listRotateTailToHead</code>，实现表尾节点移动到表头，时间复杂度为O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateTailToHead</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Detach current tail */</span></span><br><span class="line">    listNode *tail = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = tail-&gt;prev;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = tail;</span><br><span class="line">    tail-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    tail-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = tail;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第3章 链表</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
       </tags>
   </entry>
 </search>
