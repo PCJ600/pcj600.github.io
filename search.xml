@@ -24,41 +24,6 @@
       </tags>
   </entry>
   <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -113,15 +78,50 @@
       </tags>
   </entry>
   <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>隐式函数声明[-Wimplicit-function-declaration]</title>
-    <url>/2024/08/18/2020-04-11-what-is-implicit-function-declaration/</url>
+    <url>/2020/04/11/2020-04-11-what-is-implicit-function-declaration/</url>
     <content><![CDATA[<h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
 <span id="more"></span>
 
 <h2 id="忽略隐式函数声明警告的危害"><a href="#忽略隐式函数声明警告的危害" class="headerlink" title="忽略隐式函数声明警告的危害"></a>忽略隐式函数声明警告的危害</h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img src="/2024/08/18/2020-04-11-what-is-implicit-function-declaration/image1.png"></p>
+<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img src="/2020/04/11/2020-04-11-what-is-implicit-function-declaration/image1.png"></p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ldd -r libadd.so</span><br><span class="line">undefined symbol: ad (./libadd.so)</span><br></pre></td></tr></table></figure>
 
 <p>此时写一个main程序，调用libadd.so中的sum方法求三数之和</p>
@@ -149,6 +149,245 @@
       </categories>
       <tags>
         <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git常用命令</title>
+    <url>/2020/05/02/2020-05-02-git-basics-and-commands/</url>
+    <content><![CDATA[<h3 id="0-git帮助"><a href="#0-git帮助" class="headerlink" title="0. git帮助"></a>0. git帮助</h3><ul>
+<li><p>git help命令</p>
+</li>
+<li><p>git原理和命令可参考《Pro Git》，中文版链接:<a href="https://www.progit.cn"> https://www.progit.cn</a></p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="1-git配置"><a href="#1-git配置" class="headerlink" title="1. git配置"></a>1. git配置</h3><p>通过git config命令配置。–global选项指定读写的配置文件路径为~&#x2F;.gitconfig，只针对当前用户。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config --global user.name  &quot;user&quot; 		  #设置用户名</span><br><span class="line">git config --global user.email &quot;user@163.com&quot; #设置邮箱</span><br><span class="line">git config --global core.editor emacs 		  #设置默认文本编译器为emacs</span><br><span class="line">git config --list 							  #检查所有git配置</span><br><span class="line">git config &lt;key&gt; 							  #检查git某一项配置，如user.name</span><br></pre></td></tr></table></figure>
+
+<h4 id="忽略文件-——-gitignore"><a href="#忽略文件-——-gitignore" class="headerlink" title="忽略文件 —— .gitignore"></a>忽略文件 —— .gitignore</h4><ul>
+<li><p>.gitginore文件作用: 忽略无需纳入git管理的文件。</p>
+</li>
+<li><p>各种语言的.gitignore写法可参考: <a href="https://github.com/github/gitignore">https://github.com/github/gitignore</a></p>
+</li>
+</ul>
+<h3 id="2-获取与创建git仓"><a href="#2-获取与创建git仓" class="headerlink" title="2. 获取与创建git仓"></a>2. 获取与创建git仓</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git init        		#将当前目录初始化为git仓</span><br><span class="line">git clone [url]  		#克隆现有仓库</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-添加-删除文件"><a href="#3-添加-删除文件" class="headerlink" title="3. 添加&#x2F;删除文件"></a>3. 添加&#x2F;删除文件</h3><h4 id="跟踪文件"><a href="#跟踪文件" class="headerlink" title="跟踪文件"></a>跟踪文件</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git add &lt;file&gt;	 		#跟踪某个新文件，将内容从工作目录添加到暂存区</span><br><span class="line">git add .		 		#跟踪所有新文件</span><br></pre></td></tr></table></figure>
+
+<h4 id="移除文件"><a href="#移除文件" class="headerlink" title="移除文件"></a>移除文件</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git rm    				#从git中移除文件，并连带从工作目录中删除指定文件</span><br><span class="line">git rm -f 				#如删除之前有修改并已放到暂存区，必须指定-f选项，防止误删还没有添加到快照的数据不能被git恢复</span><br><span class="line">git rm --cached         #把文件从git暂存区删除，但在工作目录保留该文件</span><br><span class="line">git mv &lt;file1&gt; &lt;file2&gt;  #移动文件，相当于执行以下三条命令</span><br><span class="line">					    #mv file1 file2, git rm file1, git add file2</span><br></pre></td></tr></table></figure>
+
+<h4 id="提交更新"><a href="#提交更新" class="headerlink" title="提交更新"></a>提交更新</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git commit       		#提交更新</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-查看信息"><a href="#4-查看信息" class="headerlink" title="4. 查看信息"></a>4. 查看信息</h3><h4 id="查看当前文件状态"><a href="#查看当前文件状态" class="headerlink" title="查看当前文件状态"></a>查看当前文件状态</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git status       		#检查当前文件状态</span><br></pre></td></tr></table></figure>
+
+<h4 id="查看提交历史"><a href="#查看提交历史" class="headerlink" title="查看提交历史"></a>查看提交历史</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git log --pretty=oneline #将每个提交放在一行显示</span><br><span class="line">git log -p -2 			 #-p用来显示每次提交的内容差异, -2表示显示最近两次提交</span><br><span class="line">git log --stat 			 #查看每次提交的简略信息</span><br><span class="line">git reflog				 #显示最近的提交记录</span><br></pre></td></tr></table></figure>
+
+<h4 id="查看修改和差异"><a href="#查看修改和差异" class="headerlink" title="查看修改和差异"></a>查看修改和差异</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git diff 						 #比较工作目录中当前文件和暂存区快照之间差异，即修改后未暂存的变化</span><br><span class="line">git diff --cached [file] 		 #查看暂存区与上一个commit的差异</span><br><span class="line">git diff --staged [file]		 #等同于--cached</span><br><span class="line">git diff HEAD					 #显示工作区与当前分支最新commit的差异</span><br><span class="line">git diff [commitID1] [commitID2] #比较两次提交记录的差异，比如HEAD和HEAD~1</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-分支"><a href="#5-分支" class="headerlink" title="5. 分支"></a>5. 分支</h3><h4 id="查看分支"><a href="#查看分支" class="headerlink" title="查看分支"></a>查看分支</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch								 #列出所有本地分支</span><br><span class="line">git branch -a							 #列出所有本地分支和远程分支</span><br></pre></td></tr></table></figure>
+
+<h4 id="新建分支"><a href="#新建分支" class="headerlink" title="新建分支"></a>新建分支</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch [branch_name]				 #创建新分支，但仍然停留在当前分支</span><br><span class="line">git branch [branch_name] [commitID]		 #创建新分支，并指向指定commit</span><br><span class="line">git checkout -b [branch_name] [tag_name] #在特定标签上创建一个分支</span><br></pre></td></tr></table></figure>
+
+<h4 id="切换分支"><a href="#切换分支" class="headerlink" title="切换分支"></a>切换分支</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git checkout [branch_name] 				 #切换分支</span><br><span class="line">git checkout -b [branch_name]			 #创建并切换分支</span><br></pre></td></tr></table></figure>
+
+<h4 id="删除分支"><a href="#删除分支" class="headerlink" title="删除分支"></a>删除分支</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch -d [branch_name]				 #删除分支</span><br><span class="line">git branch -D [branch_name]				 #强制删除分支</span><br></pre></td></tr></table></figure>
+
+<h4 id="合并分支"><a href="#合并分支" class="headerlink" title="合并分支"></a>合并分支</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git merge  [branch]			   #将branch分支内容合并到当前分支</span><br><span class="line">git rebase [branch]			   #将branch分支内容变基到当前分支</span><br><span class="line">git rebase [branch1] [branch2] #将branch2分支变基到目标分支branch1，省去切换分支的步骤</span><br></pre></td></tr></table></figure>
+
+<h5 id="merge和rebase的区别"><a href="#merge和rebase的区别" class="headerlink" title="merge和rebase的区别"></a>merge和rebase的区别</h5><ul>
+<li>merge —— 把两个分支的最新快照及二者最近的共同祖先进行三方合并。</li>
+<li>rebase —— 变基，将提交到某一个分支所有修改移到另一个分支。</li>
+</ul>
+<p><font color ='red'><strong>注：只对从未推送至公共仓库的提交执行变基命令</strong></font>，只把变基命令用作推送前清理提交使之整洁的工具。</p>
+<h3 id="6-撤销、清理、重写"><a href="#6-撤销、清理、重写" class="headerlink" title="6. 撤销、清理、重写"></a>6. 撤销、清理、重写</h3><h4 id="撤销操作"><a href="#撤销操作" class="headerlink" title="撤销操作"></a>撤销操作</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git reset HEAD &lt;file&gt; 	 		#取消暂存的文件</span><br><span class="line">git checkout -- &lt;file&gt;   		#撤销文件修改，将文件还原成上次提交的状态</span><br><span class="line">git reset --hard &lt;commitID&gt;		#回退到具体版本号</span><br></pre></td></tr></table></figure>
+
+<h4 id="清理工作目录"><a href="#清理工作目录" class="headerlink" title="清理工作目录"></a>清理工作目录</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git clean -df 				# 移除工作目录中没有忽略的未追踪文件及空的子目录, -d表示删除,-f表示强制</span><br><span class="line">git clean -dn 				# -n查看将会删除哪些文件,不会真正删除</span><br><span class="line">git clean -xdf 	   			# 指定-x额外移除已忽略的未追踪文件</span><br></pre></td></tr></table></figure>
+
+<h4 id="重写历史"><a href="#重写历史" class="headerlink" title="重写历史"></a>重写历史</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git commit --amend  		#修改最后一次提交</span><br><span class="line">git rebase -i [commitID]    #修改多个历史提交</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-项目共享与更新"><a href="#7-项目共享与更新" class="headerlink" title="7. 项目共享与更新"></a>7. 项目共享与更新</h3><h4 id="远程仓库"><a href="#远程仓库" class="headerlink" title="远程仓库"></a>远程仓库</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git remote -v 					 #查看远程仓库</span><br><span class="line">git remote add &lt;shortname&gt; &lt;url&gt; #添加新的远程git仓库</span><br><span class="line">git remote rm &lt;shortname&gt;        #移除远程仓库</span><br></pre></td></tr></table></figure>
+
+<h4 id="抓取、推送"><a href="#抓取、推送" class="headerlink" title="抓取、推送"></a>抓取、推送</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git fetch [remote] 		 		    #拉取远程仓库数据到本地，但不会自动合并</span><br><span class="line">git pull [remote] [branch]		    #相当于git fetch和git merge命令的组合</span><br><span class="line">git push [remote] [branch]		    #推送本地分支到远程, -f强制推送</span><br><span class="line">git push [remote] –-delete [branch] #删除远程分支</span><br></pre></td></tr></table></figure>
+
+<h3 id="8-git设置别名"><a href="#8-git设置别名" class="headerlink" title="8. git设置别名"></a>8. git设置别名</h3><p>通过git config为git命令创建别名后，无需每次输入完整的git命令，简化了操作</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config --global alias.co checkout</span><br><span class="line">git config --global alias.br branch</span><br><span class="line">git config --global alias.ci commit</span><br><span class="line">git config --global alias.st status</span><br><span class="line">git config --global alias.unstage &#x27;reset HEAD --&#x27;</span><br><span class="line">git config --global alias.last &#x27;log -1 HEAD&#x27;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Pro Git》第2版： <a href="https://www.progit.cn">https://www.progit.cn</a></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>tmux常用操作</title>
+    <url>/2020/05/04/2020-05-04-tmux-cheetsheet/</url>
+    <content><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>TMUX指<strong>terminal multiplexer</strong>，即终端复用软件。tmux结构包含以下三个部分：</p>
+<ul>
+<li><strong>session</strong>  —— 会话，可以用tmux创建多个会话。</li>
+<li><strong>window</strong>  —— 窗口， 一个会话中可以包含多个窗口。</li>
+<li><strong>pane</strong>       —— 窗格，用于分隔窗口，一个窗口中可以包含多个窗格。</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt-get install tmux</span><br></pre></td></tr></table></figure>
+
+<h3 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h3><p><font color = 'red'><strong>说明：</strong>&lt;C-b&gt; 指 Ctrl+b键; &lt;C-b&gt; d指先按Ctrl+b键, 再按d键，不是指同时按下Ctrl+b和d</font></p>
+<h4 id="session操作"><a href="#session操作" class="headerlink" title="session操作"></a>session操作</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tmux new -s &lt;session&gt;					#创建新会话</span><br><span class="line">tmux new -s &lt;session&gt; -d				#后台创建会话</span><br><span class="line">tmux ls									#列出所有会话</span><br><span class="line">tmux a -t &lt;session&gt;						#回到某个会话,a指attach</span><br><span class="line">tmux rename -t &lt;old_name&gt; &lt;new_name&gt;	#将指定会话改名</span><br><span class="line">tmux kill-session -t &lt;session&gt;			#关闭某个会话</span><br><span class="line">tmux kill-server						#重启所有tmux进程</span><br><span class="line">&lt;C-b&gt; d									#暂时离开tmux,回到终端,d指detach</span><br><span class="line">&lt;C-b&gt; s									#选择会话列表</span><br><span class="line">&lt;C-b&gt; $									#重命名当前会话</span><br></pre></td></tr></table></figure>
+
+<h4 id="window操作"><a href="#window操作" class="headerlink" title="window操作"></a>window操作</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">&lt;C-b&gt; w									#列出所有窗口</span><br><span class="line">&lt;C-b&gt; &lt;C-o&gt;								#切换窗口顺序</span><br><span class="line">&lt;C-b&gt; 0-9								#选择几号窗口</span><br><span class="line">&lt;C-b&gt; p									#切换上一个窗口, p指previous</span><br><span class="line">&lt;C-b&gt; n									#切换下一个窗口, n指next</span><br><span class="line">&lt;C-d&gt;									#退出tmux窗口, 相当于敲exit</span><br><span class="line">&lt;C-b&gt; &amp;									#退出当前窗口, 关闭所有窗格</span><br><span class="line">&lt;C-b&gt; ,									#给窗口改名</span><br></pre></td></tr></table></figure>
+
+<h4 id="pane操作"><a href="#pane操作" class="headerlink" title="pane操作"></a>pane操作</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">&lt;C-b&gt; %									#纵向分隔窗口</span><br><span class="line">&lt;C-b&gt; &quot; 								#横向分隔窗口</span><br><span class="line">&lt;C-b&gt; &lt;Up/Down/Left/Right&gt;				#方向键切换窗格，可通过配置改成HJKL</span><br><span class="line">&lt;C-b&gt; z									#最大化当前窗格</span><br><span class="line">&lt;C-b&gt; x									#关闭当前使用中的窗格</span><br><span class="line">&lt;C-b&gt; q									#显示序号,在序号消失前按对应序号可切换到对应窗格</span><br><span class="line">&lt;C-b&gt; o									#顺时针切换窗口</span><br><span class="line">&lt;C-b&gt; &lt;C-o&gt;								#逆时针切换窗口</span><br></pre></td></tr></table></figure>
+
+<h4 id="上下滚动，查看历史"><a href="#上下滚动，查看历史" class="headerlink" title="上下滚动，查看历史"></a>上下滚动，查看历史</h4><p>先按<C-b>, 再按[键，进入复制模式后，用PgUp, PgDn查看历史，再按q退出。</p>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><p>添加~&#x2F;.tmux.conf，修改内容如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">定义快捷键&lt;C-b&gt; r, 快速加载tmux配置文件</span></span><br><span class="line">bind r source-file ~/.tmux.conf \; display &quot;tmux.conf reload!&quot;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">适应VIM操作，上下左右改为h,j,k,l</span></span><br><span class="line">bind h select-pane -L</span><br><span class="line">bind j select-pane -D</span><br><span class="line">bind k select-pane -U</span><br><span class="line">bind l select-pane -R</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">更改横分屏，竖分屏键位</span></span><br><span class="line">bind | split-window -h</span><br><span class="line">bind - split-window -v</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">设置窗口、窗格起始序号为1</span></span><br><span class="line">set -g base-index 1</span><br><span class="line">set -g pane-base-index 1</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h3><p>TMUX常用快捷键和问题 —— <a href="https://www.cnblogs.com/piperck/p/4992159.html">https://www.cnblogs.com/piperck/p/4992159.html</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用git rebase合并多条commit记录</title>
+    <url>/2020/05/04/2020-05-04-use-git-rebase-to-merge-multi-commits/</url>
+    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f70c5a84996c05511d3f98034d56ca05706d62f8 (HEAD -&gt; test) fourth commit</span><br><span class="line">56a79bb29da6e483fc6de6e8f271e1a5dcba52a5 third commit</span><br><span class="line">64db6fddd02a04194b3ca22e91dd1de23f9f81d7 second commit</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<p>比如这里希望合并本地的前三条记录(f70c, 56a7, 64db)，<strong>需找到待合并记录(64db)的前一条记录的commitID(7837)，作为git rebase -i命令的参数</strong>。</p>
+<p><strong>输入git rebase -i 7837, 进入历史提交的编辑界面：</strong><br><img src="/2020/05/04/2020-05-04-use-git-rebase-to-merge-multi-commits/image1.png"></p>
+<p>需要注意的是，上图显示的提交顺序与git log是相反的。<strong>将除了第一行的pick都改成squash, 保存退出(:wq)</strong>,再将commit信息改成merge three commit, 保存退出，再次使用git log查看：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f448ac261c7e26682935201244eda0e9d93fd307 (HEAD -&gt; test) merge three commits</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
+
+<p>发现f70c, 56a7, 64db三条本地记录已经被成功合并为一条新记录。</p>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ul>
+<li><p><font color='red'><strong>只对从未推送至公共仓库的提交记录执行git rebase</strong></font></p>
+</li>
+<li><p>原因可参考<a href = "https://www.progit.cn/">https://www.progit.cn/</a>  “Git分支 -&gt; 变基的风险”，该小节详细讲述了在一个公共仓库执行变基操作的问题。</p>
+</li>
+</ul>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><p><a href = "https://www.progit.cn/">https://www.progit.cn/  </a></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>64位Linux机器上使用gcc编译32位程序</title>
+    <url>/2020/05/31/2020-05-31-complie-32-bit-program-on-64-bit-env/</url>
+    <content><![CDATA[<h2 id="Ubuntu"><a href="#Ubuntu" class="headerlink" title="Ubuntu"></a>Ubuntu</h2><p>安装以下软件包</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt-get install build-essential module-assistant gcc-multilib g++-multilib</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h2 id="Centos"><a href="#Centos" class="headerlink" title="Centos"></a>Centos</h2><p>安装以下软件包</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">yum install glibc-devel.i686 libstdc++-devel.i686</span><br></pre></td></tr></table></figure>
+
+<p>gcc编译添加-m32参数，如</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">gcc -m32 main.c</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/">http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>gcc</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何安装和启动Redis</title>
+    <url>/2020/06/01/2020-06-01-how-to-install-and-run-redis/</url>
+    <content><![CDATA[<h2 id="一、源码安装redis"><a href="#一、源码安装redis" class="headerlink" title="一、源码安装redis"></a>一、源码安装redis</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">0.官网下载最新redis源码包</span></span><br><span class="line">wget http://download.redis.io/releases/redis-5.0.5.tar.gz</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">1.将redis.tar.gz拷贝到/usr/local目录并解压</span></span><br><span class="line">mkdir -p /usr/local/ &amp;&amp; cd /usr/local</span><br><span class="line">cp /path/to/redis-5.0.5.tar.gz .</span><br><span class="line">tar -zxvf redis-5.0.5.tar.gz</span><br><span class="line">mv redis-5.0.5 redis &amp;&amp; cd redis</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">2.编译、测试、安装</span></span><br><span class="line">make -j4 						# 编译</span><br><span class="line">make test						# 测试，显示All tests passed without errors</span><br><span class="line">make install					# 安装</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h2 id="二、启动和停止redis"><a href="#二、启动和停止redis" class="headerlink" title="二、启动和停止redis"></a>二、启动和停止redis</h2><h3 id="通过命令行启动redis"><a href="#通过命令行启动redis" class="headerlink" title="通过命令行启动redis"></a>通过命令行启动redis</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">redis-server 								#直接启动</span><br><span class="line">redis-server --port 6380					#自定义端口号启动，--port指定端口为6380</span><br><span class="line">redis-server /usr/local/redis/redis.conf    #启动redis时指定配置文件</span><br></pre></td></tr></table></figure>
+<h3 id="通过初始化脚本启动redis"><a href="#通过初始化脚本启动redis" class="headerlink" title="通过初始化脚本启动redis"></a>通过初始化脚本启动redis</h3><ul>
+<li><p>在redis源码路径的utils目录中找到初始化脚本redis_init_script, 将该脚本复制到&#x2F;etc&#x2F;init.d，文件名改为redis_端口号(如redis_6379)，脚本中修改REDISPORT变量为该端口号(如6379)</p>
+</li>
+<li><p>建立需要的目录， 新键&#x2F;etc&#x2F;redis目录用于存放redis配置文件，新建&#x2F;var&#x2F;redis&#x2F;端口号(如&#x2F;var&#x2F;redis&#x2F;6379)目录存放redis持久化文件</p>
+</li>
+<li><p>修改配置文件，将redis.conf复制到&#x2F;etc&#x2F;redis下，并改名为端口号.conf(如6379.conf)，需要修改部分参数，如下表</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>daemonize</td>
+<td>yes</td>
+<td>以守护模式运行redis</td>
+</tr>
+<tr>
+<td>pidfile</td>
+<td>&#x2F;var&#x2F;run&#x2F;redis_端口号.pid</td>
+<td>设置redis的PID文件位置</td>
+</tr>
+<tr>
+<td>port</td>
+<td>端口号</td>
+<td>设置redis监听的端口号，如6379</td>
+</tr>
+<tr>
+<td>dir</td>
+<td>&#x2F;var&#x2F;redis&#x2F;端口号</td>
+<td>设置持久化文件存放位置</td>
+</tr>
+</tbody></table>
+<h3 id="设置redis随系统自启动-Centos"><a href="#设置redis随系统自启动-Centos" class="headerlink" title="设置redis随系统自启动(Centos)"></a>设置redis随系统自启动(Centos)</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">chkconfig --add redis_6379 		#增加redis服务，并通过chkconfig管理</span><br><span class="line">chkconfig redis_6379 on 		#开启服务</span><br><span class="line">chkconfig --list 				#查看redis服务级别，默认2，3，4，5为ON表示成功开启</span><br></pre></td></tr></table></figure>
+<h3 id="停止redis"><a href="#停止redis" class="headerlink" title="停止redis"></a>停止redis</h3><p>强行终止redis可能导致数据丢失，正确停止redis方式是发送SHUTDOWN命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">redis-cli SHUTDOWN</span><br></pre></td></tr></table></figure>
+<p>redis收到SHUTDOWN命令后，会先断开所有客户端连接，然后根据配置执行持久化，最后退出<br>redis可以妥善处理SIGTERM信号，所以使用kill redis进程的PID也可以正常结束redis</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>[1]《Redis入门指南 第2版》<br>[2] redis安装教程：<a href="https://blog.csdn.net/qq_36737803/article/details/90578860">https://blog.csdn.net/qq_36737803&#x2F;article&#x2F;details&#x2F;90578860</a></p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>GDB加载so库符号失败的解决方法</title>
+    <url>/2020/06/21/2020-06-21-how-to-solve-gdb-load-so-failure/</url>
+    <content><![CDATA[<h2 id="问题现象"><a href="#问题现象" class="headerlink" title="问题现象"></a>问题现象</h2><p>gdb调试core文件或进程时，出现加载so库符号失败，错误信息如下</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">warning: Could not load shared library symbols for ../libadd.so</span><br><span class="line">Do you need &quot;set solib-search-path&quot; or &quot;set sysroot&quot;?</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>执行<strong>info sharedlibrary</strong>，查看Syms Read字段为No,  表示对应so库符号加载失败。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">pwd</span> /home/gdb</span></span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  No          ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  No          ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">0  0x00007fba2c57266b <span class="keyword">in</span> ?? ()</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">1  0x00007ffc6f703ff0 <span class="keyword">in</span> ?? ()</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>设置gdb的<strong>solib-search-path</strong>选项， 指定加载失败的so的搜索路径即可。</p>
+<p>solib-search-path可以指定多个路径。在linux上，路径之间用冒号分隔，命令如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-search-path /var:/home</span><br><span class="line">Reading symbols from ../libadd.so...done.</span><br><span class="line">Loaded symbols for ../libadd.so</span><br><span class="line">Reading symbols from ../../var/libsub.so...done.</span><br><span class="line">Loaded symbols for ../../var/libsub.so</span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  Yes         ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  Yes         ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line">#0  0x00007fba2c57266b in add (a=1, b=2) at add.c:5</span><br><span class="line">#1  0x0000000000400600 in ?? ()</span><br></pre></td></tr></table></figure>
+
+<p>或者设置gdb的<strong>solib-absolute-prefix</strong>选项，指定被搜索so文件路径的前缀， 与solib-search-path区别在于solib-absolute-prefix只能有一个，使用如下gdb指令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-absolute-prefix /</span><br><span class="line">(gdb) set sysroot /					# sysroot是solib-absolute-prefix的别名</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://visualgdb.com/gdbreference/commands/set_solib-search-path">https://visualgdb.com/gdbreference/commands/set_solib-search-path</a></p>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
       </tags>
   </entry>
 </search>

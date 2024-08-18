@@ -20,24 +20,22 @@
     var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="问题描述Linux上运行C程序发生段错误后，没有core文件生成，调试不便。">
+  <meta name="description" content="什么是隐式函数声明C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Linux下生成core dump文件">
-<meta property="og:url" content="https://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/index.html">
+<meta property="og:title" content="隐式函数声明[-Wimplicit-function-declaration]">
+<meta property="og:url" content="https://pcj600.github.io/2020/04/11/2020-04-11-what-is-implicit-function-declaration/index.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
-<meta property="og:description" content="问题描述Linux上运行C程序发生段错误后，没有core文件生成，调试不便。">
+<meta property="og:description" content="什么是隐式函数声明C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png">
-<meta property="og:image" content="https://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image2.png">
-<meta property="og:image" content="https://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image3.png">
-<meta property="article:published_time" content="2020-02-28T13:07:41.000Z">
-<meta property="article:modified_time" content="2024-08-18T06:23:23.246Z">
+<meta property="og:image" content="https://pcj600.github.io/2020/04/11/2020-04-11-what-is-implicit-function-declaration/image1.png">
+<meta property="article:published_time" content="2020-04-11T06:33:10.000Z">
+<meta property="article:modified_time" content="2024-08-18T09:10:48.507Z">
 <meta property="article:author" content="PC">
-<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="C">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png">
+<meta name="twitter:image" content="https://pcj600.github.io/2020/04/11/2020-04-11-what-is-implicit-function-declaration/image1.png">
 
-<link rel="canonical" href="https://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/">
+<link rel="canonical" href="https://pcj600.github.io/2020/04/11/2020-04-11-what-is-implicit-function-declaration/">
 
 
 <script id="page-configurations">
@@ -50,7 +48,7 @@
   };
 </script>
 
-  <title>Linux下生成core dump文件 | PC's Blog</title>
+  <title>隐式函数声明[-Wimplicit-function-declaration] | PC's Blog</title>
   
 
 
@@ -190,7 +188,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2020/02/28/2020-02-28-how-to-generate-core-dump-file/">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2020/04/11/2020-04-11-what-is-implicit-function-declaration/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -203,7 +201,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Linux下生成core dump文件
+          隐式函数声明[-Wimplicit-function-declaration]
         </h1>
 
         <div class="post-meta">
@@ -213,7 +211,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-02-28 21:07:41" itemprop="dateCreated datePublished" datetime="2020-02-28T21:07:41+08:00">2020-02-28</time>
+              <time title="创建时间：2020-04-11 14:33:10" itemprop="dateCreated datePublished" datetime="2020-04-11T14:33:10+08:00">2020-04-11</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -221,7 +219,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C</span></a>
                 </span>
             </span>
 
@@ -238,7 +236,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>523</span>
+              <span>1.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -257,18 +255,34 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
+        <h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
 <span id="more"></span>
 
-<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
-<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png"></li>
-<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
-<li>运行C程序，段错误后，在当前目录生成core文件。<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image2.png"></li>
-</ol>
-<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
-<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
-<p><strong>指定core文件的输出格式和路径</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
+<h2 id="忽略隐式函数声明警告的危害"><a href="#忽略隐式函数声明警告的危害" class="headerlink" title="忽略隐式函数声明警告的危害"></a>忽略隐式函数声明警告的危害</h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img src="/2020/04/11/2020-04-11-what-is-implicit-function-declaration/image1.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ldd -r libadd.so</span><br><span class="line">undefined symbol: ad (./libadd.so)</span><br></pre></td></tr></table></figure>
+
+<p>此时写一个main程序，调用libadd.so中的sum方法求三数之和</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译main程序出错，错误原因在于<strong>编写add.c时将符号add错写成了ad，由于忽视隐式函数声明警告，导致该错误没有在编译add.c的时候及时发现。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ gcc main.c -L. -ladd</span><br><span class="line">./libadd.so: undefined reference to `ad&#x27;</span><br><span class="line">collect2: error: ld returned 1 exit status</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对于用dlopen动态加载该so库的程序，如指定RTLD_NOW，dlopen立即失败；如指定RTLD_LAZY延迟绑定，则dlopen成功，但dlsym加载引用了未定义符号的函数(如sum函数)会出错，示例main程序如下：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;dlfcn.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">void</span> *handle = dlopen(<span class="string">&quot;./libadd.so&quot;</span>, RTLD_LAZY);</span><br><span class="line">	<span class="keyword">if</span>(handle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, dlerror());</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="type">int</span> (*add)(<span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line">	<span class="type">int</span> (*sum)(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line"></span><br><span class="line">	add = dlsym(handle, <span class="string">&quot;add&quot;</span>);	<span class="comment">// add方法正常执行</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 = %d\n&quot;</span>, add(<span class="number">1</span>, <span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">	sum = dlsym(handle, <span class="string">&quot;sum&quot;</span>);	<span class="comment">// 出错，报未定义符号ad</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 + 3 = %d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ gcc main.c -ldl</span><br><span class="line">$ ./a.out</span><br><span class="line">1 + 2 = 3</span><br><span class="line">./a.out: symbol lookup error: ./libadd.so: undefined symbol: ad</span><br></pre></td></tr></table></figure>
+<p>虽然编译成功，libadd.so可以加载，add函数可以执行，但执行sum函数时报未定义符号错。如及时处理隐式函数声明警告，可以在编译add.c的时候就发现该问题。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>函数先声明再使用，包含必要的头文件。</p>
+</li>
+<li><p>重视编译器的隐式函数声明警告, 可开启-Werror选项检查, 不要简单使用-Wno忽略该编译告警。</p>
+</li>
+</ul>
 
     </div>
 
@@ -278,7 +292,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+              <a href="/tags/C/" rel="tag"><i class="fa fa-tag"></i> C</a>
           </div>
 
         
@@ -286,10 +300,13 @@
 
         
     <div class="post-nav">
-      <div class="post-nav-item"></div>
       <div class="post-nav-item">
-    <a href="/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/" rel="next" title="标准IO库的缓冲模式">
-      标准IO库的缓冲模式 <i class="fa fa-chevron-right"></i>
+    <a href="/2020/03/29/2020-03-29-solve-sendto-error/" rel="prev" title="记一次UDP sendto函数错误解决">
+      <i class="fa fa-chevron-left"></i> 记一次UDP sendto函数错误解决
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/02/2020-05-02-git-basics-and-commands/" rel="next" title="Git常用命令">
+      Git常用命令 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -349,7 +366,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%88%90core%E6%96%87%E4%BB%B6%E6%AD%A5%E9%AA%A4"><span class="nav-number">2.</span> <span class="nav-text">生成core文件步骤</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E9%9A%90%E5%BC%8F%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E"><span class="nav-number">1.</span> <span class="nav-text">什么是隐式函数声明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%BD%E7%95%A5%E9%9A%90%E5%BC%8F%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E%E8%AD%A6%E5%91%8A%E7%9A%84%E5%8D%B1%E5%AE%B3"><span class="nav-number">2.</span> <span class="nav-text">忽略隐式函数声明警告的危害</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
