@@ -4,6 +4,8 @@
     <title>Linux下生成core dump文件</title>
     <url>/2020/02/28/2020-02-28-how-to-generate-core-dump-file/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
+<span id="more"></span>
+
 <h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
 <li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img src="/2020/02/28/2020-02-28-how-to-generate-core-dump-file/image1.png"></li>
 <li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
@@ -24,6 +26,8 @@
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
 <p>写文件的时候，明明成功执行了fwrite, fprintf语句，文件却没有写入相应的内容。</p>
 <p>想搞清楚这些问题产生的原因，需要了解标准I&#x2F;O库的缓冲模式。</p>
+<span id="more"></span>
+
 <h2 id="标准I-O与unbuffered-I-O"><a href="#标准I-O与unbuffered-I-O" class="headerlink" title="标准I&#x2F;O与unbuffered I&#x2F;O"></a>标准I&#x2F;O与unbuffered I&#x2F;O</h2><p>linux对I&#x2F;O文件操作分为不带缓存I&#x2F;O(unbuffered I&#x2F;O)和带缓存I&#x2F;O(即标准I&#x2F;O)</p>
 <p>《APUE》中对术语unbuffered的定义: “The term <em>unbuffered</em> means that each read or write invokes a system call in the kernel”</p>
 <p><a href="https://blog.csdn.net/qq_33366098/article/details/77923722">这篇文章</a>讲了unbuffered I&#x2F;O和标准I&#x2F;O的区别，以下引用其中的描述：</p>
