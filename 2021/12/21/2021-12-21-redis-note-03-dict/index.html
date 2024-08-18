@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言字典是一种用于保存键值对的数据结构，Redis数据库使用字典做为底层实现，字典也是哈希键的底层实现之一。 C语言中并没有内置字典这个数据结构，Redis自己实现了字典。 以下结合源码分析Redis字典的设计与实现，源码版本：Redis 6.0.10">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis学习笔记(三)——字典">
+<meta property="og:url" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/index.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="前言字典是一种用于保存键值对的数据结构，Redis数据库使用字典做为底层实现，字典也是哈希键的底层实现之一。 C语言中并没有内置字典这个数据结构，Redis自己实现了字典。 以下结合源码分析Redis字典的设计与实现，源码版本：Redis 6.0.10">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/image1.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/image2.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/image3.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/image4.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/image5.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/image6.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/image7.png">
+<meta property="article:published_time" content="2021-12-21T12:40:34.000Z">
+<meta property="article:modified_time" content="2024-08-18T12:44:59.435Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/image1.png">
+
+<link rel="canonical" href="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redis学习笔记(三)——字典 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Life is short, Play more!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/12/21/2021-12-21-redis-note-03-dict/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis学习笔记(三)——字典
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-12-21 20:40:34" itemprop="dateCreated datePublished" datetime="2021-12-21T20:40:34+08:00">2021-12-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>22k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>20 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>字典是一种用于保存键值对的数据结构，Redis数据库使用字典做为底层实现，字典也是哈希键的底层实现之一。</p>
+<p>C语言中并没有内置字典这个数据结构，Redis自己实现了字典。</p>
+<p>以下结合源码分析Redis字典的设计与实现，源码版本：<a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+<span id="more"></span>
+
+<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>C语言中如何设计一个通用的字典和哈希表？</p>
+<ul>
+<li><p><a href="#jump1">字典的设计与实现</a></p>
+<ul>
+<li><a href="#jump2">哈希表和哈希表节点的设计</a></li>
+<li><a href="#jump3">字典的数据结构设计</a></li>
+<li><a href="#jump4">如何设计多态字典</a></li>
+</ul>
+</li>
+<li><p><a href="#jump5">哈希算法</a></p>
+<ul>
+<li><a href="#jump6">为什么数组长度设计为2的n次方</a></li>
+</ul>
+</li>
+<li><p><a href="#jump7">如何解决键冲突</a></p>
+</li>
+<li><p><a href="#jump8">rehash操作</a></p>
+<ul>
+<li><a href="#jump9">为什么要rehash</a></li>
+<li><a href="#jump10">rehash的实现步骤</a></li>
+<li><a href="#jump11">为什么不直接复制ht[0]的节点到ht[1]，而是要重新计算哈希索引值再rehash</a></li>
+</ul>
+</li>
+<li><p><a href="#jump12">rehash的触发条件是什么</a></p>
+<ul>
+<li><a href="#jump13">负载因子的概念</a></li>
+<li><a href="#jump14">哈希表扩展策略</a></li>
+<li><a href="#jump15">哈希表收缩策略</a></li>
+</ul>
+</li>
+<li><p><a href="#jump16">渐进式rehash</a></p>
+<ul>
+<li><a href="#jump17">为什么要渐进式</a></li>
+<li><a href="#jump18">渐进式rehash的实现</a></li>
+<li><a href="#jump19">增、删、改、查场景中的rehash实现</a></li>
+</ul>
+</li>
+<li><p><a href="#jump20">字典API</a></p>
+<ul>
+<li><a href="#jump21">随机返回一个键值对</a></li>
+<li><a href="#jump22">字典迭代器的设计与实现</a></li>
+<li><a href="#jump23">dictScan算法</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="字典的设计与实现"><a href="#字典的设计与实现" class="headerlink" title="字典的设计与实现"></a>字典的设计与实现<span id="jump1"></span></h3><p>Redis中使用哈希表来实现字典，一个哈希表中有多个哈希表节点，每个节点存储一个键值对。</p>
+<h4 id="哈希表和哈希表节点的设计"><a href="#哈希表和哈希表节点的设计" class="headerlink" title="哈希表和哈希表节点的设计"></a>哈希表和哈希表节点的设计<span id="jump2"></span></h4><p>哈希表的结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictht</span> &#123;</span></span><br><span class="line">    dictEntry **table;			<span class="comment">// 哈希表数组，每个数组是一个链表 (链地址法)</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> size;			<span class="comment">// 记录哈希表大小</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> sizemask;		<span class="comment">// 掩码，用于计算哈希索引，值总是等于size - 1</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> used;			<span class="comment">// 记录已有哈希表节点个数。</span></span><br><span class="line">&#125; dictht;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>table是一个指针数组，每个数组相当于一个链表；<strong>链地址法</strong>实现哈希表</li>
+<li>size表示哈希表大小，取值总是为2的幂</li>
+<li>sizemask为掩码，用于计算索引，取值总是为size - 1</li>
+<li>used记录已有哈希表节点个数</li>
+</ul>
+<p>一个大小为4的空哈希表如下图：<br><img src="/2021/12/21/2021-12-21-redis-note-03-dict/image1.png"></p>
+<p>哈希表节点的结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictEntry</span> &#123;</span></span><br><span class="line">	<span class="type">void</span> *key;</span><br><span class="line">	<span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">		<span class="type">void</span> *val;</span><br><span class="line">		<span class="type">uint64_t</span> u64;</span><br><span class="line">		<span class="type">int64_t</span> s64;</span><br><span class="line">	&#125; v;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dictEntry</span> *<span class="title">next</span>;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>key保存键，对于哈希键场景，这个key存储的实际类型是sds</li>
+<li>v保存值，设置为联合类型用于保存不同类型的值</li>
+<li>next保存链表的下一个节点，以链地址法解决哈希键冲突问题</li>
+<li>value保存值，用联合类型的好处是可以保存不同类型的值</li>
+</ul>
+<h4 id="字典的数据结构设计"><a href="#字典的数据结构设计" class="headerlink" title="字典的数据结构设计"></a>字典的数据结构设计<span id="jump3"></span></h4><p>字典的结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dict</span> &#123;</span></span><br><span class="line">    dictType *type;		     <span class="comment">// 类型特定函数</span></span><br><span class="line">    <span class="type">void</span> *privdata;</span><br><span class="line">    dictht ht[<span class="number">2</span>];			 <span class="comment">// 两个哈希表, ht[1]用于rehash</span></span><br><span class="line">    <span class="type">long</span> rehashidx; 		 <span class="comment">/* rehashing not in progress if rehashidx == -1 */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> iterators; <span class="comment">/* number of iterators currently running */</span></span><br><span class="line">&#125; dict;</span><br></pre></td></tr></table></figure>
+
+<h4 id="如何设计多态字典？"><a href="#如何设计多态字典？" class="headerlink" title="如何设计多态字典？"></a>如何设计多态字典？<span id="jump4"></span></h4><p>type和privdata用于实现多态字典，dictType结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictType</span> &#123;</span></span><br><span class="line">    <span class="type">uint64_t</span> (*hashFunction)(<span class="type">const</span> <span class="type">void</span> *key);			<span class="comment">// 计算hash值</span></span><br><span class="line">    <span class="type">void</span> *(*keyDup)(<span class="type">void</span> *privdata, <span class="type">const</span> <span class="type">void</span> *key);	<span class="comment">// 复制键</span></span><br><span class="line">    <span class="type">void</span> *(*valDup)(<span class="type">void</span> *privdata, <span class="type">const</span> <span class="type">void</span> *obj);	<span class="comment">// 复制值</span></span><br><span class="line">    <span class="type">int</span> (*keyCompare)(<span class="type">void</span> *privdata, <span class="type">const</span> <span class="type">void</span> *key1, <span class="type">const</span> <span class="type">void</span> *key2);	<span class="comment">// 比较键</span></span><br><span class="line">    <span class="type">void</span> (*keyDestructor)(<span class="type">void</span> *privdata, <span class="type">void</span> *key);	<span class="comment">// 销毁键</span></span><br><span class="line">    <span class="type">void</span> (*valDestructor)(<span class="type">void</span> *privdata, <span class="type">void</span> *obj);	<span class="comment">// 销毁值</span></span><br><span class="line">&#125; dictType;</span><br></pre></td></tr></table></figure>
+
+<p>考虑字典的增、删、改、查场景，每个场景必定会涉及如下动作：</p>
+<ul>
+<li><p>哈希值的计算</p>
+</li>
+<li><p>键、值的复制</p>
+</li>
+<li><p>键、值的销毁</p>
+</li>
+<li><p>比较两个键是否相同</p>
+</li>
+</ul>
+<p>对于不同类型的键值对，以上这些动作的具体实现必定是有差异的。设计dictType的好处在于，通过挂接钩子函数消除这个差异，简化了字典的增、删、改、查等API的实现。（比如复制键的场景，不同类型的键值对只需调用同一个钩子函数<code>keyDup</code>即可）</p>
+<p>钩子函数的挂接，在字典创建时完成，参考<code>dictCreate</code>， 时间复杂度O(1)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">dict *<span class="title function_">dictCreate</span><span class="params">(dictType *type, <span class="type">void</span> *privDataPtr)</span> &#123;</span><br><span class="line">    dict *d = zmalloc(<span class="keyword">sizeof</span>(*d));</span><br><span class="line">    _dictInit(d,type,privDataPtr);</span><br><span class="line">    <span class="keyword">return</span> d;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> _dictInit(dict *d, dictType *type, <span class="type">void</span> *privDataPtr) &#123;</span><br><span class="line">    _dictReset(&amp;d-&gt;ht[<span class="number">0</span>]);</span><br><span class="line">    _dictReset(&amp;d-&gt;ht[<span class="number">1</span>]);</span><br><span class="line">    d-&gt;type = type;				<span class="comment">// 挂接钩子函数</span></span><br><span class="line">    d-&gt;privdata = privDataPtr;</span><br><span class="line">    d-&gt;rehashidx = <span class="number">-1</span>;</span><br><span class="line">    d-&gt;iterators = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">return</span> DICT_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>ht是一个数组，包含2个哈希表。一般情况下只会用到ht[0]，ht[1]用于字典的rehash操作。</p>
+</li>
+<li><p>rehashidx表示字典rehash的进度，取值为-1表示没有进行rehash。</p>
+</li>
+</ul>
+<p><strong>举例：</strong></p>
+<p>新增一个哈希键key，4个键值对。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; hmset key key1 value1 key2 value2 key3 value3 key4 value4</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;hashtable&quot;</span><br><span class="line">127.0.0.1:6379&gt; hgetall key</span><br><span class="line">1) &quot;key2&quot;</span><br><span class="line">2) &quot;value2&quot;</span><br><span class="line">3) &quot;key4&quot;</span><br><span class="line">4) &quot;value4&quot;</span><br><span class="line">5) &quot;key1&quot;</span><br><span class="line">6) &quot;value1&quot;</span><br><span class="line">7) &quot;key3&quot;</span><br><span class="line">8) &quot;value3&quot;</span><br></pre></td></tr></table></figure>
+
+<p>注：必须先修改redis配置项<code>hash-max-ziplist-value</code>（这个例子中要设置为4），否则这里的哈希键默认编码方式为<code>ziplist</code>，而不是<code>hashtable</code> ！</p>
+<p><strong>GDB打印这个字典，具体方法如下：</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1、打印哈希键key，在0号数据库键空间中先找到这个key。</span></span><br><span class="line">(gdb) p (sds)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">1</span>].key</span><br><span class="line">$<span class="number">1</span> = (sds) <span class="number">0x564377c118c1</span> <span class="string">&quot;key&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、打印哈希键的值, 注意值也是一个字典结构，有4个键值对</span></span><br><span class="line">(gdb) p *(robj *)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">1</span>].v</span><br><span class="line">$<span class="number">2</span> = &#123;type = <span class="number">4</span>, encoding = <span class="number">2</span>, lru = <span class="number">12185874</span>, refcount = <span class="number">1</span>, ptr = <span class="number">0x564377c20450</span>&#125; <span class="comment">// 字典位于0x564377c20450地址处</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> OBJ_HASH 4 			<span class="comment">/* Hash object. type = 4*/</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> OBJ_ENCODING_HT 2   <span class="comment">/* Encoded as hash table， encoding = 2 */</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、打印这个字典</span></span><br><span class="line">(gdb) <span class="built_in">set</span> print pretty on</span><br><span class="line">(gdb) p *(dict *)<span class="number">0x564377c20450</span></span><br><span class="line">$<span class="number">3</span> = &#123;</span><br><span class="line">  type = <span class="number">0x5643777e4860</span> &lt;hashDictType&gt;,</span><br><span class="line">  privdata = <span class="number">0x0</span>,</span><br><span class="line">  ht = &#123;&#123;							</span><br><span class="line">      table = <span class="number">0x564377c10eb0</span>, <span class="comment">// 哈希表地址0x564377c10eb0</span></span><br><span class="line">      size = <span class="number">4</span>,</span><br><span class="line">      sizemask = <span class="number">3</span>,</span><br><span class="line">      used = <span class="number">4</span></span><br><span class="line">    &#125;, &#123;			<span class="comment">// ht[1]用于rehash，一般情况下rehashidx=-1，ht[1]用不上</span></span><br><span class="line">      table = <span class="number">0x0</span>,</span><br><span class="line">      size = <span class="number">0</span>,</span><br><span class="line">      sizemask = <span class="number">0</span>,</span><br><span class="line">      used = <span class="number">0</span></span><br><span class="line">    &#125;&#125;,</span><br><span class="line">  rehashidx = <span class="number">-1</span>,	<span class="comment">// 等于-1表示没有进行rehash</span></span><br><span class="line">  iterators = <span class="number">0</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、打印字典中的哈希表，哈希表中的指针数组长度为4</span></span><br><span class="line"><span class="comment">// 索引0的链表长度为1，内容：(key, value2) -&gt; NULL</span></span><br><span class="line">(gdb) p ((dictEntry **)<span class="number">0x564377c10eb0</span>)[<span class="number">0</span>]</span><br><span class="line">$<span class="number">4</span> = (dictEntry *) <span class="number">0x564377c1a250</span></span><br><span class="line">(gdb) p (sds)((dictEntry *) <span class="number">0x564377c1a250</span>)-&gt;key</span><br><span class="line">$<span class="number">5</span> = (sds) <span class="number">0x564377c10ee1</span> <span class="string">&quot;key2&quot;</span></span><br><span class="line">(gdb) p (sds)((dictEntry *) <span class="number">0x564377c1a250</span>)-&gt;v</span><br><span class="line">$<span class="number">6</span> = (sds) <span class="number">0x564377c1a231</span> <span class="string">&quot;value2&quot;</span></span><br><span class="line">(gdb) p ((dictEntry *) <span class="number">0x564377c1a250</span>)-&gt;next</span><br><span class="line">$<span class="number">7</span> = (<span class="keyword">struct</span> dictEntry *) <span class="number">0x0</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 索引1的链表长度为0</span></span><br><span class="line">(gdb) p ((dictEntry **)<span class="number">0x564377c10eb0</span>)[<span class="number">1</span>]</span><br><span class="line">$<span class="number">8</span> = (dictEntry *) <span class="number">0x0</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 索引2的链表长度为2，内容：(key4, value4) -&gt; (key1, value1)</span></span><br><span class="line">(gdb) p ((dictEntry **)<span class="number">0x564377c10eb0</span>)[<span class="number">2</span>]</span><br><span class="line">$<span class="number">9</span> = (dictEntry *) <span class="number">0x564377c0f530</span></span><br><span class="line">(gdb) p (sds)((dictEntry *) <span class="number">0x564377c0f530</span>)-&gt;key</span><br><span class="line">$<span class="number">10</span> = (sds) <span class="number">0x564377c1a1b1</span> <span class="string">&quot;key4&quot;</span></span><br><span class="line">(gdb) p (sds)((dictEntry *) <span class="number">0x564377c0f530</span>)-&gt;v</span><br><span class="line">$<span class="number">11</span> = (sds) <span class="number">0x564377c1a1d1</span> <span class="string">&quot;value4&quot;</span></span><br><span class="line">(gdb) p ((dictEntry *) <span class="number">0x564377c0f530</span>)-&gt;next</span><br><span class="line">$<span class="number">12</span> = (<span class="keyword">struct</span> dictEntry *) <span class="number">0x564377c1a500</span></span><br><span class="line">(gdb) p (sds)((dictEntry *) <span class="number">0x564377c1a500</span>)-&gt;key</span><br><span class="line">$<span class="number">13</span> = (sds) <span class="number">0x564377c10dd1</span> <span class="string">&quot;key1&quot;</span></span><br><span class="line">(gdb) p (sds)((dictEntry *) <span class="number">0x564377c1a500</span>)-&gt;v</span><br><span class="line">$<span class="number">14</span> = (sds) <span class="number">0x564377c1a4e1</span> <span class="string">&quot;value1&quot;</span></span><br><span class="line">(gdb) p ((dictEntry *) <span class="number">0x564377c1a500</span>)-&gt;next</span><br><span class="line">$<span class="number">15</span> = (<span class="keyword">struct</span> dictEntry *) <span class="number">0x0</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 索引3的链表长度为1, 内容：(key3, value3) -&gt; NULL</span></span><br><span class="line">(gdb) p ((dictEntry **)<span class="number">0x564377c10eb0</span>)[<span class="number">3</span>]</span><br><span class="line">$<span class="number">16</span> = (dictEntry *) <span class="number">0x564377c1a190</span></span><br><span class="line">(gdb) p (sds)((dictEntry *) <span class="number">0x564377c1a190</span>)-&gt;key</span><br><span class="line">$<span class="number">17</span> = (sds) <span class="number">0x564377c1a151</span> <span class="string">&quot;key3&quot;</span></span><br><span class="line">(gdb) p (sds)((dictEntry *) <span class="number">0x564377c1a190</span>)-&gt;v</span><br><span class="line">$<span class="number">18</span> = (sds) <span class="number">0x564377c1a171</span> <span class="string">&quot;value3&quot;</span></span><br><span class="line">(gdb) p ((dictEntry *) <span class="number">0x564377c1a171</span>)-&gt;next</span><br><span class="line">$<span class="number">19</span> = (<span class="keyword">struct</span> dictEntry *) <span class="number">0x0</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>下图展示了这个字典：<br><img src="/2021/12/21/2021-12-21-redis-note-03-dict/image2.png"></p>
+<h3 id="哈希算法"><a href="#哈希算法" class="headerlink" title="哈希算法"></a>哈希算法<span id="jump5"></span></h3><p>Redis内置两种哈希算法：</p>
+<ul>
+<li><code>dictGenHashFunction</code> 用于字符串哈希，区分大小写。</li>
+<li><code>dictGenCaseHashFunction</code>用于字符串哈希，不区分大小写。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* The default hashing function uses SipHash implementation in siphash.c. */</span></span><br><span class="line"></span><br><span class="line"><span class="type">uint64_t</span> <span class="title function_">dictGenHashFunction</span><span class="params">(<span class="type">const</span> <span class="type">void</span> *key, <span class="type">int</span> len)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> siphash(key,len,dict_hash_function_seed);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">uint64_t</span> <span class="title function_">dictGenCaseHashFunction</span><span class="params">(<span class="type">const</span> <span class="type">unsigned</span> <span class="type">char</span> *buf, <span class="type">int</span> len)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> siphash_nocase(buf,len,dict_hash_function_seed);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>索引值如何计算？</strong></p>
+<p>先通过哈希算法求出64位的哈希值，再利用这个哈希值和sizemask掩码得到索引值，源码参考<code>_dictKeyIndex</code>，这里简单给出伪代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 返回key的索引值。</span></span><br><span class="line"><span class="type">long</span> <span class="title function_">GetKeyIndex</span><span class="params">(dict *d, <span class="type">const</span> <span class="type">void</span> *key)</span> &#123;</span><br><span class="line">    <span class="type">uint64_t</span> hash = dictGenHashFunction((<span class="type">unsigned</span> <span class="type">char</span> *)key, <span class="built_in">strlen</span>((<span class="type">char</span> *)key));</span><br><span class="line">	<span class="keyword">return</span> hash &amp; dict-&gt;ht[<span class="number">0</span>].sizemask;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>举例：一个大小为4的空哈希表，新增一个键值对(k0, v0)， 假设通过哈希算法求出的哈希值为666，按照上面的伪代码，求出索引值为 666 % ( 4 - 1) &#x3D; 0，这说明这个节点需要插入到第0个哈希表数组，如图所示：</p>
+<p><img src="/2021/12/21/2021-12-21-redis-note-03-dict/image3.png"></p>
+<p><strong>REDIS 3.0中的哈希算法</strong></p>
+<p>使用Murmurhash2算法计算键的哈希值，返回uint32_t类型的哈希值。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">dictGenHashFunction</span><span class="params">(<span class="type">const</span> <span class="type">void</span> *key, <span class="type">int</span> len)</span>;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="为什么哈希表数组长度设计为2的n次方，有什么好处？"><a href="#为什么哈希表数组长度设计为2的n次方，有什么好处？" class="headerlink" title="为什么哈希表数组长度设计为2的n次方，有什么好处？"></a>为什么哈希表数组长度设计为2的n次方，有什么好处？<span id="jump6"></span></h4><p><strong>好处1</strong>：保证哈希表元素分布均匀，减少哈希冲突。以下举例说明：</p>
+<ul>
+<li><p>如果哈希表长度size不设置为2的n次方（比如这里设为15），那sizemask &#x3D; 14, 二进制表示：1110；这时假设我要插两个元素，哈希值分别是6 (110), 7 (111)，分别与1110进行与运算后，两者得到的结果是相同的，因此这两个元素存储到同一个链表中，导致效率低下。</p>
+</li>
+<li><p>如果size设计为2的n次方(比如16），sizemask的二进制为15，二进制表示：1111，此时哈希值6和7分别与1111运行与运算后得到结果110和111，因此这两个元素存储到不同的链表，保证了哈希表元素分布均匀。</p>
+</li>
+</ul>
+<p><strong>好处2</strong>：利用位运算比取模运算更快的特点，提高求哈希索引的效率。</p>
+<p>计算哈希索引的本质是取模求余数，但计算机不擅长做模运算，更擅长做位运算。我们注意到，只有在size是2的幂的条件下， 等式<code>hash &amp; (size - 1) == hash % size  </code>才成立。</p>
+<p>附：<a target="_blank" rel="noopener" href="https://www.codeprj.com/blog/acae4c1.html">位运算和取模运算的运算效率对比</a></p>
+<h3 id="如何解决键冲突"><a href="#如何解决键冲突" class="headerlink" title="如何解决键冲突"></a>如何解决键冲突<span id="jump7"></span></h3><p>常见的解决哈希冲突方法：</p>
+<ul>
+<li>开放寻址法 （线性探查法，平方探查法等）</li>
+<li>链地址法</li>
+<li>再哈希法</li>
+<li>……</li>
+</ul>
+<p>Redis中使用<strong>链地址法</strong>解决哈希键冲突，即将同一个索引值的多个哈希表节点通过单链表连接起来。</p>
+<p>链地址法优点是实现简单，适用于预先不知道哈希表数据大小，插入删除频繁的场景。</p>
+<h3 id="rehash操作"><a href="#rehash操作" class="headerlink" title="rehash操作"></a>rehash操作<span id="jump8"></span></h3><h4 id="为什么要rehash？"><a href="#为什么要rehash？" class="headerlink" title="为什么要rehash？"></a>为什么要rehash？<span id="jump9"></span></h4><p>哈希表的扩容和收缩操作通过rehash完成，rehash的目的在于将哈希表的负载因子(键的个数 &#x2F; 哈希表大小)始终维持在合理范围内，以达到最优的时间和空间性能。</p>
+<p>如果不设计字典的rehash动作，试考虑以下两个场景中的问题：</p>
+<ul>
+<li>新增大量的键值对到哈希表，查询某个键的时间复杂度从O(1)退化到O(N)，时间性能差。</li>
+<li>考虑一个保存大量键值对的哈希表，删除这个表的所有键后，哈希表数组的空间并没有释放，出现内存占用高甚至内存不足的问题，空间性能差。</li>
+</ul>
+<p>综上，必须设计字典的rehash动作，当哈希表保存键值对过多或过少时，对哈希表进行动态地扩容和收缩。</p>
+<h4 id="rehash的实现步骤"><a href="#rehash的实现步骤" class="headerlink" title="rehash的实现步骤"></a>rehash的实现步骤<span id="jump10"></span></h4><p>1、为字典的ht[1]分配空间，分配的空间大小取决于执行的操作(扩展或收缩）, 以及当前键值对数目（即ht[0].used的值），源码参考<code>_dictExpandIfNeeded</code></p>
+<ul>
+<li>如执行扩展操作，ht[1]的size设置为ht[0].used * 2, 参考<code>dictExpand</code></li>
+<li>如执行收缩操作，ht[1]的size设置为ht[0].used，参考<code>dictResize</code></li>
+</ul>
+<p>2、将ht[0]的所有键值对rehash到ht[1]，即重新计算ht[0]中所有键值对在ht[1]上的索引值，再将所有键值对加入ht[1]</p>
+<p>3、ht[0]中所有键值对完成rehash后，释放ht[0], 将ht[0]指向ht[1]，ht[1]置为空哈希表，为下一次rehash做准备。 </p>
+<p><strong>举例：</strong></p>
+<p>假设这里对一个大小为4的字典做扩展操作，字典初始状态如下图：<br><img src="/2021/12/21/2021-12-21-redis-note-03-dict/image4.png"></p>
+<p>1、为字典的ht[1]分配空间，大小为 4 * 2 &#x3D; 8，分配空间后的字典如下图：</p>
+<p><img src="/2021/12/21/2021-12-21-redis-note-03-dict/image5.png"></p>
+<p>2、将ht[0]的所有4个键值对rehash到ht[1]，假设重新计算得到的索引值为2, 3, 6, 7，如下图：<br><img src="/2021/12/21/2021-12-21-redis-note-03-dict/image6.png"></p>
+<p>3、释放ht[0]，将ht[0]指向ht[1], ht[1]置为空哈希表。和最初的字典对比，我们成功将哈希表的大小从4扩展到了8，如下图：</p>
+<p><img src="/2021/12/21/2021-12-21-redis-note-03-dict/image7.png"></p>
+<p>至此，我们搞清楚了为啥REDIS要在dict结构体中设计两个哈希表，原因如下：</p>
+<ul>
+<li><p>rehash过程中简化两个哈希表之间的数据迁移替换操作。</p>
+</li>
+<li><p>用于实现渐进式的rehash，参考<a href="#jump16">渐进式rehash</a></p>
+</li>
+</ul>
+<h4 id="为什么不直接复制ht-0-的节点到ht-1-，而是要重新计算哈希索引值再rehash？"><a href="#为什么不直接复制ht-0-的节点到ht-1-，而是要重新计算哈希索引值再rehash？" class="headerlink" title="为什么不直接复制ht[0]的节点到ht[1]，而是要重新计算哈希索引值再rehash？"></a>为什么不直接复制ht[0]的节点到ht[1]，而是要重新计算哈希索引值再rehash？<span id="jump11"></span></h4><p>先看下索引值如何计算的: idx &#x3D; <code>hashcode &amp; (dict-&gt;size - 1)</code></p>
+<p>注意到，rehash之后哈希数组的大小发生了变化，所以索引值必须重新计算。</p>
+<h3 id="rehash的触发条件是什么"><a href="#rehash的触发条件是什么" class="headerlink" title="rehash的触发条件是什么"></a>rehash的触发条件是什么<span id="jump12"></span></h3><p>rehash操作会导致哈希表的扩展或收缩，以下分别讨论哈希表扩展、哈希表收缩两个场景是如何触发的。</p>
+<h4 id="负载因子的概念"><a href="#负载因子的概念" class="headerlink" title="负载因子的概念"></a>负载因子的概念<span id="jump13"></span></h4><p>这里先给出哈希表负载因子的定义：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">load_factor = ht[<span class="number">0</span>].used / ht[<span class="number">0</span>].size;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，负载因子大于1时，说明一定出现了哈希冲突。</p>
+<h4 id="哈希表扩展策略"><a href="#哈希表扩展策略" class="headerlink" title="哈希表扩展策略"></a>哈希表扩展策略<span id="jump14"></span></h4><p>以下条件中满足任意一个，即自动触发哈希表的扩展操作：</p>
+<ul>
+<li>Redis服务器没有执行<code>BGSAVE</code>或<code>BGREWRITEAOF</code>命令，且哈希表负载因子大于等于1</li>
+<li>Redis服务器正在执行<code>BGSAVE</code>或<code>BGREWRITEAOF</code>命令，且哈希表负载因子大于等于5</li>
+</ul>
+<p><strong>说明</strong>：执行<code>BGSAVE</code>或<code>BGREWRITEAOF</code>操作时，Redis会fork一个子进程。为了充分利用写时复制(Copy On Write)技术，在子进程存在期间，Redis服务器会提高负载因子，避免子进程存在期间进行哈希表扩展操作，引入不必要的内存写入，从而提高性能。</p>
+<p>哈希表扩展策略的源码参考<code>_dictExpandifNeeded</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> dict_can_resize = <span class="number">1</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">int</span> dict_force_resize_ratio = <span class="number">5</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">int</span> _dictExpandIfNeeded(dict *d) &#123;</span><br><span class="line">    <span class="comment">/* Incremental rehashing already in progress. Return. */</span></span><br><span class="line">    <span class="keyword">if</span> (dictIsRehashing(d)) <span class="keyword">return</span> DICT_OK;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* If the hash table is empty expand it to the initial size. */</span></span><br><span class="line">    <span class="keyword">if</span> (d-&gt;ht[<span class="number">0</span>].size == <span class="number">0</span>) <span class="keyword">return</span> dictExpand(d, DICT_HT_INITIAL_SIZE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* If we reached the 1:1 ratio, and we are allowed to resize the hash</span></span><br><span class="line"><span class="comment">     * table (global setting) or we should avoid it but the ratio between</span></span><br><span class="line"><span class="comment">     * elements/buckets is over the &quot;safe&quot; threshold, we resize doubling</span></span><br><span class="line"><span class="comment">     * the number of buckets. */</span></span><br><span class="line">    <span class="keyword">if</span> (d-&gt;ht[<span class="number">0</span>].used &gt;= d-&gt;ht[<span class="number">0</span>].size &amp;&amp;		<span class="comment">// 哈希表扩展的条件</span></span><br><span class="line">        (dict_can_resize ||</span><br><span class="line">         d-&gt;ht[<span class="number">0</span>].used/d-&gt;ht[<span class="number">0</span>].size &gt; dict_force_resize_ratio))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> dictExpand(d, d-&gt;ht[<span class="number">0</span>].used*<span class="number">2</span>);	<span class="comment">// 扩展操作</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> DICT_OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">dictEnableResize</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    dict_can_resize = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">dictDisableResize</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    dict_can_resize = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">updateDictResizePolicy</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="comment">// 如果没有活跃的子进程，dict_can_resize写1，否则写0</span></span><br><span class="line">    <span class="keyword">if</span> (!hasActiveChildProcess())	<span class="comment">// (bgsave, bgwriteaof这些后台持久化操作在fork出的子进程中进行！</span></span><br><span class="line">        dictEnableResize();</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        dictDisableResize();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">hasActiveChildProcess</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> server.rdb_child_pid != <span class="number">-1</span> ||</span><br><span class="line">           server.aof_child_pid != <span class="number">-1</span> ||</span><br><span class="line">           server.module_child_pid != <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="哈希表收缩策略"><a href="#哈希表收缩策略" class="headerlink" title="哈希表收缩策略"></a>哈希表收缩策略<span id="jump15"></span></h4><p>哈希表的负载因子小于0.1时，Redis自动对哈希表做收缩操作。具体场景分析如下：</p>
+<ul>
+<li><p>删除哈希表中的某个键值对之后，通过<code>htNeedsResize</code>判断是否需对哈希表做收缩，参考<code>hdelCommand</code></p>
+</li>
+<li><p>Redis服务器的定时事件中，周期性地检查每个数据库键空间字典，调用<code>htNeedsResize</code>判断是否需对哈希表做收缩操作。</p>
+</li>
+</ul>
+<p>哈希表收缩策略参考源码<code>htNeedsResize</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> HASHTABLE_MIN_FILL 10      <span class="comment">/* Minimal hash table fill 10% */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> dictSlots(d) ((d)-&gt;ht[0].size+(d)-&gt;ht[1].size)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> dictSize(d) ((d)-&gt;ht[0].used+(d)-&gt;ht[1].used)</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">htNeedsResize</span><span class="params">(dict *dict)</span> &#123;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> size, used;</span><br><span class="line">    size = dictSlots(dict);</span><br><span class="line">    used = dictSize(dict);</span><br><span class="line">    <span class="keyword">return</span> (size &gt; DICT_HT_INITIAL_SIZE &amp;&amp;		</span><br><span class="line">            (used*<span class="number">100</span>/size &lt; HASHTABLE_MIN_FILL));	<span class="comment">// 负载因子小于0.1，表示需要收缩</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>哈希表收缩的实现参考源码<code>dictResize</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> DICT_HT_INITIAL_SIZE 4</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">dictResize</span><span class="params">(dict *d)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> minimal;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!dict_can_resize || dictIsRehashing(d)) <span class="keyword">return</span> DICT_ERR;</span><br><span class="line">    minimal = d-&gt;ht[<span class="number">0</span>].used;			<span class="comment">// 收缩后的哈希表大小为max(ht[0].used, 4)</span></span><br><span class="line">    <span class="keyword">if</span> (minimal &lt; DICT_HT_INITIAL_SIZE)</span><br><span class="line">        minimal = DICT_HT_INITIAL_SIZE;</span><br><span class="line">    <span class="keyword">return</span> dictExpand(d, minimal);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>定时事件中判断每个数据库键空间字典是否需要收缩，参考源码<code>databasesCron</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">databasesCron</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">	<span class="comment">// ....</span></span><br><span class="line">	<span class="keyword">if</span> (!hasActiveChildProcess()) &#123;	<span class="comment">// 如果没有执行bgsave, bgwriteaof</span></span><br><span class="line">        <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; <span class="number">16</span>; j++) &#123;</span><br><span class="line">            tryResizeHashTables(resize_db % server.dbnum); <span class="comment">// 尝试对每个数据库键空间字典和过期字典做哈希表收缩</span></span><br><span class="line">            resize_db++;</span><br><span class="line">        &#125;		</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">tryResizeHashTables</span><span class="params">(<span class="type">int</span> dbid)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (htNeedsResize(server.db[dbid].dict))</span><br><span class="line">        dictResize(server.db[dbid].dict);</span><br><span class="line">    <span class="keyword">if</span> (htNeedsResize(server.db[dbid].expires))</span><br><span class="line">        dictResize(server.db[dbid].expires);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="渐进式rehash"><a href="#渐进式rehash" class="headerlink" title="渐进式rehash"></a>渐进式rehash<span id="jump16"></span></h3><h4 id="为什么需要渐进式rehash"><a href="#为什么需要渐进式rehash" class="headerlink" title="为什么需要渐进式rehash"></a>为什么需要渐进式rehash<span id="jump17"></span></h4><p>考虑一个很大的字典（比如有1亿个key），当扩展或收缩哈希表时，需要将ht[0]中所有键值对rehash到ht[1]，这个计算量是非常庞大的，对Redis服务器性能有一定影响，甚至会导致服务器在一段时间内停止服务。</p>
+<p>因此，Redis服务器并不是一次性将ht[0]键值对全部rehash到ht[1]，而是分多次地，渐进式地完成rehash动作。</p>
+<h4 id="渐进式rehash的步骤"><a href="#渐进式rehash的步骤" class="headerlink" title="渐进式rehash的步骤"></a>渐进式rehash的步骤<span id="jump18"></span></h4><ul>
+<li><p>为ht[1]分配空间，并设置字典的rehashIdx为0，表示rehash从ht[0]的第0号链表开始。</p>
+</li>
+<li><p>每执行一次字典的增、删、改、查操作时，Redis调用一次<code>_dictRehashStep</code>，将ht[0]哈希表在rehashIdx索引上的所有键值对rehash到ht[1]，rehash完成后将rehashIdx加1</p>
+</li>
+<li><p>当ht[0]所有键值对都rehash到ht[1]后，将rehashIdx置为-1，表示rehash完成。</p>
+</li>
+<li><p>另外，Redis服务器的定时任务中，会周期性地调用<code>dictRehashMilliseconds</code>方法，在指定毫秒事件内对字典进行主动的rehash。</p>
+</li>
+</ul>
+<p>可以看出，渐进式rehash采用分治思想，将rehash计算量平摊到对字典的增、删、改、查操作上，避免了一次性rehash的庞大计算量。</p>
+<p><strong>rehash源码分析：</strong></p>
+<p>1、通过<code>_dictRehashStep</code>执行一次单步的rehash，源码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> _dictRehashStep(dict *d) &#123;</span><br><span class="line">    <span class="keyword">if</span> (d-&gt;iterators == <span class="number">0</span>) dictRehash(d,<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Performs N steps of incremental rehashing. Returns 1 if there are still</span></span><br><span class="line"><span class="comment"> * keys to move from the old to the new hash table, otherwise 0 is returned.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Note that a rehashing step consists in moving a bucket (that may have more</span></span><br><span class="line"><span class="comment"> * than one key as we use chaining) from the old to the new hash table, however</span></span><br><span class="line"><span class="comment"> * since part of the hash table may be composed of empty spaces, it is not</span></span><br><span class="line"><span class="comment"> * guaranteed that this function will rehash even a single bucket, since it</span></span><br><span class="line"><span class="comment"> * will visit at max N*10 empty buckets in total, otherwise the amount of</span></span><br><span class="line"><span class="comment"> * work it does would be unbound and the function may block for a long time. */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">dictRehash</span><span class="params">(dict *d, <span class="type">int</span> n)</span> &#123;</span><br><span class="line">    <span class="type">int</span> empty_visits = n*<span class="number">10</span>; <span class="comment">/* Max number of empty buckets to visit. */</span></span><br><span class="line">    <span class="keyword">if</span> (!dictIsRehashing(d)) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(n-- &amp;&amp; d-&gt;ht[<span class="number">0</span>].used != <span class="number">0</span>) &#123;</span><br><span class="line">        dictEntry *de, *nextde;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Note that rehashidx can&#x27;t overflow as we are sure there are more</span></span><br><span class="line"><span class="comment">         * elements because ht[0].used != 0 */</span></span><br><span class="line">        assert(d-&gt;ht[<span class="number">0</span>].size &gt; (<span class="type">unsigned</span> <span class="type">long</span>)d-&gt;rehashidx);</span><br><span class="line">        <span class="keyword">while</span>(d-&gt;ht[<span class="number">0</span>].table[d-&gt;rehashidx] == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            d-&gt;rehashidx++;</span><br><span class="line">            <span class="keyword">if</span> (--empty_visits == <span class="number">0</span>) <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        de = d-&gt;ht[<span class="number">0</span>].table[d-&gt;rehashidx];</span><br><span class="line">        <span class="comment">/* Move all the keys in this bucket from the old to the new hash HT */</span></span><br><span class="line">        <span class="keyword">while</span>(de) &#123;</span><br><span class="line">            <span class="type">uint64_t</span> h;</span><br><span class="line"></span><br><span class="line">            nextde = de-&gt;next;</span><br><span class="line">            <span class="comment">/* Get the index in the new hash table */</span></span><br><span class="line">            h = dictHashKey(d, de-&gt;key) &amp; d-&gt;ht[<span class="number">1</span>].sizemask;</span><br><span class="line">            de-&gt;next = d-&gt;ht[<span class="number">1</span>].table[h];</span><br><span class="line">            d-&gt;ht[<span class="number">1</span>].table[h] = de;</span><br><span class="line">            d-&gt;ht[<span class="number">0</span>].used--;</span><br><span class="line">            d-&gt;ht[<span class="number">1</span>].used++;</span><br><span class="line">            de = nextde;</span><br><span class="line">        &#125;</span><br><span class="line">        d-&gt;ht[<span class="number">0</span>].table[d-&gt;rehashidx] = <span class="literal">NULL</span>;</span><br><span class="line">        d-&gt;rehashidx++;											<span class="comment">// rehash完成后，将rehashidx计数加1</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Check if we already rehashed the whole table... */</span></span><br><span class="line">    <span class="keyword">if</span> (d-&gt;ht[<span class="number">0</span>].used == <span class="number">0</span>) &#123;</span><br><span class="line">        zfree(d-&gt;ht[<span class="number">0</span>].table);</span><br><span class="line">        d-&gt;ht[<span class="number">0</span>] = d-&gt;ht[<span class="number">1</span>];</span><br><span class="line">        _dictReset(&amp;d-&gt;ht[<span class="number">1</span>]);</span><br><span class="line">        d-&gt;rehashidx = <span class="number">-1</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* More to rehash... */</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Q：为什么要设置单步rehash中最大空桶访问次数限制(<code>empty_visit</code>)？ </p>
+<p>A：考虑一个非常大的哈希表，比如有10亿个key, 其中连续1亿个空桶。如果不设置这个限制，会导致rehash中遍历空桶耗时太多，出现服务器阻塞。</p>
+<p>2、通过定时任务中，周期性调用<code>dictRehashMilliseconds</code>，对字典执行主动rehash</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> <span class="type">long</span> <span class="title function_">timeInMilliseconds</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">tv</span>;</span></span><br><span class="line"></span><br><span class="line">    gettimeofday(&amp;tv,<span class="literal">NULL</span>);</span><br><span class="line">    <span class="keyword">return</span> (((<span class="type">long</span> <span class="type">long</span>)tv.tv_sec)*<span class="number">1000</span>)+(tv.tv_usec/<span class="number">1000</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Rehash in ms+&quot;delta&quot; milliseconds. The value of &quot;delta&quot; is larger </span></span><br><span class="line"><span class="comment"> * than 0, and is smaller than 1 in most cases. The exact upper bound </span></span><br><span class="line"><span class="comment"> * depends on the running time of dictRehash(d,100).*/</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">dictRehashMilliseconds</span><span class="params">(dict *d, <span class="type">int</span> ms)</span> &#123;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> start = timeInMilliseconds();</span><br><span class="line">    <span class="type">int</span> rehashes = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span>(dictRehash(d,<span class="number">100</span>)) &#123;</span><br><span class="line">        rehashes += <span class="number">100</span>;</span><br><span class="line">        <span class="keyword">if</span> (timeInMilliseconds()-start &gt; ms) <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> rehashes;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>实现细节分析：</p>
+<ul>
+<li><p>通过C语言库函数<code>gettimeofday</code>计算rehash前后的耗时，好处是跨平台，且时间精度可以达到微秒级。</p>
+</li>
+<li><p>通过循环多次执行一个短任务，每次比较实际用时与规定用时的方式，近似地实现规定时间内执行某个任务的目的。这种实现技巧简化了代码逻辑，值得学习借鉴。</p>
+</li>
+</ul>
+<h4 id="增、删、改、查场景中的rehash实现"><a href="#增、删、改、查场景中的rehash实现" class="headerlink" title="增、删、改、查场景中的rehash实现"></a>增、删、改、查场景中的rehash实现<span id="jump19"></span></h4><p>在rehash过程中，字典会同时使用ht[0], ht[1]两个哈希表，此时字典的增、删、改、查操作也会同时在两个字典中进行。</p>
+<ul>
+<li><p>查 —— 依次在ht[0], ht[1]中查找。</p>
+</li>
+<li><p>增 —— 新增的键值对总是只加入到ht[1]，目的是保证ht[0]中键值对只减不增，加速rehash的执行。</p>
+</li>
+<li><p>删 —— 依次在ht[0], ht[1]中查找节点，并删除。</p>
+</li>
+</ul>
+<p><strong>源码分析：</strong></p>
+<p>1、<code>dictAdd</code> 将给定键值对添加到字典，时间复杂度O(1)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">dictAdd</span><span class="params">(dict *d, <span class="type">void</span> *key, <span class="type">void</span> *val)</span> &#123;</span><br><span class="line">    dictEntry *entry = dictAddRaw(d,key,<span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!entry) <span class="keyword">return</span> DICT_ERR;</span><br><span class="line">    dictSetVal(d, entry, val);</span><br><span class="line">    <span class="keyword">return</span> DICT_OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dictEntry *<span class="title function_">dictAddRaw</span><span class="params">(dict *d, <span class="type">void</span> *key, dictEntry **existing)</span> &#123;</span><br><span class="line">    <span class="type">long</span> index;</span><br><span class="line">    dictEntry *entry;</span><br><span class="line">    dictht *ht;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dictIsRehashing(d)) _dictRehashStep(d);	<span class="comment">// 执行一次rehash</span></span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 计算哈希索引值</span></span><br><span class="line">    <span class="keyword">if</span> ((index = _dictKeyIndex(d, key, dictHashKey(d,key), existing)) == <span class="number">-1</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Allocate the memory and store the new entry.</span></span><br><span class="line"><span class="comment">     * Insert the element in top, with the assumption that in a database</span></span><br><span class="line"><span class="comment">     * system it is more likely that recently added entries are accessed</span></span><br><span class="line"><span class="comment">     * more frequently. </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    ht = dictIsRehashing(d) ? &amp;d-&gt;ht[<span class="number">1</span>] : &amp;d-&gt;ht[<span class="number">0</span>]; <span class="comment">// rehash中，新增的键值对加入ht[1]</span></span><br><span class="line">    entry = zmalloc(<span class="keyword">sizeof</span>(*entry));</span><br><span class="line">    entry-&gt;next = ht-&gt;table[index];	 <span class="comment">// 头插法，理由是最先插入的节点被频繁访问的可能性越大</span></span><br><span class="line">    ht-&gt;table[index] = entry;</span><br><span class="line">    ht-&gt;used++;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the hash entry fields. */</span></span><br><span class="line">    dictSetKey(d, entry, key);</span><br><span class="line">    <span class="keyword">return</span> entry;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>分析：</p>
+<ul>
+<li><p>每执行一次字典的插入操作，都会调用一次<code>_dictRehashStep</code>，做一次rehash</p>
+</li>
+<li><p>rehash过程中，新增的键值对总是加入到ht[1]，<code>ht = dictIsRehashing(d) ? &amp;d-&gt;ht[1] : &amp;d-&gt;ht[0];</code></p>
+</li>
+<li><p>使用头插法，理由是最先插入的节点后续被访问的可能性越大，而且实现也非常简单，节省内存。</p>
+</li>
+</ul>
+<p>2、<code>dictDelete</code>从字典中删除给定键的键值对，时间复杂度O(1)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">dictDelete</span><span class="params">(dict *ht, <span class="type">const</span> <span class="type">void</span> *key)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> dictGenericDelete(ht,key,<span class="number">0</span>) ? DICT_OK : DICT_ERR;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> dictEntry *<span class="title function_">dictGenericDelete</span><span class="params">(dict *d, <span class="type">const</span> <span class="type">void</span> *key, <span class="type">int</span> nofree)</span> &#123;</span><br><span class="line">    <span class="type">uint64_t</span> h, idx;</span><br><span class="line">    dictEntry *he, *prevHe;</span><br><span class="line">    <span class="type">int</span> table;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (d-&gt;ht[<span class="number">0</span>].used == <span class="number">0</span> &amp;&amp; d-&gt;ht[<span class="number">1</span>].used == <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;	<span class="comment">// 表空不能删除，直接返回</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dictIsRehashing(d)) _dictRehashStep(d);	<span class="comment">// 执行一次rehash</span></span><br><span class="line">    h = dictHashKey(d, key);	<span class="comment">// 计算哈希值</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (table = <span class="number">0</span>; table &lt;= <span class="number">1</span>; table++) &#123;	<span class="comment">// 删除操作同时使用ht[0], ht[1]两张表</span></span><br><span class="line">        idx = h &amp; d-&gt;ht[table].sizemask;	<span class="comment">// 计算索引值</span></span><br><span class="line">        he = d-&gt;ht[table].table[idx];</span><br><span class="line">        prevHe = <span class="literal">NULL</span>;</span><br><span class="line">        <span class="keyword">while</span>(he) &#123;</span><br><span class="line">            <span class="keyword">if</span> (key==he-&gt;key || dictCompareKeys(d, key, he-&gt;key)) &#123;</span><br><span class="line">                <span class="keyword">if</span> (prevHe)</span><br><span class="line">                    prevHe-&gt;next = he-&gt;next;</span><br><span class="line">                <span class="keyword">else</span></span><br><span class="line">                    d-&gt;ht[table].table[idx] = he-&gt;next;</span><br><span class="line">                <span class="keyword">if</span> (!nofree) &#123;</span><br><span class="line">                    dictFreeKey(d, he);</span><br><span class="line">                    dictFreeVal(d, he);</span><br><span class="line">                    zfree(he);</span><br><span class="line">                &#125;</span><br><span class="line">                d-&gt;ht[table].used--;</span><br><span class="line">                <span class="keyword">return</span> he;</span><br><span class="line">            &#125;</span><br><span class="line">            prevHe = he;</span><br><span class="line">            he = he-&gt;next;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (!dictIsRehashing(d)) <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>; <span class="comment">/* not found */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>分析：</p>
+<ul>
+<li>每执行一次字典的删除操作，都会调用一次<code>_dictRehashStep</code>，做一次rehash</li>
+<li>删除操作同时使用ht[0], ht[1]两张表</li>
+</ul>
+<p>3、<code>dictFetchValue</code>用于查找字典，返回给定键的值，时间复杂度O(1)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> *<span class="title function_">dictFetchValue</span><span class="params">(dict *d, <span class="type">const</span> <span class="type">void</span> *key)</span> &#123;</span><br><span class="line">    dictEntry *he;</span><br><span class="line">    he = dictFind(d,key);</span><br><span class="line">    <span class="keyword">return</span> he ? dictGetVal(he) : <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dictEntry *<span class="title function_">dictFind</span><span class="params">(dict *d, <span class="type">const</span> <span class="type">void</span> *key)</span> &#123;</span><br><span class="line">    dictEntry *he;</span><br><span class="line">    <span class="type">uint64_t</span> h, idx, table;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dictSize(d) == <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (dictIsRehashing(d)) _dictRehashStep(d); <span class="comment">// 执行一次rehash</span></span><br><span class="line">    h = dictHashKey(d, key);</span><br><span class="line">    <span class="keyword">for</span> (table = <span class="number">0</span>; table &lt;= <span class="number">1</span>; table++) &#123; 		<span class="comment">// 查询操作同时使用ht[0], ht[1]两张表</span></span><br><span class="line">        idx = h &amp; d-&gt;ht[table].sizemask;</span><br><span class="line">        he = d-&gt;ht[table].table[idx];</span><br><span class="line">        <span class="keyword">while</span>(he) &#123;</span><br><span class="line">            <span class="keyword">if</span> (key==he-&gt;key || dictCompareKeys(d, key, he-&gt;key))</span><br><span class="line">                <span class="keyword">return</span> he;</span><br><span class="line">            he = he-&gt;next;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (!dictIsRehashing(d)) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>分析：</p>
+<ul>
+<li>每执行一次字典的查询操作，都会调用一次<code>_dictRehashStep</code>，做一次rehash</li>
+<li>查询操作同时使用ht[0], ht[1]两张表</li>
+</ul>
+<h3 id="字典API"><a href="#字典API" class="headerlink" title="字典API"></a>字典API<span id="jump20"></span></h3><table>
+<thead>
+<tr>
+<th>API</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>dictCreate</td>
+<td>创建字典</td>
+</tr>
+<tr>
+<td>dictRelease</td>
+<td>释放字典</td>
+</tr>
+<tr>
+<td>dictAdd</td>
+<td>新增一个键值对到字典</td>
+</tr>
+<tr>
+<td>dictFetchValue</td>
+<td>查找字典，返回给定键的值</td>
+</tr>
+<tr>
+<td>dictDelete</td>
+<td>从字典中删除给定键的键值对</td>
+</tr>
+</tbody></table>
+<h4 id="随机返回一个键值对"><a href="#随机返回一个键值对" class="headerlink" title="随机返回一个键值对"></a>随机返回一个键值对<span id="jump21"></span></h4><p>源码参考<code>dictGetRandomKey</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">dictEntry *<span class="title function_">dictGetRandomKey</span><span class="params">(dict *d)</span> &#123;</span><br><span class="line">    dictEntry *he, *orighe;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> h;</span><br><span class="line">    <span class="type">int</span> listlen, listele;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dictSize(d) == <span class="number">0</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (dictIsRehashing(d)) _dictRehashStep(d);</span><br><span class="line">    <span class="keyword">if</span> (dictIsRehashing(d)) &#123;</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            <span class="comment">/* We are sure there are no elements in indexes from 0</span></span><br><span class="line"><span class="comment">             * to rehashidx-1 */</span></span><br><span class="line">            h = d-&gt;rehashidx + (random() % (d-&gt;ht[<span class="number">0</span>].size +</span><br><span class="line">                                            d-&gt;ht[<span class="number">1</span>].size -</span><br><span class="line">                                            d-&gt;rehashidx));</span><br><span class="line">            he = (h &gt;= d-&gt;ht[<span class="number">0</span>].size) ? d-&gt;ht[<span class="number">1</span>].table[h - d-&gt;ht[<span class="number">0</span>].size] :</span><br><span class="line">                                      d-&gt;ht[<span class="number">0</span>].table[h];</span><br><span class="line">        &#125; <span class="keyword">while</span>(he == <span class="literal">NULL</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            h = random() &amp; d-&gt;ht[<span class="number">0</span>].sizemask;</span><br><span class="line">            he = d-&gt;ht[<span class="number">0</span>].table[h];</span><br><span class="line">        &#125; <span class="keyword">while</span>(he == <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Now we found a non empty bucket, but it is a linked</span></span><br><span class="line"><span class="comment">     * list and we need to get a random element from the list.</span></span><br><span class="line"><span class="comment">     * The only sane way to do so is counting the elements and</span></span><br><span class="line"><span class="comment">     * select a random index. */</span></span><br><span class="line">    listlen = <span class="number">0</span>;</span><br><span class="line">    orighe = he;</span><br><span class="line">    <span class="keyword">while</span>(he) &#123;</span><br><span class="line">        he = he-&gt;next;</span><br><span class="line">        listlen++;</span><br><span class="line">    &#125;</span><br><span class="line">    listele = random() % listlen;</span><br><span class="line">    he = orighe;</span><br><span class="line">    <span class="keyword">while</span>(listele--) he = he-&gt;next;</span><br><span class="line">    <span class="keyword">return</span> he;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>分析：</p>
+<ul>
+<li><p>实现思路是：先随机选取一个非空的桶，再随机选取链表中的一个节点。</p>
+</li>
+<li><p>理想情况下，哈希表中的每个链表的长度为1，所以这里用O(N)复杂度随机获取链表节点是完全可以接受的，不记录链表长度目的是为了节省内存。</p>
+</li>
+</ul>
+<h4 id="字典迭代器的实现"><a href="#字典迭代器的实现" class="headerlink" title="字典迭代器的实现"></a>字典迭代器的实现<span id="jump22"></span></h4><h5 id="1、先看下字典迭代器的结构体定义"><a href="#1、先看下字典迭代器的结构体定义" class="headerlink" title="1、先看下字典迭代器的结构体定义"></a>1、先看下字典迭代器的结构体定义</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* If safe is set to 1 this is a safe iterator, that means, you can call</span></span><br><span class="line"><span class="comment"> * dictAdd, dictFind, and other functions against the dictionary even while</span></span><br><span class="line"><span class="comment"> * iterating. Otherwise it is a non safe iterator, and only dictNext()</span></span><br><span class="line"><span class="comment"> * should be called while iterating. */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">dictIterator</span> &#123;</span></span><br><span class="line">    dict *d;</span><br><span class="line">    <span class="type">long</span> index;						<span class="comment">// 当前遍历到的哈希表中的索引值</span></span><br><span class="line">    <span class="type">int</span> table;						<span class="comment">// 取值只能是0或1</span></span><br><span class="line">    <span class="type">int</span> safe;						<span class="comment">// 表示这个迭代器是否是安全的，1表示安全，0表示不安全</span></span><br><span class="line">    dictEntry *entry, *nextEntry;	<span class="comment">// 迭代器指向的当前元素，以及下一个要遍历的元素</span></span><br><span class="line">    <span class="comment">/* unsafe iterator fingerprint for misuse detection. */</span></span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> fingerprint;			<span class="comment">// 字典的指纹</span></span><br><span class="line">&#125; dictIterator;</span><br></pre></td></tr></table></figure>
+
+<p>1、safe成员为1，表示这个迭代器是安全的。安全指的是遍历过程中允许对字典做修改操作，且迭代中不会出现元素重复。所以当字典绑定了安全迭代器时，Redis不允许出现rehash操作，源码参考：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> _dictRehashStep(dict *d) &#123;</span><br><span class="line">    <span class="keyword">if</span> (d-&gt;iterators == <span class="number">0</span>) dictRehash(d,<span class="number">1</span>);	<span class="comment">// 只有未绑定安全迭代器时，才执行dictRehash</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>safe成员为0，表示这个迭代器是不安全的。不安全指的是遍历过程中不允许修改这个字典，且遍历过程中可能出现重复元素。它的优点在于允许rehash。</p>
+<p>2、fingerprint为字典的指纹，在首次迭代时生成指纹，销毁迭代器时比较指纹，如果两者不一致，说明出现异常，程序退出。源码参考：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">dictReleaseIterator</span><span class="params">(dictIterator *iter)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!(iter-&gt;index == <span class="number">-1</span> &amp;&amp; iter-&gt;table == <span class="number">0</span>)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (iter-&gt;safe)</span><br><span class="line">            iter-&gt;d-&gt;iterators--;		<span class="comment">// 计数减1，允许rehash操作</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            assert(iter-&gt;fingerprint == dictFingerprint(iter-&gt;d));	<span class="comment">// 比较指纹</span></span><br><span class="line">    &#125;</span><br><span class="line">    zfree(iter);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>指纹的生成方法参考<code>dictFingerprint</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> <span class="type">long</span> <span class="title function_">dictFingerprint</span><span class="params">(dict *d)</span> &#123;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> integers[<span class="number">6</span>], hash = <span class="number">0</span>;</span><br><span class="line">    <span class="type">int</span> j;</span><br><span class="line"></span><br><span class="line">    integers[<span class="number">0</span>] = (<span class="type">long</span>) d-&gt;ht[<span class="number">0</span>].table;</span><br><span class="line">    integers[<span class="number">1</span>] = d-&gt;ht[<span class="number">0</span>].size;</span><br><span class="line">    integers[<span class="number">2</span>] = d-&gt;ht[<span class="number">0</span>].used;</span><br><span class="line">    integers[<span class="number">3</span>] = (<span class="type">long</span>) d-&gt;ht[<span class="number">1</span>].table;</span><br><span class="line">    integers[<span class="number">4</span>] = d-&gt;ht[<span class="number">1</span>].size;</span><br><span class="line">    integers[<span class="number">5</span>] = d-&gt;ht[<span class="number">1</span>].used;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* We hash N integers by summing every successive integer with the integer</span></span><br><span class="line"><span class="comment">     * hashing of the previous sum. Basically:</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Result = hash(hash(hash(int1)+int2)+int3) ...</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * This way the same set of integers in a different order will (likely) hash</span></span><br><span class="line"><span class="comment">     * to a different number. */</span></span><br><span class="line">    <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; <span class="number">6</span>; j++) &#123;</span><br><span class="line">        hash += integers[j];</span><br><span class="line">        <span class="comment">/* For the hashing step we use Tomas Wang&#x27;s 64 bit integer hash. */</span></span><br><span class="line">        hash = (~hash) + (hash &lt;&lt; <span class="number">21</span>); <span class="comment">// hash = (hash &lt;&lt; 21) - hash - 1;</span></span><br><span class="line">        hash = hash ^ (hash &gt;&gt; <span class="number">24</span>);</span><br><span class="line">        hash = (hash + (hash &lt;&lt; <span class="number">3</span>)) + (hash &lt;&lt; <span class="number">8</span>); <span class="comment">// hash * 265</span></span><br><span class="line">        hash = hash ^ (hash &gt;&gt; <span class="number">14</span>);</span><br><span class="line">        hash = (hash + (hash &lt;&lt; <span class="number">2</span>)) + (hash &lt;&lt; <span class="number">4</span>); <span class="comment">// hash * 21</span></span><br><span class="line">        hash = hash ^ (hash &gt;&gt; <span class="number">28</span>);</span><br><span class="line">        hash = hash + (hash &lt;&lt; <span class="number">31</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> hash;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h5 id="2、迭代器初始化"><a href="#2、迭代器初始化" class="headerlink" title="2、迭代器初始化"></a>2、迭代器初始化</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">dictIterator *<span class="title function_">dictGetIterator</span><span class="params">(dict *d)</span> &#123;</span><br><span class="line">    dictIterator *iter = zmalloc(<span class="keyword">sizeof</span>(*iter));</span><br><span class="line">    iter-&gt;d = d;</span><br><span class="line">    iter-&gt;table = <span class="number">0</span>;</span><br><span class="line">    iter-&gt;index = <span class="number">-1</span>;</span><br><span class="line">    iter-&gt;safe = <span class="number">0</span>;</span><br><span class="line">    iter-&gt;entry = <span class="literal">NULL</span>;</span><br><span class="line">    iter-&gt;nextEntry = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">return</span> iter;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dictIterator *<span class="title function_">dictGetSafeIterator</span><span class="params">(dict *d)</span> &#123;</span><br><span class="line">    dictIterator *i = dictGetIterator(d);</span><br><span class="line"></span><br><span class="line">    i-&gt;safe = <span class="number">1</span>;	<span class="comment">// 安全迭代器和非安全迭代器初始化的区别就是safe成员不同而已！</span></span><br><span class="line">    <span class="keyword">return</span> i;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，安全迭代器和非安全迭代器初始化的区别就是safe成员不同而已。</p>
+<h5 id="3、遍历下一个节点"><a href="#3、遍历下一个节点" class="headerlink" title="3、遍历下一个节点"></a>3、遍历下一个节点</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">dictEntry *<span class="title function_">dictNext</span><span class="params">(dictIterator *iter)</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (iter-&gt;entry == <span class="literal">NULL</span>) &#123;		<span class="comment">// 如果为空，遍历下一个索引</span></span><br><span class="line">            dictht *ht = &amp;iter-&gt;d-&gt;ht[iter-&gt;table];</span><br><span class="line">            <span class="keyword">if</span> (iter-&gt;index == <span class="number">-1</span> &amp;&amp; iter-&gt;table == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (iter-&gt;safe)</span><br><span class="line">                    iter-&gt;d-&gt;iterators++;</span><br><span class="line">                <span class="keyword">else</span></span><br><span class="line">                    iter-&gt;fingerprint = dictFingerprint(iter-&gt;d);	<span class="comment">// 如果是非安全迭代器，计算指纹</span></span><br><span class="line">            &#125;</span><br><span class="line">            iter-&gt;index++;</span><br><span class="line">            <span class="keyword">if</span> (iter-&gt;index &gt;= (<span class="type">long</span>) ht-&gt;size) &#123;	<span class="comment">// 如果当前哈希表是ht[0]且遍历完成，尝试遍历ht[1]</span></span><br><span class="line">                <span class="keyword">if</span> (dictIsRehashing(iter-&gt;d) &amp;&amp; iter-&gt;table == <span class="number">0</span>) &#123;</span><br><span class="line">                    iter-&gt;table++;</span><br><span class="line">                    iter-&gt;index = <span class="number">0</span>;</span><br><span class="line">                    ht = &amp;iter-&gt;d-&gt;ht[<span class="number">1</span>];</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            iter-&gt;entry = ht-&gt;table[iter-&gt;index];</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;	<span class="comment">// 否则，遍历当前链表的下一个元素</span></span><br><span class="line">            iter-&gt;entry = iter-&gt;nextEntry;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (iter-&gt;entry) &#123;</span><br><span class="line">            <span class="comment">/* We need to save the &#x27;next&#x27; here, the iterator user</span></span><br><span class="line"><span class="comment">             * may delete the entry we are returning. */</span></span><br><span class="line">            iter-&gt;nextEntry = iter-&gt;entry-&gt;next;</span><br><span class="line">            <span class="keyword">return</span> iter-&gt;entry;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>简要概括，这个遍历操作就是从ht[0]到ht[1]，再沿着哈希表数组往下遍历。</p>
+<h4 id="dictScan算法"><a href="#dictScan算法" class="headerlink" title="dictScan算法"></a>dictScan算法<span id="jump23"></span></h4><p>dictScan算法用于遍历字典，是Redis字典源码中最为精妙，同时也是最难理解的算法。</p>
+<p><strong>字典遍历算法的复杂性分析</strong></p>
+<p>Redis字典涉及Rehash操作，如果在两次遍历键之间，字典发生了扩展或收缩，就会导致哈希键的索引值变化。字典遍历算法实现的难点在于<font color = 'red'><strong>如何保证字典中原有元素都能被遍历到，且迭代到的重复元素尽可能地少</strong></font></p>
+<p>Redis实现的dictScan算法特点如下：</p>
+<ul>
+<li><p>开始遍历时的所有元素，只要不被删除都能被返回</p>
+</li>
+<li><p>rehash过程中，算法可能返回重复元素，遍历过程中新增或删除的key可能返回，可能不返回。</p>
+</li>
+</ul>
+<p><strong>具体实现分析：</strong></p>
+<p>先挖个坑，后续再填。。。。。。</p>
+<p>网上已有非常深入的分析，推荐这篇：<a target="_blank" rel="noopener" href="https://tech.meituan.com/2018/07/27/redis-rehash-practice-optimization.html">美团针对Redis Rehash机制的探索和实践</a></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第4章 字典</p>
+<p>【2】<a target="_blank" rel="noopener" href="https://juejin.cn/post/6844903702373859335">Copy On Write机制了解一下</a></p>
+<p>【3】<a target="_blank" rel="noopener" href="https://tech.meituan.com/2018/07/27/redis-rehash-practice-optimization.html">美团针对Redis Rehash机制的探索和实践</a></p>
+<p>【4】<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1672781">解决哈希冲突的常用方法分析</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"><i class="fa fa-tag"></i> Redis</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/12/2021-12-12-redis-note-02-linkedlist/" rel="prev" title="Redis学习笔记(二)——链表">
+      <i class="fa fa-chevron-left"></i> Redis学习笔记(二)——链表
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/12/30/2021-12-30-redis-note-04-ziplist/" rel="next" title="Redis学习笔记(四)——ziplist">
+      Redis学习笔记(四)——ziplist <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%80%9D%E8%80%83"><span class="nav-number">2.</span> <span class="nav-text">问题思考</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%97%E5%85%B8%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.1.</span> <span class="nav-text">字典的设计与实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%93%88%E5%B8%8C%E8%A1%A8%E5%92%8C%E5%93%88%E5%B8%8C%E8%A1%A8%E8%8A%82%E7%82%B9%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.1.1.</span> <span class="nav-text">哈希表和哈希表节点的设计</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E5%85%B8%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.1.2.</span> <span class="nav-text">字典的数据结构设计</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%AE%BE%E8%AE%A1%E5%A4%9A%E6%80%81%E5%AD%97%E5%85%B8%EF%BC%9F"><span class="nav-number">2.1.3.</span> <span class="nav-text">如何设计多态字典？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95"><span class="nav-number">2.2.</span> <span class="nav-text">哈希算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%93%88%E5%B8%8C%E8%A1%A8%E6%95%B0%E7%BB%84%E9%95%BF%E5%BA%A6%E8%AE%BE%E8%AE%A1%E4%B8%BA2%E7%9A%84n%E6%AC%A1%E6%96%B9%EF%BC%8C%E6%9C%89%E4%BB%80%E4%B9%88%E5%A5%BD%E5%A4%84%EF%BC%9F"><span class="nav-number">2.2.1.</span> <span class="nav-text">为什么哈希表数组长度设计为2的n次方，有什么好处？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3%E9%94%AE%E5%86%B2%E7%AA%81"><span class="nav-number">2.3.</span> <span class="nav-text">如何解决键冲突</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rehash%E6%93%8D%E4%BD%9C"><span class="nav-number">2.4.</span> <span class="nav-text">rehash操作</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81rehash%EF%BC%9F"><span class="nav-number">2.4.1.</span> <span class="nav-text">为什么要rehash？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rehash%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%AD%A5%E9%AA%A4"><span class="nav-number">2.4.2.</span> <span class="nav-text">rehash的实现步骤</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%9B%B4%E6%8E%A5%E5%A4%8D%E5%88%B6ht-0-%E7%9A%84%E8%8A%82%E7%82%B9%E5%88%B0ht-1-%EF%BC%8C%E8%80%8C%E6%98%AF%E8%A6%81%E9%87%8D%E6%96%B0%E8%AE%A1%E7%AE%97%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95%E5%80%BC%E5%86%8Drehash%EF%BC%9F"><span class="nav-number">2.4.3.</span> <span class="nav-text">为什么不直接复制ht[0]的节点到ht[1]，而是要重新计算哈希索引值再rehash？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rehash%E7%9A%84%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">2.5.</span> <span class="nav-text">rehash的触发条件是什么</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B4%9F%E8%BD%BD%E5%9B%A0%E5%AD%90%E7%9A%84%E6%A6%82%E5%BF%B5"><span class="nav-number">2.5.1.</span> <span class="nav-text">负载因子的概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%93%88%E5%B8%8C%E8%A1%A8%E6%89%A9%E5%B1%95%E7%AD%96%E7%95%A5"><span class="nav-number">2.5.2.</span> <span class="nav-text">哈希表扩展策略</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%93%88%E5%B8%8C%E8%A1%A8%E6%94%B6%E7%BC%A9%E7%AD%96%E7%95%A5"><span class="nav-number">2.5.3.</span> <span class="nav-text">哈希表收缩策略</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B8%90%E8%BF%9B%E5%BC%8Frehash"><span class="nav-number">2.6.</span> <span class="nav-text">渐进式rehash</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E6%B8%90%E8%BF%9B%E5%BC%8Frehash"><span class="nav-number">2.6.1.</span> <span class="nav-text">为什么需要渐进式rehash</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B8%90%E8%BF%9B%E5%BC%8Frehash%E7%9A%84%E6%AD%A5%E9%AA%A4"><span class="nav-number">2.6.2.</span> <span class="nav-text">渐进式rehash的步骤</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A2%9E%E3%80%81%E5%88%A0%E3%80%81%E6%94%B9%E3%80%81%E6%9F%A5%E5%9C%BA%E6%99%AF%E4%B8%AD%E7%9A%84rehash%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.6.3.</span> <span class="nav-text">增、删、改、查场景中的rehash实现</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%97%E5%85%B8API"><span class="nav-number">2.7.</span> <span class="nav-text">字典API</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%9A%8F%E6%9C%BA%E8%BF%94%E5%9B%9E%E4%B8%80%E4%B8%AA%E9%94%AE%E5%80%BC%E5%AF%B9"><span class="nav-number">2.7.1.</span> <span class="nav-text">随机返回一个键值对</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E5%85%B8%E8%BF%AD%E4%BB%A3%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.7.2.</span> <span class="nav-text">字典迭代器的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1%E3%80%81%E5%85%88%E7%9C%8B%E4%B8%8B%E5%AD%97%E5%85%B8%E8%BF%AD%E4%BB%A3%E5%99%A8%E7%9A%84%E7%BB%93%E6%9E%84%E4%BD%93%E5%AE%9A%E4%B9%89"><span class="nav-number">2.7.2.1.</span> <span class="nav-text">1、先看下字典迭代器的结构体定义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2%E3%80%81%E8%BF%AD%E4%BB%A3%E5%99%A8%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">2.7.2.2.</span> <span class="nav-text">2、迭代器初始化</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3%E3%80%81%E9%81%8D%E5%8E%86%E4%B8%8B%E4%B8%80%E4%B8%AA%E8%8A%82%E7%82%B9"><span class="nav-number">2.7.2.3.</span> <span class="nav-text">3、遍历下一个节点</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#dictScan%E7%AE%97%E6%B3%95"><span class="nav-number">2.7.3.</span> <span class="nav-text">dictScan算法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">50</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">214k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:14</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>
