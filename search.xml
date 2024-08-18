@@ -24,6 +24,41 @@
       </tags>
   </entry>
   <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -75,41 +110,6 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -391,6 +391,24 @@
       </tags>
   </entry>
   <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>CSAPP 二进制炸弹实验</title>
     <url>/2020/07/26/2020-07-26-csapp-bomblab/</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>二进制炸弹是一个作为目标代码提供的程序。运行时提示用户输入6个不同的字符串，如其中一个字符串不正确，炸弹会引爆并打印一条错误信息。需要通过反汇编确定输入的6个字符串，从而拆除炸弹。</p>
@@ -642,24 +660,6 @@
       <tags>
         <tag>Assembly</tag>
         <tag>CSAPP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -4341,24 +4341,6 @@
       </tags>
   </entry>
   <entry>
-    <title>crontab执行失败返回127的原因和解决方法</title>
-    <url>/2023/05/08/2023-05-08-cronjob-return-127-case/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>crontab</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>使用systemd启动stunnel，并设置自动重启的方法</title>
     <url>/2023/04/26/2023-04-26-use-systemd-to-start-stunnel/</url>
     <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p>运行环境: Centos7</p>
@@ -4391,6 +4373,24 @@
       </categories>
       <tags>
         <tag>systemd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>crontab执行失败返回127的原因和解决方法</title>
+    <url>/2023/05/08/2023-05-08-cronjob-return-127-case/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>crontab</tag>
       </tags>
   </entry>
   <entry>
@@ -4477,6 +4477,53 @@
       </tags>
   </entry>
   <entry>
+    <title>在Docker中使用GDB调试的方法</title>
+    <url>/2023/05/09/2023-05-09-how-to-use-gdb-in-docker/</url>
+    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
+<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
+<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LeetCode 常用数据结构和算法(C++)</title>
+    <url>/2023/05/09/2023-05-09-leetcode-common-datastructure-and-algorithm-cplusplus/</url>
+    <content><![CDATA[<h2 id="list"><a href="#list" class="headerlink" title="list"></a>list</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">list&lt;<span class="type">int</span>&gt; list;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs )</span></span>;				<span class="comment">// 全部移动</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs, iterator ix )</span></span>;	<span class="comment">// 移一个</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs, iterator first, iterator last )</span></span>;	<span class="comment">// 移一组</span></span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+<h2 id="pair"><a href="#pair" class="headerlink" title="pair"></a>pair</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt; v = &#123;<span class="number">1</span>, <span class="number">2</span>&#125;</span><br><span class="line">v.first</span><br><span class="line">v.second</span><br></pre></td></tr></table></figure>
+<h2 id="stack"><a href="#stack" class="headerlink" title="stack"></a>stack</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">stack&lt;<span class="type">int</span>&gt; v;</span><br></pre></td></tr></table></figure>
+<h2 id="deque"><a href="#deque" class="headerlink" title="deque"></a>deque</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">deque&lt;pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt;&gt; q;</span><br><span class="line">q.<span class="built_in">front</span>()</span><br><span class="line">q.<span class="built_in">back</span>()</span><br><span class="line">q.<span class="built_in">pop_front</span>()</span><br><span class="line">q.<span class="built_in">pop_back</span>()</span><br><span class="line">q.<span class="built_in">push_back</span>()</span><br><span class="line">q.<span class="built_in">push_front</span>()</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line">queue = deque([<span class="string">&quot;Eric&quot;</span>, <span class="string">&quot;John&quot;</span>, <span class="string">&quot;Michael&quot;</span>])</span><br><span class="line">queue.append(<span class="string">&quot;Graham&quot;</span>)</span><br><span class="line">queue.popleft()</span><br></pre></td></tr></table></figure>
+<h2 id="queue"><a href="#queue" class="headerlink" title="queue"></a>queue</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">queue&lt;<span class="type">int</span>&gt; q;</span><br><span class="line">q.<span class="built_in">push</span>(x);</span><br><span class="line">q.<span class="built_in">front</span>();</span><br><span class="line">q.<span class="built_in">pop</span>();</span><br><span class="line">q.<span class="built_in">top</span>();</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">q=Queue(maxsize=<span class="number">5</span>)  <span class="comment"># 先进先出</span></span><br><span class="line">q=LifoQueue()		<span class="comment"># 后进先出</span></span><br><span class="line">pq=PriorityQueue()	<span class="comment"># 优先级队列</span></span><br><span class="line">p.put(i)</span><br><span class="line">p.empty()</span><br><span class="line">q.qsize()</span><br><span class="line">q.full()</span><br><span class="line">q.get()</span><br></pre></td></tr></table></figure>
+<h2 id="heap"><a href="#heap" class="headerlink" title="heap"></a>heap</h2><figure class="highlight c++"><figcaption><span>大根堆</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">findKthLargest</span><span class="params">(vector&lt;<span class="type">int</span>&gt;&amp; nums, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">    priority_queue&lt;<span class="type">int</span>, vector&lt;<span class="type">int</span>&gt;, less&lt;<span class="type">int</span>&gt;&gt; h;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; nums.<span class="built_in">size</span>(); ++i) &#123;</span><br><span class="line">        h.<span class="built_in">push</span>(nums[i]);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k - <span class="number">1</span>; ++i) &#123;</span><br><span class="line">        h.<span class="built_in">pop</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> h.<span class="built_in">top</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># https://blog.csdn.net/weixin_43790276/article/details/107741332</span></span><br><span class="line"><span class="keyword">import</span> heapq</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">findKthLargest</span>(<span class="params">self, nums: <span class="type">List</span>[<span class="built_in">int</span>], k: <span class="built_in">int</span></span>) -&gt; <span class="built_in">int</span>:</span><br><span class="line">        heap = []</span><br><span class="line">        n = <span class="built_in">len</span>(nums)</span><br><span class="line">        <span class="keyword">for</span> num <span class="keyword">in</span> nums:</span><br><span class="line">            heapq.heappush(heap, num)</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(n - k):</span><br><span class="line">            heapq.heappop(heap)</span><br><span class="line">        <span class="keyword">return</span> heap[<span class="number">0</span>]</span><br></pre></td></tr></table></figure>
+<h2 id="hash"><a href="#hash" class="headerlink" title="hash"></a>hash</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">unordered_map&lt;<span class="type">int</span>, <span class="type">int</span>&gt; ht;</span><br><span class="line">ht.<span class="built_in">find</span>(key) != ht.<span class="built_in">end</span>() <span class="comment">// exist</span></span><br><span class="line">iter-&gt;<span class="built_in">first</span>()</span><br><span class="line">iter-&gt;<span class="built_in">second</span>()</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">dic = &#123;&#125;</span><br><span class="line"><span class="keyword">if</span> key <span class="keyword">in</span> dic:</span><br><span class="line">rows = <span class="built_in">set</span>()</span><br><span class="line">rows.add(<span class="number">1</span>)</span><br><span class="line">rows.remove(<span class="number">2</span>)</span><br><span class="line">rows.clear()</span><br></pre></td></tr></table></figure>
+<h2 id="sort"><a href="#sort" class="headerlink" title="sort"></a>sort</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="built_in">sort</span>(arr.<span class="built_in">begin</span>(), arr.<span class="built_in">end</span>());</span><br><span class="line"><span class="built_in">sort</span>(myvector.<span class="built_in">begin</span>(), myvector.<span class="built_in">begin</span>() + <span class="number">4</span>, std::<span class="built_in">greater</span>&lt;<span class="type">int</span>&gt;());</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># intervals: List[List[int]]</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">cmp</span>(<span class="params">listx, listy</span>):</span><br><span class="line">    <span class="keyword">if</span> listx[<span class="number">0</span>] == listy[<span class="number">0</span>]:</span><br><span class="line">        <span class="keyword">return</span> listx[<span class="number">1</span>] - listy[<span class="number">1</span>]</span><br><span class="line">    <span class="keyword">return</span> listx[<span class="number">0</span>] - listy[<span class="number">0</span>]</span><br><span class="line">intervals.sort(key=cmp_to_key(cmp))</span><br></pre></td></tr></table></figure>
+<h2 id="string-sort"><a href="#string-sort" class="headerlink" title="string sort"></a>string sort</h2><figure class="highlight py"><table><tr><td class="code"><pre><span class="line">sorted_str = <span class="string">&#x27;&#x27;</span>.join(<span class="built_in">sorted</span>(strs[i]))</span><br></pre></td></tr></table></figure>
+<h2 id="custom-sort"><a href="#custom-sort" class="headerlink" title="custom sort"></a>custom sort</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="type">bool</span> <span class="title">Cmp</span><span class="params">(vector&lt;<span class="type">int</span>&gt; &amp;v1, vector&lt;<span class="type">int</span>&gt; &amp;v2)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (v1[<span class="number">0</span>] == v2[<span class="number">0</span>]) <span class="keyword">return</span> v1[<span class="number">1</span>] &lt; v2[<span class="number">1</span>];</span><br><span class="line">    <span class="keyword">return</span> v1[<span class="number">0</span>] &lt; v2[<span class="number">0</span>];</span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">sort</span>(intervals.<span class="built_in">begin</span>(), intervals.<span class="built_in">end</span>(), Cmp);</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> functools <span class="keyword">import</span> cmp_to_key</span><br><span class="line">lst = [(<span class="number">9</span>, <span class="number">4</span>), (<span class="number">2</span>, <span class="number">10</span>), (<span class="number">4</span>, <span class="number">3</span>), (<span class="number">3</span>, <span class="number">6</span>)]</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">cmp</span>(<span class="params">x, y</span>):</span><br><span class="line">    a = x[<span class="number">0</span>] <span class="keyword">if</span> x[<span class="number">0</span>] %<span class="number">2</span> == <span class="number">1</span> <span class="keyword">else</span> x[<span class="number">1</span>]</span><br><span class="line">    b = y[<span class="number">0</span>] <span class="keyword">if</span> y[<span class="number">0</span>] %<span class="number">2</span> == <span class="number">1</span> <span class="keyword">else</span> y[<span class="number">1</span>]</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span> <span class="keyword">if</span> a &gt; b <span class="keyword">else</span> -<span class="number">1</span> <span class="keyword">if</span> a &lt; b <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">lst.sort(key=cmp_to_key(cmp))</span><br><span class="line"><span class="built_in">print</span>(lst)</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>LeetCode</category>
+      </categories>
+      <tags>
+        <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>RPM中的config和config(noreplace)</title>
     <url>/2023/05/09/2023-05-09-what-is-config-noreplace-in-rpm/</url>
     <content><![CDATA[<p>参考：<a href="https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html">https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html</a></p>
@@ -4487,6 +4534,629 @@
       <tags>
         <tag>Linux</tag>
         <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Traceroute简介和抓包</title>
+    <url>/2023/05/15/2023-05-15-traceroute-intro-and-use/</url>
+    <content><![CDATA[<h2 id="traceroute原理"><a href="#traceroute原理" class="headerlink" title="traceroute原理"></a>traceroute原理</h2><p>Traceroute 是一种网络诊断工具，用于确定数据包从一个源到达目的地所经过的路径。它通过发送一系列的数据包，并观察每个数据包经过的路由器（或称为跃点）来实现这一目的。</p>
+<span id="more"></span>
+
+<p><strong>工作原理：</strong></p>
+<ul>
+<li>Traceroute 发送一系列的 UDP 数据包，每个数据包都具有不同的 TTL（Time to Live）值。TTL 值表示数据包在网络中可经过的最大跃点数。</li>
+<li>当第一个数据包离开源设备时，它的 TTL 值被设置为 1。当该数据包到达网络中的第一个路由器时，路由器会将 TTL 值减 1，并转发该数据包。如果 TTL 值减为 0，路由器将丢弃该数据包并向源设备发送 ICMP 时间超时报文。</li>
+<li>源设备收到 ICMP 时间超时报文后，就知道了到达第一个路由器的路径。然后，源设备增加 TTL 值并发送第二个数据包，以便确定下一个路由器。</li>
+<li>这个过程不断重复，每次 TTL 值增加，直到数据包到达目的地。目的设备将收到数据包并向源设备发送 ICMP 端口不可达报文，从而终止 Traceroute 进程。</li>
+<li>Traceroute 将记录每个数据包的路径，包括每个跃点的 IP 地址和响应时间。最终将呈现给用户一张路由跟踪表，显示了数据包从源到目的地经过的所有路由器。</li>
+</ul>
+<p>总的来说，Traceroute 通过探测数据包的路径和响应时间，帮助网络管理员诊断网络连接问题，定位潜在的瓶颈或故障点。</p>
+<h2 id="traceroute用法"><a href="#traceroute用法" class="headerlink" title="traceroute用法"></a>traceroute用法</h2><p>Linux系统下，traceroute用法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">traceroute hostname</span><br></pre></td></tr></table></figure>
+<p>Windows系统使用tracert命令:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tracert hostname</span><br></pre></td></tr></table></figure>
+<h2 id="traceroute抓包"><a href="#traceroute抓包" class="headerlink" title="traceroute抓包"></a>traceroute抓包</h2><p>在宿主机10.206.216.95上执行<code>traceroute www.baidu.com</code>，通过<code>tcpdump</code>抓包，如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ifconfig ens192</span><br><span class="line">ens192: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 10.206.216.95  netmask 255.255.255.0  broadcast 10.206.216.255</span><br><span class="line">route</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">default         gateway         0.0.0.0         UG    100    0        0 ens192</span><br><span class="line">10.206.216.0    0.0.0.0         255.255.255.0   U     100    0        0 ens192</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 1</span></span><br><span class="line">$ tcpdump -i ens192 icmp and host 10.206.216.95 -w traceroute.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 2</span></span><br><span class="line">$ traceroute  www.baidu.com</span><br><span class="line">traceroute to www.baidu.com (36.155.132.55), 30 hops max, 60 byte packets</span><br><span class="line"> 1  gateway (10.206.216.254)  0.239 ms  0.152 ms  0.147 ms</span><br><span class="line"> 2  10.206.2.254 (10.206.2.254)  0.265 ms  0.274 ms  0.241 ms</span><br><span class="line"> 3  192.168.200.1 (192.168.200.1)  0.545 ms  0.506 ms  0.825 ms</span><br><span class="line"> 4  36.152.113.193 (36.152.113.193)  2.837 ms  3.182 ms  3.552 ms</span><br><span class="line"> 5  221.178.162.185 (221.178.162.185)  2.632 ms * *</span><br><span class="line"> 6  * * 183.207.54.161 (183.207.54.161)  3.116 ms</span><br><span class="line"> 7  183.207.67.106 (183.207.67.106)  3.576 ms 183.207.22.130 (183.207.22.130)  3.195 ms 183.207.66.102 (183.207.66.102)  3.638 ms</span><br><span class="line"> 8  * 36.155.156.46 (36.155.156.46)  3.884 ms 36.155.156.54 (36.155.156.54)  4.690 ms</span><br><span class="line"> 9  36.155.157.174 (36.155.157.174)  4.197 ms 36.155.157.170 (36.155.157.170)  4.344 ms  3.964 ms</span><br><span class="line">10  * * *</span><br><span class="line">11  * * *</span><br><span class="line">12  * * *</span><br><span class="line">13  * * *</span><br><span class="line">14  * * *</span><br><span class="line">15  * * *</span><br><span class="line">16  * * *</span><br><span class="line">17  * * *</span><br><span class="line">18  * * *</span><br><span class="line">19  * * *</span><br><span class="line">20  * * *</span><br><span class="line">21  * * *</span><br><span class="line">22  * * *</span><br><span class="line">23  * * *</span><br><span class="line">24  * * *</span><br><span class="line">25  * * *</span><br><span class="line">26  * * *</span><br><span class="line">27  * * *</span><br><span class="line">28  * * *</span><br><span class="line">29  * * *</span><br><span class="line">30  * * *</span><br></pre></td></tr></table></figure>
+<p>wireshark分析结果：<br><img src="/2023/05/15/2023-05-15-traceroute-intro-and-use/image1.png"></p>
+]]></content>
+      <categories>
+        <category>Network</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>Traceroute</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>pip基础用法示例</title>
+    <url>/2023/05/25/2023-05-25-pip-basic-usage/</url>
+    <content><![CDATA[<h2 id="配置国内源"><a href="#配置国内源" class="headerlink" title="配置国内源"></a>配置国内源</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[global]</span><br><span class="line">index-url = https://pypi.tuna.tsinghua.edu.cn/simple</span><br><span class="line">[install]</span><br><span class="line">trusted-host = https://pypi.tuna.tsinghua.edu.cn</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装包"><a href="#安装包" class="headerlink" title="安装包"></a>安装包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip install XXX              # 最新版本</span><br><span class="line">pip install XXX==1.0.4       # 指定版本</span><br><span class="line">pip install XXX&gt;=1.0.4       # 最低版本</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="卸载包"><a href="#卸载包" class="headerlink" title="卸载包"></a>卸载包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip uninstall XXX</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看某个已安装包的信息"><a href="#查看某个已安装包的信息" class="headerlink" title="查看某个已安装包的信息"></a>查看某个已安装包的信息</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip show XXX    # 查看信息</span><br><span class="line">pip show -f XXX # 查看详细信息</span><br></pre></td></tr></table></figure>
+
+<h2 id="列出所有已安装的包"><a href="#列出所有已安装的包" class="headerlink" title="列出所有已安装的包"></a>列出所有已安装的包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip list</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看本地某个wheel包的依赖"><a href="#查看本地某个wheel包的依赖" class="headerlink" title="查看本地某个wheel包的依赖"></a>查看本地某个wheel包的依赖</h2><p>例：使用pkginfo命令查看kubernetes-26.1.0-py2.py3-none-any.whl的依赖</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 install pkginfo</span><br><span class="line">/usr/local/python3/bin/pkginfo kubernetes-26.1.0-py2.py3-none-any.whl</span><br><span class="line"></span><br><span class="line">metadata_version: 2.1</span><br><span class="line">name: kubernetes</span><br><span class="line">...</span><br><span class="line">...</span><br><span class="line">requires_python: &gt;=3.6</span><br><span class="line">requires_dist: [&#x27;certifi (&gt;=14.05.14)&#x27;, &#x27;six (&gt;=1.9.0)&#x27;, &#x27;python-dateutil (&gt;=2.5.3)&#x27;, &#x27;setuptools (&gt;=21.0.0)&#x27;, &#x27;pyyaml (&gt;=5.4.1)&#x27;, &#x27;google-auth (&gt;=1.0.1)&#x27;, &#x27;websocket-client (!=0.40.0,!=0.41.*,!=0.42.*,&gt;=0.32.0)&#x27;, &#x27;requests&#x27;, &#x27;requests-oauthlib&#x27;, &#x27;urllib3 (&gt;=1.24.2)&#x27;, &#x27;ipaddress (&gt;=1.0.17) ; python_version==&quot;2.7&quot;&#x27;, &quot;adal (&gt;=1.0.2) ; extra == &#x27;adal&#x27;&quot;]</span><br><span class="line">provides_extras: [&#x27;adal&#x27;]</span><br></pre></td></tr></table></figure>
+
+<h2 id="只下载某个包到本地，不安装"><a href="#只下载某个包到本地，不安装" class="headerlink" title="只下载某个包到本地，不安装"></a>只下载某个包到本地，不安装</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
+<p>如果不想下载这个包的依赖，使用–no-deps选项，用法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes --no-deps on -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="离线安装，通过requirements-txt指定要安装的包"><a href="#离线安装，通过requirements-txt指定要安装的包" class="headerlink" title="离线安装，通过requirements.txt指定要安装的包"></a>离线安装，通过requirements.txt指定要安装的包</h2><ol start="0">
+<li>新增requirements.txt，内容如下：<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">psutil</span><br><span class="line">supervisor</span><br><span class="line">kubernetes</span><br></pre></td></tr></table></figure></li>
+<li>下载安装包到本地<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download -d $&#123;folder&#125; -r /path/to/requirements.txt</span><br></pre></td></tr></table></figure></li>
+<li>离线安装<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 install --no-index --find-links $&#123;folder&#125; -r /path/to/requirements.txt</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Windows上通过git bash执行python卡住的解决方法</title>
+    <url>/2023/06/26/2023-06-26-win-git-bash-fail-due-to-python/</url>
+    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img src="/2023/06/26/2023-06-26-win-git-bash-fail-due-to-python/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
+<span id="more"></span>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+        <tag>Win</tag>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>流畅的Python 笔记</title>
+    <url>/2023/07/19/2023-07-19-fluent-python-note/</url>
+    <content><![CDATA[<h2 id="第一章：Python数据类型"><a href="#第一章：Python数据类型" class="headerlink" title="第一章：Python数据类型"></a>第一章：Python数据类型</h2><h3 id="x20-为什么需要特殊方法"><a href="#x20-为什么需要特殊方法" class="headerlink" title="&#x20;为什么需要特殊方法"></a>&#x20;为什么需要特殊方法</h3><span id="more"></span>
+
+<p>在类中定义特殊方法的例子：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyObj</span>:</span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">__init</span>(<span class="params">self</span>):</span><br><span class="line">		<span class="variable language_">self</span>.L = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">__len__</span>(<span class="params">self</span>):</span><br><span class="line">		<span class="keyword">return</span> <span class="built_in">len</span>(<span class="variable language_">self</span>.L)</span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">__getitem__</span>(<span class="params">self, index</span>):</span><br><span class="line">		<span class="keyword">return</span> <span class="variable language_">self</span>.L[index]</span><br><span class="line"></span><br><span class="line">o = MyObj()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;len: &#x27;</span>, <span class="built_in">len</span>(o))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;L[1]: , o[1])</span></span><br></pre></td></tr></table></figure>
+
+<p>特殊方法存在是为了被Python解释器调用的，自己并不需要调用，比如说不应使用my<em>obj.__len__()，而应该使用len(myobj)</em></p>
+<h3 id="随机返回某个元素"><a href="#随机返回某个元素" class="headerlink" title="随机返回某个元素"></a>随机返回某个元素</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> random <span class="keyword">import</span> choice</span><br><span class="line">choice(o)   <span class="comment"># o = MyObj()</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="使用特殊方法实现一个Vector类"><a href="#使用特殊方法实现一个Vector类" class="headerlink" title="使用特殊方法实现一个Vector类"></a>使用特殊方法实现一个Vector类</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> math <span class="keyword">import</span> hypot</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Vector</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, x, y</span>):</span><br><span class="line">        <span class="variable language_">self</span>.x = x</span><br><span class="line">        <span class="variable language_">self</span>.y = y</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__abs__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span> hypot(<span class="variable language_">self</span>.x, <span class="variable language_">self</span>.y)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__bool__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">bool</span>(<span class="built_in">abs</span>(<span class="variable language_">self</span>));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__repr__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Vector(%r, %r)&quot;</span> % (<span class="variable language_">self</span>.x, <span class="variable language_">self</span>.y)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__add__</span>(<span class="params">self, other</span>):</span><br><span class="line">        x = <span class="variable language_">self</span>.x + other.x</span><br><span class="line">        y = <span class="variable language_">self</span>.y + other.y</span><br><span class="line">        <span class="keyword">return</span> Vector(x, y)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__mul__</span>(<span class="params">self, scalar</span>):</span><br><span class="line">        <span class="keyword">return</span> Vector(<span class="variable language_">self</span>.x * scalar, <span class="variable language_">self</span>.y * scalar)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Python有一个内置的函数叫repr，它能把一个对象用字符串形式表达式以便辨认</li>
+<li>通过add和mul函数，支持+和*运算</li>
+<li>默认情况，自定义类实例总为真，除非这个类对bool有自己的实现</li>
+</ul>
+<h3 id="特殊方法一览"><a href="#特殊方法一览" class="headerlink" title="特殊方法一览"></a>特殊方法一览</h3><p><a href="https://docs.python.org/3/reference/datamodel.html">3. Data model — Python 3.11.4 documentation</a></p>
+<h3 id="x20-为什么len不是普通方法"><a href="#x20-为什么len不是普通方法" class="headerlink" title="&#x20;为什么len不是普通方法"></a>&#x20;为什么len不是普通方法</h3><p>为了让Python自带的数据结构可以走后门，abs也是同理，但多亏了它是特殊方法，可以把len用于自定义数据类型</p>
+<h3 id="x20-本章小结"><a href="#x20-本章小结" class="headerlink" title="&#x20;本章小结"></a>&#x20;本章小结</h3><ul>
+<li>通过特殊方法，自定义数据类型可以表现得跟内置类型一样，从而写出更具表达力的代码</li>
+<li>Python对象的基本要求就是它得有合理的字符串表示形式，可以通过repr和str满足这个要求，前者方便调试日志，后者给终端用户看(print)</li>
+</ul>
+<h2 id="第二章：序列构成的数组"><a href="#第二章：序列构成的数组" class="headerlink" title="第二章：序列构成的数组"></a>第二章：序列构成的数组</h2><h3 id="学会使用列表推导，增强代码可读性"><a href="#学会使用列表推导，增强代码可读性" class="headerlink" title="学会使用列表推导，增强代码可读性"></a>学会使用列表推导，增强代码可读性</h3><p>例：把一个字符串变成Unicode代码</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">symbols = <span class="string">&#x27;abcdefg&#x27;</span></span><br><span class="line">codes = [ <span class="built_in">ord</span>(ch) <span class="keyword">for</span> ch <span class="keyword">in</span> symbols <span class="keyword">if</span> <span class="built_in">ord</span>(s) &gt; <span class="number">100</span>]</span><br><span class="line"><span class="built_in">print</span>(codes)</span><br><span class="line">[<span class="number">101</span>,<span class="number">102</span>,<span class="number">103</span>]</span><br></pre></td></tr></table></figure>
+
+<p>例：笛卡尔积</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">colors = [<span class="string">&#x27;black&#x27;</span>, <span class="string">&#x27;white&#x27;</span>]</span><br><span class="line">sizes = [<span class="string">&#x27;S&#x27;</span>, <span class="string">&#x27;M&#x27;</span>, <span class="string">&#x27;L&#x27;</span>]</span><br><span class="line">tshirts = [(color,size) <span class="keyword">for</span> color <span class="keyword">in</span> colors <span class="keyword">for</span> size <span class="keyword">in</span> sizes ]</span><br><span class="line"><span class="built_in">print</span>(tshirts)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[(<span class="string">&#x27;black&#x27;</span>, <span class="string">&#x27;S&#x27;</span>), (<span class="string">&#x27;black&#x27;</span>, <span class="string">&#x27;M&#x27;</span>), (<span class="string">&#x27;black&#x27;</span>, <span class="string">&#x27;L&#x27;</span>), (<span class="string">&#x27;whi</span></span><br><span class="line"><span class="string">te&#x27;</span>, <span class="string">&#x27;S&#x27;</span>), (<span class="string">&#x27;white&#x27;</span>, <span class="string">&#x27;M&#x27;</span>), (<span class="string">&#x27;white&#x27;</span>, <span class="string">&#x27;L&#x27;</span>)]</span><br></pre></td></tr></table></figure>
+
+<h3 id="x20-生成器表达式"><a href="#x20-生成器表达式" class="headerlink" title="&#x20;生成器表达式"></a>&#x20;生成器表达式</h3><p>生成器表达式可以逐个产生元素，而不是先建立一个完整列表，这种方式更加节省内存</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">symbols = <span class="string">&#x27;abcdefg&#x27;</span></span><br><span class="line"><span class="built_in">tuple</span>(<span class="built_in">ord</span>(ch) <span class="keyword">for</span> ch <span class="keyword">in</span> symbols <span class="keyword">if</span> <span class="built_in">ord</span>(s) &gt; <span class="number">100</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="元组不仅是不可变列表，还可用于没有字段名的记录"><a href="#元组不仅是不可变列表，还可用于没有字段名的记录" class="headerlink" title="元组不仅是不可变列表，还可用于没有字段名的记录"></a>元组不仅是不可变列表，还可用于没有字段名的记录</h3><p>元组拆包</p>
+<h3 id="使用collections-namedtuple构建简单类"><a href="#使用collections-namedtuple构建简单类" class="headerlink" title="使用collections.namedtuple构建简单类"></a>使用collections.namedtuple构建简单类</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">Card = collections.namedtuple(<span class="string">&#x27;Card&#x27;</span>, \[<span class="string">&#x27;rank&#x27;</span>, <span class="string">&#x27;list&#x27;</span>]) beer\_card = Card(<span class="string">&#x27;7&#x27;</span>, <span class="string">&#x27;diamonds&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="对象切片"><a href="#对象切片" class="headerlink" title="对象切片"></a>对象切片</h3><p>可以用s[a: b: c]形式对a和b之间以c为间隔取值，c的值可以为负，负值意味着反向取值。下面3个例子更直观些</p>
+<p>c为负值意味着可以反向取值，举例</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s = <span class="string">&#x27;bicycle&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s[::<span class="number">3</span>]</span><br><span class="line"><span class="string">&#x27;bye&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s[::-<span class="number">1</span>]</span><br><span class="line"><span class="string">&#x27;elcycib&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s[::-<span class="number">2</span>]</span><br><span class="line"><span class="string">&#x27;eccb&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="切片操作对序列做修改"><a href="#切片操作对序列做修改" class="headerlink" title="切片操作对序列做修改"></a>切片操作对序列做修改</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">l = <span class="built_in">list</span>(<span class="built_in">range</span>(<span class="number">10</span>))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>l</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>l[<span class="number">2</span>:<span class="number">5</span>] = [<span class="number">20</span>, <span class="number">30</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">20</span>, <span class="number">30</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">del</span> l[<span class="number">5</span>:<span class="number">7</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">20</span>, <span class="number">30</span>, <span class="number">5</span>, <span class="number">8</span>, <span class="number">9</span>]</span><br></pre></td></tr></table></figure>
+
+<h3 id="对序列使用-和"><a href="#对序列使用-和" class="headerlink" title="对序列使用+和*"></a>对序列使用+和*</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">board = [[<span class="string">&#x27;_&#x27;</span>] * <span class="number">3</span>] * <span class="number">3</span></span><br><span class="line">board = [[<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>],[<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>],[<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>]]</span><br><span class="line">board[<span class="number">1</span>][<span class="number">2</span>] = <span class="string">&#x27;0&#x27;</span></span><br><span class="line">board</span><br><span class="line">[[<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;0&#x27;</span>],[<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;0&#x27;</span>],[<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;_&#x27;</span>,<span class="string">&#x27;0&#x27;</span>]]</span><br></pre></td></tr></table></figure>
+
+<h3 id="序列的增量赋值-x20"><a href="#序列的增量赋值-x20" class="headerlink" title="序列的增量赋值&#x20;"></a>序列的增量赋值&#x20;</h3><p>+&#x3D; 背后特殊方法是iadd，如果一个类没实现这种方法就回退一步调用add, 比如</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>a += b</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>如果a实现了iadd，就会调用iadd，a就会就地改动； 如果a没实现iadd，a +&#x3D; b这个表达式效果和a &#x3D; a + b一样</li>
+</ul>
+<h3 id="对不可变序列做拼接操作"><a href="#对不可变序列做拼接操作" class="headerlink" title="对不可变序列做拼接操作"></a>对不可变序列做拼接操作</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>t = (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">id</span>(t)</span><br><span class="line"><span class="number">1737687416128</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t *= <span class="number">2</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t</span><br><span class="line">(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">id</span>(t)</span><br><span class="line"><span class="number">1737687389568</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>ID发生了变化，对不可变序列进行重复拼接操作效率低，因为每次都有一个新对象，解释器需把原来对象中元素先复制到新对象，再追加新元素</li>
+<li>str是一个例外，str做+&#x3D;，id不一定会变，因为CPython做了优化，str初始化时会留额外的可扩展空间，做增量操作时不一定会复制原有字符串到新位置到这类操作</li>
+</ul>
+<h3 id="关于-的谜题"><a href="#关于-的谜题" class="headerlink" title="关于+&#x3D;的谜题"></a>关于+&#x3D;的谜题</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>t = (<span class="number">1</span>,<span class="number">2</span>,[<span class="number">30</span>,<span class="number">40</span>])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t[<span class="number">2</span>] += [<span class="number">50</span>,<span class="number">60</span>]</span><br><span class="line">TypeError: <span class="string">&#x27;tuple&#x27;</span> obj does <span class="keyword">not</span> support item assignment</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t</span><br><span class="line">(<span class="number">1</span>, <span class="number">2</span>, [<span class="number">30</span>,<span class="number">40</span>,<span class="number">50</span>,<span class="number">60</span>])</span><br></pre></td></tr></table></figure>
+
+<p>教训：不要把可变对象放在元组里，增量赋值并非完整操作</p>
+<h3 id="list-sort方法和内置函数sorted"><a href="#list-sort方法和内置函数sorted" class="headerlink" title="list.sort方法和内置函数sorted"></a>list.sort方法和内置函数sorted</h3><ul>
+<li>list.sort方法就地排序列表, sorted总是返回一个列表</li>
+<li>两种方法都有两个可选的关键字参数<ul>
+<li>reverse 如果被设定为True，降序输出</li>
+<li>key，默认用元素自己的值做排序</li>
+</ul>
+</li>
+<li>是稳定排序，每次排序结果相对位置固定的<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>fruits = [<span class="string">&#x27;grape&#x27;</span>, <span class="string">&#x27;raspberry&#x27;</span>, <span class="string">&#x27;apple&#x27;</span>, <span class="string">&#x27;banana&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">sorted</span>(fruits)</span><br><span class="line">[<span class="string">&#x27;apple&#x27;</span>, <span class="string">&#x27;banana&#x27;</span>, <span class="string">&#x27;grape&#x27;</span>, <span class="string">&#x27;raspberry&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">sorted</span>(fruits, reverse=<span class="literal">True</span>)</span><br><span class="line">[<span class="string">&#x27;raspberry&#x27;</span>, <span class="string">&#x27;grape&#x27;</span>, <span class="string">&#x27;banana&#x27;</span>, <span class="string">&#x27;apple&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">sorted</span>(fruits, key=<span class="built_in">len</span>)</span><br><span class="line">[<span class="string">&#x27;grape&#x27;</span>, <span class="string">&#x27;apple&#x27;</span>, <span class="string">&#x27;banana&#x27;</span>, <span class="string">&#x27;raspberry&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">sorted</span>(fruits, key=<span class="built_in">len</span>, reverse=<span class="literal">True</span>)</span><br><span class="line">[<span class="string">&#x27;raspberry&#x27;</span>, <span class="string">&#x27;banana&#x27;</span>, <span class="string">&#x27;grape&#x27;</span>, <span class="string">&#x27;apple&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>fruits.sort()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>fruits</span><br><span class="line">[<span class="string">&#x27;apple&#x27;</span>, <span class="string">&#x27;banana&#x27;</span>, <span class="string">&#x27;grape&#x27;</span>, <span class="string">&#x27;raspberry&#x27;</span>]</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="bisect操作（排序，插入已排序的序列）"><a href="#bisect操作（排序，插入已排序的序列）" class="headerlink" title="bisect操作（排序，插入已排序的序列）"></a>bisect操作（排序，插入已排序的序列）</h3><p>插入已排序的序列</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>a = [<span class="number">1</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">6</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> bisect</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>bisect.insort(a, <span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(a)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>]</span><br></pre></td></tr></table></figure>
+<h3 id="array数组"><a href="#array数组" class="headerlink" title="array数组"></a>array数组</h3><ul>
+<li><p>如需要一个只包含数字的列表, array.array比list更高效</p>
+</li>
+<li><p>数组支持所有可变序列相关操作，包括pop, insert, extend</p>
+</li>
+<li><p>数组提供从文件读取和存入文件的快速方法，如frombytes, tofile</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> array <span class="keyword">import</span> array</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> random <span class="keyword">import</span> random</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>floats = array(<span class="string">&#x27;d&#x27;</span>, (random() <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>**<span class="number">7</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>floats[-<span class="number">1</span>]</span><br><span class="line"><span class="number">0.5225102971704024</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>fp = <span class="built_in">open</span>(<span class="string">&#x27;floats.bin&#x27;</span>, <span class="string">&#x27;wb&#x27;</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>floats.tofile(fp)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>fp.close()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>floats2 = array(<span class="string">&#x27;d&#x27;</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>fp = <span class="built_in">open</span>(<span class="string">&#x27;floats.bin&#x27;</span>, <span class="string">&#x27;rb&#x27;</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>floats2.fromfile(fp, <span class="number">10</span>**<span class="number">7</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>fp.close()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>floats2[-<span class="number">1</span>]</span><br><span class="line"><span class="number">0.5225102971704024</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>floats2 == floats</span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>tofile和fromfile速度比从文本文件读快60多倍，原因是后者使用内置的float把每一行文字转成浮点数</p>
+</li>
+<li><p>另一个快速序列化数字类型方法是使用pickle，速度和array相当，但pickle可以处理几乎所有的内置数字类型，包含复数、嵌套集合，用户自定义类</p>
+</li>
+</ul>
+<h3 id="x20-内存视图"><a href="#x20-内存视图" class="headerlink" title="&#x20;内存视图"></a>&#x20;内存视图</h3><p><code>memoryview</code>是一个内置类，能让用户在不复制内容情况下操作同一个数组的不同切片</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> array</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>numbers = array.array(<span class="string">&#x27;h&#x27;</span>, [-<span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>memv = <span class="built_in">memoryview</span>(numbers)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">len</span>(memv)</span><br><span class="line"><span class="number">3</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>memv[<span class="number">0</span>]</span><br><span class="line">-<span class="number">1</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>memv_oct = memv.cast(<span class="string">&#x27;B&#x27;</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>memv_oct.tolist()</span><br><span class="line">[<span class="number">255</span>, <span class="number">255</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>memv_oct[<span class="number">3</span>] = <span class="number">4</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>numbers</span><br><span class="line">array(<span class="string">&#x27;h&#x27;</span>, [-<span class="number">1</span>, <span class="number">1024</span>, <span class="number">1</span>])</span><br></pre></td></tr></table></figure>
+
+<h3 id="NumPy-和-SciPy"><a href="#NumPy-和-SciPy" class="headerlink" title="NumPy 和 SciPy"></a>NumPy 和 SciPy</h3><ul>
+<li>NumPy提供高阶数组和矩阵操作, SciPy是基于NumPy的库，提供科学计算有关算法</li>
+</ul>
+<h3 id="双向队列和其他形式的队列"><a href="#双向队列和其他形式的队列" class="headerlink" title="双向队列和其他形式的队列"></a>双向队列和其他形式的队列</h3><p>collections.deque类是一个线程安全，可以快速从两端添加或删除元素的数据类型</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(<span class="built_in">range</span>(<span class="number">10</span>), maxlen=<span class="number">10</span>) ➊</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq</span><br><span class="line">deque([<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>], maxlen=<span class="number">10</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.rotate(<span class="number">3</span>) ➋</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq</span><br><span class="line">deque([<span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>], maxlen=<span class="number">10</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.rotate(-<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq</span><br><span class="line">deque([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">0</span>], maxlen=<span class="number">10</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.appendleft(-<span class="number">1</span>) ➌</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq</span><br><span class="line">deque([-<span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>], maxlen=<span class="number">10</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.extend([<span class="number">11</span>, <span class="number">22</span>, <span class="number">33</span>]) ➍</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">22</span>, <span class="number">33</span>], maxlen=<span class="number">10</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.extendleft([<span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>, <span class="number">40</span>]) ➎</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq</span><br><span class="line">deque([<span class="number">40</span>, <span class="number">30</span>, <span class="number">20</span>, <span class="number">10</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>], maxlen=<span class="number">10</span>)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>maxlen是一个可选参数，代表队列可以容纳的元素数量，一旦设定不可修改</li>
+<li>rotate操作接受一个参数n，当n &gt; 0时，最右边n个元素移动到最左，n &lt; 0, 最左边n个元素移动到最右</li>
+</ul>
+<p>除了deque，其他Python标准库也有对队列的实现</p>
+<ul>
+<li>queue</li>
+<li>multiprocessing 实现了自己的Queue</li>
+<li>asyncio</li>
+<li>heapq</li>
+</ul>
+<h3 id="x20-sorted-list-sort背后的排序算法-Timsort"><a href="#x20-sorted-list-sort背后的排序算法-Timsort" class="headerlink" title="&#x20;sorted, list.sort背后的排序算法 Timsort"></a>&#x20;sorted, list.sort背后的排序算法 Timsort</h3><p>Timsort是一种自适应排序算法，会根据原始数据的顺序特点交替用插入排序和归并排序，以达到最佳效率</p>
+<h2 id="第3章-字典和集合"><a href="#第3章-字典和集合" class="headerlink" title="第3章 字典和集合"></a>第3章 字典和集合</h2><h3 id="可散列的数据类型"><a href="#可散列的数据类型" class="headerlink" title="可散列的数据类型"></a>可散列的数据类型</h3><ul>
+<li>如一个对象时可散列的，在这个对象的生命周期中，它的散列值是不变的，而且这个对象需要实现hash方法，另外可散列对象要有qe方法，才能跟其他键做比较</li>
+<li>原子不可变数据类型(str, bytes, 数值类型）都是可散列类型, frozenset也是可散列的</li>
+<li>对于元组，只有当一个元组包含所有元素都是可散列类型情况下，它才是可散列的</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>ttt = (<span class="number">1</span>, <span class="number">2</span>, (<span class="number">30</span>, <span class="number">40</span>))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">hash</span>(ttt)</span><br><span class="line">-<span class="number">3907003130834322577</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t2 = (<span class="number">1</span>, <span class="number">2</span>, [<span class="number">30</span>, <span class="number">40</span>])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">hash</span>(t2)</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">&quot;&lt;stdin&gt;&quot;</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">TypeError: unhashable <span class="built_in">type</span>: <span class="string">&#x27;list&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="x20-字典的构造方法"><a href="#x20-字典的构造方法" class="headerlink" title="&#x20;字典的构造方法"></a>&#x20;字典的构造方法</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>a =  <span class="built_in">dict</span>(one=<span class="number">1</span>, two=<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>b = &#123;<span class="string">&#x27;one&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;two&#x27;</span>: <span class="number">2</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>c = <span class="built_in">dict</span>(<span class="built_in">zip</span>([<span class="string">&#x27;one&#x27;</span>, <span class="string">&#x27;two&#x27;</span>], [<span class="number">1</span>,<span class="number">2</span>]))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>d = <span class="built_in">dict</span>([(<span class="string">&#x27;one&#x27;</span>,<span class="number">1</span>), (<span class="string">&#x27;two&#x27;</span>,<span class="number">2</span>)])</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>e = <span class="built_in">dict</span>(&#123;<span class="string">&#x27;one&#x27;</span>:<span class="number">1</span>, <span class="string">&#x27;two&#x27;</span>:<span class="number">2</span>&#125;)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a == b == c == d == e</span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="字典推导"><a href="#字典推导" class="headerlink" title="字典推导"></a>字典推导</h3><p>字典推导可以从任何以键值对作为元素可迭代对象中构建出字典</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>array = [(<span class="string">&#x27;one&#x27;</span>, <span class="number">1</span>), (<span class="string">&#x27;two&#x27;</span>, <span class="number">2</span>), (<span class="string">&#x27;three&#x27;</span>, <span class="number">3</span>)]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dic = &#123;k: v <span class="keyword">for</span> v, k <span class="keyword">in</span> array&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dic</span><br><span class="line">&#123;<span class="number">1</span>: <span class="string">&#x27;one&#x27;</span>, <span class="number">2</span>: <span class="string">&#x27;two&#x27;</span>, <span class="number">3</span>: <span class="string">&#x27;three&#x27;</span>&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="用setdefault处理找不到的键"><a href="#用setdefault处理找不到的键" class="headerlink" title="用setdefault处理找不到的键"></a>用setdefault处理找不到的键</h3><p>以下两种写法是等价的</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> key <span class="keyword">not</span> <span class="keyword">in</span> my_dict:</span><br><span class="line">	my_dict[key] = []</span><br><span class="line">my_dicy[key].append(new_value)</span><br><span class="line"></span><br><span class="line">my_dict.setdefault(key, []).append(new_value)</span><br></pre></td></tr></table></figure>
+
+<p>也可以用get方法获得key对应的value，如果不存在返回默认值</p>
+<pre><code>&gt;&gt;&gt; dic = &#123; 1: &#39;one&#39;&#125;
+&gt;&gt;&gt; dic.get(2, &#39;N/A&#39;)
+&#39;N/A&#39;
+</code></pre>
+<h3 id="字典的变种"><a href="#字典的变种" class="headerlink" title="字典的变种"></a>字典的变种</h3><p>collections.OrderedDict</p>
+<p>添加key时会保持顺序</p>
+<p>collections.ChainMap</p>
+<p>容纳数个不同映射对象，进行key查找时，这些对象会被当做一个整体被逐个查找</p>
+<h3 id="不可变映射类型"><a href="#不可变映射类型" class="headerlink" title="不可变映射类型"></a>不可变映射类型</h3><p>MappingProxyType</p>
+<h3 id="集合论"><a href="#集合论" class="headerlink" title="集合论"></a>集合论</h3><p>set和它的不可变姊妹类型frozenset，集合中元素必须是可散列的</p>
+<p>创建空集合用 set(), frozenset({0,1,2,3})</p>
+<h3 id="往字典里添加新键可能会改变已有键顺序"><a href="#往字典里添加新键可能会改变已有键顺序" class="headerlink" title="往字典里添加新键可能会改变已有键顺序"></a>往字典里添加新键可能会改变已有键顺序</h3><p>不要对字典同时进行迭代和修改，最好分两步：首先对字典迭代，得出要添加内容，把这些内容放在一个新字典里，迭代结束后再对原有字典进行更新</p>
+<h2 id="第4章-文本和字节序列"><a href="#第4章-文本和字节序列" class="headerlink" title="第4章 文本和字节序列"></a>第4章 文本和字节序列</h2><ul>
+<li>字符、码位和字节表述&#x20;</li>
+<li>bytes、bytearray 和 memoryview 等二进制序列的独特特性&#x20;</li>
+<li>全部 Unicode 和陈旧字符集的编解码器&#x20;</li>
+<li>避免和处理编码错误&#x20;</li>
+<li>处理文本文件的最佳实践&#x20;</li>
+<li>默认编码的陷阱和标准 I&#x2F;O 的问题&#x20;</li>
+<li>规范化 Unicode 文本，进行安全的比较&#x20;</li>
+<li>规范化、大小写折叠和暴力移除音调符号的实用函数&#x20;</li>
+<li>使用 locale 模块和 PyUCA 库正确地排序 Unicode 文本&#x20;</li>
+<li>Unicode 数据库中的字符元数据 能处理字符串和字节序列的双模式 API</li>
+</ul>
+<p>字符串是一个字符序列，从Python3的str对下井获取元素是Unicode字符，Unicode标准把字符的标识和具体字节表述进行如下明确区分</p>
+<ul>
+<li>字符标识，即码位，是0-1114111的数字，在Unicode标准中以4-6个十六进制数字表示，加前缀U+, 例如字母A的码位是U+0041，欧元符号码位阿是U+20AC</li>
+<li>字符具体表述取决于所用编码，UTF-8中, A(U+0041)的码位编码成单个字节\x41, 而在UTF-16LE编码中编成两个字节\x41\x00</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>s = <span class="string">&#x27;café&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">len</span>(s)</span><br><span class="line"><span class="number">4</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>b = s.encode(<span class="string">&#x27;utf8&#x27;</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>b</span><br><span class="line"><span class="string">b&#x27;caf\xc3\xa9&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">len</span>(b)</span><br><span class="line"><span class="number">5</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>b.decode(<span class="string">&#x27;utf8&#x27;</span>)</span><br><span class="line"><span class="string">&#x27;café&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="字节概要"><a href="#字节概要" class="headerlink" title="字节概要"></a>字节概要</h3><p>Python内置两种基本二进制序列类型： bytes, bytearray</p>
+<h3 id="BOM是什么"><a href="#BOM是什么" class="headerlink" title="BOM是什么"></a>BOM是什么</h3><p>字节序标记 byte-order mark</p>
+<h2 id="x20-第7章-函数装饰器和闭包"><a href="#x20-第7章-函数装饰器和闭包" class="headerlink" title="&#x20;第7章 函数装饰器和闭包"></a>&#x20;第7章 函数装饰器和闭包</h2><p>装饰器特性，能把被装饰的函数替换成其他函数， 第二个特性：装饰器在加载模块时立即执行</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">deco</span>(<span class="params">func</span>):</span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">inner</span>():</span><br><span class="line">		<span class="built_in">print</span>(<span class="string">&#x27;running inner()&#x27;</span>)</span><br><span class="line">    <span class="keyword">return</span> inner</span><br><span class="line"><span class="meta">@deco</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">target</span>():</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;running target()&#x27;</span>)</span><br><span class="line"></span><br><span class="line">target()</span><br><span class="line">running inner()</span><br></pre></td></tr></table></figure>
+
+<p>打印函数运行时间</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">calc_time</span>(<span class="params">func</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">wrapper</span>(<span class="params">*args, **kwargs</span>):</span><br><span class="line">        t1 = time.time()</span><br><span class="line">        func(*args, **kwargs)</span><br><span class="line">        t2 = time.time()</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;func &#123;&#125; costs &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(func.__name__, t2 - t1))</span><br><span class="line">    <span class="keyword">return</span> wrapper</span><br><span class="line"></span><br><span class="line"><span class="meta">@calc_time</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">a, b</span>):</span><br><span class="line">    time.sleep(<span class="number">5</span>)</span><br><span class="line">    <span class="keyword">return</span> a + b</span><br><span class="line"></span><br><span class="line">add(<span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">$ python calc.py</span><br><span class="line">func add costs <span class="number">5.014971017837524</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="为什么用闭包"><a href="#为什么用闭包" class="headerlink" title="为什么用闭包"></a>为什么用闭包</h3><p>举例：求平均数，每次调用avg，新增一个数并重新计算平均值</p>
+<p>实现方法1：缺点是需定义全局变量</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">total = <span class="number">0</span></span><br><span class="line">count = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">avg</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">global</span> total,count</span><br><span class="line">    total += n</span><br><span class="line">    count += <span class="number">1</span></span><br><span class="line">    <span class="keyword">return</span> total / count</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(avg(<span class="number">10</span>))</span><br><span class="line"><span class="built_in">print</span>(avg(<span class="number">11</span>))</span><br></pre></td></tr></table></figure>
+
+<p>实现方法2：使用类，缺点是麻烦</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Aver</span>():</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="variable language_">self</span>.series = []</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__call__</span>(<span class="params">self, value</span>):</span><br><span class="line">        <span class="variable language_">self</span>.series.append(value)</span><br><span class="line">        total = <span class="built_in">sum</span>(<span class="variable language_">self</span>.series)</span><br><span class="line">        <span class="keyword">return</span> total/<span class="built_in">len</span>(<span class="variable language_">self</span>.series)</span><br><span class="line"></span><br><span class="line">avg = Aver()</span><br><span class="line"><span class="built_in">print</span>(avg(<span class="number">10</span>))</span><br><span class="line"><span class="built_in">print</span>(avg(<span class="number">11</span>))</span><br></pre></td></tr></table></figure>
+
+<p>实现方法3：用函数，引入nonocal声明</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">make_aver</span>():</span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    total = <span class="number">0</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">aver</span>(<span class="params">val</span>):</span><br><span class="line">        <span class="keyword">nonlocal</span> count</span><br><span class="line">        <span class="keyword">nonlocal</span> total</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">        total += val</span><br><span class="line">        <span class="keyword">return</span> total / count</span><br><span class="line">    <span class="keyword">return</span> aver</span><br><span class="line"></span><br><span class="line">avg = make_aver()</span><br><span class="line"><span class="built_in">print</span>(avg(<span class="number">10</span>))</span><br><span class="line"><span class="built_in">print</span>(avg(<span class="number">11</span>))</span><br></pre></td></tr></table></figure>
+
+<h3 id="闭包和匿名函数区别"><a href="#闭包和匿名函数区别" class="headerlink" title="闭包和匿名函数区别"></a>闭包和匿名函数区别</h3><h2 id="第8章-对象引用、可变性和垃圾回收"><a href="#第8章-对象引用、可变性和垃圾回收" class="headerlink" title="第8章 对象引用、可变性和垃圾回收"></a>第8章 对象引用、可变性和垃圾回收</h2><h3 id="x20-默认做浅复制"><a href="#x20-默认做浅复制" class="headerlink" title="&#x20;默认做浅复制"></a>&#x20;默认做浅复制</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">l1 = [<span class="number">3</span>, [<span class="number">66</span>,<span class="number">55</span>,<span class="number">44</span>], (<span class="number">7</span>,<span class="number">8</span>,<span class="number">9</span>)]</span><br><span class="line">l2 = <span class="built_in">list</span>(l1)</span><br><span class="line">l1.append(<span class="number">100</span>)</span><br><span class="line">l1[<span class="number">1</span>].remove(<span class="number">55</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>l1 = [<span class="number">3</span>, [<span class="number">66</span>,<span class="number">44</span>], (<span class="number">7</span>,<span class="number">8</span>,<span class="number">9</span>), <span class="number">100</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>l2 = [<span class="number">3</span>, [<span class="number">66</span>,<span class="number">44</span>], (<span class="number">7</span>,<span class="number">8</span>,<span class="number">9</span>)]</span><br><span class="line">l2[<span class="number">1</span>] += [<span class="number">33</span>,<span class="number">22</span>]</span><br><span class="line">l2[<span class="number">2</span>] += (<span class="number">10</span>,<span class="number">11</span>)</span><br><span class="line">[<span class="number">3</span>, [<span class="number">66</span>,<span class="number">44</span>,<span class="number">33</span>,<span class="number">22</span>], (<span class="number">7</span>,<span class="number">8</span>,<span class="number">9</span>), <span class="number">100</span>]</span><br><span class="line">[<span class="number">3</span>, [<span class="number">66</span>,<span class="number">44</span>,<span class="number">33</span>,<span class="number">22</span>], (<span class="number">7</span>,<span class="number">8</span>,<span class="number">9</span>,<span class="number">10</span>,<span class="number">11</span>), <span class="number">100</span>]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对可变对象来说，l2[1]引用的列表， +&#x3D;运算符就地修改列表，修改在l1[1]中也有体现</li>
+<li>对元组来说，+&#x3D;创建一个新元组，然后重新绑定给变量l2[2]</li>
+</ul>
+<h3 id="不要使用可变类型作为参数默认值"><a href="#不要使用可变类型作为参数默认值" class="headerlink" title="不要使用可变类型作为参数默认值"></a>不要使用可变类型作为参数默认值</h3><h3 id="防御可变参数"><a href="#防御可变参数" class="headerlink" title="防御可变参数"></a>防御可变参数</h3><p>如果定义函数接收可变参数，应该谨慎考虑调用方是否期望修改传入参数</p>
+<p>例：从TwilightBus下车后，乘客消失了</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Bus</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, passengers=<span class="literal">None</span></span>):</span><br><span class="line">        <span class="keyword">if</span> passengers <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="variable language_">self</span>.passengers = []</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="variable language_">self</span>.passengers = passengers</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">drop</span>(<span class="params">self, name</span>):</span><br><span class="line">        <span class="variable language_">self</span>.passengers.remove(name)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">basketball_team = [<span class="string">&#x27;Sue&#x27;</span>, <span class="string">&#x27;Tina&#x27;</span>, <span class="string">&#x27;Maya&#x27;</span>]</span><br><span class="line">bus = Bus(basketball_team)</span><br><span class="line">bus.drop(<span class="string">&#x27;Tina&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(basketball_team)</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="string">&#x27;Sue&#x27;</span>, <span class="string">&#x27;Maya&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<h3 id="del和垃圾回收"><a href="#del和垃圾回收" class="headerlink" title="del和垃圾回收"></a>del和垃圾回收</h3><p>对象不会自行销毁，然而无法得到对象时，可能被当做垃圾回收</p>
+<p>del语句删除名称，而不是对象，举例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> weakref</span><br><span class="line">s1 = &#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;</span><br><span class="line">s2 = s1</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bye</span>():</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;Gone with the wind...&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ender = weakref.finalize(s1, bye)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ender.alive</span><br><span class="line"><span class="literal">True</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">del</span> s1</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ender.alive</span><br><span class="line"><span class="literal">True</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2 = <span class="string">&#x27;spam&#x27;</span></span><br><span class="line">Gone <span class="keyword">with</span> the wind...</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ender.alive</span><br><span class="line"><span class="literal">False</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="x20-弱引用"><a href="#x20-弱引用" class="headerlink" title="&#x20;弱引用"></a>&#x20;弱引用</h3><p>当对象的饮用数量归零后，垃圾回收程序会把对象销毁，但是，有时需要引用对象，而不让对象存在时间超过所需时间，这经常用在缓存中</p>
+<p>弱引用不会增加对象引用数量，引用的目标对象称为所指对象，因此我们说，弱引用不会妨碍所指对象被当做垃圾回收</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> weakref</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a_set = &#123;<span class="number">0</span>, <span class="number">1</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>wref = weakref.ref(a_set)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>wref</span><br><span class="line">&lt;weakref at <span class="number">0x100637598</span>; to <span class="string">&#x27;set&#x27;</span> at <span class="number">0x100636748</span>&gt;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>wref()</span><br><span class="line">&#123;<span class="number">0</span>, <span class="number">1</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a_set = &#123;<span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>wref()</span><br><span class="line">&#123;<span class="number">0</span>, <span class="number">1</span>&#125;</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>wref() <span class="keyword">is</span> <span class="literal">None</span></span><br><span class="line"><span class="literal">False</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>wref() <span class="keyword">is</span> <span class="literal">None</span></span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="x20-Python对不可变类型施加的把戏"><a href="#x20-Python对不可变类型施加的把戏" class="headerlink" title="&#x20;Python对不可变类型施加的把戏"></a>&#x20;Python对不可变类型施加的把戏</h3><p>例：使用另一个元组构建元组，得到的是同一个元组</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>t1 = (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t2 = <span class="built_in">tuple</span>(t1)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t2 <span class="keyword">is</span> t1</span><br><span class="line"><span class="literal">True</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t3 = t1[:]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t3 <span class="keyword">is</span> t1</span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<p>例：字符串字面量可能会创建共享的对象</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>t1 = (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t3 = (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>t3 <span class="keyword">is</span> t1</span><br><span class="line"><span class="literal">False</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s1 = <span class="string">&#x27;ABC&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2 = <span class="string">&#x27;ABC&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>s2 <span class="keyword">is</span> s1</span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="第9章-符合Python风格的对象"><a href="#第9章-符合Python风格的对象" class="headerlink" title="第9章 符合Python风格的对象"></a>第9章 符合Python风格的对象</h2><p>讨论两个概念：</p>
+<ul>
+<li>如何以及何时使用@classmethod和@staticmethod装饰器</li>
+<li>Python的私有属性和受保护属性的用法，约定和局限</li>
+</ul>
+<h3 id="classmethod和staticmethod"><a href="#classmethod和staticmethod" class="headerlink" title="classmethod和staticmethod"></a>classmethod和staticmethod</h3><ul>
+<li>classmethod定义了操作类，而不是操作实例的方法, (参数没有this)</li>
+<li>staticmethod就是普通函数，不过它碰巧在类的定义中体现 (不太有用）</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Demo</span>:</span><br><span class="line"><span class="meta">	@classmethod</span></span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">klassmeth</span>(<span class="params">*args</span>):</span><br><span class="line">		<span class="keyword">return</span> args</span><br><span class="line"><span class="meta">	@staticmethod(<span class="params">*args</span>):</span></span><br><span class="line">		<span class="keyword">return</span> args</span><br></pre></td></tr></table></figure>
+
+<p><a href="https://julien.danjou.info/blog/2013/guide-python-static-class-abstract-methods">https://julien.danjou.info/blog/2013/guide-python-static-class-abstract-methods</a></p>
+<h3 id="Python的私有属性和受保护的属性"><a href="#Python的私有属性和受保护的属性" class="headerlink" title="Python的私有属性和受保护的属性"></a>Python的私有属性和受保护的属性</h3><ul>
+<li>_private_attrs：两个下划线开头，声明该属性为私有，不能在类地外部被使用或直接访问。 在类内部的方法中使用时 self.__private_attrs</li>
+<li>__private_method：两个下划线开头，声明该方法为私有方法，不能在类地外部调用</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Effective Python 笔记</title>
+    <url>/2023/08/12/2023-08-12-effective-python-note/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>不错的Python进阶书。写这个笔记的目的是，把书中提到的编写高质量Python的59个方法的要点记录下来，便于今后的工作中查阅</p>
+<h1 id="第1章：用Pythonic方式来思考"><a href="#第1章：用Pythonic方式来思考" class="headerlink" title="第1章：用Pythonic方式来思考"></a>第1章：用Pythonic方式来思考</h1><span id="more"></span>
+
+<h2 id="x20-1-用Pythonic方式来思考"><a href="#x20-1-用Pythonic方式来思考" class="headerlink" title="&#x20;1. 用Pythonic方式来思考"></a>&#x20;1. 用Pythonic方式来思考</h2><p>python之禅 —— <code>import this</code></p>
+<h2 id="x20-2-遵循PEP8风格"><a href="#x20-2-遵循PEP8风格" class="headerlink" title="&#x20;2. 遵循PEP8风格"></a>&#x20;2. 遵循PEP8风格</h2><p>PEP8 —— Python Enhancement Proposal #8</p>
+<p>空白：</p>
+<ul>
+<li>使用空格而不是tab表示缩进</li>
+<li>和语法相关每一层缩进用4个空格</li>
+<li>每行字符数不超过79</li>
+<li>占据多行表达式，除首行外其余各行应在通常缩进级别上加4空格</li>
+<li>函数与类之间两个空行隔开</li>
+<li>同一个类中，各方法一个空行隔开</li>
+<li>使用下标获取元素，不要在两旁加空格</li>
+<li>为变量赋值，赋值符号左侧和右侧各自写一个空格，不要在两旁添加空格</li>
+</ul>
+<p>命名：</p>
+<ul>
+<li>函数、变量、属性用小写，各单词以下划线连接</li>
+<li>受保护实例属性，以单下划线开头</li>
+<li>私有实例属性：以两个下划线开头</li>
+<li>类以异常，应每个单词以大写形式命名，如CapitalizedWord</li>
+<li>模块级别常量，应全部采用大写，各单词以下划线相连，如ALL_CAPS</li>
+<li>类中实例方法，应该把首个参数命名为self，以表示对象自身</li>
+<li>类方法首个参数，应该命名为cls，以表示类自身</li>
+</ul>
+<p>表达式和语句：</p>
+<ul>
+<li>采用内联形式否定词，而不是把否定词放在整个表达式前面，例如写if a is not b 而不是 if not a is b</li>
+<li>不要通过测长度方法判断list是否为空，应采用if not list，空值会自动评估为False</li>
+<li>import语句总应放在文件开头</li>
+<li>引入模块时总应使用绝对名称，不应根据当前模块路径使用相对名称，例如引入bar包中的foo模块，应完整写出from bar import foo，不应该简写import foo</li>
+<li>文件中import语句应按顺序划三部分，分别表示标准库模块，第三方模块，自用模块，各部分中的import语句应按模块的字母顺序排列</li>
+</ul>
+<h2 id="3-了解bytes-str-unicode区别"><a href="#3-了解bytes-str-unicode区别" class="headerlink" title="3. 了解bytes, str, unicode区别"></a>3. 了解bytes, str, unicode区别</h2><ul>
+<li>Python3中，bytes是一个包含8位置的序列，str是一种包含unicode字符序列</li>
+</ul>
+<h2 id="4-用辅助函数取代复杂表达式"><a href="#4-用辅助函数取代复杂表达式" class="headerlink" title="4. 用辅助函数取代复杂表达式"></a>4. 用辅助函数取代复杂表达式</h2><p>开发者容易过度运用Python语法特性，写出特别复杂难以理解的单行表达式。<strong>这种情况需要把复杂表达式移到辅助函数</strong></p>
+<h2 id="5-了解切割序列的方法"><a href="#5-了解切割序列的方法" class="headerlink" title="5. 了解切割序列的方法"></a>5. 了解切割序列的方法</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">a = [<span class="string">&#x27;a&#x27;</span>,<span class="string">&#x27;b&#x27;</span>,<span class="string">&#x27;c&#x27;</span>,<span class="string">&#x27;d&#x27;</span>,<span class="string">&#x27;e&#x27;</span>,<span class="string">&#x27;f&#x27;</span>,<span class="string">&#x27;g&#x27;</span>,<span class="string">&#x27;h&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a[:<span class="number">4</span>]</span><br><span class="line">[<span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;b&#x27;</span>, <span class="string">&#x27;c&#x27;</span>, <span class="string">&#x27;d&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a[<span class="number">5</span>:]</span><br><span class="line">[<span class="string">&#x27;f&#x27;</span>, <span class="string">&#x27;g&#x27;</span>, <span class="string">&#x27;h&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a[-<span class="number">2</span>:]</span><br><span class="line">[<span class="string">&#x27;g&#x27;</span>, <span class="string">&#x27;h&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a[<span class="number">2</span>:-<span class="number">3</span>]</span><br><span class="line">[<span class="string">&#x27;c&#x27;</span>, <span class="string">&#x27;d&#x27;</span>, <span class="string">&#x27;e&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>a[:]</span><br><span class="line">[<span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;b&#x27;</span>, <span class="string">&#x27;c&#x27;</span>, <span class="string">&#x27;d&#x27;</span>, <span class="string">&#x27;e&#x27;</span>, <span class="string">&#x27;f&#x27;</span>, <span class="string">&#x27;g&#x27;</span>, <span class="string">&#x27;h&#x27;</span>]</span><br><span class="line">a[<span class="number">2</span>:<span class="number">6</span>] = [<span class="string">&#x27;c&#x27;</span>, <span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;o&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;b&#x27;</span>, <span class="string">&#x27;c&#x27;</span>, <span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;o&#x27;</span>, <span class="string">&#x27;g&#x27;</span>, <span class="string">&#x27;h&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-单次切片操作内，不要同时指定start-end-stride"><a href="#6-单次切片操作内，不要同时指定start-end-stride" class="headerlink" title="6. 单次切片操作内，不要同时指定start, end, stride"></a>6. 单次切片操作内，不要同时指定start, end, stride</h2><p>除了基本切片操作，Python还提供了somelist[start:end:stride]形式写法，以实现步进式切割，就是从每n个元素里取1个出来</p>
+<p>既有start, end，又有stride的切割操作，可能令人费解，考虑拆解两条语句，其中一条做范围切割，另一条做步进切割，如下</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">b = a[::<span class="number">2</span>]    <span class="comment"># [&#x27;a&#x27;, &#x27;c&#x27;, &#x27;e&#x27;, &#x27;g&#x27;]</span></span><br><span class="line">c = b[<span class="number">1</span>:-<span class="number">1</span>]   <span class="comment"># [&#x27;c&#x27;, &#x27;e&#x27;]</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="x20-7-用列表推导取代map-filter"><a href="#x20-7-用列表推导取代map-filter" class="headerlink" title="&#x20;7. 用列表推导取代map, filter"></a>&#x20;7. 用列表推导取代map, filter</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">a = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line">squares = [ x**<span class="number">2</span> <span class="keyword">for</span> x <span class="keyword">in</span> a ]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(squares)</span><br><span class="line">[<span class="number">1</span>, <span class="number">4</span>, <span class="number">9</span>]</span><br><span class="line">或者<span class="built_in">map</span>, <span class="built_in">filter</span></span><br><span class="line">squares = <span class="built_in">map</span>(<span class="keyword">lambda</span> x: x ** <span class="number">2</span>, a)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">list</span>(squares)</span><br><span class="line">[<span class="number">1</span>, <span class="number">4</span>, <span class="number">9</span>]</span><br></pre></td></tr></table></figure>
+
+<h2 id="8-不要使用含有两个以上表达式的列表推导"><a href="#8-不要使用含有两个以上表达式的列表推导" class="headerlink" title="8. 不要使用含有两个以上表达式的列表推导"></a>8. 不要使用含有两个以上表达式的列表推导</h2><p>例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">my_lists = [</span><br><span class="line">    [[<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>], [<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>]],</span><br><span class="line">]</span><br><span class="line">flat = [x <span class="keyword">for</span> sublist1 <span class="keyword">in</span> my_lists</span><br><span class="line">		  <span class="keyword">for</span> sublist2 <span class="keyword">in</span> sublist1</span><br><span class="line">		  <span class="keyword">for</span> x <span class="keyword">in</span> sublist2]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 可以看出，列表推导写法不够简洁，改用普通循环语句实现相同效果</span></span><br><span class="line">flat = []</span><br><span class="line"><span class="keyword">for</span> sublist1 <span class="keyword">in</span> my_lists:</span><br><span class="line">	<span class="keyword">for</span> sublist2 <span class="keyword">in</span> sublist1:</span><br><span class="line">		flat.extend(sublist2)</span><br></pre></td></tr></table></figure>
+
+<h2 id="9-用生成器表达式改写数据量较大的列表推导"><a href="#9-用生成器表达式改写数据量较大的列表推导" class="headerlink" title="9. 用生成器表达式改写数据量较大的列表推导"></a>9. 用生成器表达式改写数据量较大的列表推导</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">it = (<span class="built_in">len</span>(x) <span class="keyword">for</span> x <span class="keyword">in</span> <span class="built_in">open</span>(<span class="string">&#x27;file.txt&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(it)</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line">generator obj at XXX</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">next</span>(it))</span><br></pre></td></tr></table></figure>
+
+<h2 id="10-尽量用enumerate取代range"><a href="#10-尽量用enumerate取代range" class="headerlink" title="10. 尽量用enumerate取代range"></a>10. 尽量用enumerate取代range</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">flavor_list = [<span class="string">&#x27;vanilla&#x27;</span>, <span class="string">&#x27;chocolate&#x27;</span>, <span class="string">&#x27;pecan&#x27;</span>, <span class="string">&#x27;strawberry&#x27;</span>]</span><br><span class="line"><span class="keyword">for</span> i, flavor <span class="keyword">in</span> <span class="built_in">enumerate</span>(flavor_list):</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;%d: %s&#x27;</span> % (i + <span class="number">1</span>, flavor))</span><br></pre></td></tr></table></figure>
+
+<p>还可以直接指定enumerate函数开始计数时所用值，这样能把代码写的更短</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> i, flavor <span class="keyword">in</span> <span class="built_in">enumerate</span>(flavor_list, <span class="number">1</span>):</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;%d: %s&#x27;</span> % (i, flavor))</span><br></pre></td></tr></table></figure>
+
+<h2 id="11-用zip函数同时遍历两个迭代器"><a href="#11-用zip函数同时遍历两个迭代器" class="headerlink" title="11. 用zip函数同时遍历两个迭代器"></a>11. 用zip函数同时遍历两个迭代器</h2><p>使用range或enumerate方法的代码不够简洁</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">names = [<span class="string">&#x27;Cecilia&#x27;</span>, <span class="string">&#x27;Lise&#x27;</span>, <span class="string">&#x27;Marie&#x27;</span>]</span><br><span class="line">letters = [ <span class="built_in">len</span>(s) <span class="keyword">for</span> s <span class="keyword">in</span> names]</span><br><span class="line"></span><br><span class="line">longest_name = <span class="literal">None</span></span><br><span class="line">max_letters = <span class="number">0</span></span><br><span class="line"><span class="keyword">for</span> i, name <span class="keyword">in</span> <span class="built_in">enumerate</span>(names):</span><br><span class="line">    <span class="keyword">if</span> letters[i] &gt; max_letters:</span><br><span class="line">        max_letters = letters[i]</span><br><span class="line">        longest_name = name</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;longest_name: &#x27;</span>, longest_name)</span><br></pre></td></tr></table></figure>
+
+<p>改用内置zip方法，使代码更清晰</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">names = [<span class="string">&#x27;Cecilia&#x27;</span>, <span class="string">&#x27;Lise&#x27;</span>, <span class="string">&#x27;Marie&#x27;</span>]</span><br><span class="line">letters = [ <span class="built_in">len</span>(s) <span class="keyword">for</span> s <span class="keyword">in</span> names]</span><br><span class="line"></span><br><span class="line">longest_name = <span class="literal">None</span></span><br><span class="line">max_letters = <span class="number">0</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> name, count <span class="keyword">in</span> <span class="built_in">zip</span>(names, letters):</span><br><span class="line">    <span class="keyword">if</span> count &gt; max_letters:</span><br><span class="line">        longest_name = name</span><br><span class="line">        max_letters = count</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;longest_name: &#x27;</span>, longest_name)</span><br></pre></td></tr></table></figure>
+
+<p>注意点：</p>
+<ul>
+<li>Python2中zip不是生成器，而是会把开发者提供那些迭代器都平行遍历一次，可能占用大量内存导致程序崩溃</li>
+<li>如果输入迭代器长度不同，zip会提前终止，将导致意外结果</li>
+</ul>
+<h2 id="12-不要在for和while循环后写else块"><a href="#12-不要在for和while循环后写else块" class="headerlink" title="12. 不要在for和while循环后写else块"></a>12. 不要在for和while循环后写else块</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;Loop %d&#x27;</span> % i)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;Else block!&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>else块会在整个循环执行完之后立刻运行</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Loop %d&#x27;</span> % i)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&#x27;Else block!&#x27;</span>)</span><br><span class="line"></span><br><span class="line">$ python test.py</span><br><span class="line">Loop <span class="number">0</span></span><br><span class="line">Loop <span class="number">1</span></span><br><span class="line">Loop <span class="number">2</span></span><br><span class="line">Else block!</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>循环里用break提前跳出，会导致else块不执行</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">3</span>):</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;Loop %d&#x27;</span> % i)</span><br><span class="line">	<span class="keyword">if</span> i == <span class="number">1</span>:</span><br><span class="line">		<span class="keyword">break</span></span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;Else block!&#x27;</span>)</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line">Loop <span class="number">0</span></span><br><span class="line">Loop <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>如果for循环遍历序列是空的，就会立刻执行else块</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> x <span class="keyword">in</span> []:</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;Never runs&#x27;</span>)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;For Else block!&#x27;</span>)</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line">For Else block!</span><br></pre></td></tr></table></figure>
+
+<p>要点：不要在循环后使用else块，这种写法即不直观，又容易让人误解</p>
+<h2 id="13-合理利用try-except-else-finally结构中每个代码块"><a href="#13-合理利用try-except-else-finally结构中每个代码块" class="headerlink" title="13. 合理利用try&#x2F;except&#x2F;else&#x2F;finally结构中每个代码块"></a>13. 合理利用try&#x2F;except&#x2F;else&#x2F;finally结构中每个代码块</h2><ul>
+<li>无论try是否异常，都可利用try&#x2F;finally复合语句中finally块执行清理工作</li>
+<li>else块可用来缩减try代码量，并把没有发生异常所要执行的语句与try&#x2F;except分开</li>
+<li>顺利运行try块后，若想使某些操作能在finaly块的清理代码前执行，可将这些操作写到else</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">UNDEFINED = <span class="built_in">object</span>()</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">divide_json</span>(<span class="params">path</span>):</span><br><span class="line">	handle = <span class="built_in">open</span>(path, <span class="string">&#x27;r+&#x27;</span>)</span><br><span class="line">	<span class="keyword">try</span>:</span><br><span class="line">		data = handle.read()</span><br><span class="line">		op = json.loads(data)</span><br><span class="line">		value = (op[<span class="string">&#x27;numerator&#x27;</span>]/op[<span class="string">&#x27;denominator&#x27;</span>])</span><br><span class="line">	<span class="keyword">except</span> ZeroDivisionError es e:</span><br><span class="line">		<span class="keyword">return</span> UNDEFINED</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">	    op[<span class="string">&#x27;result&#x27;</span>] = value</span><br><span class="line">	    result = json.dumps(op)</span><br><span class="line">	    handle.seek(<span class="number">0</span>)</span><br><span class="line">	    handle.write(result)</span><br><span class="line">	    <span class="keyword">return</span> value</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">	    handle.close()</span><br></pre></td></tr></table></figure>
+
+<h1 id="第2章-函数"><a href="#第2章-函数" class="headerlink" title="第2章 函数"></a>第2章 函数</h1><h2 id="14-尽量用异常来表示特殊情况，而不返回Nones"><a href="#14-尽量用异常来表示特殊情况，而不返回Nones" class="headerlink" title="14. 尽量用异常来表示特殊情况，而不返回Nones"></a>14. 尽量用异常来表示特殊情况，而不返回Nones</h2><p>例：令函数返回None，可能会使调用该函数人犯错</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">divide</span>(<span class="params">a, b</span>):</span><br><span class="line">	<span class="keyword">try</span>:</span><br><span class="line">		<span class="keyword">return</span> a / b</span><br><span class="line">	<span class="keyword">except</span> ZeroDivisionError:</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line"></span><br><span class="line">x,y = <span class="number">0</span>, <span class="number">5</span></span><br><span class="line">result = divide(x, y)</span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> result:</span><br><span class="line">	<span class="built_in">print</span>(<span class="string">&#x27;Invaid inputs&#x27;</span>) <span class="comment"># This is WRONG !</span></span><br></pre></td></tr></table></figure>
+
+<p>改进方法一： 把返回值拆两部分，例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">divide</span>(<span class="params">a, b</span>):</span><br><span class="line">	<span class="keyword">try</span>:</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">True</span>, a / b</span><br><span class="line">	<span class="keyword">except</span> ZeroDivisionError:</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">False</span>, <span class="literal">None</span></span><br></pre></td></tr></table></figure>
+
+<p>改进方法二：给上一级抛异常</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">divide</span>(<span class="params">a, b</span>):</span><br><span class="line">	<span class="keyword">try</span>:</span><br><span class="line">		<span class="keyword">return</span> a / b:</span><br><span class="line">	<span class="keyword">except</span> ZeroDivisionError <span class="keyword">as</span> e:</span><br><span class="line">		<span class="keyword">raise</span> ValueError(<span class="string">&#x27;Invalid inputs&#x27;</span>) <span class="keyword">from</span> e</span><br></pre></td></tr></table></figure>
+
+<h2 id="15-了解如何在闭包里使用外围作用域中的变量"><a href="#15-了解如何在闭包里使用外围作用域中的变量" class="headerlink" title="15. 了解如何在闭包里使用外围作用域中的变量"></a>15. 了解如何在闭包里使用外围作用域中的变量</h2><p>使用nonlocal获取闭包内的数据</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">sort_priority3</span>(<span class="params">numbers, group</span>):</span><br><span class="line">	found = <span class="literal">False</span></span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">helper</span>(<span class="params">x</span>):</span><br><span class="line">		<span class="keyword">nonlocal</span> found</span><br><span class="line">		<span class="keyword">if</span> x <span class="keyword">in</span> group:</span><br><span class="line">			found = <span class="literal">True</span></span><br><span class="line">			<span class="keyword">return</span> (<span class="number">0</span>, x)</span><br><span class="line">		<span class="keyword">return</span> (<span class="number">1</span>, x)</span><br><span class="line">	numbers.sort(key=helper)</span><br><span class="line">	<span class="keyword">return</span> found</span><br></pre></td></tr></table></figure>
+
+<h2 id="16-用生成器改写直接返回列表函数"><a href="#16-用生成器改写直接返回列表函数" class="headerlink" title="16. 用生成器改写直接返回列表函数"></a>16. 用生成器改写直接返回列表函数</h2><p>这种写法的问题是，返回前要把所有结果放在列表里，如果输入量非常大，程序可能耗尽内存崩溃</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">index_words</span>(<span class="params">text</span>):</span><br><span class="line">	result = []</span><br><span class="line">	<span class="keyword">if</span> text:</span><br><span class="line">		result.append(<span class="number">0</span>)</span><br><span class="line">	<span class="keyword">for</span> index, letter <span class="keyword">in</span> <span class="built_in">enumerate</span>(text):</span><br><span class="line">		<span class="keyword">if</span> letter == <span class="string">&#x27; &#x27;</span>:</span><br><span class="line">			result.append(index + <span class="number">1</span>)</span><br><span class="line">	<span class="keyword">return</span> result</span><br><span class="line"></span><br><span class="line">address = <span class="string">&#x27;Four score and seven years ago...&#x27;</span></span><br><span class="line">result = index_words(address)</span><br><span class="line"><span class="built_in">print</span>(result[:<span class="number">3</span>])</span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line">[<span class="number">0</span>, <span class="number">5</span>, <span class="number">11</span>]</span><br></pre></td></tr></table></figure>
+
+<p>用生成器改写会更好，生成器用yield表达式函数，调用生成器函数时，不会真的运行，而是返回迭代器</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">index_word_iter</span>(<span class="params">text</span>):</span><br><span class="line">	<span class="keyword">if</span> text:</span><br><span class="line">		<span class="keyword">yield</span> <span class="number">0</span></span><br><span class="line">	<span class="keyword">for</span> index, letter <span class="keyword">in</span> <span class="built_in">enumerate</span>(text):</span><br><span class="line">		<span class="keyword">if</span> letter == <span class="string">&#x27; &#x27;</span>:</span><br><span class="line">			<span class="keyword">yield</span> index + <span class="number">1</span></span><br><span class="line"></span><br><span class="line">address = <span class="string">&#x27;Four score and seven years ago...&#x27;</span></span><br><span class="line">result = <span class="built_in">list</span>(index_words_iter(address))</span><br><span class="line">[<span class="number">0</span>, <span class="number">5</span>, <span class="number">11</span>, <span class="number">15</span>, <span class="number">21</span>, <span class="number">27</span>]</span><br></pre></td></tr></table></figure>
+
+<h2 id="17-在参数上迭代时，多加小心"><a href="#17-在参数上迭代时，多加小心" class="headerlink" title="17. 在参数上迭代时，多加小心"></a>17. 在参数上迭代时，多加小心</h2><p>函数在输入参数上多次迭代时要当心，如果参数是迭代器，可能导致奇怪的行为并错失某些值</p>
+<h2 id="18-用数量可变位置参数减少视觉杂讯-visual-noise"><a href="#18-用数量可变位置参数减少视觉杂讯-visual-noise" class="headerlink" title="18. 用数量可变位置参数减少视觉杂讯 (visual noise)"></a>18. 用数量可变位置参数减少视觉杂讯 (visual noise)</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">log</span>(<span class="params">message, *values</span>):</span><br><span class="line">	<span class="keyword">if</span> <span class="keyword">not</span> values:</span><br><span class="line">		<span class="built_in">print</span>(message)</span><br><span class="line">	<span class="keyword">else</span>:</span><br><span class="line">		values_str = <span class="string">&#x27;, &#x27;</span>.join(<span class="built_in">str</span>(x) <span class="keyword">for</span> x <span class="keyword">in</span> values)</span><br><span class="line">		<span class="built_in">print</span>(<span class="string">&#x27;%s: %s&#x27;</span> % (message, values_str))</span><br><span class="line"></span><br><span class="line">log(<span class="string">&#x27;My numbers are&#x27;</span>, <span class="number">1</span>, <span class="number">2</span>)</span><br><span class="line">log(<span class="string">&#x27;Hi there&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>要点：</p>
+<ul>
+<li>def语句中使用*args, 即可令函数接收数量可变的位置参数</li>
+<li>在已经接收*args参数的函数上继续添加位置参数，可能产生难以排查的BUG</li>
+</ul>
+<h2 id="19-用关键字参数表达可选的行为"><a href="#19-用关键字参数表达可选的行为" class="headerlink" title="19. 用关键字参数表达可选的行为"></a>19. 用关键字参数表达可选的行为</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">remainder</span>(<span class="params">number, divisor</span>):</span><br><span class="line">	<span class="keyword">return</span> number % divisor</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>下面这些调用，都是等效的</span><br><span class="line">remainder(<span class="number">20</span>, <span class="number">7</span>)</span><br><span class="line">remainder(<span class="number">20</span>, divisor=<span class="number">7</span>)</span><br><span class="line">remainder(number=<span class="number">20</span>, divisor=<span class="number">7</span>)</span><br><span class="line">remainder(ivisor=<span class="number">7</span>, number=<span class="number">20</span>)</span><br></pre></td></tr></table></figure>
+
+<p>灵活使用关键字参数，提供如下好处：</p>
+<ul>
+<li>更容易理解含义</li>
+<li>在函数定义中提供默认值，使代码简洁</li>
+</ul>
+<h2 id="20-用None和文档字符串描述含有动态默认值的参数"><a href="#20-用None和文档字符串描述含有动态默认值的参数" class="headerlink" title="20. 用None和文档字符串描述含有动态默认值的参数"></a>20. 用None和文档字符串描述含有动态默认值的参数</h2><p>参数默认值，只会在程序加载模块并读到本函数的定义时评估一次，对于{}或[]等动态的值，这可能会导致奇怪的行为</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">decode</span>(<span class="params">data, default=&#123;&#125;</span>):</span><br><span class="line">	<span class="keyword">try</span>:</span><br><span class="line">		<span class="keyword">return</span> json.loads(data)</span><br><span class="line">	<span class="keyword">except</span> ValueError:</span><br><span class="line">		<span class="keyword">return</span> default</span><br><span class="line"></span><br><span class="line">foo = decode(<span class="string">&#x27;bad data&#x27;</span>)</span><br><span class="line">foo[<span class="string">&#x27;stuff&#x27;</span>] = <span class="number">5</span></span><br><span class="line">bar = decode(<span class="string">&#x27;also bad&#x27;</span>)</span><br><span class="line">bar[<span class="string">&#x27;meep&#x27;</span>] = <span class="number">1</span></span><br><span class="line">&gt;&gt;&gt;</span><br><span class="line">Foo: &#123;<span class="string">&#x27;stuff&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;meep&#x27;</span>: <span class="number">1</span>&#125;</span><br><span class="line">Bar: &#123;<span class="string">&#x27;stuff&#x27;</span>: <span class="number">5</span>, <span class="string">&#x27;meep&#x27;</span>: <span class="number">1</span>&#125; <span class="comment"># Wrong</span></span><br></pre></td></tr></table></figure>
+
+<p>解决方法是，把关键字参数默认设置为None，并在文档字符串中描述它的行为</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">decode</span>(<span class="params">data, default=<span class="literal">None</span></span>):</span><br><span class="line">	<span class="string">&quot;&quot;&quot; Load JSON data from a string</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">	Args:</span></span><br><span class="line"><span class="string">		data: JSON data to decode</span></span><br><span class="line"><span class="string">		default: Value to return if decoding fails, Defaults to an empty dictionary</span></span><br><span class="line"><span class="string">	&quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> default <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        default = &#123;&#125;</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="keyword">return</span> json.loads(data)</span><br><span class="line">    <span class="keyword">except</span> ValueError:</span><br><span class="line">        <span class="keyword">return</span> default</span><br></pre></td></tr></table></figure>
+
+<h2 id="21-用只能以关键字形式指定的参数来确保代码明晰"><a href="#21-用只能以关键字形式指定的参数来确保代码明晰" class="headerlink" title="21. 用只能以关键字形式指定的参数来确保代码明晰"></a>21. 用只能以关键字形式指定的参数来确保代码明晰</h2><h1 id="第3章-类与继承"><a href="#第3章-类与继承" class="headerlink" title="第3章 类与继承"></a>第3章 类与继承</h1><h2 id="22-尽量用辅助类维护程序状态，而不要用字典和元组"><a href="#22-尽量用辅助类维护程序状态，而不要用字典和元组" class="headerlink" title="22. 尽量用辅助类维护程序状态，而不要用字典和元组"></a>22. 尽量用辅助类维护程序状态，而不要用字典和元组</h2><ul>
+<li>不要使用包含其他字典的字典，也不要使用过长的元组</li>
+<li>如果容器中包含简单而又不可变的数据，可先使用namedtuple表示，后有需要再修改为类</li>
+<li>保存内部状态的字典如果比较复杂，应该把代码拆解为辅助类</li>
+</ul>
+<h2 id="23-简单的接口应该接受函数，而不是类的实例"><a href="#23-简单的接口应该接受函数，而不是类的实例" class="headerlink" title="23. 简单的接口应该接受函数，而不是类的实例"></a>23. 简单的接口应该接受函数，而不是类的实例</h2><p>Python有许多内置API，允许调用者传入函数，以定制其行为，例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>names = [<span class="string">&#x27;Socrates&#x27;</span>, <span class="string">&#x27;Archimedes&#x27;</span>, <span class="string">&#x27;Plato&#x27;</span>, <span class="string">&#x27;Aristotle&#x27;</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>names.sort(key=<span class="keyword">lambda</span> x: <span class="built_in">len</span>(x))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(names)</span><br><span class="line">[<span class="string">&#x27;Plato&#x27;</span>, <span class="string">&#x27;Socrates&#x27;</span>, <span class="string">&#x27;Aristotle&#x27;</span>, <span class="string">&#x27;Archimedes&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<p>其他编程语言可能用抽象类定义挂钩，然而在Python中，很多挂钩只是无状态函数，这些函数有明确参数和返回值。用函数做挂钩，比定义一个类要简单</p>
+<h2 id="24-以-classmethod形式的多态去通用地构建对象"><a href="#24-以-classmethod形式的多态去通用地构建对象" class="headerlink" title="24. 以@classmethod形式的多态去通用地构建对象"></a>24. 以@classmethod形式的多态去通用地构建对象</h2><p>通过@classmethod机制，可以用一种与构造器相仿的方式构造类的对象</p>
+<h2 id="25-用super初始化父类"><a href="#25-用super初始化父类" class="headerlink" title="25. 用super初始化父类"></a>25. 用super初始化父类</h2><ul>
+<li>直接调用父类的__init__方法，在多重继承影响下，可能产生无法预知行为</li>
+<li>总是应该使用内置的super函数初始化父类</li>
+</ul>
+<h2 id="26-只在使用Mix-in组件制作工具类时进行多重继承"><a href="#26-只在使用Mix-in组件制作工具类时进行多重继承" class="headerlink" title="26. 只在使用Mix-in组件制作工具类时进行多重继承"></a>26. 只在使用Mix-in组件制作工具类时进行多重继承</h2><h2 id="27-多用public属性，少用private属性"><a href="#27-多用public属性，少用private属性" class="headerlink" title="27. 多用public属性，少用private属性"></a>27. 多用public属性，少用private属性</h2><ul>
+<li>Python编译器无法严格保证private字段私密性，用经典的格言来说：“we are all consenting adults here”，大家都认为开放比封闭更好</li>
+<li>只有子类不受自己控制时，才可以考虑用private属性来避免名称冲突</li>
+</ul>
+<h2 id="28-继承collections-abc以实现自定义的容器类型"><a href="#28-继承collections-abc以实现自定义的容器类型" class="headerlink" title="28. 继承collections.abc以实现自定义的容器类型"></a>28. 继承collections.abc以实现自定义的容器类型</h2><p>编写自制容器类型，可以从内置collections.abc模块的抽象基类中继承。从这样的基类继承了子类后，如果忘记实现某个方法，那么collections.abc模块会指出这个错误：</p>
+<pre><code>from collections.abc import Sequence
+class BadType(Sequence):
+    pass
+foo = BadType()
+&gt;&gt;&gt;
+TypeError: Can&#39;t instantiate abstract class BadType with ...
+</code></pre>
+<h1 id="第4章-元素与属性"><a href="#第4章-元素与属性" class="headerlink" title="第4章 元素与属性"></a>第4章 元素与属性</h1><h2 id="29-用纯属性取代get和set方法"><a href="#29-用纯属性取代get和set方法" class="headerlink" title="29. 用纯属性取代get和set方法"></a>29. 用纯属性取代get和set方法</h2><p>从其他语言转入Python的开发者，可能会在类中明确实现getter, setter，但这种做法不像Python编程风格</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">OldResistor</span>(<span class="title class_ inherited__">object</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, ohms</span>):</span><br><span class="line">        <span class="variable language_">self</span>._ohms = ohms</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get_ohms</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>._ohms</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">set_ohms</span>(<span class="params">self, ohms</span>):</span><br><span class="line">        <span class="variable language_">self</span>._ohms = ohms</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">obj = OldResistor(<span class="number">50e3</span>)</span><br><span class="line"><span class="built_in">print</span>(obj.get_ohms())</span><br></pre></td></tr></table></figure>
+
+<p>但是，对Python来说，不需要手工实现setter和getter，而是直接用public属性，这样原地自增操作变得清晰自然</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Resistor</span>(<span class="title class_ inherited__">object</span>):</span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">__init</span>(<span class="params">self, ohms</span>):</span><br><span class="line">		<span class="variable language_">self</span>.ohms = ohms</span><br><span class="line">r1 = Resistor(<span class="number">50e3</span>)</span><br><span class="line">r1.ohms += <span class="number">5e3</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="30-考虑用-property代替属性重构"><a href="#30-考虑用-property代替属性重构" class="headerlink" title="30. 考虑用@property代替属性重构"></a>30. 考虑用@property代替属性重构</h2><p>Python内置的@property装饰器负责把一个方法变成属性调用</p>
+<p>例，使用@property既能检查参数，又可以用类似属性这样简单方法访问类的变量</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Student</span>(<span class="title class_ inherited__">object</span>):</span><br><span class="line"><span class="meta">    @property</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">score</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="variable language_">self</span>.score</span><br><span class="line"></span><br><span class="line"><span class="meta">    @score.setter</span></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">score</span>(<span class="params">self, value</span>):</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">isinstance</span>(value, <span class="built_in">int</span>):</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&#x27;score must be an int!&#x27;</span>)</span><br><span class="line">        <span class="keyword">if</span> value &lt; <span class="number">0</span> <span class="keyword">or</span> value &gt; <span class="number">100</span>:</span><br><span class="line">            <span class="keyword">raise</span> ValueError(<span class="string">&#x27;score must between 0 ~ 100&#x27;</span>)</span><br><span class="line">        <span class="variable language_">self</span>._score = value</span><br><span class="line"></span><br><span class="line">s = Student()</span><br><span class="line">s.score = <span class="number">60</span></span><br><span class="line">s.score = <span class="number">10000</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>python test.py</span><br><span class="line">ValueError: score must between <span class="number">0</span> ~ <span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="31-用描述符来改写需要复用的-property方法"><a href="#31-用描述符来改写需要复用的-property方法" class="headerlink" title="31. 用描述符来改写需要复用的@property方法"></a>31. 用描述符来改写需要复用的@property方法</h2><h2 id="32-用getattr-getattribute-setattr实现按需生成操作-惰性方式加载并保存对象属性）"><a href="#32-用getattr-getattribute-setattr实现按需生成操作-惰性方式加载并保存对象属性）" class="headerlink" title="32. 用getattr, getattribute, setattr实现按需生成操作 (惰性方式加载并保存对象属性）"></a>32. 用getattr, getattribute, setattr实现按需生成操作 (惰性方式加载并保存对象属性）</h2><ul>
+<li>如果某个类定义了__getattr__，同时系统在该类对象实例字典中找不到待查属性，那么，系统就会调用这个方法</li>
+<li>程序每次访问对象属性，Python系统会调用__getattribute__</li>
+</ul>
+<h2 id="33-用元类验证子类"><a href="#33-用元类验证子类" class="headerlink" title="33. 用元类验证子类"></a>33. 用元类验证子类</h2><h2 id="34-用元类注册子类"><a href="#34-用元类注册子类" class="headerlink" title="34. 用元类注册子类"></a>34. 用元类注册子类</h2><h1 id="第5章-并发及并行"><a href="#第5章-并发及并行" class="headerlink" title="第5章 并发及并行"></a>第5章 并发及并行</h1><h2 id="36-用subprocess模块管理子进程"><a href="#36-用subprocess模块管理子进程" class="headerlink" title="36. 用subprocess模块管理子进程"></a>36. 用subprocess模块管理子进程</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"></span><br><span class="line">proc = subprocess.Popen([<span class="string">&#x27;echo&#x27;</span>, <span class="string">&#x27;hello&#x27;</span>], stdout=subprocess.PIPE)</span><br><span class="line">out, err = proc.communicate()</span><br><span class="line"><span class="built_in">print</span>(out.decode(<span class="string">&#x27;utf-8&#x27;</span>))</span><br></pre></td></tr></table></figure>
+
+<p>把子进程从父进程中剥离</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">run_sleep</span>(<span class="params">period</span>):</span><br><span class="line">    proc = subprocess.Popen([<span class="string">&#x27;sleep&#x27;</span>, <span class="built_in">str</span>(period)])</span><br><span class="line">    <span class="keyword">return</span> proc</span><br><span class="line"></span><br><span class="line">start = time.time()</span><br><span class="line">procs = []</span><br><span class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">    proc = run_sleep(<span class="number">0.1</span>)</span><br><span class="line">    procs.append(proc)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> proc <span class="keyword">in</span> procs:</span><br><span class="line">    proc.communicate()</span><br><span class="line">end = time.time()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;Finished in %.3f seconds&#x27;</span> % (end - start))</span><br></pre></td></tr></table></figure>
+
+<h2 id="37-可以用线程执行阻塞式IO，但不要用它做并行计算"><a href="#37-可以用线程执行阻塞式IO，但不要用它做并行计算" class="headerlink" title="37. 可以用线程执行阻塞式IO，但不要用它做并行计算"></a>37. 可以用线程执行阻塞式IO，但不要用它做并行计算</h2><ul>
+<li>受到全局解释器锁（GIL）限制，多条Python线程不能在多个CPU核心上平行地执行字节码</li>
+</ul>
+<h2 id="38-在线程中使用Lock来防止数据竞争"><a href="#38-在线程中使用Lock来防止数据竞争" class="headerlink" title="38. 在线程中使用Lock来防止数据竞争"></a>38. 在线程中使用Lock来防止数据竞争</h2><ul>
+<li>GIL不会保护开发者自己代码， 同一时刻固然只能有一个Python线程运行，但这个线程正在操作某个数据结构时，其他线程可能会打断它，也就是说Python解释器来执行两个连续字节码指令时，其他线程可能会中途插进来。</li>
+</ul>
+<p>threading.Lock类实现了互斥锁</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">LockingCounter</span>(<span class="title class_ inherited__">object</span>):</span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">		<span class="variable language_">self</span>.lock = Lock()</span><br><span class="line">		<span class="variable language_">self</span>.count = <span class="number">0</span></span><br><span class="line">	<span class="keyword">def</span> <span class="title function_">increment</span>(<span class="params">self, offset</span>):</span><br><span class="line">		<span class="keyword">with</span> <span class="variable language_">self</span>.lock:</span><br><span class="line">			<span class="variable language_">self</span>.count += offset</span><br></pre></td></tr></table></figure>
+
+<h2 id="39-用Queue协调各线程之间的工作"><a href="#39-用Queue协调各线程之间的工作" class="headerlink" title="39. 用Queue协调各线程之间的工作"></a>39. 用Queue协调各线程之间的工作</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> Queue</span><br><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">q = Queue.Queue(<span class="number">10</span>=</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">producer</span>():</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">        q.put(i)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">consumer</span>():</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">10</span>):</span><br><span class="line">        <span class="built_in">print</span>(q.get())</span><br><span class="line"></span><br><span class="line">threads = []</span><br><span class="line"></span><br><span class="line">t1 = threading.Thread(target=consumer)</span><br><span class="line">t2 = threading.Thread(target=producer)</span><br></pre></td></tr></table></figure>
+
+<h2 id="40-考虑用协程并发地运行多个函数"><a href="#40-考虑用协程并发地运行多个函数" class="headerlink" title="40.考虑用协程并发地运行多个函数"></a>40.考虑用协程并发地运行多个函数</h2><ul>
+<li>对于生成器的yield表达式来说，外部代码通过send方法传给生成器的那个值，就是该表达式所具备的值</li>
+</ul>
+<h2 id="x20-41-考虑用concurrent-futures实现平行计算"><a href="#x20-41-考虑用concurrent-futures实现平行计算" class="headerlink" title="&#x20;41. 考虑用concurrent.futures实现平行计算"></a>&#x20;41. 考虑用concurrent.futures实现平行计算</h2><ul>
+<li>multiprocessing模块可用于实现平行计算，利用multiprocessing模块最恰当做法，是通过内置concurrent.futures模块及其ProcessPoolExecutor类使用它</li>
+</ul>
+<h1 id="第6章-内置模块"><a href="#第6章-内置模块" class="headerlink" title="第6章 内置模块"></a>第6章 内置模块</h1><h2 id="x20-42-用functools-wraps定义函数修饰器"><a href="#x20-42-用functools-wraps定义函数修饰器" class="headerlink" title="&#x20;42. 用functools.wraps定义函数修饰器"></a>&#x20;42. 用functools.wraps定义函数修饰器</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">trace</span>(<span class="params">func</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">wrapper</span>(<span class="params">*args, **kwargs</span>):</span><br><span class="line">        result = func(*args, **kwargs)</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;%s(%r, %r) -&gt; %r&#x27;</span> % (func.__name__, args, kwargs, result))</span><br><span class="line">        <span class="keyword">return</span> result</span><br><span class="line">    <span class="keyword">return</span> wrapper</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@trace</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">fibonacci</span>(<span class="params">n</span>):</span><br><span class="line">    <span class="keyword">if</span> n <span class="keyword">in</span> (<span class="number">0</span>, <span class="number">1</span>):</span><br><span class="line">        <span class="keyword">return</span> n</span><br><span class="line">    <span class="keyword">return</span> fibonacci(n - <span class="number">2</span>) + fibonacci(n - <span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(fibonacci(<span class="number">3</span>))</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>Python为修饰器提供专门语法，使得程序运行时，能用一个函数修改另一个函数</li>
+</ul>
+<h2 id="43-考虑以contextlib和with语句改写可复用的try-finally代码"><a href="#43-考虑以contextlib和with语句改写可复用的try-finally代码" class="headerlink" title="43. 考虑以contextlib和with语句改写可复用的try&#x2F;finally代码"></a>43. 考虑以contextlib和with语句改写可复用的try&#x2F;finally代码</h2><p>用with语句代替try… finally，例如</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;/path/to/file&#x27;</span>, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">	f.read()</span><br></pre></td></tr></table></figure>
+
+<h2 id="44-用copyreg实现可靠pickle操作"><a href="#44-用copyreg实现可靠pickle操作" class="headerlink" title="44. 用copyreg实现可靠pickle操作"></a>44. 用copyreg实现可靠pickle操作</h2><p>内置的pickle模块能够将Python对象字节序列转化为字节流，也能把字节反序列化成Python对象</p>
+<h2 id="45-使用datatime模块处理本地时间而不是time"><a href="#45-使用datatime模块处理本地时间而不是time" class="headerlink" title="45. 使用datatime模块处理本地时间而不是time"></a>45. 使用datatime模块处理本地时间而不是time</h2><ul>
+<li>不要用time模块在不同时区进行转换</li>
+<li>开发者总是应该先把时间表示成UTC，然后对其转换，最后再转回本地时间</li>
+</ul>
+<h2 id="46-使用内置算法和数据结构"><a href="#46-使用内置算法和数据结构" class="headerlink" title="46. 使用内置算法和数据结构"></a>46. 使用内置算法和数据结构</h2><ul>
+<li>双向队列 deque</li>
+<li>有序字典 OrderedDict (按照键插入顺序，保留键值对在字典中次序）</li>
+<li>优先级队列 heapq</li>
+<li>二分查找 bisect</li>
+<li>迭代器有关 itertools</li>
+</ul>
+<h2 id="47-重视精确度场合，应该使用decimal"><a href="#47-重视精确度场合，应该使用decimal" class="headerlink" title="47.重视精确度场合，应该使用decimal"></a>47.重视精确度场合，应该使用decimal</h2><p>Decimal类适合用在对精度要求高，对舍入行为要求严格的场合，例如：涉及货币计算的场合</p>
+<h2 id="48-学会安装由Python开发者社区构建的模块-x20"><a href="#48-学会安装由Python开发者社区构建的模块-x20" class="headerlink" title="48. 学会安装由Python开发者社区构建的模块&#x20;"></a>48. 学会安装由Python开发者社区构建的模块&#x20;</h2><ul>
+<li>PyPI (Python Package Index) 包含许多常用软件包， pip命令行工具可以从PyPI中安装软件包</li>
+</ul>
+<h1 id="第7章-协作开发"><a href="#第7章-协作开发" class="headerlink" title="第7章 协作开发"></a>第7章 协作开发</h1><h2 id="49-为每个函数、类和模块编写文档字符串"><a href="#49-为每个函数、类和模块编写文档字符串" class="headerlink" title="49. 为每个函数、类和模块编写文档字符串"></a>49. 为每个函数、类和模块编写文档字符串</h2><p><strong>为模块编写文档</strong></p>
+<ul>
+<li>每个模块应该有顶级的docstring</li>
+<li>头一行文字，用一句话描述本模块用途，接着一段话包含一些细节信息，把与本模块操作相关内容，告诉模块使用者。</li>
+<li>还可以在模块的dockstring中，强调本模块里比较重要类和函数，使开发者据此了解该模块用法</li>
+</ul>
+<p>举例：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># words.py</span></span><br><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"><span class="string">&quot;&quot;&quot; Library for XXX...</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">Testing how words XXX...</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">Available functions:</span></span><br><span class="line"><span class="string"> - palindrome: Determine if a word ...</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>为类编写文档</strong></p>
+<p>每一个类应该有docstring，写法与模块级的docstring大致相同，如下：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Player</span>(<span class="title class_ inherited__">object</span>):</span><br><span class="line">	<span class="string">&quot;&quot;&quot;Represents a player of the game.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">	Subclassses may override ...</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">	Public attributes:</span></span><br><span class="line"><span class="string">	- power: ...</span></span><br><span class="line"><span class="string">	- coins: ...</span></span><br><span class="line"><span class="string">	&quot;&quot;&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>为函数编写文档</strong></p>
+<p>函数的docstring，第一行用一句话描述函数功能，接下来用一段话描述具体行为和函数参数。 若函数由返回值，应该在docstring中写明</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">find_anagrams</span>(<span class="params">word, dictionary</span>):</span><br><span class="line">	<span class="string">&quot;&quot;&quot;Find all anagrams for a word.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">	This function only runs as fast as the test for membership in the dictionary container...</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">	Args:</span></span><br><span class="line"><span class="string">		word: String of the target word.</span></span><br><span class="line"><span class="string">		dictionary: Container with all strings that are known to be actual words.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">	Returns:</span></span><br><span class="line"><span class="string">		List of anagrams that were found. Empty if none were found.</span></span><br></pre></td></tr></table></figure>
+<p>作者的建议：</p>
+<ul>
+<li>如果函数没有参数，仅有一个简单返回值，那么只需一句话描述该函数就够了</li>
+<li>如果函数没有返回值，不要在docstring里提及，不要出现return None这种说法</li>
+<li>如果正常使用中不会抛异常，就不要在docstring提到异常</li>
+<li>如果函数接收可变参数，应该在文档中描述*args, **kwargs用途</li>
+<li>如果函数参数有默认值，应该指出这些默认值</li>
+</ul>
+<h2 id="50-用包安排模块，并提供稳固API"><a href="#50-用包安排模块，并提供稳固API" class="headerlink" title="50. 用包安排模块，并提供稳固API"></a>50. 用包安排模块，并提供稳固API</h2><p>在目录中放入名为__init__.py的空文件，就可以采用相对于该目录的路径，引入目录中其他Python文件，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">main.py</span><br><span class="line">mypackage/__init__.py</span><br><span class="line">mypackage/utils.py</span><br></pre></td></tr></table></figure>
+
+<p>在main.py中引入utils模块</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># main.py</span></span><br><span class="line"><span class="keyword">from</span> mypackage <span class="keyword">import</span> utils</span><br></pre></td></tr></table></figure>
+
+<p><strong>as子句可以给引入当前作用域的属性重新起名，解决冲突</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> analysis.utils <span class="keyword">import</span> inspect <span class="keyword">as</span> analysis_inspect</span><br><span class="line"><span class="keyword">from</span> frontend.utils <span class="keyword">import</span> inspect <span class="keyword">as</span> frontend_inspect</span><br></pre></td></tr></table></figure>
+
+<p>尽量不要使用import *语句，而是应该用from x import y，明确指出自己想要引入的名称</p>
+<h2 id="51-为自编的模块定义根异常，以便将调用者与API隔离"><a href="#51-为自编的模块定义根异常，以便将调用者与API隔离" class="headerlink" title="51. 为自编的模块定义根异常，以便将调用者与API隔离"></a>51. 为自编的模块定义根异常，以便将调用者与API隔离</h2><h2 id="52-用适当方式打破循环依赖关系"><a href="#52-用适当方式打破循环依赖关系" class="headerlink" title="52. 用适当方式打破循环依赖关系"></a>52. 用适当方式打破循环依赖关系</h2><ul>
+<li>如果两个模块必须相互调用对方，才能完成引入操作，就会出现循环依赖现象，这可能导致程序启动时崩溃</li>
+<li>打破循环依赖关系最佳方案，是把导致两个模块互相依赖的那部分代码，重构为单独模块，并把它放在依赖树底部</li>
+</ul>
+<h2 id="53-用虚拟环境隔离项目，并重建其依赖关系"><a href="#53-用虚拟环境隔离项目，并重建其依赖关系" class="headerlink" title="53. 用虚拟环境隔离项目，并重建其依赖关系"></a>53. 用虚拟环境隔离项目，并重建其依赖关系</h2><h1 id="x20-第8章-部署"><a href="#x20-第8章-部署" class="headerlink" title="&#x20;第8章 部署"></a>&#x20;第8章 部署</h1><h2 id="54-考虑用模块级别代码配置不同部署环境-x20"><a href="#54-考虑用模块级别代码配置不同部署环境-x20" class="headerlink" title="54. 考虑用模块级别代码配置不同部署环境&#x20;"></a>54. 考虑用模块级别代码配置不同部署环境&#x20;</h2><h2 id="55-通过repr字符串输出调试信息"><a href="#55-通过repr字符串输出调试信息" class="headerlink" title="55. 通过repr字符串输出调试信息"></a>55. 通过repr字符串输出调试信息</h2><p>简单的print不能打印出值的类型信息，可以用repr获取类型信息</p>
+<h2 id="56-用unittest测试全部代码"><a href="#56-用unittest测试全部代码" class="headerlink" title="56. 用unittest测试全部代码"></a>56. 用unittest测试全部代码</h2><h2 id="57-用pdb实现交互调试"><a href="#57-用pdb实现交互调试" class="headerlink" title="57. 用pdb实现交互调试"></a>57. 用pdb实现交互调试</h2><p><a href="https://docs.python.org/zh-cn/3/library/pdb.html">https://docs.python.org/zh-cn/3/library/pdb.html</a></p>
+<h2 id="58-先分析性能，然后再优化"><a href="#58-先分析性能，然后再优化" class="headerlink" title="58. 先分析性能，然后再优化"></a>58. 先分析性能，然后再优化</h2><h2 id="59-用tracemalloc掌握内存使用和泄漏情况"><a href="#59-用tracemalloc掌握内存使用和泄漏情况" class="headerlink" title="59. 用tracemalloc掌握内存使用和泄漏情况"></a>59. 用tracemalloc掌握内存使用和泄漏情况</h2>]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
+    <url>/2023/08/22/2023-08-22-extrace-seq-in-python/</url>
+    <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
+
+<p>可以用占位符，丢弃其他的值</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">year, _ , _ = [<span class="number">2002</span>,<span class="number">6</span>,<span class="number">10</span>]</span><br><span class="line"><span class="built_in">print</span>(year)</span><br><span class="line"><span class="number">2002</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="解压可迭代对象赋值给多个变量"><a href="#解压可迭代对象赋值给多个变量" class="headerlink" title="解压可迭代对象赋值给多个变量"></a>解压可迭代对象赋值给多个变量</h2><span id="more"></span>
+
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>]</span><br><span class="line">first, *middle, last = grades</span><br><span class="line"><span class="built_in">print</span>(middle)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p01_unpack_sequence_into_separate_variables.html">Python Cookbook 第一章</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python保留最后N个元素</title>
+    <url>/2023/08/29/2023-08-29-keep-final-n-elements-by-python/</url>
+    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
       </tags>
   </entry>
 </search>

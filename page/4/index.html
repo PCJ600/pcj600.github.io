@@ -180,7 +180,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/06/05/2021-06-05-git-download-too-slow/">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/12/12/2021-12-12-redis-note-02-linkedlist/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -194,7 +194,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/06/05/2021-06-05-git-download-too-slow/" class="post-title-link" itemprop="url">配置Git代理，解决下载龟速问题</a>
+            <a href="/2021/12/12/2021-12-12-redis-note-02-linkedlist/" class="post-title-link" itemprop="url">Redis学习笔记(二)——链表</a>
         </h2>
 
         <div class="post-meta">
@@ -204,7 +204,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2021-06-05 19:54:18" itemprop="dateCreated datePublished" datetime="2021-06-05T19:54:18+08:00">2021-06-05</time>
+              <time title="创建时间：2021-12-12 20:32:39" itemprop="dateCreated datePublished" datetime="2021-12-12T20:32:39+08:00">2021-12-12</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -212,7 +212,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Git/" itemprop="url" rel="index"><span itemprop="name">Git</span></a>
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
                 </span>
             </span>
 
@@ -222,7 +222,365 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>608</span>
+              <span>7.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>链表在Redis中的应用非常广泛，链表是列表键的底层实现之一，发布订阅，慢查询，监视器等功能也用到了链表。</p>
+<p>以下给出Redis中链表相关的一些思考问题，通过源码分析，给出问题的答案，掌握链表的底层实现原理和设计思路。</p>
+<p>源码版本：<a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/12/12/2021-12-12-redis-note-02-linkedlist/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/12/11/2021-12-11-redis-note-01-sds/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/12/11/2021-12-11-redis-note-01-sds/" class="post-title-link" itemprop="url">Redis学习笔记(一)——简单动态字符串</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-12-11 20:28:06" itemprop="dateCreated datePublished" datetime="2021-12-11T20:28:06+08:00">2021-12-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>17k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>15 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Redis是用C语言开发的，但并没有直接使用C语言数组去表示字符串，而是使用简单动态字符串(Simple dynamic String，简称SDS)作为字符串的底层实现。</p>
+<p>以下给出SDS相关的一些常见问题，通过源码分析和实际验证，思考这些问题的答案，了解实现原理和设计思路。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/12/11/2021-12-11-redis-note-01-sds/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/11/30/2021-11-30-redis-key-expired-case/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/11/30/2021-11-30-redis-key-expired-case/" class="post-title-link" itemprop="url">Hiredis查询失败时出现key丢失问题定位</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-30 20:25:25" itemprop="dateCreated datePublished" datetime="2021-11-30T20:25:25+08:00">2021-11-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>hiredis查询key失败后，出现key丢失的问题。</p>
+<p>REDIS版本及源码：<a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/6.0.10">6.0.10</a></p>
+<p>hiredis版本及源码：<a target="_blank" rel="noopener" href="https://github.com/redis/hiredis/releases/tag/v1.0.2">v1.0.2</a></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/11/30/2021-11-30-redis-key-expired-case/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/" class="post-title-link" itemprop="url">ARMv8 A64汇编中立即数范围问题分析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-21 20:21:19" itemprop="dateCreated datePublished" datetime="2021-11-21T20:21:19+08:00">2021-11-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Assembly/" itemprop="url" rel="index"><span itemprop="name">Assembly</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？</strong></p>
+<p>在Stackoverflow上发现类似的讨论：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly">https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly</a></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/" class="post-title-link" itemprop="url">如何查看Redis订阅的模式字符串</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-11-21 20:17:45" itemprop="dateCreated datePublished" datetime="2021-11-21T20:17:45+08:00">2021-11-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>854</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -241,13 +599,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
-<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>首先，你的本地机器必须有socks5代理</p>
-<p>进<code>git bash</code>，敲如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global http.sslverify false</span><br><span class="line">git config -l</span><br></pre></td></tr></table></figure>
+          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><code>pubsub channels</code>可以查看Redis中被订阅的频道(<strong>channel</strong>)：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/06/05/2021-06-05-git-download-too-slow/#more" rel="contents">
+              <a class="btn" href="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -271,7 +626,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/03/20/2021-03-20-redis-note-09-aof/">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/11/06/2021-11-06-one-redis-case/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -285,7 +640,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/03/20/2021-03-20-redis-note-09-aof/" class="post-title-link" itemprop="url">Redis学习笔记(九)——AOF持久化</a>
+            <a href="/2021/11/06/2021-11-06-one-redis-case/" class="post-title-link" itemprop="url">Redis抓包分析案例</a>
         </h2>
 
         <div class="post-meta">
@@ -295,7 +650,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2021-03-20 19:51:12" itemprop="dateCreated datePublished" datetime="2021-03-20T19:51:12+08:00">2021-03-20</time>
+              <time title="创建时间：2021-11-06 20:14:29" itemprop="dateCreated datePublished" datetime="2021-11-06T20:14:29+08:00">2021-11-06</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -303,471 +658,11 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
                 </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>3k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>3 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>Redis提供了AOF(append only file)持久化功能，通过保存服务器执行的写命令的方式记录数据库状态。本文介绍如下内容：</p>
-<ul>
-<li>AOF持久化的实现 (命令追加、文件写入、AOF重写、AOF后台重写)</li>
-<li>如何通过AOF文件还原数据库</li>
-<li>AOF持久化的配置选项</li>
-<li>AOF和RDB两种持久化方式的比较</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/03/20/2021-03-20-redis-note-09-aof/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/03/14/2021-03-14-redis-note-08-rdb/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/03/14/2021-03-14-redis-note-08-rdb/" class="post-title-link" itemprop="url">Redis学习笔记(八)——RDB持久化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-03-14 19:48:30" itemprop="dateCreated datePublished" datetime="2021-03-14T19:48:30+08:00">2021-03-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
+                  ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>4k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>4 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Redis是基于内存的数据库，服务器进程退出后，内存中的数据会丢失。为了解决这个问题，Redis提供了RDB持久化机制，将内存中的数据保存到硬盘，从而避免数据意外丢失。</p>
-<h2 id="RDB持久化"><a href="#RDB持久化" class="headerlink" title="RDB持久化"></a>RDB持久化</h2><p>RDB持久化将某个时间点上的数据库状态保存到一个RDB文件，这个RDB文件是一个经过压缩的二进制文件，Redis服务器可以通过读取RDB文件还原数据库状态。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/03/14/2021-03-14-redis-note-08-rdb/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/03/13/2021-03-13-redis-note-07-database/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/03/13/2021-03-13-redis-note-07-database/" class="post-title-link" itemprop="url">Redis学习笔记(七)——数据库</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-03-13 19:45:53" itemprop="dateCreated datePublished" datetime="2021-03-13T19:45:53+08:00">2021-03-13</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>5.3k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>5 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>介绍Redis数据库的实现，解答以下几个问题：</p>
-<ul>
-<li>Redis服务器是怎么保存数据库的？客户端又是怎么切换数据库的？</li>
-<li>数据库的增、删、改、查的实现</li>
-<li>键的过期时间是怎么保存的，又是如何删除的？怎么判断一个键是否过期？</li>
-<li>过期键的删除策略有哪些？每种策略的优缺点分析？Redis采用的是哪种策略，具体又是怎么实现的？</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/03/13/2021-03-13-redis-note-07-database/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/02/06/2021-02-06-leetcode-linkedlist-problems/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/02/06/2021-02-06-leetcode-linkedlist-problems/" class="post-title-link" itemprop="url">leetcode几道链表题解决思路</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-02-06 19:43:52" itemprop="dateCreated datePublished" datetime="2021-02-06T19:43:52+08:00">2021-02-06</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>3k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>3 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>LeetCode链表题汇总，记录解题思路，C&#x2F;C++语言实现。</p>
-<h3 id="LeetCode链表题"><a href="#LeetCode链表题" class="headerlink" title="LeetCode链表题"></a>LeetCode链表题</h3><ul>
-<li><p>判断链表是否有环 ：<a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/linked-list-cycle/">https://leetcode-cn.com/problems/linked-list-cycle/</a></p>
-</li>
-<li><p>输出环形链表的入环点：<a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">https://leetcode-cn.com/problems/linked-list-cycle-ii/</a></p>
-</li>
-<li><p>输出链表中倒数第k个节点：<a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/">https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/</a></p>
-</li>
-<li><p>反转链表：<a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/reverse-linked-list/">https://leetcode-cn.com/problems/reverse-linked-list/</a></p>
-</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/02/06/2021-02-06-leetcode-linkedlist-problems/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/01/23/2021-01-23-redis-note-06-object/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/01/23/2021-01-23-redis-note-06-object/" class="post-title-link" itemprop="url">Redis学习笔记(六)——对象系统</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-01-23 19:40:36" itemprop="dateCreated datePublished" datetime="2021-01-23T19:40:36+08:00">2021-01-23</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>4.6k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>4 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis没有直接使用基础数据结构来实现数据库，而是基于这些数据结构创建了一个对象系统。这个系统包含字符串对象、列表对象、哈希对象、集合对象、有序集合对象。</p>
-<h3 id="1-Redis3-0中的6种基础数据结构"><a href="#1-Redis3-0中的6种基础数据结构" class="headerlink" title="1. Redis3.0中的6种基础数据结构"></a>1. Redis3.0中的6种基础数据结构</h3>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/01/23/2021-01-23-redis-note-06-object/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/01/23/2021-01-23-redis-note-04-skiplist/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/01/23/2021-01-23-redis-note-04-skiplist/" class="post-title-link" itemprop="url">Redis学习笔记(四)——跳跃表</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-01-23 19:38:43" itemprop="dateCreated datePublished" datetime="2021-01-23T19:38:43+08:00">2021-01-23</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                  <a href="/categories/troubleshooting/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
                 </span>
             </span>
 
@@ -796,13 +691,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。</p>
-<p>Redis使用跳跃表作为<strong>有序集合键</strong>的底层实现之一。</p>
-<p>跳表的基本实现原理参考：<a target="_blank" rel="noopener" href="http://www.cl.cam.ac.uk/teaching/0506/Algorithms/skiplists.pdf">《Skip lists: a probabilistic alternative to balanced trees》</a></p>
-<h3 id="Redis中的跳表实现"><a href="#Redis中的跳表实现" class="headerlink" title="Redis中的跳表实现"></a>Redis中的跳表实现</h3>
+          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
+<p><strong>问题：</strong> 仿真设备启动中，<strong>概率出现Redis的某个字符串键被不符合预期地改写成空串</strong>，导致客户端Docker从Redis获取的数据有问题。<strong>需要定位是哪个Docker上的哪个进程改写了Redis数据库。</strong></p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2021/01/23/2021-01-23-redis-note-04-skiplist/#more" rel="contents">
+              <a class="btn" href="/2021/11/06/2021-11-06-one-redis-case/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -826,7 +719,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2020/12/16/2020-12-16-stack-chk-fail-case/">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/10/16/2021-10-16-use-gdb-to-modify-binary-file/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -840,7 +733,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/12/16/2020-12-16-stack-chk-fail-case/" class="post-title-link" itemprop="url">__stack_chk_fail栈溢出问题定位</a>
+            <a href="/2021/10/16/2021-10-16-use-gdb-to-modify-binary-file/" class="post-title-link" itemprop="url">使用GDB修改二进制文件</a>
         </h2>
 
         <div class="post-meta">
@@ -850,7 +743,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-12-16 19:34:17" itemprop="dateCreated datePublished" datetime="2020-12-16T19:34:17+08:00">2020-12-16</time>
+              <time title="创建时间：2021-10-16 20:11:59" itemprop="dateCreated datePublished" datetime="2021-10-16T20:11:59+08:00">2021-10-16</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -858,7 +751,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
+                  <a href="/categories/GDB/" itemprop="url" rel="index"><span itemprop="name">GDB</span></a>
                 </span>
             </span>
 
@@ -868,97 +761,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>6.2k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>6 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>进程收到<code>SIGABRT</code>信号异常退出，异常调用栈显示<code>__stack_chk_fail</code></p>
-<h3 id="原因分析和定位思路"><a href="#原因分析和定位思路" class="headerlink" title="原因分析和定位思路"></a>原因分析和定位思路</h3><p><strong>原因分析：</strong> <code>__stack_chk_fail</code>说明<strong>发生了缓冲区溢出，canary被破坏</strong>。这说明代码设置GCC编译选项<strong>fstack-protector</strong>，开启了<a target="_blank" rel="noopener" href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/mitigation/canary-zh/">栈保护机制canary</a></p>
-<p><strong>定位思路：</strong></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/12/16/2020-12-16-stack-chk-fail-case/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2020/12/06/2020-12-06-redis-note-05-intset/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/12/06/2020-12-06-redis-note-05-intset/" class="post-title-link" itemprop="url">Redis学习笔记(五)——整数集合</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-12-06 19:29:58" itemprop="dateCreated datePublished" datetime="2020-12-06T19:29:58+08:00">2020-12-06</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>2.2k</span>
+              <span>2.6k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -977,12 +780,20 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
-<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
-<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3>
+          <h3 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h3><p>GDB不仅可以用来调试程序，还可以直接修改被调试程序的二进制文件。这种方式相比于改源码重新编译、<code>gdb attach</code>有什么优势呢？考虑以下企业生产环境中的几个调试场景：</p>
+<ul>
+<li><strong>需要修改的二进制文件是其他领域的，你没有源码和编译工程</strong>，让相关领域出调试对接件比较费时，但你只想临时改一行别人的代码，几分钟内完成验证。</li>
+<li><strong>调试环境上，使用gdb attach进程方式有困难</strong>：<ul>
+<li>被调试的服务（进程）没有启动断点(可定位性很差)，或者gdb手动拉起的方法非常复杂，等服务正常启动后再attach已经赶不上打断点的时机。</li>
+<li>长时间gdb挂住业务进程导致触发丢心跳复位。</li>
+<li>你不确定修改的二进制文件同时被几个进程加载，但你诉求很明确，就是直接改文件，对所有进程生效。</li>
+</ul>
+</li>
+</ul>
+<p>以下举一个简单的例子，介绍GDB修改程序二进制文件的技巧：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2020/12/06/2020-12-06-redis-note-05-intset/#more" rel="contents">
+              <a class="btn" href="/2021/10/16/2021-10-16-use-gdb-to-modify-binary-file/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1006,7 +817,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2020/12/05/2020-12-05-design-skiplist-by-c/">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/10/16/2021-10-16-use-wget-to-download-file/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -1020,7 +831,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/12/05/2020-12-05-design-skiplist-by-c/" class="post-title-link" itemprop="url">设计跳表, C语言实现</a>
+            <a href="/2021/10/16/2021-10-16-use-wget-to-download-file/" class="post-title-link" itemprop="url">使用wget批量下载指定类型文件</a>
         </h2>
 
         <div class="post-meta">
@@ -1030,7 +841,186 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-12-05 19:23:33" itemprop="dateCreated datePublished" datetime="2020-12-05T19:23:33+08:00">2020-12-05</time>
+              <time title="创建时间：2021-10-16 20:09:52" itemprop="dateCreated datePublished" datetime="2021-10-16T20:09:52+08:00">2021-10-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/wget/" itemprop="url" rel="index"><span itemprop="name">wget</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>452</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
+
+<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/10/16/2021-10-16-use-wget-to-download-file/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/10/16/2021-10-16-modify-docker-image-path/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/10/16/2021-10-16-modify-docker-image-path/" class="post-title-link" itemprop="url">修改Docker容器的存储路径</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-10-16 20:07:21" itemprop="dateCreated datePublished" datetime="2021-10-16T20:07:21+08:00">2021-10-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>311</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>docker拉取的镜像默认存储在根路径(<code>/var/lib/docker</code>)，但根路径存储空间有限。我们可以通过挂载更大的磁盘，将docker数据迁移到挂载磁盘上, 以解决空间不足问题。具体方法如下：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/10/16/2021-10-16-modify-docker-image-path/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/08/15/2021-08-15-leetcode-664-weird-printer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/08/15/2021-08-15-leetcode-664-weird-printer/" class="post-title-link" itemprop="url">Leetcode 664 奇怪的打印机</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-08-15 20:05:10" itemprop="dateCreated datePublished" datetime="2021-08-15T20:05:10+08:00">2021-08-15</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1048,14 +1038,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>5.3k</span>
+              <span>2.1k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>5 分钟</span>
+              <span>2 分钟</span>
             </span>
 
         </div>
@@ -1067,11 +1057,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="跳跃表简介"><a href="#跳跃表简介" class="headerlink" title="跳跃表简介"></a>跳跃表简介</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。其性能和红黑树相当，且跳跃表实现更为简单。</p>
-<h3 id="如何理解”跳跃“二字"><a href="#如何理解”跳跃“二字" class="headerlink" title="如何理解”跳跃“二字"></a>如何理解”跳跃“二字</h3>
+          <h3 id="题目描述"><a href="#题目描述" class="headerlink" title="题目描述"></a>题目描述</h3><p><a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/strange-printer">https://leetcode-cn.com/problems/strange-printer</a></p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2020/12/05/2020-12-05-design-skiplist-by-c/#more" rel="contents">
+              <a class="btn" href="/2021/08/15/2021-08-15-leetcode-664-weird-printer/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1094,7 +1083,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1162,19 +1151,19 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">60</span>
+          <span class="site-state-item-count">70</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-count">21</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-count">24</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1212,12 +1201,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">221k</span>
+    <span title="站点总字数">254k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">3:21</span>
+    <span title="站点阅读时长">3:50</span>
 </div>
 
 <!--
