@@ -24,41 +24,6 @@
       </tags>
   </entry>
   <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -110,6 +75,41 @@
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -223,6 +223,35 @@
       </tags>
   </entry>
   <entry>
+    <title>使用git rebase合并多条commit记录</title>
+    <url>/2020/05/04/2020-05-04-use-git-rebase-to-merge-multi-commits/</url>
+    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f70c5a84996c05511d3f98034d56ca05706d62f8 (HEAD -&gt; test) fourth commit</span><br><span class="line">56a79bb29da6e483fc6de6e8f271e1a5dcba52a5 third commit</span><br><span class="line">64db6fddd02a04194b3ca22e91dd1de23f9f81d7 second commit</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<p>比如这里希望合并本地的前三条记录(f70c, 56a7, 64db)，<strong>需找到待合并记录(64db)的前一条记录的commitID(7837)，作为git rebase -i命令的参数</strong>。</p>
+<p><strong>输入git rebase -i 7837, 进入历史提交的编辑界面：</strong><br><img src="/2020/05/04/2020-05-04-use-git-rebase-to-merge-multi-commits/image1.png"></p>
+<p>需要注意的是，上图显示的提交顺序与git log是相反的。<strong>将除了第一行的pick都改成squash, 保存退出(:wq)</strong>,再将commit信息改成merge three commit, 保存退出，再次使用git log查看：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f448ac261c7e26682935201244eda0e9d93fd307 (HEAD -&gt; test) merge three commits</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
+
+<p>发现f70c, 56a7, 64db三条本地记录已经被成功合并为一条新记录。</p>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ul>
+<li><p><font color='red'><strong>只对从未推送至公共仓库的提交记录执行git rebase</strong></font></p>
+</li>
+<li><p>原因可参考<a href = "https://www.progit.cn/">https://www.progit.cn/</a>  “Git分支 -&gt; 变基的风险”，该小节详细讲述了在一个公共仓库执行变基操作的问题。</p>
+</li>
+</ul>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><p><a href = "https://www.progit.cn/">https://www.progit.cn/  </a></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>tmux常用操作</title>
     <url>/2020/05/04/2020-05-04-tmux-cheetsheet/</url>
     <content><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>TMUX指<strong>terminal multiplexer</strong>，即终端复用软件。tmux结构包含以下三个部分：</p>
@@ -253,35 +282,6 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用git rebase合并多条commit记录</title>
-    <url>/2020/05/04/2020-05-04-use-git-rebase-to-merge-multi-commits/</url>
-    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f70c5a84996c05511d3f98034d56ca05706d62f8 (HEAD -&gt; test) fourth commit</span><br><span class="line">56a79bb29da6e483fc6de6e8f271e1a5dcba52a5 third commit</span><br><span class="line">64db6fddd02a04194b3ca22e91dd1de23f9f81d7 second commit</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<p>比如这里希望合并本地的前三条记录(f70c, 56a7, 64db)，<strong>需找到待合并记录(64db)的前一条记录的commitID(7837)，作为git rebase -i命令的参数</strong>。</p>
-<p><strong>输入git rebase -i 7837, 进入历史提交的编辑界面：</strong><br><img src="/2020/05/04/2020-05-04-use-git-rebase-to-merge-multi-commits/image1.png"></p>
-<p>需要注意的是，上图显示的提交顺序与git log是相反的。<strong>将除了第一行的pick都改成squash, 保存退出(:wq)</strong>,再将commit信息改成merge three commit, 保存退出，再次使用git log查看：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f448ac261c7e26682935201244eda0e9d93fd307 (HEAD -&gt; test) merge three commits</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
-
-<p>发现f70c, 56a7, 64db三条本地记录已经被成功合并为一条新记录。</p>
-<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ul>
-<li><p><font color='red'><strong>只对从未推送至公共仓库的提交记录执行git rebase</strong></font></p>
-</li>
-<li><p>原因可参考<a href = "https://www.progit.cn/">https://www.progit.cn/</a>  “Git分支 -&gt; 变基的风险”，该小节详细讲述了在一个公共仓库执行变基操作的问题。</p>
-</li>
-</ul>
-<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><p><a href = "https://www.progit.cn/">https://www.progit.cn/  </a></p>
-]]></content>
-      <categories>
-        <category>Git</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -4239,17 +4239,17 @@
       </tags>
   </entry>
   <entry>
-    <title>如何查看Microk8s的apiserver证书过期时间</title>
-    <url>/2023/03/30/2023-03-30-how-to-lookup-apiserver-cert-expired-time-in-microk8s/</url>
+    <title>如何在Centos7上安装Microk8s</title>
+    <url>/2023/03/31/2023-03-31-how-to-install-microk8s-on-centos7/</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
 <li><p>安装snap</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
 </li>
 <li><p>安装microk8s</p>
 </li>
 </ol>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic --channel=1.23/stable</span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
 
 <ol start="3">
 <li>安装microk8s插件(addons)<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure></li>
@@ -4290,17 +4290,17 @@
       </tags>
   </entry>
   <entry>
-    <title>如何在Centos7上安装Microk8s</title>
-    <url>/2023/03/31/2023-03-31-how-to-install-microk8s-on-centos7/</url>
+    <title>如何查看Microk8s的apiserver证书过期时间</title>
+    <url>/2023/03/30/2023-03-30-how-to-lookup-apiserver-cert-expired-time-in-microk8s/</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
 <li><p>安装snap</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
 </li>
 <li><p>安装microk8s</p>
 </li>
 </ol>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic --channel=1.23/stable</span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
 
 <ol start="3">
 <li>安装microk8s插件(addons)<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure></li>
@@ -4394,26 +4394,6 @@
       </tags>
   </entry>
   <entry>
-    <title>pip3只下载不安装以及离线安装的方法</title>
-    <url>/2023/05/08/2023-05-08-how-to-download-only-with-pip3/</url>
-    <content><![CDATA[<h3 id="只下载不安装"><a href="#只下载不安装" class="headerlink" title="只下载不安装"></a>只下载不安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
-<p>如不需要下载依赖包，改用如下命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes --no-deps on -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h3 id="离线安装"><a href="#离线安装" class="headerlink" title="离线安装"></a>离线安装</h3><ol start="0">
-<li>新增requirements.txt，内容如下：<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">psutil</span><br><span class="line">supervisor</span><br><span class="line">kubernetes</span><br></pre></td></tr></table></figure></li>
-<li>下载安装包到本地<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download -d $&#123;folder&#125; -r /path/to/requirements.txt</span><br></pre></td></tr></table></figure></li>
-<li>离线安装<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 install --no-index --find-links $&#123;folder&#125; -r /path/to/requirements.txt</span><br></pre></td></tr></table></figure></li>
-</ol>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>RockyLinux9 docker中安装python2方法</title>
     <url>/2023/05/08/2023-05-08-how-to-install-py2-in-rockylinux9/</url>
     <content><![CDATA[<p>新增Dockerfile, 内容如下：</p>
@@ -4457,6 +4437,26 @@
       </tags>
   </entry>
   <entry>
+    <title>pip3只下载不安装以及离线安装的方法</title>
+    <url>/2023/05/08/2023-05-08-how-to-download-only-with-pip3/</url>
+    <content><![CDATA[<h3 id="只下载不安装"><a href="#只下载不安装" class="headerlink" title="只下载不安装"></a>只下载不安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
+<p>如不需要下载依赖包，改用如下命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes --no-deps on -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h3 id="离线安装"><a href="#离线安装" class="headerlink" title="离线安装"></a>离线安装</h3><ol start="0">
+<li>新增requirements.txt，内容如下：<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">psutil</span><br><span class="line">supervisor</span><br><span class="line">kubernetes</span><br></pre></td></tr></table></figure></li>
+<li>下载安装包到本地<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download -d $&#123;folder&#125; -r /path/to/requirements.txt</span><br></pre></td></tr></table></figure></li>
+<li>离线安装<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 install --no-index --find-links $&#123;folder&#125; -r /path/to/requirements.txt</span><br></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何设置systemd服务自动重启</title>
     <url>/2023/05/09/2023-05-09-how-to-auto-restart-service-by-systemd/</url>
     <content><![CDATA[<h2 id="设置systemd服务自动重启的方法"><a href="#设置systemd服务自动重启的方法" class="headerlink" title="设置systemd服务自动重启的方法"></a>设置systemd服务自动重启的方法</h2><p>service文件里添加如下配置：</p>
@@ -4474,24 +4474,6 @@
       </categories>
       <tags>
         <tag>systemd</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在Docker中使用GDB调试的方法</title>
-    <url>/2023/05/09/2023-05-09-how-to-use-gdb-in-docker/</url>
-    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
-<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
-<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>GDB</category>
-      </categories>
-      <tags>
-        <tag>GDB</tag>
-        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -4521,6 +4503,24 @@
       </categories>
       <tags>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在Docker中使用GDB调试的方法</title>
+    <url>/2023/05/09/2023-05-09-how-to-use-gdb-in-docker/</url>
+    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
+<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
+<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
+        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -5145,19 +5145,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python 查找最大或最小的N个元素</title>
-    <url>/2023/08/22/2023-08-22-find-n-elements-with-python/</url>
-    <content><![CDATA[<p>除了直接排序，还可以利用<code>heaq</code>模块的<code>nlargest()</code>和<code>nsmallest()</code>方法，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>nums = [<span class="number">3</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">1</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>smallest = heapq.nsmallest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(smallest)</span><br><span class="line">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>largest = heapq.nlargest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(largest)</span><br><span class="line">[<span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>]</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python保留最后N个元素</title>
     <url>/2023/08/29/2023-08-29-keep-final-n-elements-by-python/</url>
     <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
@@ -5179,6 +5166,19 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip=<span class="string">&quot;&lt;127.0.0.1&gt;&quot;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>GET_IP = <span class="built_in">slice</span>(<span class="number">1</span>,-<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip[GET_IP]</span><br><span class="line"><span class="string">&#x27;127.0.0.1&#x27;</span></span><br></pre></td></tr></table></figure>
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p11_naming_slice.html">https://python3-cookbook.readthedocs.io/zh_CN&#x2F;latest&#x2F;c01&#x2F;p11_naming_slice.html</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python 查找最大或最小的N个元素</title>
+    <url>/2023/08/22/2023-08-22-find-n-elements-with-python/</url>
+    <content><![CDATA[<p>除了直接排序，还可以利用<code>heaq</code>模块的<code>nlargest()</code>和<code>nsmallest()</code>方法，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>nums = [<span class="number">3</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">1</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>smallest = heapq.nsmallest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(smallest)</span><br><span class="line">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>largest = heapq.nlargest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(largest)</span><br><span class="line">[<span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>]</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5450,24 +5450,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>每天的三哥小鸡腿没了</title>
-    <url>/2024/03/13/2024-03-13-india-lof-arbitrage-end/</url>
-    <content><![CDATA[<p>查看印度基金(164824)公告，从2024年2月28日起，暂停印度基金的申购，限额100块的一拖七套利告一段落。这意味着看好印度股市的国内投资者，以后只能通过在场内买入获得份额。</p>
-<span id="more"></span>
-
-<p><img src="/2024/03/13/2024-03-13-india-lof-arbitrage-end/image1.png"><br>关于暂停申购的原因，官方说是为<strong>保护基金持有人利益</strong>，这个说法真的是TM把我整乐了。太阳从西边出来了，镰刀喊着要保护韭菜的利益了，就问你信不信吧！真正原因我想应该是套利申购份额越来越多，基金公司外汇额度不够用了。为了保护所谓的投资者利益，每天放着这么多申购费都不赚，有钱不赚王八下蛋，这么有良心的基金公司把我感动的都快哭了！</p>
-<p>印度基金作为唯一一支能投资三哥的基金，稀缺性比较强，目前溢价率在7%左右。后市缺少了套利大军的砸盘，估计溢价率会进一步抬升。如果你看好三哥市场，已经申购到手的份额不妨拿一拿，不急着卖，让子弹再飞一会。（个人利益相关，不构成投资建议）<br><img src="/2024/03/13/2024-03-13-india-lof-arbitrage-end/image2.png"></p>
-<p>总结下，这次的套利行情从1月19日开始，到2月28日结束，时间竟然持续一个月之久。如果每天坚持一拖七申购卖出，一个账户可以获利近1000元，你能搞3个账户就赚3000元，6个账户就赚6000元 。而为了赚到这个钱需要做的，无非就是事先用几个小时学习下基金套利的知识，再准备好几台拖拉机而已，教程网上一搜一大把。</p>
-<p>这简单吗？太简单了，市场送钱我只管接就完事了。</p>
-]]></content>
-      <categories>
-        <category>套利往事</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>GRUB菜单不显示问题定位</title>
     <url>/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/</url>
     <content><![CDATA[<h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>Rocky Linux 9.2环境，手工配置了<code>GRUB_TIMEOUT</code>为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。</p>
@@ -5498,6 +5480,24 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>Linux</tag>
         <tag>troubleshooting</tag>
         <tag>GRUB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>每天的三哥小鸡腿没了</title>
+    <url>/2024/03/13/2024-03-13-india-lof-arbitrage-end/</url>
+    <content><![CDATA[<p>查看印度基金(164824)公告，从2024年2月28日起，暂停印度基金的申购，限额100块的一拖七套利告一段落。这意味着看好印度股市的国内投资者，以后只能通过在场内买入获得份额。</p>
+<span id="more"></span>
+
+<p><img src="/2024/03/13/2024-03-13-india-lof-arbitrage-end/image1.png"><br>关于暂停申购的原因，官方说是为<strong>保护基金持有人利益</strong>，这个说法真的是TM把我整乐了。太阳从西边出来了，镰刀喊着要保护韭菜的利益了，就问你信不信吧！真正原因我想应该是套利申购份额越来越多，基金公司外汇额度不够用了。为了保护所谓的投资者利益，每天放着这么多申购费都不赚，有钱不赚王八下蛋，这么有良心的基金公司把我感动的都快哭了！</p>
+<p>印度基金作为唯一一支能投资三哥的基金，稀缺性比较强，目前溢价率在7%左右。后市缺少了套利大军的砸盘，估计溢价率会进一步抬升。如果你看好三哥市场，已经申购到手的份额不妨拿一拿，不急着卖，让子弹再飞一会。（个人利益相关，不构成投资建议）<br><img src="/2024/03/13/2024-03-13-india-lof-arbitrage-end/image2.png"></p>
+<p>总结下，这次的套利行情从1月19日开始，到2月28日结束，时间竟然持续一个月之久。如果每天坚持一拖七申购卖出，一个账户可以获利近1000元，你能搞3个账户就赚3000元，6个账户就赚6000元 。而为了赚到这个钱需要做的，无非就是事先用几个小时学习下基金套利的知识，再准备好几台拖拉机而已，教程网上一搜一大把。</p>
+<p>这简单吗？太简单了，市场送钱我只管接就完事了。</p>
+]]></content>
+      <categories>
+        <category>套利往事</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -5644,43 +5644,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Microk8s dqlite启动失败, raft_start(): io: load closed segment XXX: entries count in preamble is zero</title>
-    <url>/2024/03/28/2024-03-28-microk8s-dqlite-run-fail/</url>
-    <content><![CDATA[<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><p>后台查看Microk8s相关进程：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  7281 ?        Ss    27:02 /bin/bash /var/lib/snapd/snap/microk8s/3699/apiservice-kicker</span><br><span class="line">749807 ?        S      0:00  \_ sleep 5</span><br><span class="line">  7290 ?        Ss     0:00 /bin/bash /var/lib/snapd/snap/microk8s/3699/run-cluster-agent-with-args</span><br><span class="line">  7362 ?        S      2:32  \_ python3 /snap/microk8s/3699/usr/bin/gunicorn3 cluster.agent:app --bind 0.0.0.0:25000 --keyfile /var/snap/microk8s/3699/certs/server.key --certfile /var/snap/microk8s/3699/certs/server.crt --timeout 240</span><br><span class="line">  7684 ?        S      0:02      \_ python3 /snap/microk8s/3699/usr/bin/gunicorn3 cluster.agent:app --bind 0.0.0.0:25000 --keyfile /var/snap/microk8s/3699/certs/server.key --certfile /var/snap/microk8s/3699/certs/server.crt --timeout 240</span><br><span class="line">  7310 ?        Ssl  399:16 /snap/microk8s/3699/bin/containerd --config /var/snap/microk8s/3699/args/containerd.toml --root /var/snap/microk8s/common/var/lib/containerd --state /var/snap/microk8s/common/run/containerd --address /var/snap/microk8s/common/run/containerd.sock</span><br></pre></td></tr></table></figure>
-<p>和正常环境对比，发现<code>k8s-dqlite</code>, <code>kubelite</code>进程执行异常，如下：</p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">7457 ?        Ssl  752:10 /snap/microk8s/3699/bin/k8s-dqlite --storage-dir=/var/snap/microk8s/3699/var/kubernetes/backend/ --listen=unix:///var/snap/microk8s/3699/var/kubernetes/backend/kine.sock:12379</span><br><span class="line">7489 ?        Ssl  1777:58 /snap/microk8s/3699/kubelite --scheduler-args-file=/var/snap/microk8s/3699/args/kube-scheduler --controller-manager-args-file=/var/snap/microk8s/3699/args/kube-controller-manager --proxy-args-file=/var/snap/microk8s/3699/args/kube-proxy --kubelet-args-file=/var/snap/microk8s/3699/args/kubelet --apiserver-args-file=/var/snap/microk8s/3699/args/kube-apiserver</span><br></pre></td></tr></table></figure>
-<p>通过<code>journactl</code>查看错误日志:<br>fatal msg&#x3D;”Failed to start server: start node: raft_start(): io: <strong>load closed segment 0000000014232389-0000000014232597</strong>: entries batch 394 starting at byte 8384000: entries count in preamble is zero\n”<br>Feb 03 08:18:08 GIFOCTMSG02 systemd[1]: snap.microk8s.daemon-k8s-dqlite.service: Main process exited, code&#x3D;exited, status&#x3D;1&#x2F;FAILURE</p>
-<p>根据关键字查Google找到解决方案：<a href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>根据错误日志中”segment <strong>0000000014232389-0000000014232597</strong>“的信息，找到出错的文件<code>/var/snap/microk8s/current/var/kubernetes/backend/0000000014232389-0000000014232597</code>，删除此文件后重启microk8s，发现问题解决。文件出错原因可能是因为机器被异常下电，导致文件损坏</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s stop</span><br><span class="line">rm /var/snap/microk8s/current/var/kubernetes/backend/0000000014232389-0000000014232597</span><br><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
-<p><code>/var/snap/microk8s/3699/var/kubernetes/backend</code>的文件如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># ll /var/snap/microk8s/3699/var/kubernetes/backend</span><br><span class="line">total 153212</span><br><span class="line">-rw-rw---- 1 root microk8s 8381624 Jan 28 00:11 0000000014225187-0000000014225660</span><br><span class="line">-rw-rw---- 1 root microk8s 8386880 Jan 28 00:12 0000000014225661-0000000014226264</span><br><span class="line">-rw-rw---- 1 root microk8s 8386016 Jan 28 00:16 0000000014226265-0000000014226628</span><br><span class="line">-rw-rw---- 1 root microk8s 8381552 Jan 28 00:16 0000000014226629-0000000014227272</span><br><span class="line">-rw-rw---- 1 root microk8s 8378744 Jan 28 00:19 0000000014227273-0000000014227706</span><br><span class="line">-rw-rw---- 1 root microk8s 8362544 Jan 28 00:21 0000000014227707-0000000014228257</span><br><span class="line">-rw-rw---- 1 root microk8s 8377520 Jan 28 00:23 0000000014228258-0000000014228788</span><br><span class="line">-rw-rw---- 1 root microk8s 8386592 Jan 28 00:26 0000000014228789-0000000014229217</span><br><span class="line">-rw-rw---- 1 root microk8s 8368952 Jan 28 00:26 0000000014229218-0000000014229857</span><br><span class="line">-rw-rw---- 1 root microk8s 8361608 Jan 28 00:30 0000000014229858-0000000014230224</span><br><span class="line">-rw-rw---- 1 root microk8s 8387384 Jan 28 00:31 0000000014230225-0000000014230835</span><br><span class="line">-rw-rw---- 1 root microk8s 8377232 Jan 28 00:34 0000000014230836-0000000014231305</span><br><span class="line">-rw-rw---- 1 root microk8s 8387384 Jan 28 00:36 0000000014231306-0000000014231802</span><br><span class="line">-rw-rw---- 1 root microk8s 8373272 Jan 28 00:37 0000000014231803-0000000014232388</span><br><span class="line">-rw-rw---- 1 root microk8s 8384512 Jan 28 00:41 0000000014232389-0000000014232597</span><br><span class="line">-rw-rw---- 1 root microk8s      80 Jan 28 00:40 0000000014232598-0000000014232598</span><br><span class="line">-rw-rw---- 1 root microk8s    1883 Dec 14 03:38 cluster.crt</span><br><span class="line">-rw-rw---- 1 root microk8s    3272 Dec 14 03:38 cluster.key</span><br><span class="line">-rw-rw---- 1 root microk8s      63 Feb  4 03:11 cluster.yaml</span><br><span class="line">-rw-rw-r-- 1 root microk8s       2 Feb  4 03:12 failure-domain</span><br><span class="line">-rw-rw---- 1 root microk8s      57 Dec 14 03:38 info.yaml</span><br><span class="line">-rw-rw-r-- 1 root microk8s       0 Feb  2 10:24 kine.sock</span><br><span class="line">-rw-rw---- 1 root microk8s      63 Dec 19 07:56 localnode.yaml</span><br><span class="line">-rw-rw---- 1 root microk8s      32 Dec 14 03:38 metadata1</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:41 open-28053</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:41 open-28054</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:45 open-28055</span><br><span class="line">-rw-rw---- 1 root microk8s 3069878 Jan 28 00:40 snapshot-1-14232647-3429895302</span><br><span class="line">-rw-rw---- 1 root microk8s      72 Jan 28 00:40 snapshot-1-14232647-3429895302.meta</span><br><span class="line">-rw-rw---- 1 root microk8s 2893883 Jan 28 00:43 snapshot-1-14233671-3430050282</span><br><span class="line">-rw-rw---- 1 root microk8s      72 Jan 28 00:43 snapshot-1-14233671-3430050282.meta</span><br></pre></td></tr></table></figure>
-<p>每个文件的作用：</p>
-<ul>
-<li>数据段文件（如：0000000014225187-0000000014225660）：<br>这些文件包含 dqlite 存储的实际数据段。每个文件代表一个数据段，存储着相应的数据。这些文件在 dqlite 数据库引擎中用于持久性地存储数据。</li>
-<li>索引段文件（如：0000000014225661-0000000014226264）：<br>类似于数据段文件，这些文件包含 dqlite 存储的索引段，用于加速数据检索。</li>
-<li>快照文件（如：snapshot-1-14232647-3429895302）：<br>这些文件包含数据库在某个时间点的快照，用于还原数据库状态。在备份和还原过程中，这些文件可能会用到。</li>
-<li>信息文件（info.yaml）：<br>这是一个 YAML 格式的文件，包含有关 dqlite 数据库的一些元信息。</li>
-<li>配置文件（cluster.yaml）：<br>包含 dqlite 集群的配置信息，例如节点地址、端口等。</li>
-<li>证书文件（cluster.crt、cluster.key）：<br>这是用于在 dqlite 集群中进行安全通信的证书文件。</li>
-<li>本地节点配置文件（localnode.yaml）：<br>包含本地节点的配置信息，例如节点 ID。</li>
-<li>元数据文件（metadata1）：<br>存储 dqlite 内部使用的一些元数据信息。</li>
-<li>打开文件（如：open-28055）：<br>这些文件可能是当前正在使用的打开文件。它们通常在 dqlite 服务正在运行时存在。</li>
-<li>失败域文件（failure-domain）：<br>可能包含关于节点失败域的信息，用于高可用性和容错。</li>
-</ul>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>股票账户除了炒股还能做什么?</title>
     <url>/2024/03/31/2024-03-31-what-else-can-a-stock-account-do-besides-trade-stock/</url>
     <content><![CDATA[<p>除了炒股，股票账户还有哪些功能？开股票账户是不是和去赌场赌博是一回事？股票账户有靠谱的赚钱手艺吗？</p>
@@ -5720,6 +5683,43 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Microk8s dqlite启动失败, raft_start(): io: load closed segment XXX: entries count in preamble is zero</title>
+    <url>/2024/03/28/2024-03-28-microk8s-dqlite-run-fail/</url>
+    <content><![CDATA[<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><p>后台查看Microk8s相关进程：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  7281 ?        Ss    27:02 /bin/bash /var/lib/snapd/snap/microk8s/3699/apiservice-kicker</span><br><span class="line">749807 ?        S      0:00  \_ sleep 5</span><br><span class="line">  7290 ?        Ss     0:00 /bin/bash /var/lib/snapd/snap/microk8s/3699/run-cluster-agent-with-args</span><br><span class="line">  7362 ?        S      2:32  \_ python3 /snap/microk8s/3699/usr/bin/gunicorn3 cluster.agent:app --bind 0.0.0.0:25000 --keyfile /var/snap/microk8s/3699/certs/server.key --certfile /var/snap/microk8s/3699/certs/server.crt --timeout 240</span><br><span class="line">  7684 ?        S      0:02      \_ python3 /snap/microk8s/3699/usr/bin/gunicorn3 cluster.agent:app --bind 0.0.0.0:25000 --keyfile /var/snap/microk8s/3699/certs/server.key --certfile /var/snap/microk8s/3699/certs/server.crt --timeout 240</span><br><span class="line">  7310 ?        Ssl  399:16 /snap/microk8s/3699/bin/containerd --config /var/snap/microk8s/3699/args/containerd.toml --root /var/snap/microk8s/common/var/lib/containerd --state /var/snap/microk8s/common/run/containerd --address /var/snap/microk8s/common/run/containerd.sock</span><br></pre></td></tr></table></figure>
+<p>和正常环境对比，发现<code>k8s-dqlite</code>, <code>kubelite</code>进程执行异常，如下：</p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">7457 ?        Ssl  752:10 /snap/microk8s/3699/bin/k8s-dqlite --storage-dir=/var/snap/microk8s/3699/var/kubernetes/backend/ --listen=unix:///var/snap/microk8s/3699/var/kubernetes/backend/kine.sock:12379</span><br><span class="line">7489 ?        Ssl  1777:58 /snap/microk8s/3699/kubelite --scheduler-args-file=/var/snap/microk8s/3699/args/kube-scheduler --controller-manager-args-file=/var/snap/microk8s/3699/args/kube-controller-manager --proxy-args-file=/var/snap/microk8s/3699/args/kube-proxy --kubelet-args-file=/var/snap/microk8s/3699/args/kubelet --apiserver-args-file=/var/snap/microk8s/3699/args/kube-apiserver</span><br></pre></td></tr></table></figure>
+<p>通过<code>journactl</code>查看错误日志:<br>fatal msg&#x3D;”Failed to start server: start node: raft_start(): io: <strong>load closed segment 0000000014232389-0000000014232597</strong>: entries batch 394 starting at byte 8384000: entries count in preamble is zero\n”<br>Feb 03 08:18:08 GIFOCTMSG02 systemd[1]: snap.microk8s.daemon-k8s-dqlite.service: Main process exited, code&#x3D;exited, status&#x3D;1&#x2F;FAILURE</p>
+<p>根据关键字查Google找到解决方案：<a href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>根据错误日志中”segment <strong>0000000014232389-0000000014232597</strong>“的信息，找到出错的文件<code>/var/snap/microk8s/current/var/kubernetes/backend/0000000014232389-0000000014232597</code>，删除此文件后重启microk8s，发现问题解决。文件出错原因可能是因为机器被异常下电，导致文件损坏</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s stop</span><br><span class="line">rm /var/snap/microk8s/current/var/kubernetes/backend/0000000014232389-0000000014232597</span><br><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
+<p><code>/var/snap/microk8s/3699/var/kubernetes/backend</code>的文件如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># ll /var/snap/microk8s/3699/var/kubernetes/backend</span><br><span class="line">total 153212</span><br><span class="line">-rw-rw---- 1 root microk8s 8381624 Jan 28 00:11 0000000014225187-0000000014225660</span><br><span class="line">-rw-rw---- 1 root microk8s 8386880 Jan 28 00:12 0000000014225661-0000000014226264</span><br><span class="line">-rw-rw---- 1 root microk8s 8386016 Jan 28 00:16 0000000014226265-0000000014226628</span><br><span class="line">-rw-rw---- 1 root microk8s 8381552 Jan 28 00:16 0000000014226629-0000000014227272</span><br><span class="line">-rw-rw---- 1 root microk8s 8378744 Jan 28 00:19 0000000014227273-0000000014227706</span><br><span class="line">-rw-rw---- 1 root microk8s 8362544 Jan 28 00:21 0000000014227707-0000000014228257</span><br><span class="line">-rw-rw---- 1 root microk8s 8377520 Jan 28 00:23 0000000014228258-0000000014228788</span><br><span class="line">-rw-rw---- 1 root microk8s 8386592 Jan 28 00:26 0000000014228789-0000000014229217</span><br><span class="line">-rw-rw---- 1 root microk8s 8368952 Jan 28 00:26 0000000014229218-0000000014229857</span><br><span class="line">-rw-rw---- 1 root microk8s 8361608 Jan 28 00:30 0000000014229858-0000000014230224</span><br><span class="line">-rw-rw---- 1 root microk8s 8387384 Jan 28 00:31 0000000014230225-0000000014230835</span><br><span class="line">-rw-rw---- 1 root microk8s 8377232 Jan 28 00:34 0000000014230836-0000000014231305</span><br><span class="line">-rw-rw---- 1 root microk8s 8387384 Jan 28 00:36 0000000014231306-0000000014231802</span><br><span class="line">-rw-rw---- 1 root microk8s 8373272 Jan 28 00:37 0000000014231803-0000000014232388</span><br><span class="line">-rw-rw---- 1 root microk8s 8384512 Jan 28 00:41 0000000014232389-0000000014232597</span><br><span class="line">-rw-rw---- 1 root microk8s      80 Jan 28 00:40 0000000014232598-0000000014232598</span><br><span class="line">-rw-rw---- 1 root microk8s    1883 Dec 14 03:38 cluster.crt</span><br><span class="line">-rw-rw---- 1 root microk8s    3272 Dec 14 03:38 cluster.key</span><br><span class="line">-rw-rw---- 1 root microk8s      63 Feb  4 03:11 cluster.yaml</span><br><span class="line">-rw-rw-r-- 1 root microk8s       2 Feb  4 03:12 failure-domain</span><br><span class="line">-rw-rw---- 1 root microk8s      57 Dec 14 03:38 info.yaml</span><br><span class="line">-rw-rw-r-- 1 root microk8s       0 Feb  2 10:24 kine.sock</span><br><span class="line">-rw-rw---- 1 root microk8s      63 Dec 19 07:56 localnode.yaml</span><br><span class="line">-rw-rw---- 1 root microk8s      32 Dec 14 03:38 metadata1</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:41 open-28053</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:41 open-28054</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:45 open-28055</span><br><span class="line">-rw-rw---- 1 root microk8s 3069878 Jan 28 00:40 snapshot-1-14232647-3429895302</span><br><span class="line">-rw-rw---- 1 root microk8s      72 Jan 28 00:40 snapshot-1-14232647-3429895302.meta</span><br><span class="line">-rw-rw---- 1 root microk8s 2893883 Jan 28 00:43 snapshot-1-14233671-3430050282</span><br><span class="line">-rw-rw---- 1 root microk8s      72 Jan 28 00:43 snapshot-1-14233671-3430050282.meta</span><br></pre></td></tr></table></figure>
+<p>每个文件的作用：</p>
+<ul>
+<li>数据段文件（如：0000000014225187-0000000014225660）：<br>这些文件包含 dqlite 存储的实际数据段。每个文件代表一个数据段，存储着相应的数据。这些文件在 dqlite 数据库引擎中用于持久性地存储数据。</li>
+<li>索引段文件（如：0000000014225661-0000000014226264）：<br>类似于数据段文件，这些文件包含 dqlite 存储的索引段，用于加速数据检索。</li>
+<li>快照文件（如：snapshot-1-14232647-3429895302）：<br>这些文件包含数据库在某个时间点的快照，用于还原数据库状态。在备份和还原过程中，这些文件可能会用到。</li>
+<li>信息文件（info.yaml）：<br>这是一个 YAML 格式的文件，包含有关 dqlite 数据库的一些元信息。</li>
+<li>配置文件（cluster.yaml）：<br>包含 dqlite 集群的配置信息，例如节点地址、端口等。</li>
+<li>证书文件（cluster.crt、cluster.key）：<br>这是用于在 dqlite 集群中进行安全通信的证书文件。</li>
+<li>本地节点配置文件（localnode.yaml）：<br>包含本地节点的配置信息，例如节点 ID。</li>
+<li>元数据文件（metadata1）：<br>存储 dqlite 内部使用的一些元数据信息。</li>
+<li>打开文件（如：open-28055）：<br>这些文件可能是当前正在使用的打开文件。它们通常在 dqlite 服务正在运行时存在。</li>
+<li>失败域文件（failure-domain）：<br>可能包含关于节点失败域的信息，用于高可用性和容错。</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>k8s</tag>
       </tags>
   </entry>
   <entry>
@@ -5767,6 +5767,267 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>shell</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>投资组合中是否应该包括黄金</title>
+    <url>/2024/04/13/2024-04-13-should-gold-be-included-in-an-investment-portfolio/</url>
+    <content><![CDATA[<p>最近有朋友问我，你对黄金怎么看？现在可以买黄金吗？</p>
+<p>这些问题问的很好啊。首先表明我的观点：<font color=red><strong>黄金是投机不是投资，黄金的长期投资价值极低</strong></font>，在我的投资组合中配置黄金的比例不会超过5%。</p>
+<p>可能有些朋友会反对：你谁啊，一句话把黄金贴个投机的标签，我几年前300多元一克买的黄金放到现在已经赚麻了，你懂不懂黄金啊？</p>
+<p>的确，构建投资组合时是否应包含黄金，是一个备受争议的话题。下面我分别给出买黄金和不买黄金的理由，供大家参考。</p>
+<span id="more"></span>
+
+<h2 id="配置黄金的理由"><a href="#配置黄金的理由" class="headerlink" title="配置黄金的理由"></a>配置黄金的理由</h2><p><strong>1. 避险保值，抵御通胀</strong></p>
+<p>黄金作为一种避险资产，在经济不稳定或通胀预期上升时往往表现较好，有对冲货币贬值的作用。</p>
+<p>你买的股票可能会破产，债券可能会违约，但是黄金的价格不会跌到零。</p>
+<p><strong>2. 资产多样化，降低投资组合风险</strong></p>
+<p>黄金的价格和股票、债券相关性低。<font color=red><strong>将投资组合分散到黄金、债券、股票等几种不相关的资产中，可以在不牺牲预期收益的同时降低风险，从而获得一份”免费的午餐”</strong></font>，这就是著名的资产配置理论。</p>
+<p>对资产配置感兴趣的朋友，我推荐威廉·伯恩斯坦的《有效资产管理》，值得反复阅读。</p>
+<h2 id="不配置黄金的理由"><a href="#不配置黄金的理由" class="headerlink" title="不配置黄金的理由"></a>不配置黄金的理由</h2><p><strong>1. 本身没有内在回报，其回报基于博傻</strong></p>
+<p>我们知道，投资股票有红利收入，债券有利息收入，房地产有租金收入，这些都是生息资产，可以创造现金流。</p>
+<p>但是黄金属于不创造现金流的资产，本身没有内在回报，难以估值，就像古董，字画一样，其回报只能基于博傻，指望别人出更高的价格接你的盘。</p>
+<p><font color='red'><strong>投资和投机最大的区别在于，你需要预测的对象是内在回报还是市场情绪。</strong></font>从这个角度看，我认为黄金仅有投机价值，而投机想要获利，你就必须正确预测市场情绪，预判他人的行为，这是远远超出我能力圈的事情，我不会参与这种游戏。</p>
+<p><strong>2. 风险溢价几乎为零</strong></p>
+<p>风险溢价（Risk premium）指的是投资者在一段时间内持有风险资产的预期回报率相对于无风险资产的超额回报率。</p>
+<p>杰里米·西格尔教授在他的经典之作《股市长线法宝》(Stocks for the long run)中，给出了各资产在1802-2012年的真实收益：<br><img src="/2024/04/13/2024-04-13-should-gold-be-included-in-an-investment-portfolio/image1.png"><br>可以看出，在210年的时间内，<font color='red'><strong>一个充分分散的股票投资组合的年平均真实收益率为6.6%，短期债券为2.7%, 而黄金的真实收益率仅有0.7%，风险溢价几乎是零</strong></font>。</p>
+<p>也就是说，投资者持有黄金，承担了和股票类似的价格波动，但回报远不如股票，甚至不如无风险的短期国债。那我不如持有无风险的短期国债，既获得了和黄金类似的回报，又不用承担价格波动的风险，何乐不为呢？</p>
+<p>行文至此，对于仍然想要配置黄金的朋友，我建议不要着急，先思考下面几个问题，想明白了再买不迟：</p>
+<ul>
+<li>我的投资周期到底有多长？</li>
+<li>我需要配置多少比例的黄金？</li>
+<li>我最多可以忍受多少幅度的下跌？</li>
+<li>如何设置止损和止盈？</li>
+</ul>
+<p>只有事先想清楚这些问题，谋定而后动，才能做出理性的投资决策。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
+<span id="more"></span>
+<p><img src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
+]]></content>
+      <categories>
+        <category>套利往事</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>掌握夜市委托，出货快人一步</title>
+    <url>/2024/05/19/2024-05-19-learn-night-market-order-and-sell-stock-faster/</url>
+    <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
+<span id="more"></span>
+
+<p><img src="/2024/05/19/2024-05-19-learn-night-market-order-and-sell-stock-faster/image1.png"></p>
+<p>4月25日，场内新增的申购份额有3318万份，但成交额只有228万，只有不到10%的套利党成功出货。我当天成功出掉一组拖拉机，直接白捡 (1.099-0.924)&#x2F;0.924<em>100</em>7&#x3D;132元</p>
+<p>那么，如何成为这顺利吃肉的10%呢？这里我给大家分享两个知识点，教大家今后如何在赌场里捞这种钱。</p>
+<h2 id="1-利用夜市委托规则，提前占座"><a href="#1-利用夜市委托规则，提前占座" class="headerlink" title="1. 利用夜市委托规则，提前占座"></a>1. 利用夜市委托规则，提前占座</h2><p>首先，我们要明白A股的交易规则是“价格优先，时间优先”。<font color ='red'><strong>价格优先意味着低价卖出的申报会优先成交；而时间优先则意味着在价格相同时，谁挂单早谁就先成交。</strong></font></p>
+<p><strong>那么，什么是夜市委托呢？简单说，就是在前一个交易日晚上清算后，提前进行第二个交易日的委托</strong>。这样，你就可以在其他人还在睡梦中时，就已经占好了位置，等待开盘后的成交。</p>
+<p>夜市委托的开始时间因券商而异，以我常用的华B来说，通常在前一个交易日的17点30分左右开始。</p>
+<p>接下来，以黄金LOF（161116）为例，来说说夜市委托的具体操作：</p>
+<ul>
+<li><p>在24日19点左右（具体时间因券商而异）, 你能查到22日申购的份额到达持仓, 成本价0.924。<font color ='red'>*<em>到达持仓后立刻挂跌停单，跌停价为24日收盘价1.221的90%，再四舍五入到小数点后三位。比如, 1.221</em>0.9&#x3D;1.0989，你的卖出价就设为1.099</font>**。注意，这里价格千万不能输错，多一分钱你卖不掉，少一分钱算无效单！</p>
+</li>
+<li><p><font color ='red'><strong>在25日14点57分前，手动撤掉所有未卖出的委托单。等到17点30分，找一个安静的地方坐下来，拿出手机，使出单身二十多年的手速，疯狂刷跌停单，跌停价输入1.099*0.9&#x3D;0.989</strong></font>。直到系统不再提示”此时间段不允许委托”，再把其他账号一个个全都挂上去。</p>
+</li>
+</ul>
+<h2 id="2-选择不拥挤的券商，人多的地方你别去"><a href="#2-选择不拥挤的券商，人多的地方你别去" class="headerlink" title="2. 选择不拥挤的券商，人多的地方你别去"></a>2. 选择不拥挤的券商，人多的地方你别去</h2><p>某些网红券商因为聚集了大量的套利用户，交易通道极其拥堵，出货机会渺茫。根据朋友们的反馈，用了华B的很多都顺利出货了，而用了YH的很多都没跑掉。如果你没有跑掉，那再高的溢价都是镜花水月，你的所有操作，就是白忙活，纯纯给券商贡献利润。</p>
+<h2 id="最后做个交易记录小结"><a href="#最后做个交易记录小结" class="headerlink" title="最后做个交易记录小结"></a>最后做个交易记录小结</h2><p>4.22日起连续申购3天，到4.29日全部卖出，盈利合计252元。<br><img src="/2024/05/19/2024-05-19-learn-night-market-order-and-sell-stock-faster/image2.png"></p>
+]]></content>
+      <categories>
+        <category>套利往事</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>iptables规则转换为nftables的方法</title>
+    <url>/2024/05/21/2024-05-21-convert-iptables-to-nftables/</url>
+    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
+<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>iptables</category>
+      </categories>
+      <tags>
+        <tag>iptables</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Microk8s启动失败，Failed to start Service for snap application microk8s.daemon-containerd 问题定位</title>
+    <url>/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.3 x86_64</p>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>microk8s启动失败，microk8s.daemon-containerd服务启动失败，报“Failed to start Service for snap application microk8s.daemon-containerd”</p>
+<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><span id="more"></span>
+<ol>
+<li>敲<code>microk8s inspect</code>，检查相关service启动是否正常，发现snap.microk8s.daemon-containerd服务没有running.<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image1.png"></li>
+<li>敲<code>journal -u snap.microk8s.daemon-containerd</code>，查看服务启动失败原因：<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image2.png"></li>
+<li>观察上面的journal日志发现，microk8s.daemon-containerd反复尝试获取默认路由失败，因此怀疑是网卡配置有问题，敲<code>route</code>发现路由表为空，敲<code>ifconfig</code>发现主网卡没有配置IP地址。<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image3.png"></li>
+<li>检查VMware虚拟机设置，找到网卡没有IP地址原因：主网卡没有<strong>connect</strong><br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image4.png"></li>
+</ol>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>Vmware VM设置里勾选网卡状态为connect，再设置主网卡IP, Gateway, DNS，重启microk8s问题解决。<br>配置网卡使用<code>nmcli</code>命令，方法如下：</p>
+<ul>
+<li>修改已存在的connection<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv4.addresses <span class="string">&quot;<span class="variable">$&#123;ip&#125;</span>&quot;</span></span><br><span class="line">nmcli con mod eth0 ipv4.dns <span class="string">&quot;<span class="variable">$&#123;dns&#125;</span>&quot;</span></span><br><span class="line">nmcli con mod eth0 ipv4.gateway <span class="string">&quot;<span class="variable">$&#123;gw&#125;</span>&quot;</span></span><br><span class="line">nmcli con up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure></li>
+<li>connection不存在，需要新增<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli con add con-name eth0 autoconnect <span class="built_in">yes</span>  <span class="built_in">type</span> ethernet ifname eth0 ipv4.method manual ip4 <span class="string">&quot;<span class="variable">$&#123;ip&#125;</span>&quot;</span> gw4 <span class="string">&quot;<span class="variable">$&#123;gw&#125;</span>&quot;</span> ipv4.dns <span class="string">&quot;<span class="variable">$&#123;dns&#125;</span>&quot;</span></span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure></li>
+</ul>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何在centos7上安装ansible</title>
+    <url>/2024/05/24/2024-05-24-how-to-install-ansible-on-centos7/</url>
+    <content><![CDATA[<p>先安装python3, 再通过pip安装ansible，最后把ansible安装路径添加到环境变量PATH，如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install python3 python3-pip</span><br><span class="line">pip3 install ansible --user</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$PATH</span>:/usr/local/python3/bin</span><br></pre></td></tr></table></figure>
+<p>检查安装是否成功</p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ansible --version</span><br><span class="line">ansible [core 2.15.12]</span><br><span class="line">  config file = None</span><br><span class="line">  configured module search path = [&#x27;/root/.ansible/plugins/modules&#x27;, &#x27;/usr/share/ansible/plugins/modules&#x27;]</span><br><span class="line">  ansible python module location = /usr/local/python3/lib/python3.9/site-packages/ansible</span><br><span class="line">  ansible collection location = /root/.ansible/collections:/usr/share/ansible/collections</span><br><span class="line">  executable location = /usr/local/python3/bin/ansible</span><br><span class="line">  python version = 3.9.12 (main, Oct 19 2022, 05:17:58) [GCC 4.8.5 20150623 (Red Hat 4.8.5-44)] (/usr/local/bin/python3)</span><br><span class="line">  jinja version = 3.1.2</span><br><span class="line">  libyaml = True</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://unix.stackexchange.com/questions/546578/failed-to-install-ansible-on-centos-8">https://unix.stackexchange.com/questions/546578/failed-to-install-ansible-on-centos-8</a></p>
+]]></content>
+      <categories>
+        <category>ansible</category>
+      </categories>
+      <tags>
+        <tag>ansible</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img src="/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>k8s中的pod域名解析失败问题定位</title>
+    <url>/2024/06/12/2024-06-12-k8s-pod-dns-resolv-failure/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在k8s中启动了一个Host网络模式的pod，这个pod的域名解析失败了。</p>
+<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><p>敲<code>kubectl  exec -it [pod_name] -- bash</code>进入pod后台，查看<code>/etc/resolv.conf</code>，发现nameserver配的有问题。<strong>这里我预期的nameserver应该使用宿主机的，但实际上用的是coredns的。</strong></p>
+<span id="more"></span>
+<p><img src="/2024/06/12/2024-06-12-k8s-pod-dns-resolv-failure/image1.png"></p>
+<p>再查看pod的dnsPolicy，发现dns策略为ClusterFirstWithHostNet，这个策略使得Host模式的Pod仍然使用k8s的dns；我需要使用宿主机的dns，所以需要把这个dns策略改为’Default’</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n sg-fps get deploy -o yaml | grep dnsPolicy</span><br><span class="line">        dnsPolicy: ClusterFirstWithHostNet</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>kubectl -n kube-system get cm/coredns -o yaml</code>查看coredns配置，发现coredns里配置的dnsserver为10.204.16.1，这个IP我也配错了，再加上之前pod里配的策略是ClusterFirstWithHostNet，这两个错误同时出现，导致pod域名解析失败。</p>
+<p><img src="/2024/06/12/2024-06-12-k8s-pod-dns-resolv-failure/image2.png"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>把Pod的dnsPolicy改成Default，k8s的四种DNS策略参考：<a href="https://aiops.com/news/post/12763.html">link</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>质疑标普，理解标普，加入标普</title>
+    <url>/2024/06/16/2024-06-16-join-sp500/</url>
+    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
+<span id="more"></span>
+<p><img src="/2024/06/16/2024-06-16-join-sp500/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
+<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img src="/2024/06/16/2024-06-16-join-sp500/image2.png"><br><img src="/2024/06/16/2024-06-16-join-sp500/image3.png"></p>
+<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>继续捡钱，每天几百块！</title>
+    <url>/2024/06/27/2024-06-27-keep-picking-up-money-a-few-hundred-rmb-a-day/</url>
+    <content><![CDATA[<p><font color='red'><strong>每日操作计划：</strong></font></p>
+<ul>
+<li><p>标普信息科技(161128)，溢价8.5%，限购100，一拖七，单户每天700*8.5%&#x3D;59元</p>
+</li>
+<li><p>印度基金LOF(164824)，溢价2.6%，限购100，一拖七，单户每天700*2.6%&#x3D;18元</p>
+</li>
+<li><p>美元债LOF(501300)，溢价5%，限购100，场外申购转托管，单户每天100*5%&#x3D;5元</p>
+</li>
+</ul>
+<p>预计单户每天59+18+5&#x3D;82元，10个账户820元！</p>
+<span id="more"></span>
+
+<p><font color='red'><strong>说明：</strong></font></p>
+<ul>
+<li><p>标普信息科技LOF溢价收缩，原因是最近美股回调，英伟达大跌。不过目前仍然有8%的溢价，继续发车!</p>
+</li>
+<li><p>印度股市又双叒创新高，如此强势的市场怎能错过？别嫌2个点溢价太少，3个交易日2%，年化收益200%+，吊锤粪坑A ！</p>
+</li>
+<li><p>美元债LOF限购100元，但无法在场内申购。只能先在场外申购，再转托管到场内卖出，整个过程需5个交易日。</p>
+</li>
+<li><p>美元债LOF持有的是美债，每天净值波动很小，再加上场内无法申购，砸盘力量微弱，单账户每天5元简直是无脑捡，一顿午饭钱轻松到手。</p>
+</li>
+</ul>
+<p><img src="/image1.png"></p>
+]]></content>
+      <categories>
+        <category>套利往事</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>2024-06-27-ssh-connect-failure-case</title>
+    <url>/2024/08/19/2024-06-27-ssh-connect-failure-case/</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware虚拟机 RockyLinux 9 x86_64</p>
+<p>双网卡：eth0(访问外网): 10.206.216.92&#x2F;24; eth1(访问内网) 192.168.1.4&#x2F;24</p>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>虚拟机重启后，SSH连接失败，提示”Connection time out”，重启之前SSH连接还是正常的。</p>
+<span id="more"></span>
+
+<p><img src="/2024/08/19/2024-06-27-ssh-connect-failure-case/image1.png"></p>
+<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><p>登录Vmware串口，先确认sshd进程是否启动，通过ps查看sshd进程运行进程正常, netstat查看22号端口LISTEN，这一步没问题。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ps axf | grep sshd</span><br><span class="line">    996 ?        Ss     0:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups</span><br><span class="line">ss -antp | grep 22 | grep LISTEN</span><br><span class="line">LISTEN    0      128                   0.0.0.0:22                    0.0.0.0:*     <span class="built_in">users</span>:((&quot;sshd&quot;,pid=<span class="number">996</span>,fd=<span class="number">3</span>))</span><br></pre></td></tr></table></figure>
+
+<p>再通过<code>tcpdump -i eth0 port 22</code> 抓包，确认是否收到SSH请求报文，排除防火墙设置的原因。<br><img src="/2024/08/19/2024-06-27-ssh-connect-failure-case/image2.png"></p>
+<p>从抓包结果看，只有收的包，没有发出去的包。再用<code>route</code>命令查看路由表，发现问题：<strong>eth0默认路由Metric值为101，大于eth1的Metric(100)，这说明eth1默认路由优先级更高，结果应答报文从eth1发出去了，导致客户端收不到应答，显示”Connection time out”</strong><br><img src="/2024/08/19/2024-06-27-ssh-connect-failure-case/image3.png"></p>
+<p>通过<code>dmesg</code>查看虚拟机启动日志，发现eth1居然先于eth0 UP，所以系统自动分配给eth1的metric更小(优先级更高)。而之前SSH连接正常的时候，都是eth0先UP。<br><img src="/2024/08/19/2024-06-27-ssh-connect-failure-case/image4.png"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>手动设置下两个网卡的metric值，保证eth0的<code>ipv4.route-metric</code>小于eth1就行。写个脚本每次启动跑一下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 ipv4.route-metric 100</span><br><span class="line">nmcli connection modify eth1 ipv4.route-metric 101</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c up eth1</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
+<p>查看网卡配置文件确认修改生效：<br><img src="/" alt="image5.png"></p>
+]]></content>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
 </search>
