@@ -24,6 +24,41 @@
       </tags>
   </entry>
   <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -75,41 +110,6 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -3960,27 +3960,6 @@
       </tags>
   </entry>
   <entry>
-    <title>tar打包时去掉目录前缀的方法</title>
-    <url>/2022/06/04/2022-06-04-use-tar-to-remove-dir-prefix/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
-<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
-
-<p>利用-C参数，方法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
-
-<p>tar用法参考手册：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>tar</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>2022 Trend Micro 社招面经</title>
     <url>/2022/03/20/2022-03-20-trendmicro-job-interview/</url>
     <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
@@ -4122,6 +4101,27 @@
       </tags>
   </entry>
   <entry>
+    <title>tar打包时去掉目录前缀的方法</title>
+    <url>/2022/06/04/2022-06-04-use-tar-to-remove-dir-prefix/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
+<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
+
+<p>利用-C参数，方法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
+
+<p>tar用法参考手册：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>tar</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>k8s删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/11/16/2022-11-06-k8s-delete-ns-failed-case/</url>
     <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>强制删除deployment和pod后，问题解决：</p>
@@ -4148,6 +4148,25 @@
       </tags>
   </entry>
   <entry>
+    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
+    <url>/2023/02/01/2023-02-01-rpm-build-use-python3/</url>
+    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Centos7中修改hostname的方法</title>
     <url>/2023/02/13/2023-02-13-change-hostname-in-centos7/</url>
     <content><![CDATA[<h2 id="hostname临时修改主机名"><a href="#hostname临时修改主机名" class="headerlink" title="hostname临时修改主机名"></a>hostname临时修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostname XXX</span><br></pre></td></tr></table></figure>
@@ -4165,25 +4184,6 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
-    <url>/2023/02/01/2023-02-01-rpm-build-use-python3/</url>
-    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -5105,6 +5105,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
     <url>/2023/08/22/2023-08-22-extrace-seq-in-python/</url>
     <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
@@ -5117,25 +5136,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>]</span><br><span class="line">first, *middle, last = grades</span><br><span class="line"><span class="built_in">print</span>(middle)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br></pre></td></tr></table></figure>
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p01_unpack_sequence_into_separate_variables.html">Python Cookbook 第一章</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
-    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
-    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5501,16 +5501,272 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>如何自定义Squid日志格式, 添加请求方法等参数</title>
+    <url>/2024/03/21/2024-03-21-how-to-modify-squid-logformat/</url>
+    <content><![CDATA[<p>查<a href="http://www.squid-cache.org/Doc/config/logformat/">Squid手册</a>，找到你需要添加的参数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Field name syntax keys:</span><br><span class="line">	...</span><br><span class="line">	%rm</span><br><span class="line">	Request method</span><br><span class="line">	%ru</span><br><span class="line">	Request URL, without the query string</span><br><span class="line">	...</span><br></pre></td></tr></table></figure>
+
+<p>修改Squid配置文件<code>/etc/squid/squid.conf</code>，在<code>logformat</code>开头的这一行中添加<code>%rm %ru</code>参数，如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">logformat customized  %tl %ts %6tr %&gt;a %Ss %03&gt;Hs %&gt;st %&lt;st %[un %Sh %&lt;A %mt <span class="string">&quot;%&#123;User-Agent&#125;&gt;h&quot;</span> %03&lt;Hs <span class="string">&quot;%rm %ru HTTP/%rv&quot;</span> %err_code</span><br><span class="line">access_log  /var/log/squid/access.log customized</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>重启Squid, 查看<code>access.log</code>, 发现日志格式已成功修改<br><img src="/2024/03/21/2024-03-21-how-to-modify-squid-logformat/image1.png"></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="http://www.squid-cache.org/Doc/config/logformat/">http://www.squid-cache.org/Doc/config/logformat/</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>购买基金前应阅读基金招募说明书</title>
+    <url>/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/</url>
+    <content><![CDATA[<p>3月8号，华泰天金ETF(511670)离奇暴涨6.17%, 收盘价106.17元。作为一个净值100元的货币基金，正常收益一年也就2%，单日6%的溢价相当于用1天时间提前兑现3年的收益，一个货币基金也可以玩这么嗨，我实在是无法理解！</p>
+<span id="more"></span>
+<p><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image1.png"></p>
+<p>据传言，是因为大爷大妈们看到基金的名字中带有黄金，误以为是投资黄金的ETF，所以一通乱买把价格炒上去了。3月12日，华泰天金ETF以100.999元收盘，单日暴跌7%，高溢价买入的”投资者”们损失惨重，着实当了一回韭菜。</p>
+<p>从韭菜们的经历中，我们可以吸取教训：<strong>在购买一个基金前，我们需要知道这个基金的底层资产是什么</strong>，了解这个基金的投资范围，投资策略，基金费用，交易规则，这些信息可以在基金招募说明书里找到。</p>
+<p>以华泰天金ETF为例，可以从华泰官网上找到基金招募说明书。查看“基金的投资”部分，可以看出这是货币基金。<br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image2.png"></p>
+<p>查看基金说明书中“基金份额的申购与赎回”部分，发现华泰天金ETF的净值始终为100元，无申购赎回费，T日申购T+2日到账。<br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image3.png"><br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image4.png"></p>
+<p>这意味着，如果你在3月8号以净值100元申购，3月12日以开盘价102元卖出，4天收益率2%，年化收益高达182%！<strong>韭菜们的钱，挺容易赚的</strong> ^_^</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>标普500LOF又来送钱，一拖七拖拉机开起来！</title>
+    <url>/2024/03/22/2024-03-22-sp500-lof-give-money/</url>
+    <content><![CDATA[<p>标普500LOF(161125)公告，3月22日开放申购，限额申购100元，溢价率达到了离谱的40%！！！为了平抑这不合理的溢价，我决定用一拖七拖拉机狠狠拖它一把！</p>
+<span id="more"></span>
+<p><img src="/2024/03/22/2024-03-22-sp500-lof-give-money/image1.png"><br><strong>一拖七的注意事项：</strong></p>
+<ul>
+<li>标普500LOF属于深市基金，一个身份证可以使用3个深A账户+3个深基金账户+1个场外账户进行一拖七申购，这样每天可以申购100*7&#x3D;700元，收益放大七倍，多个身份证可以继续放大收益。</li>
+<li>T日(3月22日)申购的份额，在T+2日(3月26日)晚上到达持仓, 在T+3日(3月27日)早盘可以卖出。</li>
+<li>必须记住T日的操作是场内申购，千万别点错点成在场内买入！</li>
+<li>你需要有场内申购费1折+没有最低5元消费限制的券商，否则申购100元的交易成本高达6%以上，纯给券商打工。</li>
+</ul>
+<p><strong>如何打造一拖七拖拉机：</strong></p>
+<ul>
+<li>你需要有华宝和银河账户，支持加挂3个深市股东号和3个深基金号，实现一键拖拉机申购，如下：<br><img src="/2024/03/22/2024-03-22-sp500-lof-give-money/image2.jpeg"></li>
+<li>没有开满6个深市股东&#x2F;基金号的，可以在银河增开。可以在公众号”中国结算营业厅”里查询自己所有的股东号。</li>
+<li>增开可以在非交易时间进行。每次增开时，勾选1个深a加1个深基金，需上传身份证照片和视频，做电话回访，开满6个深市股东&#x2F;基金号需要最多3天时间。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>套利往事</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux双网卡环境概率出现DNS解析错误</title>
+    <url>/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
+<span id="more"></span>
+<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img src="/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
+<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
+<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>判断两个IP地址是否在同一网段(Shell实现)</title>
     <url>/2024/03/28/2024-03-28-check-two-ip-in-same-network/</url>
-    <content><![CDATA[<p>实现代码</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/bash</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">函数：提取 CIDR 的网络地址和子网掩码</span></span><br><span class="line">function extract_network() &#123;</span><br><span class="line">    echo $1 | awk -F &#x27;/&#x27; &#x27;&#123;print $1&#125;&#x27;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function extract_subnet() &#123;</span><br><span class="line">    echo $1 | awk -F &#x27;/&#x27; &#x27;&#123;print $2&#125;&#x27;</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">函数：将 IP 地址转换为二进制格式</span></span><br><span class="line">function ip_to_binary() &#123;</span><br><span class="line">    local ip=$1</span><br><span class="line">    local binary=&quot;&quot;</span><br><span class="line">    local IFS=&#x27;.&#x27;</span><br><span class="line">    local octets=($ip)</span><br><span class="line">    for octet in &quot;$&#123;octets[@]&#125;&quot;; do</span><br><span class="line">        local bin_octet=&quot;&quot;</span><br><span class="line">        local num=$octet</span><br><span class="line">        for (( i=0; i&lt;8; i++ )); do</span><br><span class="line">            bin_octet=$((num % 2))$bin_octet</span><br><span class="line">            num=$((num / 2))</span><br><span class="line">        done</span><br><span class="line">        binary+=$bin_octet</span><br><span class="line">    done</span><br><span class="line">    echo $binary</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&lt;!-- more --&gt;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">函数：比较两个 IP 地址是否在同一网段</span></span><br><span class="line">function same_network() &#123;</span><br><span class="line">    network1=$(extract_network $1)</span><br><span class="line">    subnet1=$(extract_subnet $1)</span><br><span class="line">    network2=$(extract_network $2)</span><br><span class="line">    subnet2=$(extract_subnet $2)</span><br><span class="line"></span><br><span class="line">    binary1=$(ip_to_binary $network1)</span><br><span class="line">    binary2=$(ip_to_binary $network2)</span><br><span class="line"></span><br><span class="line">    # 截取相同长度的二进制子串</span><br><span class="line">    binary1=$(echo $binary1 | cut -c1-$subnet1)</span><br><span class="line">    binary2=$(echo $binary2 | cut -c1-$subnet2)</span><br><span class="line"></span><br><span class="line">    if [ &quot;$binary1&quot; == &quot;$binary2&quot; ]; then</span><br><span class="line">        echo &quot;两个 CIDR 在同一网段&quot;</span><br><span class="line">    else</span><br><span class="line">        echo &quot;两个 CIDR 不在同一网段&quot;</span><br><span class="line">    fi</span><br><span class="line">&#125;</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">测试</span></span><br><span class="line">CIDR1=&quot;10.206.216.21/24&quot;</span><br><span class="line">CIDR2=&quot;10.206.217.10/24&quot;</span><br><span class="line">same_network $CIDR1 $CIDR2</span><br></pre></td></tr></table></figure>
+    <content><![CDATA[<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：提取 CIDR 的网络地址和子网掩码</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_network</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_subnet</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $2&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：将 IP 地址转换为二进制格式</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">ip_to_binary</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> ip=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">local</span> binary=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="built_in">local</span> IFS=<span class="string">&#x27;.&#x27;</span></span><br><span class="line">    <span class="built_in">local</span> octets=(<span class="variable">$ip</span>)</span><br><span class="line">    <span class="keyword">for</span> octet <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$&#123;octets[@]&#125;</span>&quot;</span>; <span class="keyword">do</span></span><br><span class="line">        <span class="built_in">local</span> bin_octet=<span class="string">&quot;&quot;</span></span><br><span class="line">        <span class="built_in">local</span> num=<span class="variable">$octet</span></span><br><span class="line">        <span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="number">8</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">            bin_octet=$((num % <span class="number">2</span>))<span class="variable">$bin_octet</span></span><br><span class="line">            num=$((num / <span class="number">2</span>))</span><br><span class="line">        <span class="keyword">done</span></span><br><span class="line">        binary+=<span class="variable">$bin_octet</span></span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$binary</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 函数：比较两个 IP 地址是否在同一网段</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">same_network</span></span>() &#123;</span><br><span class="line">    network1=$(extract_network <span class="variable">$1</span>)</span><br><span class="line">    subnet1=$(extract_subnet <span class="variable">$1</span>)</span><br><span class="line">    network2=$(extract_network <span class="variable">$2</span>)</span><br><span class="line">    subnet2=$(extract_subnet <span class="variable">$2</span>)</span><br><span class="line"></span><br><span class="line">    binary1=$(ip_to_binary <span class="variable">$network1</span>)</span><br><span class="line">    binary2=$(ip_to_binary <span class="variable">$network2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 截取相同长度的二进制子串</span></span><br><span class="line">    binary1=$(<span class="built_in">echo</span> <span class="variable">$binary1</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet1</span>)</span><br><span class="line">    binary2=$(<span class="built_in">echo</span> <span class="variable">$binary2</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$binary1</span>&quot;</span> == <span class="string">&quot;<span class="variable">$binary2</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 不在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>CIDR1&#x3D;”10.206.216.21&#x2F;24”<br>CIDR2&#x3D;”10.206.217.10&#x2F;24”<br>same_network $CIDR1 $CIDR2</p>
 ]]></content>
       <categories>
         <category>Shell</category>
       </categories>
       <tags>
         <tag>Shell</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Centos7.9上安装Docker</title>
+    <url>/2024/03/28/2024-03-28-how-to-install-docker-on-centos7/</url>
+    <content><![CDATA[<p>移除旧版本Docker</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
+
+<p>安装依赖</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<p>添加Docker存储库</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<p>安装</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+<p>启动Docker服务</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+<p>查看Docker版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kubectl执行失败后等待一段时间重试(Shell实现)</title>
+    <url>/2024/03/28/2024-03-28-kubectl-add-retry/</url>
+    <content><![CDATA[<p>使用Shell脚本实现功能： <code>kubectl</code>执行失败后，等待30秒后再重试，一共重试3次，代码如下：</p>
+<span id="more"></span>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">KUBECTL_BIN=/var/lib/snapd/snap/bin/kubectl</span><br><span class="line"></span><br><span class="line">ERR_MSG_K8S_NOTRUNNING=<span class="string">&quot;microk8s is not running&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_TIMEOUT=<span class="string">&quot;connection timed out&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_REFUSED=<span class="string">&quot;refused - did you specify the right host or port&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">debuglog</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> log_content=<span class="variable">$&#123;@:1&#125;</span></span><br><span class="line">    <span class="built_in">local</span> <span class="built_in">caller</span>=$(<span class="built_in">basename</span> <span class="string">&quot;<span class="variable">$0</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;`date +&quot;</span>%Y-%m-%d %H:%M:%S<span class="string">&quot;` [<span class="variable">$caller</span>] INFO <span class="variable">$log_content</span>&quot;</span> 2&gt;&amp;1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectlX</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> retry=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">shift</span></span><br><span class="line">    <span class="built_in">local</span> args=<span class="variable">$@</span></span><br><span class="line">    <span class="built_in">local</span> ret=0</span><br><span class="line">    <span class="built_in">local</span> cmdstr=<span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">local</span> tmpfile=$(<span class="built_in">mktemp</span>)</span><br><span class="line">    <span class="keyword">for</span> ((i=<span class="number">0</span>;i&lt;<span class="variable">$retry</span>;i++)); <span class="keyword">do</span></span><br><span class="line">        <span class="variable">$&#123;KUBECTL_BIN&#125;</span> <span class="variable">$@</span> 2&gt;<span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span></span><br><span class="line">        ret=$?</span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$ret</span> -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL <span class="variable">$cmdstr</span> ret: 0&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">local</span> errinfo=$(&lt; <span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">local</span> need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">if</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_K8S_NOTRUNNING</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_TIMEOUT</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_REFUSED</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ <span class="variable">$ret</span> -eq 143 ]; <span class="keyword">then</span> <span class="comment"># 143 means SIGTERM, just retry</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$need_retry</span> != <span class="string">&quot;yes&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) (retry:<span class="variable">$i</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">        <span class="built_in">sleep</span> 30</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">rm</span> -- <span class="variable">$&#123;tmpfile&#125;</span></span><br><span class="line">    <span class="built_in">return</span> <span class="variable">$ret</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectl</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> args=(3 <span class="string">&quot;<span class="variable">$@</span>&quot;</span>)</span><br><span class="line">    api_kubectlX <span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">return</span> $?</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用方法：</span></span><br><span class="line">api_kubectl get ns</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+        <tag>Shell</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Microk8s dqlite启动失败, raft_start(): io: load closed segment XXX: entries count in preamble is zero</title>
+    <url>/2024/03/28/2024-03-28-microk8s-dqlite-run-fail/</url>
+    <content><![CDATA[<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><p>后台查看Microk8s相关进程：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  7281 ?        Ss    27:02 /bin/bash /var/lib/snapd/snap/microk8s/3699/apiservice-kicker</span><br><span class="line">749807 ?        S      0:00  \_ sleep 5</span><br><span class="line">  7290 ?        Ss     0:00 /bin/bash /var/lib/snapd/snap/microk8s/3699/run-cluster-agent-with-args</span><br><span class="line">  7362 ?        S      2:32  \_ python3 /snap/microk8s/3699/usr/bin/gunicorn3 cluster.agent:app --bind 0.0.0.0:25000 --keyfile /var/snap/microk8s/3699/certs/server.key --certfile /var/snap/microk8s/3699/certs/server.crt --timeout 240</span><br><span class="line">  7684 ?        S      0:02      \_ python3 /snap/microk8s/3699/usr/bin/gunicorn3 cluster.agent:app --bind 0.0.0.0:25000 --keyfile /var/snap/microk8s/3699/certs/server.key --certfile /var/snap/microk8s/3699/certs/server.crt --timeout 240</span><br><span class="line">  7310 ?        Ssl  399:16 /snap/microk8s/3699/bin/containerd --config /var/snap/microk8s/3699/args/containerd.toml --root /var/snap/microk8s/common/var/lib/containerd --state /var/snap/microk8s/common/run/containerd --address /var/snap/microk8s/common/run/containerd.sock</span><br></pre></td></tr></table></figure>
+<p>和正常环境对比，发现<code>k8s-dqlite</code>, <code>kubelite</code>进程执行异常，如下：</p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">7457 ?        Ssl  752:10 /snap/microk8s/3699/bin/k8s-dqlite --storage-dir=/var/snap/microk8s/3699/var/kubernetes/backend/ --listen=unix:///var/snap/microk8s/3699/var/kubernetes/backend/kine.sock:12379</span><br><span class="line">7489 ?        Ssl  1777:58 /snap/microk8s/3699/kubelite --scheduler-args-file=/var/snap/microk8s/3699/args/kube-scheduler --controller-manager-args-file=/var/snap/microk8s/3699/args/kube-controller-manager --proxy-args-file=/var/snap/microk8s/3699/args/kube-proxy --kubelet-args-file=/var/snap/microk8s/3699/args/kubelet --apiserver-args-file=/var/snap/microk8s/3699/args/kube-apiserver</span><br></pre></td></tr></table></figure>
+<p>通过<code>journactl</code>查看错误日志:<br>fatal msg&#x3D;”Failed to start server: start node: raft_start(): io: <strong>load closed segment 0000000014232389-0000000014232597</strong>: entries batch 394 starting at byte 8384000: entries count in preamble is zero\n”<br>Feb 03 08:18:08 GIFOCTMSG02 systemd[1]: snap.microk8s.daemon-k8s-dqlite.service: Main process exited, code&#x3D;exited, status&#x3D;1&#x2F;FAILURE</p>
+<p>根据关键字查Google找到解决方案：<a href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>根据错误日志中”segment <strong>0000000014232389-0000000014232597</strong>“的信息，找到出错的文件<code>/var/snap/microk8s/current/var/kubernetes/backend/0000000014232389-0000000014232597</code>，删除此文件后重启microk8s，发现问题解决。文件出错原因可能是因为机器被异常下电，导致文件损坏</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s stop</span><br><span class="line">rm /var/snap/microk8s/current/var/kubernetes/backend/0000000014232389-0000000014232597</span><br><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
+<p><code>/var/snap/microk8s/3699/var/kubernetes/backend</code>的文件如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># ll /var/snap/microk8s/3699/var/kubernetes/backend</span><br><span class="line">total 153212</span><br><span class="line">-rw-rw---- 1 root microk8s 8381624 Jan 28 00:11 0000000014225187-0000000014225660</span><br><span class="line">-rw-rw---- 1 root microk8s 8386880 Jan 28 00:12 0000000014225661-0000000014226264</span><br><span class="line">-rw-rw---- 1 root microk8s 8386016 Jan 28 00:16 0000000014226265-0000000014226628</span><br><span class="line">-rw-rw---- 1 root microk8s 8381552 Jan 28 00:16 0000000014226629-0000000014227272</span><br><span class="line">-rw-rw---- 1 root microk8s 8378744 Jan 28 00:19 0000000014227273-0000000014227706</span><br><span class="line">-rw-rw---- 1 root microk8s 8362544 Jan 28 00:21 0000000014227707-0000000014228257</span><br><span class="line">-rw-rw---- 1 root microk8s 8377520 Jan 28 00:23 0000000014228258-0000000014228788</span><br><span class="line">-rw-rw---- 1 root microk8s 8386592 Jan 28 00:26 0000000014228789-0000000014229217</span><br><span class="line">-rw-rw---- 1 root microk8s 8368952 Jan 28 00:26 0000000014229218-0000000014229857</span><br><span class="line">-rw-rw---- 1 root microk8s 8361608 Jan 28 00:30 0000000014229858-0000000014230224</span><br><span class="line">-rw-rw---- 1 root microk8s 8387384 Jan 28 00:31 0000000014230225-0000000014230835</span><br><span class="line">-rw-rw---- 1 root microk8s 8377232 Jan 28 00:34 0000000014230836-0000000014231305</span><br><span class="line">-rw-rw---- 1 root microk8s 8387384 Jan 28 00:36 0000000014231306-0000000014231802</span><br><span class="line">-rw-rw---- 1 root microk8s 8373272 Jan 28 00:37 0000000014231803-0000000014232388</span><br><span class="line">-rw-rw---- 1 root microk8s 8384512 Jan 28 00:41 0000000014232389-0000000014232597</span><br><span class="line">-rw-rw---- 1 root microk8s      80 Jan 28 00:40 0000000014232598-0000000014232598</span><br><span class="line">-rw-rw---- 1 root microk8s    1883 Dec 14 03:38 cluster.crt</span><br><span class="line">-rw-rw---- 1 root microk8s    3272 Dec 14 03:38 cluster.key</span><br><span class="line">-rw-rw---- 1 root microk8s      63 Feb  4 03:11 cluster.yaml</span><br><span class="line">-rw-rw-r-- 1 root microk8s       2 Feb  4 03:12 failure-domain</span><br><span class="line">-rw-rw---- 1 root microk8s      57 Dec 14 03:38 info.yaml</span><br><span class="line">-rw-rw-r-- 1 root microk8s       0 Feb  2 10:24 kine.sock</span><br><span class="line">-rw-rw---- 1 root microk8s      63 Dec 19 07:56 localnode.yaml</span><br><span class="line">-rw-rw---- 1 root microk8s      32 Dec 14 03:38 metadata1</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:41 open-28053</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:41 open-28054</span><br><span class="line">-rw-rw---- 1 root microk8s 8388608 Jan 28 00:45 open-28055</span><br><span class="line">-rw-rw---- 1 root microk8s 3069878 Jan 28 00:40 snapshot-1-14232647-3429895302</span><br><span class="line">-rw-rw---- 1 root microk8s      72 Jan 28 00:40 snapshot-1-14232647-3429895302.meta</span><br><span class="line">-rw-rw---- 1 root microk8s 2893883 Jan 28 00:43 snapshot-1-14233671-3430050282</span><br><span class="line">-rw-rw---- 1 root microk8s      72 Jan 28 00:43 snapshot-1-14233671-3430050282.meta</span><br></pre></td></tr></table></figure>
+<p>每个文件的作用：</p>
+<ul>
+<li>数据段文件（如：0000000014225187-0000000014225660）：<br>这些文件包含 dqlite 存储的实际数据段。每个文件代表一个数据段，存储着相应的数据。这些文件在 dqlite 数据库引擎中用于持久性地存储数据。</li>
+<li>索引段文件（如：0000000014225661-0000000014226264）：<br>类似于数据段文件，这些文件包含 dqlite 存储的索引段，用于加速数据检索。</li>
+<li>快照文件（如：snapshot-1-14232647-3429895302）：<br>这些文件包含数据库在某个时间点的快照，用于还原数据库状态。在备份和还原过程中，这些文件可能会用到。</li>
+<li>信息文件（info.yaml）：<br>这是一个 YAML 格式的文件，包含有关 dqlite 数据库的一些元信息。</li>
+<li>配置文件（cluster.yaml）：<br>包含 dqlite 集群的配置信息，例如节点地址、端口等。</li>
+<li>证书文件（cluster.crt、cluster.key）：<br>这是用于在 dqlite 集群中进行安全通信的证书文件。</li>
+<li>本地节点配置文件（localnode.yaml）：<br>包含本地节点的配置信息，例如节点 ID。</li>
+<li>元数据文件（metadata1）：<br>存储 dqlite 内部使用的一些元数据信息。</li>
+<li>打开文件（如：open-28055）：<br>这些文件可能是当前正在使用的打开文件。它们通常在 dqlite 服务正在运行时存在。</li>
+<li>失败域文件（failure-domain）：<br>可能包含关于节点失败域的信息，用于高可用性和容错。</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>股票账户除了炒股还能做什么?</title>
+    <url>/2024/03/31/2024-03-31-what-else-can-a-stock-account-do-besides-trade-stock/</url>
+    <content><![CDATA[<p>除了炒股，股票账户还有哪些功能？开股票账户是不是和去赌场赌博是一回事？股票账户有靠谱的赚钱手艺吗？</p>
+<p>我的回答是：<strong>股票账户当然能赚钱，而且股票账户的功能非常丰富，可以是说现代投资理财必备工具</strong>。下面我介绍几个我常用的低风险投资工具，供大家参考：</p>
+<span id="more"></span>
+
+<h2 id="1-购买国债逆回购、货币基金等短期资金管理工具"><a href="#1-购买国债逆回购、货币基金等短期资金管理工具" class="headerlink" title="1. 购买国债逆回购、货币基金等短期资金管理工具"></a>1. 购买国债逆回购、货币基金等短期资金管理工具</h2><p>我通常把3年内可能会用掉的钱看作短期资金，这部分钱只能投入到流动性好，风险极低的资产。我最常用的短期资金管理工具是国债逆回购和货币基金：</p>
+<h3 id="国债逆回购"><a href="#国债逆回购" class="headerlink" title="国债逆回购"></a>国债逆回购</h3><ul>
+<li>逆回购本质是一种短期贷款，你把钱借给别人获得固定的利息收益，别人用自己的国债作为抵押获得这笔借款，到期还本付息，逆回购的安全性等同于国债。</li>
+<li>逆回购的流动性好，可根据自己需要选择1天，2天，3天，4天等不同期限。</li>
+<li>在月末季末等资金面紧张的时候，逆回购收益率较高。</li>
+<li>在节前倒数第二个交易日购买1天期逆回购，资金只占用1天，可以获得整个节日期间的利息。<br><img src="/2024/03/31/2024-03-31-what-else-can-a-stock-account-do-besides-trade-stock/image1.png"></li>
+</ul>
+<h3 id="货币基金"><a href="#货币基金" class="headerlink" title="货币基金"></a>货币基金</h3><ul>
+<li>货币基金主要投资于国债、央行票据等风险极低的东西，安全性很强。货币基金的收益和逆回购相当。</li>
+<li>我通常只买场内交易型货币基金，有两点好处：日内可以随时买入卖出，如果急用钱当天卖出下一个交易日就能取现；价格和净值出现偏离时可以套利。</li>
+<li>逆回购搭配“算头不算尾”的场内货币基金，可以实现用7天时间赚9天收益。篇幅所限不展开讨论，有兴趣朋友可自行搜索原理。</li>
+</ul>
+<h2 id="2-购买券商新客理财"><a href="#2-购买券商新客理财" class="headerlink" title="2. 购买券商新客理财"></a>2. 购买券商新客理财</h2><p>券商新客理财是券商给新客户发行的一种短期理财产品，以质押式报价回购和收益凭证为主。本质上是证券公司向你借钱，投向风险极低的品种，投资期限一般在14天到1个月，约定到期收益6%-8%，说白了就是券商为了拉新倒贴你钱。<br><img src="/2024/03/31/2024-03-31-what-else-can-a-stock-account-do-besides-trade-stock/image2.png"><br>思考题：只有新客户才能买新客理财，一次只能享受14天到1个月的利息，你该如何放大这个收益？</p>
+<p>答：你完全可以(用家人的账户)继续购买。如果你不想麻烦家人开户，你一个人也可以开多个证券公司的账户，注意这里的多不是3个5个，而是30个50个甚至100多个，理论上全国有多少券商你就可以开多少个~</p>
+<p>要解释这个神奇的BUG，你需要了解<strong>不限三</strong>的概念：<strong>不限制深A股东号，超过三户之后你可以接着开第四家，只需在开户时勾选“转户深A”，即可无限复制深A号，实现无尽开户的概念</strong>。</p>
+<p>总结下，券商新客理财适合20万以内的小资金，没必要去瞎炒什么股票，每个月去开户就完事了，稳拿6%-8%收益，再加上券商开户返利，年化10-20%很容易。你只要不嫌麻烦，就能站着把这钱挣了。</p>
+<h2 id="3-做基金套利"><a href="#3-做基金套利" class="headerlink" title="3. 做基金套利"></a>3. 做基金套利</h2><p>关于基金套利的原理，简单说就是<strong>从价格低的市场买入，然后到价格高的市场卖出，赚取差价，就像勤劳的搬砖工一样</strong>。</p>
+<p>今年短短3个月时间里，出现了非常多的基金套利机会，比如印度基金LOF，全球芯片LOF，标普500LOF，给了我实践套利机会的同时，还顺便让我捡了几千块钱~</p>
+<p>至于下一次套利机会什么时候出现，谁也不知道。我们能做的就是提前把工具准备好，多开几个拖拉机户，下次在地上看到钱了，弯个腰，把它捡起来。</p>
+<h2 id="4-可转债打新"><a href="#4-可转债打新" class="headerlink" title="4. 可转债打新"></a>4. 可转债打新</h2><p>关于可转债是什么，大家可自行搜索。可转债打新几乎是一门稳赚不赔的手艺，单账户一年期望收益在1000元左右，你自己的再加上父母老婆兄弟姐妹的，一年搞个五六千的无风险收益不难。你只需要做到每次新债不漏申，中签要缴款，有手就行，属于白送的钱。</p>
+<p>现在可转债新规，要求2年股票交易经验+10万元资产的参与门槛，我只能说赚钱要趁早。<strong>刚开户的朋友务必记得买卖一手股票(推荐600022)刷下交易经验，等2年时间一到就准备开始捡钱。</strong></p>
+<p>想学习可转债的朋友，我推荐以下这几本我看过的书：</p>
+<ul>
+<li>《攻守：可转债投资实用手册》作者：饕餮海&#x2F;定风波&#x2F;优美</li>
+<li>《可转债投资黄金宝典》作者：阿秋</li>
+<li>《可转债投资魔法书》作者：安道全</li>
+</ul>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux双网卡默认路由优先级不正确，导致网络不通问题定位</title>
+    <url>/2024/04/10/2024-04-10-network-failure-due-to-incorrect-default-route-priority-in-dual-nic-linux/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 双网卡环境，两个网卡配置如下：(<strong>eth0 走内网，eth1 走外网</strong>)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0  192.168.10.20/24     网关: 192.168.10.254</span><br><span class="line">eth1  10.206.216.92/24     网关: 10.206.216.254</span><br></pre></td></tr></table></figure>
+<p>配置完成后，<code>curl https://www.baidu.com</code>访问百度失败，发现网络不通。</p>
+<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><span id="more"></span>
+<p>使用<code>route</code>命令查路由表，发现eth0的默认路由Metric值为100，小于eth1的Metric(101)，这说明eth0默认路由优先级更高，**<code>curl https://www.baidu.com</code> 匹配的是eth0的默认路由，但我们需要通过eth1访问外网**，所以网络不通。<br><img src="/2024/04/10/2024-04-10-network-failure-due-to-incorrect-default-route-priority-in-dual-nic-linux/image1.png"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>有两种方法，任选其一即可</p>
+<h3 id="方法1-手动修改eth0默认路由的metric值，需大于eth1"><a href="#方法1-手动修改eth0默认路由的metric值，需大于eth1" class="headerlink" title="方法1: 手动修改eth0默认路由的metric值，需大于eth1"></a>方法1: 手动修改eth0默认路由的metric值，需大于eth1</h3><p>以下命令设置eth0的默认路由metric值为200，大于eth1的默认路由metric(101)</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 ipv4.route-metric 200</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
+<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
+<h3 id="方法2：删除eth0的默认路由，只保留eth1的默认路由"><a href="#方法2：删除eth0的默认路由，只保留eth1的默认路由" class="headerlink" title="方法2：删除eth0的默认路由，只保留eth1的默认路由"></a>方法2：删除eth0的默认路由，只保留eth1的默认路由</h3><p>通过配置<code>ipv4.never-default=no</code>，删除eth0网卡的默认路由，参考如下命令：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli c mod eth0 ipv4.never-default no gw4 192.168.10.254</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
+<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/managing-the-default-gateway-setting_configuring-and-managing-networking">Red Hat Customer Portal – Chapter 23. Managing the default gateway setting</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Shell函数中使用echo返回了错误字符串问题定位</title>
+    <url>/2024/04/12/2024-04-12-echo-return-wrong-str-in-shell/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>在Vmware虚拟机上，执行如下Shell代码获取VM类型</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">get_VM_infra</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> infra=$(dmidecode -t system | grep <span class="string">&quot;Manufacturer&quot;</span>)</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$infra</span>&quot;</span> | grep <span class="string">&quot;VMware&quot;</span> <span class="comment"># 判断VM平台类型是否为VMware</span></span><br><span class="line">    <span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;VMware&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;Other Type&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">infra=$(get_VM_infra)</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;infra: <span class="variable">$infra</span>&quot;</span></span><br></pre></td></tr></table></figure>
+<p>预期返回<code>&quot;VMware&quot;</code>，实际返回<code>&quot;Manufacturer: VMware, Inc.\nVMware&quot;</code>，这个返回的结果是错误的</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># infra:  Manufacturer: VMware, Inc.</span><br><span class="line"># VMware</span><br></pre></td></tr></table></figure>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><span id="more"></span>
+<p>问题出在<code>echo &quot;$infra&quot; | grep &quot;VMware&quot;</code>，<strong>这行代码判断虚拟机类型的时候，也使用了echo，导致返回的字符串多了一行</strong>(Manufacturer: VMware, Inc.)。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>方法1：<br><code>echo &quot;$infra&quot; | grep &quot;VMware&quot;</code> 改成 <code>echo &quot;$infra&quot; | grep &quot;VMware&quot; &gt; /dev/null 2&gt;&amp;1</code></p>
+<p>方法2:<br>直接定义全局变量保存字符串，回避echo语句的副作用</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://linuxsimply.com/bash-scripting-tutorial/functions/return-values/return-string-function/">How to Return String From Bash Function</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>shell</tag>
       </tags>
   </entry>
 </search>
