@@ -20,27 +20,23 @@
     var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="测试环境VMware虚拟机 RockyLinux 9 x86_64 双网卡：eth0(访问外网): 10.206.216.92&#x2F;24; eth1(访问内网) 192.168.1.4&#x2F;24 问题描述虚拟机重启后，SSH连接失败，提示”Connection time out”，重启之前SSH连接还是正常的。">
+  <meta name="description" content="问题描述我有一个On-Premises Appliance使用了CLISH(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。 解决思路Google没查到类似案例，毕竟这年头互联网公司谁还用这种命令行呢，只好把CLISH源代码下一份，捋下流程看看解决方法,  先给出我的">
 <meta property="og:type" content="article">
-<meta property="og:title" content="2024-06-27-ssh-connect-failure-case">
-<meta property="og:url" content="https://pcj600.github.io/2024/08/19/2024-06-27-ssh-connect-failure-case/index.html">
+<meta property="og:title" content="CLISH logout后没有执行自定义脚本问题的解决方法">
+<meta property="og:url" content="https://pcj600.github.io/2024/08/19/2024-08-19-clish-custom-script-not-executed-after-logout/index.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
-<meta property="og:description" content="测试环境VMware虚拟机 RockyLinux 9 x86_64 双网卡：eth0(访问外网): 10.206.216.92&#x2F;24; eth1(访问内网) 192.168.1.4&#x2F;24 问题描述虚拟机重启后，SSH连接失败，提示”Connection time out”，重启之前SSH连接还是正常的。">
+<meta property="og:description" content="问题描述我有一个On-Premises Appliance使用了CLISH(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。 解决思路Google没查到类似案例，毕竟这年头互联网公司谁还用这种命令行呢，只好把CLISH源代码下一份，捋下流程看看解决方法,  先给出我的">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://pcj600.github.io/2024/08/19/2024-06-27-ssh-connect-failure-case/image1.png">
-<meta property="og:image" content="https://pcj600.github.io/2024/08/19/2024-06-27-ssh-connect-failure-case/image2.png">
-<meta property="og:image" content="https://pcj600.github.io/2024/08/19/2024-06-27-ssh-connect-failure-case/image3.png">
-<meta property="og:image" content="https://pcj600.github.io/2024/08/19/2024-06-27-ssh-connect-failure-case/image4.png">
-<meta property="og:image" content="https://pcj600.github.io/">
-<meta property="article:published_time" content="2024-08-19T13:51:22.000Z">
-<meta property="article:modified_time" content="2024-08-19T13:55:39.611Z">
+<meta property="og:image" content="https://pcj600.github.io/2024/08/19/2024-08-19-clish-custom-script-not-executed-after-logout/image1.png">
+<meta property="article:published_time" content="2024-08-19T14:34:18.000Z">
+<meta property="article:modified_time" content="2024-08-19T14:35:41.001Z">
 <meta property="article:author" content="PC">
-<meta property="article:tag" content="Linux">
 <meta property="article:tag" content="troubleshooting">
+<meta property="article:tag" content="CLISH">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://pcj600.github.io/2024/08/19/2024-06-27-ssh-connect-failure-case/image1.png">
+<meta name="twitter:image" content="https://pcj600.github.io/2024/08/19/2024-08-19-clish-custom-script-not-executed-after-logout/image1.png">
 
-<link rel="canonical" href="https://pcj600.github.io/2024/08/19/2024-06-27-ssh-connect-failure-case/">
+<link rel="canonical" href="https://pcj600.github.io/2024/08/19/2024-08-19-clish-custom-script-not-executed-after-logout/">
 
 
 <script id="page-configurations">
@@ -53,7 +49,7 @@
   };
 </script>
 
-  <title>2024-06-27-ssh-connect-failure-case | PC's Blog</title>
+  <title>CLISH logout后没有执行自定义脚本问题的解决方法 | PC's Blog</title>
   
 
 
@@ -193,7 +189,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/08/19/2024-06-27-ssh-connect-failure-case/">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/08/19/2024-08-19-clish-custom-script-not-executed-after-logout/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -206,7 +202,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          2024-06-27-ssh-connect-failure-case
+          CLISH logout后没有执行自定义脚本问题的解决方法
         </h1>
 
         <div class="post-meta">
@@ -216,7 +212,16 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2024-08-19 21:51:22" itemprop="dateCreated datePublished" datetime="2024-08-19T21:51:22+08:00">2024-08-19</time>
+              <time title="创建时间：2024-08-19 22:34:18" itemprop="dateCreated datePublished" datetime="2024-08-19T22:34:18+08:00">2024-08-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
+                </span>
             </span>
 
           
@@ -232,14 +237,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>893</span>
+              <span>1.9k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>2 分钟</span>
             </span>
 
         </div>
@@ -251,21 +256,27 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware虚拟机 RockyLinux 9 x86_64</p>
-<p>双网卡：eth0(访问外网): 10.206.216.92&#x2F;24; eth1(访问内网) 192.168.1.4&#x2F;24</p>
-<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>虚拟机重启后，SSH连接失败，提示”Connection time out”，重启之前SSH连接还是正常的。</p>
+        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我有一个On-Premises Appliance使用了<a target="_blank" rel="noopener" href="https://clish.sourceforge.net/">CLISH</a>(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。</p>
+<h2 id="解决思路"><a href="#解决思路" class="headerlink" title="解决思路"></a>解决思路</h2><p>Google没查到类似案例，毕竟这年头互联网公司谁还用这种命令行呢，只好把CLISH源代码下一份，捋下流程看看解决方法,  先给出我的root-view.xml配置：</p>
 <span id="more"></span>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">COMMAND</span> <span class="attr">name</span>=<span class="string">&quot;logout&quot;</span> <span class="attr">help</span>=<span class="string">&quot;Logout of the current CLI session&quot;</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">ACTION</span> <span class="attr">builtin</span>=<span class="string">&quot;clish_close&quot;</span>&gt;</span>	<span class="comment">&lt;!-- 内置的clish_close方法，用于退出clish --&gt;</span></span><br><span class="line">	/usr/share/clish/scripts/basecmd.sh release #自定义的脚本，用于记录auditlog</span><br><span class="line">       <span class="tag">&lt;/<span class="name">ACTION</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">COMMAND</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
-<p><img src="/2024/08/19/2024-06-27-ssh-connect-failure-case/image1.png"></p>
-<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><p>登录Vmware串口，先确认sshd进程是否启动，通过ps查看sshd进程运行进程正常, netstat查看22号端口LISTEN，这一步没问题。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ps axf | grep sshd</span><br><span class="line">    996 ?        Ss     0:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups</span><br><span class="line">ss -antp | grep 22 | grep LISTEN</span><br><span class="line">LISTEN    0      128                   0.0.0.0:22                    0.0.0.0:*     <span class="built_in">users</span>:((&quot;sshd&quot;,pid=<span class="number">996</span>,fd=<span class="number">3</span>))</span><br></pre></td></tr></table></figure>
+<p>查看CLISH源码，看下root-view.xml中的command怎么解析的：</p>
+<!-- more -->
+<p><img src="/2024/08/19/2024-08-19-clish-custom-script-not-executed-after-logout/image1.png"></p>
+<p>观察if语句发现问题所在：如果builtin存在，就不执行script。 我在配置文件里指定了builtin函数clish_close, 所以自定义的脚本没有执行。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>我想到两种方法：<br><strong>方法1：</strong>自行修改CLISH源码, 改C函数clish_close, 添加自定义代码。 这种方法需要自己维护源代码，不太推荐。</p>
+<p><strong>方法2:</strong> 在root-view.xml里自定义action, 通过kill $PPID(直接杀死父进程)的方式退出CLISH。</p>
+<p>这种方法不需修改源代码，问题是每次退出会打印一行”Terminated”，无伤大雅。 将root-view.xml配置修改如下：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">COMMAND</span> <span class="attr">name</span>=<span class="string">&quot;logout&quot;</span> <span class="attr">help</span>=<span class="string">&quot;Logout of the current CLI session&quot;</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">ACTION</span>&gt;</span>	<span class="comment">&lt;!-- 去掉内置的clish_close方法 --&gt;</span></span><br><span class="line">	/usr/share/clish/scripts/basecmd.sh release</span><br><span class="line">	kill $PPID # 杀掉父进程，也就是CLISH主进程</span><br><span class="line">       <span class="tag">&lt;/<span class="name">ACTION</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">COMMAND</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
-<p>再通过<code>tcpdump -i eth0 port 22</code> 抓包，确认是否收到SSH请求报文，排除防火墙设置的原因。<br><img src="/2024/08/19/2024-06-27-ssh-connect-failure-case/image2.png"></p>
-<p>从抓包结果看，只有收的包，没有发出去的包。再用<code>route</code>命令查看路由表，发现问题：<strong>eth0默认路由Metric值为101，大于eth1的Metric(100)，这说明eth1默认路由优先级更高，结果应答报文从eth1发出去了，导致客户端收不到应答，显示”Connection time out”</strong><br><img src="/2024/08/19/2024-06-27-ssh-connect-failure-case/image3.png"></p>
-<p>通过<code>dmesg</code>查看虚拟机启动日志，发现eth1居然先于eth0 UP，所以系统自动分配给eth1的metric更小(优先级更高)。而之前SSH连接正常的时候，都是eth0先UP。<br><img src="/2024/08/19/2024-06-27-ssh-connect-failure-case/image4.png"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>手动设置下两个网卡的metric值，保证eth0的<code>ipv4.route-metric</code>小于eth1就行。写个脚本每次启动跑一下：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nmcli connection modify eth0 ipv4.route-metric 100</span><br><span class="line">nmcli connection modify eth1 ipv4.route-metric 101</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c up eth1</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
-<p>查看网卡配置文件确认修改生效：<br><img src="/" alt="image5.png"></p>
+<h2 id="CLISH进程模型分析"><a href="#CLISH进程模型分析" class="headerlink" title="CLISH进程模型分析"></a>CLISH进程模型分析</h2><ul>
+<li>一个主进程clish, 创建一个副线程循环读取用户输入的指令，主进程等待副线程退出;</li>
+<li>副线程每读取一个指令就创建一个子进程，子进程执行xml里定义的builtin和action，执行完子进程退出。</li>
+</ul>
+<p>分析过程如下，通过GDB和ps命令，没啥难度：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">ps aux</span><br><span class="line"> 339658 ?        Ss     0:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups</span><br><span class="line"> 339765 pts/0    Ss     0:00  |       \_ -bash</span><br><span class="line"> 383959 pts/0    Sl+    0:00  |           \_ clish (有两个线程, 副线程(383960)负责读取输入指令，主线程等待副线程(383960)结束</span><br><span class="line"> 384002 pts/0    S+     0:00  |               \_ sh -c  ??        /usr/share/clish/scripts/basecmd.sh release ??        <span class="built_in">echo</span> <span class="string">&quot;pid: $$, ppid: <span class="variable">$PPID</span>&quot;</span> ?? (执行用户自定义action的进程)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">ps -T 383959 <span class="comment"># (CLISH进程有两个线程)</span></span><br><span class="line">    PID    SPID TTY      STAT   TIME COMMAND</span><br><span class="line"> 383959  383959 pts/0    Sl+    0:00 clish (创建副线程383960，等待其退出)</span><br><span class="line"> 383959  383960 pts/0    Sl+    0:00 clish (副线程循环读取用户输入指令, 创建子进程执行自定义<span class="built_in">builtin</span>和action)</span><br><span class="line"></span><br><span class="line">ps ajx | grep clish <span class="comment"># (查看相关CLISH进程的PID, 父进程ID, 线程ID)</span></span><br><span class="line">   PPID     PID    PGID     SID TTY        TPGID STAT   UID   TIME COMMAND</span><br><span class="line"> 339765  383959  383959  339765 pts/0     383959 Sl+      0   0:00 clish</span><br><span class="line"> 383959  384002  383959  339765 pts/0     383959 S+       0   0:00 sh -c  ??   /usr/share/clish/scripts/basecmd.sh release ??        <span class="built_in">echo</span> <span class="string">&quot;pid: $$, ppid: <span class="variable">$PPID</span>&quot;</span> ??        <span class="built_in">sleep</span> 1000 ??        <span class="built_in">kill</span> <span class="variable">$PPID</span> ???</span><br></pre></td></tr></table></figure>
+
 
     </div>
 
@@ -275,8 +286,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
               <a href="/tags/troubleshooting/" rel="tag"><i class="fa fa-tag"></i> troubleshooting</a>
+              <a href="/tags/CLISH/" rel="tag"><i class="fa fa-tag"></i> CLISH</a>
           </div>
 
         
@@ -285,8 +296,8 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2024/07/14/2024-07-14-india-fund-close-and-arbitrage-usd-bond-lof/" rel="prev" title="标普印度基金关门，继续套利美元债LOF">
-      <i class="fa fa-chevron-left"></i> 标普印度基金关门，继续套利美元债LOF
+    <a href="/2024/08/18/2024-08-18-is-bond-default-a-big-step-for-high-quality-development-of-economy/" rel="prev" title="可转债违约是实体经济高质量发展的一大步？">
+      <i class="fa fa-chevron-left"></i> 可转债违约是实体经济高质量发展的一大步？
     </a></div>
       <div class="post-nav-item"></div>
     </div>
@@ -347,7 +358,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83"><span class="nav-number">1.</span> <span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-number">2.</span> <span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text">解决方法</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%80%9D%E8%B7%AF"><span class="nav-number">2.</span> <span class="nav-text">解决思路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CLISH%E8%BF%9B%E7%A8%8B%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">CLISH进程模型分析</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -363,7 +374,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">109</span>
+          <span class="site-state-item-count">115</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -375,7 +386,7 @@
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
-        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-count">34</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -413,12 +424,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">299k</span>
+    <span title="站点总字数">303k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">4:32</span>
+    <span title="站点阅读时长">4:36</span>
 </div>
 
 <!--
