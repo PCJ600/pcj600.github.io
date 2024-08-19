@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="问题描述Rocky Linux 9.2环境，手工配置了GRUB_TIMEOUT为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。 调试方法梳理GRUB启动流程，下载GRUB源码并重新编译、安装、调试，具体步骤如下：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GRUB菜单不显示问题定位">
+<meta property="og:url" content="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/index.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="问题描述Rocky Linux 9.2环境，手工配置了GRUB_TIMEOUT为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。 调试方法梳理GRUB启动流程，下载GRUB源码并重新编译、安装、调试，具体步骤如下：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image1.png">
+<meta property="og:image" content="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image2.png">
+<meta property="og:image" content="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image3.png">
+<meta property="og:image" content="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image4.png">
+<meta property="article:published_time" content="2024-03-21T11:52:18.000Z">
+<meta property="article:modified_time" content="2024-08-19T11:54:22.313Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="troubleshooting">
+<meta property="article:tag" content="GRUB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image1.png">
+
+<link rel="canonical" href="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>GRUB菜单不显示问题定位 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Life is short, Play more!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          GRUB菜单不显示问题定位
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-03-21 19:52:18" itemprop="dateCreated datePublished" datetime="2024-03-21T19:52:18+08:00">2024-03-21</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>Rocky Linux 9.2环境，手工配置了<code>GRUB_TIMEOUT</code>为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。</p>
+<h1 id="调试方法"><a href="#调试方法" class="headerlink" title="调试方法"></a>调试方法</h1><p>梳理GRUB启动流程，下载GRUB源码并重新编译、安装、调试，具体步骤如下：</p>
+<span id="more"></span>
+
+<h1 id="0-梳理GRUB启动流程"><a href="#0-梳理GRUB启动流程" class="headerlink" title="0. 梳理GRUB启动流程"></a>0. 梳理GRUB启动流程</h1><p>Linux启动流程参考： <a target="_blank" rel="noopener" href="https://www.cnblogs.com/quan0311/p/15292110.html">谈谈Linux系统启动流程</a><br>GRUB启动流程参考下图：(图片非原创，转载)<br><img src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image1.png"></p>
+<h1 id="1-确认GRUB版本号"><a href="#1-确认GRUB版本号" class="headerlink" title="1. 确认GRUB版本号"></a>1. 确认GRUB版本号</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># rpm -qa | grep grub</span></span><br><span class="line">grub2-pc-2.06</span><br><span class="line"><span class="comment"># grub2-install --version</span></span><br><span class="line">grub2-install (GRUB) 2.06</span><br></pre></td></tr></table></figure>
+<p>得到GRUB版本号为2.06</p>
+<h1 id="2-下载GRUB源码"><a href="#2-下载GRUB源码" class="headerlink" title="2. 下载GRUB源码"></a>2. 下载GRUB源码</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wget https://ftp.gnu.org/gnu/grub/grub-2.06.tar.gz</span><br><span class="line">tar -xzvf grub-2.06.tar.gz</span><br><span class="line"><span class="built_in">cd</span> grub-2.06</span><br></pre></td></tr></table></figure>
+<h1 id="3-修改GRUB源码，添加调试日志"><a href="#3-修改GRUB源码，添加调试日志" class="headerlink" title="3. 修改GRUB源码，添加调试日志"></a>3. 修改GRUB源码，添加调试日志</h1><p>修改<code>grub-core/normal/menu.c</code>中的函数<code>run_menu</code></p>
+<ul>
+<li>使用<code>grub_printf</code>函数添加日志打印<code>timeout</code>，<code>timeout_style</code>, <code>default_entry</code></li>
+<li>使用<code>grub_millisleep</code>函数休指定休眠时间(单位毫秒，休眠目的是让日志停留一段时间，方便定位）<br><img src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image2.png"><br>kernel.img执行流程：<code>startup.S -&gt; grub_main -&gt; grub_load_normal_mode -&gt; grub_command_execute(&quot;normal&quot;, 0 ,0) -&gt; grub_show_menu -&gt; show_menu -&gt; run_menu -&gt; ...</code></li>
+</ul>
+<h1 id="4-编译和安装GRUB"><a href="#4-编译和安装GRUB" class="headerlink" title="4. 编译和安装GRUB"></a>4. 编译和安装GRUB</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install -y bison gcc flex  <span class="comment"># 安装必要依赖</span></span><br><span class="line">./configure --prefix=/usr	<span class="comment"># 笔者的RockyLinux9.2默认应安装到/usr, 其他环境只需后台确认下grub安装的路径，指定对应的prefix即可</span></span><br><span class="line">make <span class="comment"># 编译</span></span><br><span class="line">make install <span class="comment"># 安装</span></span><br><span class="line">grub2-install /dev/sda <span class="comment"># 重新安装GRUB到MBR, 根据你的环境把/dev/sda改成具体的虚拟硬盘设备</span></span><br></pre></td></tr></table></figure>
+<h1 id="5-重启后，通过串口查看GRUB日志，确认修改生效"><a href="#5-重启后，通过串口查看GRUB日志，确认修改生效" class="headerlink" title="5. 重启后，通过串口查看GRUB日志，确认修改生效"></a>5. 重启后，通过串口查看GRUB日志，确认修改生效</h1><p>串口日志打印如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">GRUB loading.</span><br><span class="line">Welcome to GRUB!</span><br><span class="line">GET DEFAULT ENTRY: 0</span><br><span class="line">GET TIMEOUT: 1</span><br><span class="line">GET TIMEOUT STYLE: 2</span><br></pre></td></tr></table></figure>
+<p>发现<code>timeout</code>值为1，<code>timeout_style</code>为2(TIMEOUT_STYLE_HIDDEN)，不符合预期的30秒设定，查看<code>/boot/grub2/grub.cfg</code>，找到了对应的代码段：<br><img src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image3.png"><br>通过<code>grub2-editenv</code>命令查看<code>menu_auto_hide</code>这个环境变量的确存在，且值为1，所以匹配了else语句，<code>timeout</code>的值被设置了1秒</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># grub2-editenv - list | grep menu_auto_hide</span><br><span class="line">menu_auto_hide=1</span><br></pre></td></tr></table></figure>
+<p>查看<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_notable-changes-to-boot-loader_assembly_kernel">Rocky Linux官方文档</a>，找到了<code>menu_auto_hide</code>环境变量被设置的原因，以及解决方法：<br><img src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image4.png"></p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><p>【1】 <a target="_blank" rel="noopener" href="https://www.cnblogs.com/quan0311/p/15292110.html">谈谈Linux系统启动流程</a><br>【2】 <a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_notable-changes-to-boot-loader_assembly_kernel">Red hat Customer Portal</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+              <a href="/tags/troubleshooting/" rel="tag"><i class="fa fa-tag"></i> troubleshooting</a>
+              <a href="/tags/GRUB/" rel="tag"><i class="fa fa-tag"></i> GRUB</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/03/13/2024-03-13-india-lof-arbitrage-end/" rel="prev" title="每天的三哥小鸡腿没了">
+      <i class="fa fa-chevron-left"></i> 每天的三哥小鸡腿没了
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/03/28/2024-03-28-check-two-ip-in-same-network/" rel="next" title="判断两个IP地址是否在同一网段(Shell实现)">
+      判断两个IP地址是否在同一网段(Shell实现) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-number">1.</span> <span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%E6%96%B9%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">调试方法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0-%E6%A2%B3%E7%90%86GRUB%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">0. 梳理GRUB启动流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E7%A1%AE%E8%AE%A4GRUB%E7%89%88%E6%9C%AC%E5%8F%B7"><span class="nav-number">4.</span> <span class="nav-text">1. 确认GRUB版本号</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-%E4%B8%8B%E8%BD%BDGRUB%E6%BA%90%E7%A0%81"><span class="nav-number">5.</span> <span class="nav-text">2. 下载GRUB源码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-%E4%BF%AE%E6%94%B9GRUB%E6%BA%90%E7%A0%81%EF%BC%8C%E6%B7%BB%E5%8A%A0%E8%B0%83%E8%AF%95%E6%97%A5%E5%BF%97"><span class="nav-number">6.</span> <span class="nav-text">3. 修改GRUB源码，添加调试日志</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-%E7%BC%96%E8%AF%91%E5%92%8C%E5%AE%89%E8%A3%85GRUB"><span class="nav-number">7.</span> <span class="nav-text">4. 编译和安装GRUB</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5-%E9%87%8D%E5%90%AF%E5%90%8E%EF%BC%8C%E9%80%9A%E8%BF%87%E4%B8%B2%E5%8F%A3%E6%9F%A5%E7%9C%8BGRUB%E6%97%A5%E5%BF%97%EF%BC%8C%E7%A1%AE%E8%AE%A4%E4%BF%AE%E6%94%B9%E7%94%9F%E6%95%88"><span class="nav-number">8.</span> <span class="nav-text">5. 重启后，通过串口查看GRUB日志，确认修改生效</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">9.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">274k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">4:09</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>
