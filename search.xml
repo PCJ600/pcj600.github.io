@@ -2054,6 +2054,76 @@
       </tags>
   </entry>
   <entry>
+    <title>Redis学习笔记(八)——RDB持久化</title>
+    <url>/2021/03/14/2021-03-14-redis-note-08-rdb/</url>
+    <content><![CDATA[<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Redis是基于内存的数据库，服务器进程退出后，内存中的数据会丢失。为了解决这个问题，Redis提供了RDB持久化机制，将内存中的数据保存到硬盘，从而避免数据意外丢失。</p>
+<h2 id="RDB持久化"><a href="#RDB持久化" class="headerlink" title="RDB持久化"></a>RDB持久化</h2><p>RDB持久化将某个时间点上的数据库状态保存到一个RDB文件，这个RDB文件是一个经过压缩的二进制文件，Redis服务器可以通过读取RDB文件还原数据库状态。</p>
+<span id="more"></span>
+
+<p>RDB文件的生成路径和文件名通过配置文件指定，如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># dbfilename指定RDB文件名</span><br><span class="line">dbfilename dump.rdb</span><br><span class="line"></span><br><span class="line"># dir表示工作目录, RDB文件会写入这个目录</span><br><span class="line">dir /var/redis/6379</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-RDB文件如何创建"><a href="#1-RDB文件如何创建" class="headerlink" title="1. RDB文件如何创建"></a>1. RDB文件如何创建</h3><p>RDB持久化既可以手动触发，也可以通过配置文件的选项定期触发。</p>
+<h4 id="1-1-save-bgsave命令"><a href="#1-1-save-bgsave命令" class="headerlink" title="1.1 save, bgsave命令"></a>1.1 save, bgsave命令</h4><p>执行<code>save</code>, <code>bgsave</code>命令，可以手动生成RDB文件。两者的区别如下：</p>
+<ul>
+<li><code>save</code>命令会阻塞Redis服务器进程，直到RDB文件创建完毕；阻塞期间服务器无法处理任何请求。</li>
+<li><code>bgsave</code>命令会fork一个子进程，由子进程负责创建RDB文件，父进程能够继续处理命令请求。</li>
+</ul>
+<p><strong>注：</strong><code>bgsave</code>命令执行期间，服务器会拒绝执行客户端的<code>save</code>, <code>bgsave</code>命令，原因是防止竞争条件。</p>
+<p>创建RDB文件的实际动作通过<code>rdb.c/rdbSave</code>函数完成,3.0版本的实现细节如下:</p>
+<ul>
+<li><p>先创建临时文件<code>&quot;temp-%d.rdb&quot;</code>, 其中%d为当前进程id。</p>
+</li>
+<li><p>遍历所有数据库,将数据库状态写入到该临时文件, 写入完成后调用<code>fflush</code>, <code>fsync</code>确保数据被写入硬盘。</p>
+</li>
+<li><p>调用<code>rename</code>方法,原子性地覆盖旧的RDB文件，覆盖成功后，将<code>dirty</code>计数器清零并记录当前时间(即最后一次完成RDB持久化的时间)。</p>
+</li>
+</ul>
+<h4 id="1-2-定期触发"><a href="#1-2-定期触发" class="headerlink" title="1.2 定期触发"></a>1.2 定期触发</h4><h5 id="1-2-1-保存条件怎么设置"><a href="#1-2-1-保存条件怎么设置" class="headerlink" title="1.2.1 保存条件怎么设置"></a>1.2.1 保存条件怎么设置</h5><p>在配置文件中更改<code>save &lt;seconds&gt; &lt;changes&gt;</code>选项，可以设置多个<strong>保存条件</strong>。只要其中某个保存条件被满足，服务器就执行<code>bgsave</code>命令。</p>
+<p>官方给出的save选项的典型设置和意义如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Save the DB on disk:</span><br><span class="line">#   save &lt;seconds&gt; &lt;changes&gt;</span><br><span class="line">#</span><br><span class="line">#   Will save the DB if both the given number of seconds and the given</span><br><span class="line">#   number of write operations against the DB occurred.</span><br><span class="line">#</span><br><span class="line">#   In the example below the behavior will be to save:</span><br><span class="line">#   after 900 sec (15 min) if at least 1 key changed</span><br><span class="line">#   after 300 sec (5 min) if at least 10 keys changed</span><br><span class="line">#   after 60 sec if at least 10000 keys changed</span><br><span class="line">#</span><br><span class="line">#   Note: you can disable saving completely by commenting out all &quot;save&quot; lines.</span><br><span class="line">#</span><br><span class="line">#   It is also possible to remove all the previously configured save</span><br><span class="line">#   points by adding a save directive with a single empty string argument</span><br><span class="line">#   like in the following example:</span><br><span class="line">#</span><br><span class="line">#   save &quot;&quot;</span><br><span class="line"></span><br><span class="line">save 900 1				# 如果900秒内至少1个键被修改，就执行bgsave命令</span><br><span class="line">save 300 10				# 300秒内至少10个键被修改，就执行bgsave命令</span><br><span class="line">save 60 10000			# 60秒内至少10000个键被修改，就执行bgsave命令</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，如果想关闭RDB功能，只需注释掉所有save选项后，再添加<code>save &quot;&quot;</code>即可</p>
+<h5 id="1-2-2-实现细节"><a href="#1-2-2-实现细节" class="headerlink" title="1.2.2 实现细节"></a>1.2.2 实现细节</h5><p>Redis服务器状态通过redisServer结构表示，其中<code>saveparams</code>属性用于记录所有的保存条件，如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">saveparams</span>;</span> <span class="comment">// 一维数组, = &#123;&#123;900, 1&#125;, &#123;300, 10&#125;, &#123;60, 10000&#125;&#125;</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> &#123;</span></span><br><span class="line">	<span class="type">time_t</span> seconds;	<span class="comment">// 秒数</span></span><br><span class="line">	<span class="type">int</span> changes;	<span class="comment">// 修改数</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>光有保存条件还不行，我们还需要知道<strong>上一次成功执行RDB持久化的时间</strong>，以及<strong>距离上一次成功执行RDB持久化，服务器对数据库总共做了多少次修改</strong>，这样才能和每个保存条件做比较，最终判断某个保存条件是否被满足。</p>
+<p>因此，redisServer结构中新增<code>dirty</code>计数器和<code>lastsave</code>属性，如下：</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">struct</span> redisServer &#123;</span><br><span class="line">	<span class="built_in">long</span> <span class="built_in">long</span> dirty;	<span class="comment">// 计数器</span></span><br><span class="line">	time_t lastsave;	<span class="comment">// 上一次成功执行持久化的时间，格式是UNIX时间戳</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>dirty</code>计数器记录距离上一次成功执行RDB持久化，服务器对数据库一共做了多少次修改。</li>
+<li><code>lastsave</code>属性记录上一次成功执行RDB持久化的时间，格式为UNIX时间戳。</li>
+</ul>
+<p>Redis服务器会周期性地检查保存条件是否满足, 源码实现可参考<code>redis.c/ServerCron</code></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// serverCron是Redis服务器的时间事件，周期性执行，默认周期为0.1s, 可以通过改配置选项hz修改这个默认周期</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">serverCron</span><span class="params">(<span class="keyword">struct</span> aeEventLoop *eventLoop, <span class="type">long</span> <span class="type">long</span> id, <span class="type">void</span> *clientData)</span> &#123;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; server.saveparamslen; j++) &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">sp</span> =</span> server.saveparams+j;</span><br><span class="line">        <span class="keyword">if</span> (server.dirty &gt;= sp-&gt;changes &amp;&amp;</span><br><span class="line">            server.unixtime-server.lastsave &gt; sp-&gt;seconds &amp;&amp;</span><br><span class="line">            (server.unixtime-server.lastbgsave_try &gt;</span><br><span class="line">            REDIS_BGSAVE_RETRY_DELAY ||</span><br><span class="line">            server.lastbgsave_status == REDIS_OK)) &#123;</span><br><span class="line">            rdbSaveBackground(server.rdb_filename); <span class="comment">// 某个保存条件满足，就执行BGSAVE命令</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-RDB文件如何加载"><a href="#2-RDB文件如何加载" class="headerlink" title="2. RDB文件如何加载"></a>2. RDB文件如何加载</h3><p>Redis没有提供专门加载RDB文件的命令，只要Redis在启动时检测到了RDB文件的存在，就会自动加载RDB文件，加载RDB文件的动作由<code>rdb.c/rdbLoad</code>函数完成。</p>
+<p><strong>注</strong>: 如果Redis开启了AOF持久化功能, 服务器会优先使用AOF文件而不是RDB文件还原数据库。</p>
+<h3 id="3-RDB文件结构和解析方法"><a href="#3-RDB文件结构和解析方法" class="headerlink" title="3. RDB文件结构和解析方法"></a>3. RDB文件结构和解析方法</h3><p>能借助工具离线分析RDB文件即可, 掌握RDB文件结构是非必要的，只需了解：</p>
+<ul>
+<li>RDB文件是一个经过压缩的二进制文件，对于不同类型的键，会使用不同的方式去存储。</li>
+<li>RDB文件不保存已过期的键，但是会保存键的过期时间。</li>
+</ul>
+<p>Redis官方提供了<code>redis-check-rdb</code>工具用于检测RDB文件。</p>
+<p>举例，在某个空的redis数据库中新增5个key，如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 每种类型键增加1个						    # 查询键的命令</span><br><span class="line">set key1 123								# get key1</span><br><span class="line">rpush list1 1 2 3							# lrange 0 -1</span><br><span class="line">hset hashtable1 k1 v1 k2 v2 k3 v3 			# hgetall hashtable1</span><br><span class="line">sadd set1 1 2 3								# smembers set1</span><br><span class="line">zadd zset1 1.0 m1 2.0 m2 3.0 m3				# zrange zset1 0 -1 withscores</span><br></pre></td></tr></table></figure>
+
+<p>可以通过<code>ob -cx dump.rdb</code>命令解析这个RDB文件, 但输出结果不够直观；更好的方式是借助开源社区已有的RDB分析工具, 可以参考：<a href="https://github.com/sripathikrishnan/redis-rdb-tools">https://github.com/sripathikrishnan/redis-rdb-tools</a></p>
+<p>这里将RDB文件转换为json格式查看，命令如下：</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line"># rdb -c json /var/redis/6379/dump.rdb</span><br><span class="line">[&#123;</span><br><span class="line">&quot;set1&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;],</span><br><span class="line">&quot;zset1&quot;:&#123;&quot;m1&quot;:&quot;1&quot;,&quot;m2&quot;:&quot;2&quot;,&quot;m3&quot;:&quot;3&quot;&#125;,</span><br><span class="line">&quot;hashtable1&quot;:&#123;&quot;k1&quot;:&quot;v1&quot;,&quot;k2&quot;:&quot;v2&quot;,&quot;k3&quot;:&quot;v3&quot;&#125;,</span><br><span class="line">&quot;list1&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;],</span><br><span class="line">&quot;str1&quot;:&quot;123&quot;&#125;]</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》  第10章 RDB持久化</p>
+<p>【2】<a href="https://cloud.tencent.com/developer/article/1394329">Redis RDB文件离线分析</a></p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis学习笔记(九)——AOF持久化</title>
     <url>/2021/03/20/2021-03-20-redis-note-09-aof/</url>
     <content><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>Redis提供了AOF(append only file)持久化功能，通过保存服务器执行的写命令的方式记录数据库状态。本文介绍如下内容：</p>
@@ -2154,76 +2224,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Redis学习笔记(八)——RDB持久化</title>
-    <url>/2021/03/14/2021-03-14-redis-note-08-rdb/</url>
-    <content><![CDATA[<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Redis是基于内存的数据库，服务器进程退出后，内存中的数据会丢失。为了解决这个问题，Redis提供了RDB持久化机制，将内存中的数据保存到硬盘，从而避免数据意外丢失。</p>
-<h2 id="RDB持久化"><a href="#RDB持久化" class="headerlink" title="RDB持久化"></a>RDB持久化</h2><p>RDB持久化将某个时间点上的数据库状态保存到一个RDB文件，这个RDB文件是一个经过压缩的二进制文件，Redis服务器可以通过读取RDB文件还原数据库状态。</p>
-<span id="more"></span>
-
-<p>RDB文件的生成路径和文件名通过配置文件指定，如下所示：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># dbfilename指定RDB文件名</span><br><span class="line">dbfilename dump.rdb</span><br><span class="line"></span><br><span class="line"># dir表示工作目录, RDB文件会写入这个目录</span><br><span class="line">dir /var/redis/6379</span><br></pre></td></tr></table></figure>
-
-<h3 id="1-RDB文件如何创建"><a href="#1-RDB文件如何创建" class="headerlink" title="1. RDB文件如何创建"></a>1. RDB文件如何创建</h3><p>RDB持久化既可以手动触发，也可以通过配置文件的选项定期触发。</p>
-<h4 id="1-1-save-bgsave命令"><a href="#1-1-save-bgsave命令" class="headerlink" title="1.1 save, bgsave命令"></a>1.1 save, bgsave命令</h4><p>执行<code>save</code>, <code>bgsave</code>命令，可以手动生成RDB文件。两者的区别如下：</p>
-<ul>
-<li><code>save</code>命令会阻塞Redis服务器进程，直到RDB文件创建完毕；阻塞期间服务器无法处理任何请求。</li>
-<li><code>bgsave</code>命令会fork一个子进程，由子进程负责创建RDB文件，父进程能够继续处理命令请求。</li>
-</ul>
-<p><strong>注：</strong><code>bgsave</code>命令执行期间，服务器会拒绝执行客户端的<code>save</code>, <code>bgsave</code>命令，原因是防止竞争条件。</p>
-<p>创建RDB文件的实际动作通过<code>rdb.c/rdbSave</code>函数完成,3.0版本的实现细节如下:</p>
-<ul>
-<li><p>先创建临时文件<code>&quot;temp-%d.rdb&quot;</code>, 其中%d为当前进程id。</p>
-</li>
-<li><p>遍历所有数据库,将数据库状态写入到该临时文件, 写入完成后调用<code>fflush</code>, <code>fsync</code>确保数据被写入硬盘。</p>
-</li>
-<li><p>调用<code>rename</code>方法,原子性地覆盖旧的RDB文件，覆盖成功后，将<code>dirty</code>计数器清零并记录当前时间(即最后一次完成RDB持久化的时间)。</p>
-</li>
-</ul>
-<h4 id="1-2-定期触发"><a href="#1-2-定期触发" class="headerlink" title="1.2 定期触发"></a>1.2 定期触发</h4><h5 id="1-2-1-保存条件怎么设置"><a href="#1-2-1-保存条件怎么设置" class="headerlink" title="1.2.1 保存条件怎么设置"></a>1.2.1 保存条件怎么设置</h5><p>在配置文件中更改<code>save &lt;seconds&gt; &lt;changes&gt;</code>选项，可以设置多个<strong>保存条件</strong>。只要其中某个保存条件被满足，服务器就执行<code>bgsave</code>命令。</p>
-<p>官方给出的save选项的典型设置和意义如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Save the DB on disk:</span><br><span class="line">#   save &lt;seconds&gt; &lt;changes&gt;</span><br><span class="line">#</span><br><span class="line">#   Will save the DB if both the given number of seconds and the given</span><br><span class="line">#   number of write operations against the DB occurred.</span><br><span class="line">#</span><br><span class="line">#   In the example below the behavior will be to save:</span><br><span class="line">#   after 900 sec (15 min) if at least 1 key changed</span><br><span class="line">#   after 300 sec (5 min) if at least 10 keys changed</span><br><span class="line">#   after 60 sec if at least 10000 keys changed</span><br><span class="line">#</span><br><span class="line">#   Note: you can disable saving completely by commenting out all &quot;save&quot; lines.</span><br><span class="line">#</span><br><span class="line">#   It is also possible to remove all the previously configured save</span><br><span class="line">#   points by adding a save directive with a single empty string argument</span><br><span class="line">#   like in the following example:</span><br><span class="line">#</span><br><span class="line">#   save &quot;&quot;</span><br><span class="line"></span><br><span class="line">save 900 1				# 如果900秒内至少1个键被修改，就执行bgsave命令</span><br><span class="line">save 300 10				# 300秒内至少10个键被修改，就执行bgsave命令</span><br><span class="line">save 60 10000			# 60秒内至少10000个键被修改，就执行bgsave命令</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，如果想关闭RDB功能，只需注释掉所有save选项后，再添加<code>save &quot;&quot;</code>即可</p>
-<h5 id="1-2-2-实现细节"><a href="#1-2-2-实现细节" class="headerlink" title="1.2.2 实现细节"></a>1.2.2 实现细节</h5><p>Redis服务器状态通过redisServer结构表示，其中<code>saveparams</code>属性用于记录所有的保存条件，如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">saveparams</span>;</span> <span class="comment">// 一维数组, = &#123;&#123;900, 1&#125;, &#123;300, 10&#125;, &#123;60, 10000&#125;&#125;</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> &#123;</span></span><br><span class="line">	<span class="type">time_t</span> seconds;	<span class="comment">// 秒数</span></span><br><span class="line">	<span class="type">int</span> changes;	<span class="comment">// 修改数</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>光有保存条件还不行，我们还需要知道<strong>上一次成功执行RDB持久化的时间</strong>，以及<strong>距离上一次成功执行RDB持久化，服务器对数据库总共做了多少次修改</strong>，这样才能和每个保存条件做比较，最终判断某个保存条件是否被满足。</p>
-<p>因此，redisServer结构中新增<code>dirty</code>计数器和<code>lastsave</code>属性，如下：</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">struct</span> redisServer &#123;</span><br><span class="line">	<span class="built_in">long</span> <span class="built_in">long</span> dirty;	<span class="comment">// 计数器</span></span><br><span class="line">	time_t lastsave;	<span class="comment">// 上一次成功执行持久化的时间，格式是UNIX时间戳</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>dirty</code>计数器记录距离上一次成功执行RDB持久化，服务器对数据库一共做了多少次修改。</li>
-<li><code>lastsave</code>属性记录上一次成功执行RDB持久化的时间，格式为UNIX时间戳。</li>
-</ul>
-<p>Redis服务器会周期性地检查保存条件是否满足, 源码实现可参考<code>redis.c/ServerCron</code></p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// serverCron是Redis服务器的时间事件，周期性执行，默认周期为0.1s, 可以通过改配置选项hz修改这个默认周期</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">serverCron</span><span class="params">(<span class="keyword">struct</span> aeEventLoop *eventLoop, <span class="type">long</span> <span class="type">long</span> id, <span class="type">void</span> *clientData)</span> &#123;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; server.saveparamslen; j++) &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">sp</span> =</span> server.saveparams+j;</span><br><span class="line">        <span class="keyword">if</span> (server.dirty &gt;= sp-&gt;changes &amp;&amp;</span><br><span class="line">            server.unixtime-server.lastsave &gt; sp-&gt;seconds &amp;&amp;</span><br><span class="line">            (server.unixtime-server.lastbgsave_try &gt;</span><br><span class="line">            REDIS_BGSAVE_RETRY_DELAY ||</span><br><span class="line">            server.lastbgsave_status == REDIS_OK)) &#123;</span><br><span class="line">            rdbSaveBackground(server.rdb_filename); <span class="comment">// 某个保存条件满足，就执行BGSAVE命令</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-RDB文件如何加载"><a href="#2-RDB文件如何加载" class="headerlink" title="2. RDB文件如何加载"></a>2. RDB文件如何加载</h3><p>Redis没有提供专门加载RDB文件的命令，只要Redis在启动时检测到了RDB文件的存在，就会自动加载RDB文件，加载RDB文件的动作由<code>rdb.c/rdbLoad</code>函数完成。</p>
-<p><strong>注</strong>: 如果Redis开启了AOF持久化功能, 服务器会优先使用AOF文件而不是RDB文件还原数据库。</p>
-<h3 id="3-RDB文件结构和解析方法"><a href="#3-RDB文件结构和解析方法" class="headerlink" title="3. RDB文件结构和解析方法"></a>3. RDB文件结构和解析方法</h3><p>能借助工具离线分析RDB文件即可, 掌握RDB文件结构是非必要的，只需了解：</p>
-<ul>
-<li>RDB文件是一个经过压缩的二进制文件，对于不同类型的键，会使用不同的方式去存储。</li>
-<li>RDB文件不保存已过期的键，但是会保存键的过期时间。</li>
-</ul>
-<p>Redis官方提供了<code>redis-check-rdb</code>工具用于检测RDB文件。</p>
-<p>举例，在某个空的redis数据库中新增5个key，如下所示：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 每种类型键增加1个						    # 查询键的命令</span><br><span class="line">set key1 123								# get key1</span><br><span class="line">rpush list1 1 2 3							# lrange 0 -1</span><br><span class="line">hset hashtable1 k1 v1 k2 v2 k3 v3 			# hgetall hashtable1</span><br><span class="line">sadd set1 1 2 3								# smembers set1</span><br><span class="line">zadd zset1 1.0 m1 2.0 m2 3.0 m3				# zrange zset1 0 -1 withscores</span><br></pre></td></tr></table></figure>
-
-<p>可以通过<code>ob -cx dump.rdb</code>命令解析这个RDB文件, 但输出结果不够直观；更好的方式是借助开源社区已有的RDB分析工具, 可以参考：<a href="https://github.com/sripathikrishnan/redis-rdb-tools">https://github.com/sripathikrishnan/redis-rdb-tools</a></p>
-<p>这里将RDB文件转换为json格式查看，命令如下：</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line"># rdb -c json /var/redis/6379/dump.rdb</span><br><span class="line">[&#123;</span><br><span class="line">&quot;set1&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;],</span><br><span class="line">&quot;zset1&quot;:&#123;&quot;m1&quot;:&quot;1&quot;,&quot;m2&quot;:&quot;2&quot;,&quot;m3&quot;:&quot;3&quot;&#125;,</span><br><span class="line">&quot;hashtable1&quot;:&#123;&quot;k1&quot;:&quot;v1&quot;,&quot;k2&quot;:&quot;v2&quot;,&quot;k3&quot;:&quot;v3&quot;&#125;,</span><br><span class="line">&quot;list1&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;],</span><br><span class="line">&quot;str1&quot;:&quot;123&quot;&#125;]</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》  第10章 RDB持久化</p>
-<p>【2】<a href="https://cloud.tencent.com/developer/article/1394329">Redis RDB文件离线分析</a></p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>配置Git代理，解决下载龟速问题</title>
     <url>/2021/06/05/2021-06-05-git-download-too-slow/</url>
     <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
@@ -2244,24 +2244,6 @@
       </categories>
       <tags>
         <tag>Git</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>修改Docker容器的存储路径</title>
-    <url>/2021/10/16/2021-10-16-modify-docker-image-path/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>docker拉取的镜像默认存储在根路径(<code>/var/lib/docker</code>)，但根路径存储空间有限。我们可以通过挂载更大的磁盘，将docker数据迁移到挂载磁盘上, 以解决空间不足问题。具体方法如下：</p>
-<span id="more"></span>
-
-<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>假设挂载磁盘在<code>/usr1</code>，需要将docker数据迁移到路径<code>/usr1</code>下。步骤如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">service docker stop 				# 停止容器</span><br><span class="line">mv /var/lib/docker /usr1/docker 	# 迁移docker数据到新路径，新路径只需保证在/usr1下即可</span><br><span class="line">ln -s /usr1/docker /var/lib/docker  # 创建软连接</span><br><span class="line">service docker start				# 重新启动docker</span><br></pre></td></tr></table></figure>
-
-<p>通过 <code>df -h</code>命令可确认修改生效。</p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -2298,6 +2280,24 @@
       </categories>
       <tags>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>修改Docker容器的存储路径</title>
+    <url>/2021/10/16/2021-10-16-modify-docker-image-path/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>docker拉取的镜像默认存储在根路径(<code>/var/lib/docker</code>)，但根路径存储空间有限。我们可以通过挂载更大的磁盘，将docker数据迁移到挂载磁盘上, 以解决空间不足问题。具体方法如下：</p>
+<span id="more"></span>
+
+<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>假设挂载磁盘在<code>/usr1</code>，需要将docker数据迁移到路径<code>/usr1</code>下。步骤如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">service docker stop 				# 停止容器</span><br><span class="line">mv /var/lib/docker /usr1/docker 	# 迁移docker数据到新路径，新路径只需保证在/usr1下即可</span><br><span class="line">ln -s /usr1/docker /var/lib/docker  # 创建软连接</span><br><span class="line">service docker start				# 重新启动docker</span><br></pre></td></tr></table></figure>
+
+<p>通过 <code>df -h</code>命令可确认修改生效。</p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -2368,6 +2368,49 @@
       </categories>
       <tags>
         <tag>wget</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis抓包分析案例</title>
+    <url>/2021/11/06/2021-11-06-one-redis-case/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
+<p><strong>问题：</strong> 仿真设备启动中，<strong>概率出现Redis的某个字符串键被不符合预期地改写成空串</strong>，导致客户端Docker从Redis获取的数据有问题。<strong>需要定位是哪个Docker上的哪个进程改写了Redis数据库。</strong></p>
+<span id="more"></span>
+
+<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><ul>
+<li>先尝试排查客户端代码。但此案例中涉及业务代码过多(200w+行代码)，且Redis客户端的形式也很多（有<code>goredis</code>, <code>redis-py</code>, <code>hiredis</code>, <code>redis-cli</code>等）。看来肉眼扫描代码的笨方法不靠谱，而且这种<strong>寄希望于碰运气蒙混过关</strong>的思考方式实在不像是一个程序员。</li>
+</ul>
+<p>那么既然排查客户端有困难，能不能换个角度思考，比如说从服务端入手？以下给出第二种思路：</p>
+<ul>
+<li><strong>通过在服务端抓包，得到所有对这个字符串键做set操作的报文，再根据报文中的IP和端口号得到进程ID</strong>。听起来可行，下面举一个简化的案例介绍具体的操作方法。</li>
+</ul>
+<h2 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h2><p>利用tcpdump，在Redis服务端后台抓取对这个字符串键做set操作的报文，再根据报文中的IP和端口号确认进程即可。</p>
+<p>如下图所示，使用命令<code>tcpdump -i any port 6379 | grep set | grep [key]</code> ，得到客户端IP是localhost,端口号是44880。 </p>
+<p><img src="/2021/11/06/2021-11-06-one-redis-case/image1.png"></p>
+<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image2.png"></p>
+<h4 id="思考："><a href="#思考：" class="headerlink" title="思考："></a>思考：</h4><p>如果我只需要抓取将某个特定字符串键（比如”hello”）写成<strong>某个特定值</strong>（比如写成空串）的报文，怎么做？</p>
+<p>除了<code>grep</code>，下面再给出一种方法，利用<strong>tcpdump的根据报文特征过滤</strong>的技巧：</p>
+<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image3.png"></p>
+<p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
+
+<p>协议内容的解析参考<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
+<ul>
+<li>*3 表示数组长度为3， 数组元素依次为 [“set” “hello” “world”]</li>
+<li>$3 表示字符串 “set” 的长度</li>
+<li>第一个 $5 表示字符串 “hello” 的长度。</li>
+<li>第二个 $5 表示字符串 “world” 的长度。</li>
+</ul>
+<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image4.png"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
+<p>【2】<a href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -2531,49 +2574,6 @@
       <tags>
         <tag>troubleshooting</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis抓包分析案例</title>
-    <url>/2021/11/06/2021-11-06-one-redis-case/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
-<p><strong>问题：</strong> 仿真设备启动中，<strong>概率出现Redis的某个字符串键被不符合预期地改写成空串</strong>，导致客户端Docker从Redis获取的数据有问题。<strong>需要定位是哪个Docker上的哪个进程改写了Redis数据库。</strong></p>
-<span id="more"></span>
-
-<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><ul>
-<li>先尝试排查客户端代码。但此案例中涉及业务代码过多(200w+行代码)，且Redis客户端的形式也很多（有<code>goredis</code>, <code>redis-py</code>, <code>hiredis</code>, <code>redis-cli</code>等）。看来肉眼扫描代码的笨方法不靠谱，而且这种<strong>寄希望于碰运气蒙混过关</strong>的思考方式实在不像是一个程序员。</li>
-</ul>
-<p>那么既然排查客户端有困难，能不能换个角度思考，比如说从服务端入手？以下给出第二种思路：</p>
-<ul>
-<li><strong>通过在服务端抓包，得到所有对这个字符串键做set操作的报文，再根据报文中的IP和端口号得到进程ID</strong>。听起来可行，下面举一个简化的案例介绍具体的操作方法。</li>
-</ul>
-<h2 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h2><p>利用tcpdump，在Redis服务端后台抓取对这个字符串键做set操作的报文，再根据报文中的IP和端口号确认进程即可。</p>
-<p>如下图所示，使用命令<code>tcpdump -i any port 6379 | grep set | grep [key]</code> ，得到客户端IP是localhost,端口号是44880。 </p>
-<p><img src="/2021/11/06/2021-11-06-one-redis-case/image1.png"></p>
-<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image2.png"></p>
-<h4 id="思考："><a href="#思考：" class="headerlink" title="思考："></a>思考：</h4><p>如果我只需要抓取将某个特定字符串键（比如”hello”）写成<strong>某个特定值</strong>（比如写成空串）的报文，怎么做？</p>
-<p>除了<code>grep</code>，下面再给出一种方法，利用<strong>tcpdump的根据报文特征过滤</strong>的技巧：</p>
-<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image3.png"></p>
-<p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
-
-<p>协议内容的解析参考<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
-<ul>
-<li>*3 表示数组长度为3， 数组元素依次为 [“set” “hello” “world”]</li>
-<li>$3 表示字符串 “set” 的长度</li>
-<li>第一个 $5 表示字符串 “hello” 的长度。</li>
-<li>第二个 $5 表示字符串 “world” 的长度。</li>
-</ul>
-<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image4.png"></p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
-<p>【2】<a href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -3704,6 +3704,147 @@
       </tags>
   </entry>
   <entry>
+    <title>2022 Trend Micro 社招面经</title>
+    <url>/2022/03/20/2022-03-20-trendmicro-job-interview/</url>
+    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
+<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
+<li>2022-02-25 官网投递简历，职位：Linux开发</li>
+</ul>
+<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
+
+<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
+<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
+<ul>
+<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
+</li>
+<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
+</li>
+</ul>
+<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
+<p>线上面试，用的微软Teams，二对一，80min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>问项目（30min）</p>
+<ul>
+<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
+<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
+<li>举一个项目中你遇到的难题，如何解决的</li>
+<li>你的项目中为什么用Redis，不用MySQL</li>
+<li>……</li>
+</ul>
+</li>
+<li><p>1道编程题 （15min）</p>
+<ul>
+<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
+</ul>
+</li>
+<li><p>技术问题（25min）</p>
+<ul>
+<li>给每个中国人分一个IP地址，够分吗</li>
+<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
+<li>后台服务变慢，谈谈你的定位思路</li>
+<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
+<li>Redis过期键的实现原理，过期时间怎么存储的</li>
+<li>Redis缓存逐出策略</li>
+<li>全中国人的数据能放到一张MySQL表里吗</li>
+<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
+<li>Linux下如何定时备份一个文件</li>
+</ul>
+</li>
+<li><p>其它问题（10min）</p>
+<ul>
+<li>同事对你的评价</li>
+<li>你的缺点是什么</li>
+<li>同事觉得你有什么阴暗面</li>
+<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
+</ul>
+</li>
+</ul>
+<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
+<p>现场面试，二对一，50min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>简单问项目（10min）</p>
+</li>
+<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
+</li>
+<li><p>你在项目组里还负责了哪些项目和工作</p>
+</li>
+<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
+</li>
+<li><p>你平时用到的开发工具和编程语言</p>
+</li>
+<li><p>说下你的团队成员组成</p>
+</li>
+<li><p>说说你最近在看的书</p>
+</li>
+<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
+<ul>
+<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
+</ul>
+</li>
+<li><p>项目中遇到别人不配合你的工作怎么办</p>
+</li>
+<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
+</li>
+<li><p>评价你同事的水平</p>
+</li>
+<li><p>有没有感觉有技术能力比较弱的同事</p>
+</li>
+<li><p>你还有什么问题（问团队成员组成）</p>
+</li>
+</ul>
+<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
+<p>现场面试，一对一，30min</p>
+<ul>
+<li><p>自我介绍</p>
+</li>
+<li><p>为什么选择我们公司，选择这个职位</p>
+</li>
+<li><p>你为什么离职</p>
+</li>
+<li><p>你当初考虑XX公司的原因是什么</p>
+</li>
+<li><p>你有考虑过内部转岗吗</p>
+</li>
+<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
+</li>
+<li><p>你同事对你的评价</p>
+</li>
+<li><p>说说你的优点</p>
+</li>
+<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
+</li>
+</ul>
+<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
+<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
+<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
+<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
+<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
+<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
+<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
+<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
+<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
+<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
+<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
+<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
+<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
+<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
+<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
+<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/01/29/2022-01-29-redis-pubsub-study/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -3977,147 +4118,6 @@
       <tags>
         <tag>Linux</tag>
         <tag>tar</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>2022 Trend Micro 社招面经</title>
-    <url>/2022/03/20/2022-03-20-trendmicro-job-interview/</url>
-    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
-<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
-<li>2022-02-25 官网投递简历，职位：Linux开发</li>
-</ul>
-<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
-
-<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
-<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
-<ul>
-<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
-</li>
-<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
-</li>
-</ul>
-<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
-<p>线上面试，用的微软Teams，二对一，80min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>问项目（30min）</p>
-<ul>
-<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
-<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
-<li>举一个项目中你遇到的难题，如何解决的</li>
-<li>你的项目中为什么用Redis，不用MySQL</li>
-<li>……</li>
-</ul>
-</li>
-<li><p>1道编程题 （15min）</p>
-<ul>
-<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
-</ul>
-</li>
-<li><p>技术问题（25min）</p>
-<ul>
-<li>给每个中国人分一个IP地址，够分吗</li>
-<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
-<li>后台服务变慢，谈谈你的定位思路</li>
-<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
-<li>Redis过期键的实现原理，过期时间怎么存储的</li>
-<li>Redis缓存逐出策略</li>
-<li>全中国人的数据能放到一张MySQL表里吗</li>
-<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
-<li>Linux下如何定时备份一个文件</li>
-</ul>
-</li>
-<li><p>其它问题（10min）</p>
-<ul>
-<li>同事对你的评价</li>
-<li>你的缺点是什么</li>
-<li>同事觉得你有什么阴暗面</li>
-<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
-</ul>
-</li>
-</ul>
-<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
-<p>现场面试，二对一，50min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>简单问项目（10min）</p>
-</li>
-<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
-</li>
-<li><p>你在项目组里还负责了哪些项目和工作</p>
-</li>
-<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
-</li>
-<li><p>你平时用到的开发工具和编程语言</p>
-</li>
-<li><p>说下你的团队成员组成</p>
-</li>
-<li><p>说说你最近在看的书</p>
-</li>
-<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
-<ul>
-<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
-</ul>
-</li>
-<li><p>项目中遇到别人不配合你的工作怎么办</p>
-</li>
-<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
-</li>
-<li><p>评价你同事的水平</p>
-</li>
-<li><p>有没有感觉有技术能力比较弱的同事</p>
-</li>
-<li><p>你还有什么问题（问团队成员组成）</p>
-</li>
-</ul>
-<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
-<p>现场面试，一对一，30min</p>
-<ul>
-<li><p>自我介绍</p>
-</li>
-<li><p>为什么选择我们公司，选择这个职位</p>
-</li>
-<li><p>你为什么离职</p>
-</li>
-<li><p>你当初考虑XX公司的原因是什么</p>
-</li>
-<li><p>你有考虑过内部转岗吗</p>
-</li>
-<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
-</li>
-<li><p>你同事对你的评价</p>
-</li>
-<li><p>说说你的优点</p>
-</li>
-<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
-</li>
-</ul>
-<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
-<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
-<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
-<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
-<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
-<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
-<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
-<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
-<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
-<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
-<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
-<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
-<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
-<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
-<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
-<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
       </tags>
   </entry>
   <entry>
@@ -5144,12 +5144,10 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python保留最后N个元素</title>
-    <url>/2023/08/29/2023-08-29-keep-final-n-elements-by-python/</url>
-    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
+    <title>Python 查找最大或最小的N个元素</title>
+    <url>/2023/08/22/2023-08-22-find-n-elements-with-python/</url>
+    <content><![CDATA[<p>除了直接排序，还可以利用<code>heaq</code>模块的<code>nlargest()</code>和<code>nsmallest()</code>方法，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>nums = [<span class="number">3</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">1</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>smallest = heapq.nsmallest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(smallest)</span><br><span class="line">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>largest = heapq.nlargest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(largest)</span><br><span class="line">[<span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>]</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5159,10 +5157,12 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python 查找最大或最小的N个元素</title>
-    <url>/2023/08/22/2023-08-22-find-n-elements-with-python/</url>
-    <content><![CDATA[<p>除了直接排序，还可以利用<code>heaq</code>模块的<code>nlargest()</code>和<code>nsmallest()</code>方法，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>nums = [<span class="number">3</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">1</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>smallest = heapq.nsmallest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(smallest)</span><br><span class="line">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>largest = heapq.nlargest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(largest)</span><br><span class="line">[<span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>]</span><br></pre></td></tr></table></figure>
+    <title>Python保留最后N个元素</title>
+    <url>/2023/08/29/2023-08-29-keep-final-n-elements-by-python/</url>
+    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5850,27 +5850,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>iptables规则转换为nftables的方法</title>
-    <url>/2024/05/21/2024-05-21-convert-iptables-to-nftables/</url>
-    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
-<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>iptables</category>
-      </categories>
-      <tags>
-        <tag>iptables</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>掌握夜市委托，出货快人一步</title>
     <url>/2024/05/19/2024-05-19-learn-night-market-order-and-sell-stock-faster/</url>
     <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
@@ -5900,6 +5879,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>iptables规则转换为nftables的方法</title>
+    <url>/2024/05/21/2024-05-21-convert-iptables-to-nftables/</url>
+    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
+<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>iptables</category>
+      </categories>
+      <tags>
+        <tag>iptables</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Microk8s启动失败，Failed to start Service for snap application microk8s.daemon-containerd 问题定位</title>
     <url>/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.3 x86_64</p>
@@ -5926,6 +5926,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img src="/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何在centos7上安装ansible</title>
     <url>/2024/05/24/2024-05-24-how-to-install-ansible-on-centos7/</url>
     <content><![CDATA[<p>先安装python3, 再通过pip安装ansible，最后把ansible安装路径添加到环境变量PATH，如下：</p>
@@ -5944,15 +5956,19 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Notepad++不显示CRLF的方法</title>
-    <url>/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/</url>
-    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img src="/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/image1.png"></p>
+    <title>质疑标普，理解标普，加入标普</title>
+    <url>/2024/06/16/2024-06-16-join-sp500/</url>
+    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
+<span id="more"></span>
+<p><img src="/2024/06/16/2024-06-16-join-sp500/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
+<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img src="/2024/06/16/2024-06-16-join-sp500/image2.png"><br><img src="/2024/06/16/2024-06-16-join-sp500/image3.png"></p>
+<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
 ]]></content>
       <categories>
-        <category>other</category>
+        <category>investment</category>
       </categories>
       <tags>
-        <tag>other</tag>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -5975,22 +5991,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>质疑标普，理解标普，加入标普</title>
-    <url>/2024/06/16/2024-06-16-join-sp500/</url>
-    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
-<span id="more"></span>
-<p><img src="/2024/06/16/2024-06-16-join-sp500/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
-<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img src="/2024/06/16/2024-06-16-join-sp500/image2.png"><br><img src="/2024/06/16/2024-06-16-join-sp500/image3.png"></p>
-<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -6155,21 +6155,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Win11右键默认显示更多选项的方法</title>
-    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
-<span id="more"></span>
-<p><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
-<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
-]]></content>
-      <categories>
-        <category>Win</category>
-      </categories>
-      <tags>
-        <tag>Win</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何修复Rocky Linux 9 OpenSSH CVE-2024-6387漏洞</title>
     <url>/2024/07/10/2024-07-10-how-to-fix-openssh-cve-2024-6387-in-rockylinux9/</url>
     <content><![CDATA[<p>关于漏洞的详细说明，参考Rocky官方文档：<a href="https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression">https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression</a></p>
@@ -6189,6 +6174,21 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Win11右键默认显示更多选项的方法</title>
+    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
+<span id="more"></span>
+<p><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
+<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
+]]></content>
+      <categories>
+        <category>Win</category>
+      </categories>
+      <tags>
+        <tag>Win</tag>
       </tags>
   </entry>
   <entry>
