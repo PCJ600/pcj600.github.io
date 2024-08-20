@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="traceroute原理Traceroute 是一种网络诊断工具，用于确定数据包从一个源到达目的地所经过的路径。它通过发送一系列的数据包，并观察每个数据包经过的路由器（或称为跃点）来实现这一目的。">
@@ -287,7 +287,7 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tracert hostname</span><br></pre></td></tr></table></figure>
 <h2 id="traceroute抓包"><a href="#traceroute抓包" class="headerlink" title="traceroute抓包"></a>traceroute抓包</h2><p>在宿主机10.206.216.95上执行<code>traceroute www.baidu.com</code>，通过<code>tcpdump</code>抓包，如下：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">$ ifconfig ens192</span><br><span class="line">ens192: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 10.206.216.95  netmask 255.255.255.0  broadcast 10.206.216.255</span><br><span class="line">route</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">default         gateway         0.0.0.0         UG    100    0        0 ens192</span><br><span class="line">10.206.216.0    0.0.0.0         255.255.255.0   U     100    0        0 ens192</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 1</span></span><br><span class="line">$ tcpdump -i ens192 icmp and host 10.206.216.95 -w traceroute.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 2</span></span><br><span class="line">$ traceroute  www.baidu.com</span><br><span class="line">traceroute to www.baidu.com (36.155.132.55), 30 hops max, 60 byte packets</span><br><span class="line"> 1  gateway (10.206.216.254)  0.239 ms  0.152 ms  0.147 ms</span><br><span class="line"> 2  10.206.2.254 (10.206.2.254)  0.265 ms  0.274 ms  0.241 ms</span><br><span class="line"> 3  192.168.200.1 (192.168.200.1)  0.545 ms  0.506 ms  0.825 ms</span><br><span class="line"> 4  36.152.113.193 (36.152.113.193)  2.837 ms  3.182 ms  3.552 ms</span><br><span class="line"> 5  221.178.162.185 (221.178.162.185)  2.632 ms * *</span><br><span class="line"> 6  * * 183.207.54.161 (183.207.54.161)  3.116 ms</span><br><span class="line"> 7  183.207.67.106 (183.207.67.106)  3.576 ms 183.207.22.130 (183.207.22.130)  3.195 ms 183.207.66.102 (183.207.66.102)  3.638 ms</span><br><span class="line"> 8  * 36.155.156.46 (36.155.156.46)  3.884 ms 36.155.156.54 (36.155.156.54)  4.690 ms</span><br><span class="line"> 9  36.155.157.174 (36.155.157.174)  4.197 ms 36.155.157.170 (36.155.157.170)  4.344 ms  3.964 ms</span><br><span class="line">10  * * *</span><br><span class="line">11  * * *</span><br><span class="line">12  * * *</span><br><span class="line">13  * * *</span><br><span class="line">14  * * *</span><br><span class="line">15  * * *</span><br><span class="line">16  * * *</span><br><span class="line">17  * * *</span><br><span class="line">18  * * *</span><br><span class="line">19  * * *</span><br><span class="line">20  * * *</span><br><span class="line">21  * * *</span><br><span class="line">22  * * *</span><br><span class="line">23  * * *</span><br><span class="line">24  * * *</span><br><span class="line">25  * * *</span><br><span class="line">26  * * *</span><br><span class="line">27  * * *</span><br><span class="line">28  * * *</span><br><span class="line">29  * * *</span><br><span class="line">30  * * *</span><br></pre></td></tr></table></figure>
-<p>wireshark分析结果：<br><img src="/2023/05/15/2023-05-15-traceroute-intro-and-use/image1.png"></p>
+<p>wireshark分析结果：<br><img data-src="/2023/05/15/2023-05-15-traceroute-intro-and-use/image1.png"></p>
 
     </div>
 
@@ -444,6 +444,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -490,39 +495,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -537,6 +512,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

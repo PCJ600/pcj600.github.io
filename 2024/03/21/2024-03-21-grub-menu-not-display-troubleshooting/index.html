@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="问题描述Rocky Linux 9.2环境，手工配置了GRUB_TIMEOUT为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。 调试方法梳理GRUB启动流程，下载GRUB源码并重新编译、安装、调试，具体步骤如下：">
@@ -36,8 +36,8 @@
 <meta property="article:published_time" content="2024-03-21T11:52:18.000Z">
 <meta property="article:modified_time" content="2024-08-19T11:54:22.313Z">
 <meta property="article:author" content="PC">
-<meta property="article:tag" content="troubleshooting">
 <meta property="article:tag" content="Linux">
+<meta property="article:tag" content="troubleshooting">
 <meta property="article:tag" content="GRUB">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://pcj600.github.io/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image1.png">
@@ -276,21 +276,21 @@
 <h1 id="调试方法"><a href="#调试方法" class="headerlink" title="调试方法"></a>调试方法</h1><p>梳理GRUB启动流程，下载GRUB源码并重新编译、安装、调试，具体步骤如下：</p>
 <span id="more"></span>
 
-<h1 id="0-梳理GRUB启动流程"><a href="#0-梳理GRUB启动流程" class="headerlink" title="0. 梳理GRUB启动流程"></a>0. 梳理GRUB启动流程</h1><p>Linux启动流程参考： <a target="_blank" rel="noopener" href="https://www.cnblogs.com/quan0311/p/15292110.html">谈谈Linux系统启动流程</a><br>GRUB启动流程参考下图：(图片非原创，转载)<br><img src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image1.png"></p>
+<h1 id="0-梳理GRUB启动流程"><a href="#0-梳理GRUB启动流程" class="headerlink" title="0. 梳理GRUB启动流程"></a>0. 梳理GRUB启动流程</h1><p>Linux启动流程参考： <a target="_blank" rel="noopener" href="https://www.cnblogs.com/quan0311/p/15292110.html">谈谈Linux系统启动流程</a><br>GRUB启动流程参考下图：(图片非原创，转载)<br><img data-src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image1.png"></p>
 <h1 id="1-确认GRUB版本号"><a href="#1-确认GRUB版本号" class="headerlink" title="1. 确认GRUB版本号"></a>1. 确认GRUB版本号</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># rpm -qa | grep grub</span></span><br><span class="line">grub2-pc-2.06</span><br><span class="line"><span class="comment"># grub2-install --version</span></span><br><span class="line">grub2-install (GRUB) 2.06</span><br></pre></td></tr></table></figure>
 <p>得到GRUB版本号为2.06</p>
 <h1 id="2-下载GRUB源码"><a href="#2-下载GRUB源码" class="headerlink" title="2. 下载GRUB源码"></a>2. 下载GRUB源码</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wget https://ftp.gnu.org/gnu/grub/grub-2.06.tar.gz</span><br><span class="line">tar -xzvf grub-2.06.tar.gz</span><br><span class="line"><span class="built_in">cd</span> grub-2.06</span><br></pre></td></tr></table></figure>
 <h1 id="3-修改GRUB源码，添加调试日志"><a href="#3-修改GRUB源码，添加调试日志" class="headerlink" title="3. 修改GRUB源码，添加调试日志"></a>3. 修改GRUB源码，添加调试日志</h1><p>修改<code>grub-core/normal/menu.c</code>中的函数<code>run_menu</code></p>
 <ul>
 <li>使用<code>grub_printf</code>函数添加日志打印<code>timeout</code>，<code>timeout_style</code>, <code>default_entry</code></li>
-<li>使用<code>grub_millisleep</code>函数休指定休眠时间(单位毫秒，休眠目的是让日志停留一段时间，方便定位）<br><img src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image2.png"><br>kernel.img执行流程：<code>startup.S -&gt; grub_main -&gt; grub_load_normal_mode -&gt; grub_command_execute(&quot;normal&quot;, 0 ,0) -&gt; grub_show_menu -&gt; show_menu -&gt; run_menu -&gt; ...</code></li>
+<li>使用<code>grub_millisleep</code>函数休指定休眠时间(单位毫秒，休眠目的是让日志停留一段时间，方便定位）<br><img data-src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image2.png"><br>kernel.img执行流程：<code>startup.S -&gt; grub_main -&gt; grub_load_normal_mode -&gt; grub_command_execute(&quot;normal&quot;, 0 ,0) -&gt; grub_show_menu -&gt; show_menu -&gt; run_menu -&gt; ...</code></li>
 </ul>
 <h1 id="4-编译和安装GRUB"><a href="#4-编译和安装GRUB" class="headerlink" title="4. 编译和安装GRUB"></a>4. 编译和安装GRUB</h1><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install -y bison gcc flex  <span class="comment"># 安装必要依赖</span></span><br><span class="line">./configure --prefix=/usr	<span class="comment"># 笔者的RockyLinux9.2默认应安装到/usr, 其他环境只需后台确认下grub安装的路径，指定对应的prefix即可</span></span><br><span class="line">make <span class="comment"># 编译</span></span><br><span class="line">make install <span class="comment"># 安装</span></span><br><span class="line">grub2-install /dev/sda <span class="comment"># 重新安装GRUB到MBR, 根据你的环境把/dev/sda改成具体的虚拟硬盘设备</span></span><br></pre></td></tr></table></figure>
 <h1 id="5-重启后，通过串口查看GRUB日志，确认修改生效"><a href="#5-重启后，通过串口查看GRUB日志，确认修改生效" class="headerlink" title="5. 重启后，通过串口查看GRUB日志，确认修改生效"></a>5. 重启后，通过串口查看GRUB日志，确认修改生效</h1><p>串口日志打印如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">GRUB loading.</span><br><span class="line">Welcome to GRUB!</span><br><span class="line">GET DEFAULT ENTRY: 0</span><br><span class="line">GET TIMEOUT: 1</span><br><span class="line">GET TIMEOUT STYLE: 2</span><br></pre></td></tr></table></figure>
-<p>发现<code>timeout</code>值为1，<code>timeout_style</code>为2(TIMEOUT_STYLE_HIDDEN)，不符合预期的30秒设定，查看<code>/boot/grub2/grub.cfg</code>，找到了对应的代码段：<br><img src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image3.png"><br>通过<code>grub2-editenv</code>命令查看<code>menu_auto_hide</code>这个环境变量的确存在，且值为1，所以匹配了else语句，<code>timeout</code>的值被设置了1秒</p>
+<p>发现<code>timeout</code>值为1，<code>timeout_style</code>为2(TIMEOUT_STYLE_HIDDEN)，不符合预期的30秒设定，查看<code>/boot/grub2/grub.cfg</code>，找到了对应的代码段：<br><img data-src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image3.png"><br>通过<code>grub2-editenv</code>命令查看<code>menu_auto_hide</code>这个环境变量的确存在，且值为1，所以匹配了else语句，<code>timeout</code>的值被设置了1秒</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># grub2-editenv - list | grep menu_auto_hide</span><br><span class="line">menu_auto_hide=1</span><br></pre></td></tr></table></figure>
-<p>查看<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_notable-changes-to-boot-loader_assembly_kernel">Rocky Linux官方文档</a>，找到了<code>menu_auto_hide</code>环境变量被设置的原因，以及解决方法：<br><img src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image4.png"></p>
+<p>查看<a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_notable-changes-to-boot-loader_assembly_kernel">Rocky Linux官方文档</a>，找到了<code>menu_auto_hide</code>环境变量被设置的原因，以及解决方法：<br><img data-src="/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/image4.png"></p>
 <h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><p>【1】 <a target="_blank" rel="noopener" href="https://www.cnblogs.com/quan0311/p/15292110.html">谈谈Linux系统启动流程</a><br>【2】 <a target="_blank" rel="noopener" href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/considerations_in_adopting_rhel_9/ref_notable-changes-to-boot-loader_assembly_kernel">Red hat Customer Portal</a></p>
 
     </div>
@@ -338,8 +338,8 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/troubleshooting/" rel="tag"><i class="fa fa-tag"></i> troubleshooting</a>
               <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+              <a href="/tags/troubleshooting/" rel="tag"><i class="fa fa-tag"></i> troubleshooting</a>
               <a href="/tags/GRUB/" rel="tag"><i class="fa fa-tag"></i> GRUB</a>
           </div>
 
@@ -448,6 +448,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -494,39 +499,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -541,6 +516,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

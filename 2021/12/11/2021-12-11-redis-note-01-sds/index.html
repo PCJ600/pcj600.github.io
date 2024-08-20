@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="前言Redis是用C语言开发的，但并没有直接使用C语言数组去表示字符串，而是使用简单动态字符串(Simple dynamic String，简称SDS)作为字符串的底层实现。 以下给出SDS相关的一些常见问题，通过源码分析和实际验证，思考这些问题的答案，了解实现原理和设计思路。">
@@ -334,7 +334,7 @@
 <li><p>buf的内容为 “Redis”, 以’\0’结尾，6字节大小</p>
 </li>
 </ul>
-<p>SDS实例图：<br><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image1.png"></p>
+<p>SDS实例图：<br><img data-src="/2021/12/11/2021-12-11-redis-note-01-sds/image1.png"></p>
 <p><strong>思考问题：</strong> 初始化SDS时free为啥给0？—— 平时使用字符串还是只读场景偏多，这样能节约空间。</p>
 <p><strong>GDB验证：</strong></p>
 <p>Redis是基于内存的数据库，可以通过GDB打印内存，查看这个key对应的SDS结构体，是否和源码分析结果一致：</p>
@@ -420,7 +420,7 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key 123</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;int&quot;</span><br></pre></td></tr></table></figure>
 
 <p>内存中的<code>redisObject</code>对象内容如下：</p>
-<p><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image2.png"></p>
+<p><img data-src="/2021/12/11/2021-12-11-redis-note-01-sds/image2.png"></p>
 <p>int类型编码的字符串，要求整数落在long的范围内。在64位环境上，long范围：-9223372036854775808～+9223372036854775807，不同的键值和编码结果参考下表：</p>
 <table>
 <thead>
@@ -469,13 +469,13 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">(gdb)  p *(robj *)server.db[0].dict.ht[0].table[0].v</span><br><span class="line">$15 = &#123;type = 0, encoding = 1, lru = 11668863, refcount = 3, ptr = 0x1&#125;</span><br><span class="line">(gdb)  p *(robj *)server.db[0].dict.ht[0].table[2].v</span><br><span class="line">$16 = &#123;type = 0, encoding = 1, lru = 11668863, refcount = 3, ptr = 0x1&#125;</span><br><span class="line">(gdb)  p &amp;(*(robj *)server.db[0].dict.ht[0].table[0].v)</span><br><span class="line">$17 = (robj *) 0x7fa7c1457360</span><br><span class="line">(gdb)  p &amp;(*(robj *)server.db[0].dict.ht[0].table[2].v)</span><br><span class="line">$18 = (robj *) 0x7fa7c1457360		# 和$17相同，都是0x7fa7c1457360，说明这是一个共享对象</span><br></pre></td></tr></table></figure>
 
 <p>此时，两个key和共享字符串对象的内存示意图：</p>
-<p><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image3.png"></p>
+<p><img data-src="/2021/12/11/2021-12-11-redis-note-01-sds/image3.png"></p>
 <h4 id="raw编码"><a href="#raw编码" class="headerlink" title="raw编码"></a>raw编码<span id="jump13"></span></h4><p>如果字符串对象保存的是一个字符串值，且这个字符串长度大于39个字节，REDIS就使用SDS存储这个字符串，并设置编码类型为raw。</p>
 <p><strong>举例：</strong></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key 1234567891234567891234567891234567891234</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding ket</span><br><span class="line">&quot;raw&quot;</span><br><span class="line">127.0.0.1:6379&gt; strlen key</span><br><span class="line">(integer) 40</span><br></pre></td></tr></table></figure>
 
 <p>raw编码的字符串示意图：</p>
-<p><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image4.png"></p>
+<p><img data-src="/2021/12/11/2021-12-11-redis-note-01-sds/image4.png"></p>
 <p><strong>源码分析：</strong></p>
 <p><code>createStringObject</code>用于创建一个SDS表示的字符串对象。当字符串长度大于39字节时使用raw编码， 否则用embstr编码，源码如下：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* The current limit of 39 is chosen so that the biggest string object</span></span><br><span class="line"><span class="comment"> * we allocate as EMBSTR will still fit into the 64 byte arena of jemalloc. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> REDIS_ENCODING_EMBSTR_SIZE_LIMIT 39</span></span><br><span class="line">robj *<span class="title function_">createStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (len &lt;= REDIS_ENCODING_EMBSTR_SIZE_LIMIT)</span><br><span class="line">        <span class="keyword">return</span> createEmbeddedStringObject(ptr,len);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> createRawStringObject(ptr,len);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">robj *<span class="title function_">createRawStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> createObject(REDIS_STRING,sdsnewlen(ptr,len));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">robj *<span class="title function_">createObject</span><span class="params">(<span class="type">int</span> type, <span class="type">void</span> *ptr)</span> &#123;</span><br><span class="line">    robj *o = zmalloc(<span class="keyword">sizeof</span>(*o));</span><br><span class="line">    o-&gt;type = type;</span><br><span class="line">    o-&gt;encoding = REDIS_ENCODING_RAW;	<span class="comment">// 设置编码类型为raw</span></span><br><span class="line">    o-&gt;ptr = ptr;</span><br><span class="line">    o-&gt;refcount = <span class="number">1</span>;</span><br><span class="line">    o-&gt;lru = LRU_CLOCK();</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -495,7 +495,7 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p &amp;(*(robj *)server.db[0].dict.ht[0].table[3].v)</span><br><span class="line">$1 = (robj *) 0x7f43ebd3b9c0</span><br><span class="line">(gdb) p *(robj *)server.db[0].dict.ht[0].table[3].v</span><br><span class="line">$2 = &#123;type = 0, encoding = 8, lru = 11755503, refcount = 1, ptr = 0x7f43ebd3b9d8&#125;</span><br><span class="line">(gdb) p *(struct sdshdr *)0x7f43ebd3b9d0</span><br><span class="line">$3 = &#123;len = 5, free = 0, buf = 0x7f43ebd3b9d8 &quot;hello&quot;&#125;</span><br></pre></td></tr></table></figure>
 
 <p>观察结果发现robj和sdshdr内存确实是连续的，embstr编码的内存示意图：</p>
-<p><img src="/2021/12/11/2021-12-11-redis-note-01-sds/image5.png"></p>
+<p><img data-src="/2021/12/11/2021-12-11-redis-note-01-sds/image5.png"></p>
 <p><strong>源码分析：</strong></p>
 <p><code>createEmbeddedStringObject</code>用于创建一个embstr编码的字符串</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">robj *<span class="title function_">createEmbeddedStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    robj *o = zmalloc(<span class="keyword">sizeof</span>(robj)+<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+len+<span class="number">1</span>); <span class="comment">// 仅1次malloc</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span> =</span> (<span class="type">void</span>*)(o+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    o-&gt;type = REDIS_STRING;</span><br><span class="line">    o-&gt;encoding = REDIS_ENCODING_EMBSTR;</span><br><span class="line">    o-&gt;ptr = sh+<span class="number">1</span>;</span><br><span class="line">    o-&gt;refcount = <span class="number">1</span>;</span><br><span class="line">    o-&gt;lru = LRU_CLOCK();</span><br><span class="line"></span><br><span class="line">    sh-&gt;len = len;</span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (ptr) &#123;</span><br><span class="line">        <span class="built_in">memcpy</span>(sh-&gt;buf,ptr,len);</span><br><span class="line">        sh-&gt;buf[len] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">memset</span>(sh-&gt;buf,<span class="number">0</span>,len+<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -772,6 +772,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -818,39 +823,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -865,6 +840,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

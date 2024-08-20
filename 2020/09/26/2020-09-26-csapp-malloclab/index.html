@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="实验简介实现自己的动态内存分配器（malloc、free、realloc）。 预备知识 阅读《CSAPP原书第3版》 9.9小节 —— 动态内存分配。 阅读writeup的全部内容。">
@@ -309,7 +309,7 @@
 <li>显示空闲链表 + 分离的空闲链表 +  分离适配。</li>
 </ul>
 <h3 id="隐式空闲链表法"><a href="#隐式空闲链表法" class="headerlink" title="隐式空闲链表法"></a>隐式空闲链表法</h3><p>原书9.9.6节详细介绍了隐式空闲链表法，并贴出了所有源代码。代码实现细节请参考原书或者 <a target="_blank" rel="noopener" href="https://github.com/PCJ600/MallocLab/tree/br64">https://github.com/PCJ600/MallocLab/tree/br64</a></p>
-<h5 id="隐式空闲链表的形式如下："><a href="#隐式空闲链表的形式如下：" class="headerlink" title="隐式空闲链表的形式如下："></a>隐式空闲链表的形式如下：</h5><p><img src="/2020/09/26/2020-09-26-csapp-malloclab/image1.png"></p>
+<h5 id="隐式空闲链表的形式如下："><a href="#隐式空闲链表的形式如下：" class="headerlink" title="隐式空闲链表的形式如下："></a>隐式空闲链表的形式如下：</h5><p><img data-src="/2020/09/26/2020-09-26-csapp-malloclab/image1.png"></p>
 <ul>
 <li>每个堆块使用边界标记法。头部大小为4字节，前29位表示块大小，后3位表示这个块是否空闲；脚部(ftr)是头部(hdr)的副本。目的是<strong>将合并前面的堆块时的搜索时间降到常数</strong>。</li>
 <li><strong>第1个填充字用于8字节对齐访问</strong>。考虑64位场景，如不添加填充字，heap_listp的值不能整除8，不满足对齐条件！</li>
@@ -331,7 +331,7 @@
 <li>调用<code>mm_malloc</code>找不到合适的空闲块时。</li>
 </ul>
 <p>举例：堆上扩展4096个字节，堆数组前后变化如下：</p>
-<p><img src="/2020/09/26/2020-09-26-csapp-malloclab/image2.png"></p>
+<p><img data-src="/2020/09/26/2020-09-26-csapp-malloclab/image2.png"></p>
 <h4 id="3-释放和合并块-——-mm-free和coalesce函数"><a href="#3-释放和合并块-——-mm-free和coalesce函数" class="headerlink" title="3. 释放和合并块 —— mm_free和coalesce函数"></a>3. 释放和合并块 —— mm_free和coalesce函数</h4><p>调用<code>mm_free</code>释放块，步骤如下：</p>
 <ul>
 <li><p>将当前块的头部和脚部中的分配位清零。</p>
@@ -348,12 +348,12 @@
 </ul>
 <p>说的比较啰嗦，以下画图帮助理解：</p>
 <p><strong>情况2:</strong> 前面的块已分配，后面的块空闲</p>
-<p><img src="/2020/09/26/2020-09-26-csapp-malloclab/image3.png"></p>
+<p><img data-src="/2020/09/26/2020-09-26-csapp-malloclab/image3.png"></p>
 <p><strong>注意：</strong> <font color = 'red'><strong>如采用下次适配策略，在情况3、情况4合并后可能出现pre_listp指针不再指向一个块的payload段，报payload overlap错!</strong></font></p>
 <p>因此必须更新<code>pre_listp</code>。这里简单将<code>pre_listp</code>指向合并后的新块的<code>payload</code>即可。</p>
 <p><strong>情况3：</strong> 前面的块是空闲的，后面的块是分配的</p>
-<p><img src="/2020/09/26/2020-09-26-csapp-malloclab/image4.png"></p>
-<p><strong>情况4：</strong> 前面和后面的块均空闲<br><img src="/2020/09/26/2020-09-26-csapp-malloclab/image5.png"><br>[O#### 4. 分配块 —— mm_malloc</p>
+<p><img data-src="/2020/09/26/2020-09-26-csapp-malloclab/image4.png"></p>
+<p><strong>情况4：</strong> 前面和后面的块均空闲<br><img data-src="/2020/09/26/2020-09-26-csapp-malloclab/image5.png"><br>[O#### 4. 分配块 —— mm_malloc</p>
 <h5 id="mm-malloc步骤"><a href="#mm-malloc步骤" class="headerlink" title="mm_malloc步骤"></a>mm_malloc步骤</h5><ul>
 <li><p>调整请求块的大小，需不低于16字节（8字节对齐要求），并舍入到8的整数倍。</p>
 </li>
@@ -373,7 +373,7 @@
 </ul>
 <h5 id="分割策略"><a href="#分割策略" class="headerlink" title="分割策略"></a>分割策略</h5><p>如分割后剩下的块不小于最小块大小(16字节)，才分割这个块。</p>
 <p>设空闲块大小为M字节，<code>malloc</code>请求的块大小为N字节。只有M - N &gt;&#x3D; 16，才分割这个块。</p>
-<p><img src="/2020/09/26/2020-09-26-csapp-malloclab/image6.png"></p>
+<p><img data-src="/2020/09/26/2020-09-26-csapp-malloclab/image6.png"></p>
 <h4 id="5-实现mm-realloc"><a href="#5-实现mm-realloc" class="headerlink" title="5. 实现mm_realloc"></a>5. 实现mm_realloc</h4><p><code>mm_realloc</code>原型：<code>void *mm_realloc(void *ptr, size_t size)</code></p>
 <p><a target="_blank" rel="noopener" href="http://csapp.cs.cmu.edu/3e/malloclab.pdf">writeup</a>中提到了<code>mm_realloc</code>的所有实现要点，如下：</p>
 <ul>
@@ -397,7 +397,7 @@
 <li>默认Makefile采用<code>-m32</code>选项，64位环境下需要改成<code>-m64</code>。</li>
 <li>实验涉及大量指针操作，编码极易出错。需掌握基本的gdb调试手段、并编写代码检查堆区和分离链表。</li>
 </ul>
-<h4 id="显式的双向链表的堆块结构"><a href="#显式的双向链表的堆块结构" class="headerlink" title="显式的双向链表的堆块结构"></a>显式的双向链表的堆块结构</h4><p><img src="/2020/09/26/2020-09-26-csapp-malloclab/image7.png"></p>
+<h4 id="显式的双向链表的堆块结构"><a href="#显式的双向链表的堆块结构" class="headerlink" title="显式的双向链表的堆块结构"></a>显式的双向链表的堆块结构</h4><p><img data-src="/2020/09/26/2020-09-26-csapp-malloclab/image7.png"></p>
 <ul>
 <li><p>对于空闲块，<code>pred</code>保存上一个空闲块的地址，<code>succ</code>保存下一个空闲块的地址。</p>
 </li>
@@ -469,7 +469,7 @@
 
 <h5 id="extend-heap"><a href="#extend-heap" class="headerlink" title="extend_heap"></a>extend_heap</h5><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> *<span class="title function_">extend_heap</span><span class="params">(<span class="type">size_t</span> size)</span> &#123;</span><br><span class="line">    size = ALIGN(size);</span><br><span class="line">    <span class="type">void</span> *p;</span><br><span class="line">    <span class="keyword">if</span> ((p = mem_sbrk(size)) == (<span class="type">void</span> *)<span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;extend_heap failed! mem_sbrk return -1!\n&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    PUT(HDRP(p), PACK(size, <span class="number">0</span>));</span><br><span class="line">    PUT(FTRP(p), PACK(size, <span class="number">0</span>));</span><br><span class="line">    PUT(HDRP(NEXT_BLKP(p)), PACK(<span class="number">0</span>, <span class="number">1</span>));</span><br><span class="line">    insert_node(p, size);</span><br><span class="line">    <span class="keyword">return</span> coalesce(p);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h4 id="初始化堆-——-mm-init"><a href="#初始化堆-——-mm-init" class="headerlink" title="初始化堆 —— mm_init"></a>初始化堆 —— mm_init</h4><p>调用mm_init后，堆数组结构如下图所示：<br><img src="/2020/09/26/2020-09-26-csapp-malloclab/image8.png"></p>
+<h4 id="初始化堆-——-mm-init"><a href="#初始化堆-——-mm-init" class="headerlink" title="初始化堆 —— mm_init"></a>初始化堆 —— mm_init</h4><p>调用mm_init后，堆数组结构如下图所示：<br><img data-src="/2020/09/26/2020-09-26-csapp-malloclab/image8.png"></p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">mm_init</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="comment">// 4字节对齐块 + MAX_LIST_NUM * DSIZE字节的空闲链表头指针 + 2个4字节序言块 + 4字节结尾块</span></span><br><span class="line">    <span class="type">char</span> *p = mem_sbrk(MAX_LIST_NUM * <span class="keyword">sizeof</span>(<span class="type">intptr_t</span>) + <span class="number">4</span> * WSIZE);</span><br><span class="line">    <span class="keyword">if</span> ((<span class="type">void</span> *)p == (<span class="type">void</span> *)(<span class="number">-1</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将所有空闲链表的头指针初始为NULL</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; MAX_LIST_NUM; ++i) &#123;</span><br><span class="line">        PUT_P(p + i * <span class="keyword">sizeof</span>(<span class="type">intptr_t</span>), <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    p += MAX_LIST_NUM * <span class="keyword">sizeof</span>(<span class="type">intptr_t</span>);</span><br><span class="line"></span><br><span class="line">    PUT(p, <span class="number">0</span>);								<span class="comment">// 4字节对齐块，填0;</span></span><br><span class="line">    PUT(p + WSIZE, PACK(DSIZE, <span class="number">1</span>));			<span class="comment">// 序言块头部，4字节</span></span><br><span class="line">    PUT(p + <span class="number">2</span> * WSIZE, PACK(DSIZE, <span class="number">1</span>));		<span class="comment">// 序言块脚部，4字节</span></span><br><span class="line">    PUT(p + <span class="number">3</span> * WSIZE, PACK(<span class="number">0</span>, <span class="number">1</span>));			<span class="comment">// 结尾快，4字节</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((p = extend_heap(CHUNKSIZE)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h4 id="分配块-——-mm-malloc"><a href="#分配块-——-mm-malloc" class="headerlink" title="分配块 —— mm_malloc"></a>分配块 —— mm_malloc</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> *<span class="title function_">mm_malloc</span><span class="params">(<span class="type">size_t</span> size)</span></span><br><span class="line">&#123;</span><br><span class="line">    size = get_malloc_size(size);	<span class="comment">// 得到调整后的malloc请求大小</span></span><br><span class="line">    <span class="comment">// 寻找空闲链表是否有合适的空闲块。如果没找到合适的空闲块, 需要扩展堆</span></span><br><span class="line">    <span class="type">void</span> *p = find_free_block(size);</span><br><span class="line">    <span class="keyword">if</span> (p == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((p = extend_heap(MAX(size, CHUNKSIZE))) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="built_in">printf</span>(<span class="string">&quot;mm_malloc, extend_heap failed!\n&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    p = place(p, size);</span><br><span class="line">    <span class="keyword">return</span> p;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -646,6 +646,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -692,39 +697,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -739,6 +714,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

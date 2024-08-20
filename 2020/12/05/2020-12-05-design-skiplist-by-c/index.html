@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="跳跃表简介跳跃表是一种以O(log N)期望时间支持查找、插入、删除操作的、有序的数据结构。其性能和红黑树相当，且跳跃表实现更为简单。 如何理解”跳跃“二字">
@@ -280,14 +280,14 @@
 <ol>
 <li>首先，考察一个有序的单链表。如下图所示，该链表由8个元素组成，为了查找元素14，需要依次遍历 2 -&gt; 4 -&gt; 6 -&gt; 8 -&gt; 10 -&gt; 12 -&gt; 14, 共考察7个节点。考察的节点数正比于链表长度，查找的时间复杂度为O(n)，效率很低。</li>
 </ol>
-<p><img src="/2020/12/05/2020-12-05-design-skiplist-by-c/image1.png"></p>
+<p><img data-src="/2020/12/05/2020-12-05-design-skiplist-by-c/image1.png"></p>
 <ol start="2">
-<li><p>为了加快查找速度，可以对单链表进行改造，每隔一个节点新增一个指针，指向它前面两个位置上的节点。所有新增的节点组成一条新的单链表(下图中的链表1)。同样查找元素14，现在只需考察4, 8, 12, 14，共4个节点。<br><img src="/2020/12/05/2020-12-05-design-skiplist-by-c/image2.png"></p>
+<li><p>为了加快查找速度，可以对单链表进行改造，每隔一个节点新增一个指针，指向它前面两个位置上的节点。所有新增的节点组成一条新的单链表(下图中的链表1)。同样查找元素14，现在只需考察4, 8, 12, 14，共4个节点。<br><img data-src="/2020/12/05/2020-12-05-design-skiplist-by-c/image2.png"></p>
 </li>
 <li><p>对链表1做类似的操作，又得到一条新的单链表(下图中的链表2)。此时查找元素14，只需考察8, 12, 14，共3个节点。</p>
 </li>
 </ol>
-<p><img src="/2020/12/05/2020-12-05-design-skiplist-by-c/image3.png"></p>
+<p><img data-src="/2020/12/05/2020-12-05-design-skiplist-by-c/image3.png"></p>
 <p>可以看出，跳跃表是<strong>由多条有序链表组成，支持折半查找</strong>的数据结构。</p>
 <h3 id="实现跳跃表"><a href="#实现跳跃表" class="headerlink" title="实现跳跃表"></a>实现跳跃表</h3><p>以下用C语言实现一个简单的跳表。跳表实现要求如下，详细参考：<a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/design-skiplist/">LeetCode 1206 设计跳表</a></p>
 <ul>
@@ -306,9 +306,9 @@
 <li><code>level</code>表示跳表层数，跳表的插入、删除操作需要读取和更新<code>level</code>的值。</li>
 </ul>
 <p>下图表示一个层数为3的节点：</p>
-<p><img src="/2020/12/05/2020-12-05-design-skiplist-by-c/image4.png"></p>
+<p><img data-src="/2020/12/05/2020-12-05-design-skiplist-by-c/image4.png"></p>
 <p>下图表示一个长度为6，层数为4的跳表：</p>
-<p><img src="/2020/12/05/2020-12-05-design-skiplist-by-c/image5.png"></p>
+<p><img data-src="/2020/12/05/2020-12-05-design-skiplist-by-c/image5.png"></p>
 <h4 id="1-创建跳跃表"><a href="#1-创建跳跃表" class="headerlink" title="1. 创建跳跃表"></a>1. 创建跳跃表</h4><p>设计<code>Skiplist* skiplistCreate()</code>方法创建跳跃表，要点如下：</p>
 <ul>
 <li>给Skiplist分配空间，长度初始为0，层高初始为1</li>
@@ -319,7 +319,7 @@
 <h4 id="2-查找"><a href="#2-查找" class="headerlink" title="2. 查找"></a>2. 查找</h4><p>设计<code>bool skiplistSearch(Skiplist* obj, int target)</code>实现跳表的查找。</p>
 <p>上面分析过，跳表就是由N条有序链表组成的，所以对跳表的查找相当于<strong>从高到低，依次在N条有序链表中</strong>查找。</p>
 <p>举例说明，在下图给出的跳表中，查找元素60，红色箭头表示遍历过程。</p>
-<p><img src="/2020/12/05/2020-12-05-design-skiplist-by-c/image6.png"></p>
+<p><img data-src="/2020/12/05/2020-12-05-design-skiplist-by-c/image6.png"></p>
 <p>代码实现如下：</p>
  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 跳表的查找, 时间复杂度O(logN)</span></span><br><span class="line"><span class="type">bool</span> <span class="title function_">skiplistSearch</span><span class="params">(Skiplist* obj, <span class="type">int</span> target)</span> &#123;</span><br><span class="line">    SkiplistNode *p = obj-&gt;head;</span><br><span class="line">    <span class="type">int</span> levelIdx = obj-&gt;level - <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = levelIdx; i &gt;= <span class="number">0</span>; --i) &#123;</span><br><span class="line">        <span class="comment">// 如果第i层节点值小于target, 就沿着当前层继续查找</span></span><br><span class="line">        <span class="keyword">while</span> (p-&gt;level[i].next &amp;&amp; p-&gt;level[i].next-&gt;value &lt; target) &#123;</span><br><span class="line">            p = p-&gt;level[i].next;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 第i层未找到该节点, 或者节点值已大于target, 沿着下一层继续查找</span></span><br><span class="line">        <span class="keyword">if</span> (p-&gt;level[i].next == <span class="literal">NULL</span> || p-&gt;level[i].next-&gt;value &gt; target) &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> TRUE;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> FALSE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -333,7 +333,7 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">GetSkipNodeRandomLevel</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> level = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">while</span> (rand() &amp; <span class="number">0x1</span>) &#123;					<span class="comment">// 抛硬币思想，随机数为奇数的概率可认为是1/2</span></span><br><span class="line">        ++level;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> min(level,SKIPLIST_MAXLEVEL); 	<span class="comment">// 返回的最大层数不超过32</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h5 id="3-2-新增节点后，如何更新跳表中对应的N条单链表？"><a href="#3-2-新增节点后，如何更新跳表中对应的N条单链表？" class="headerlink" title="3.2 新增节点后，如何更新跳表中对应的N条单链表？"></a>3.2 新增节点后，如何更新跳表中对应的N条单链表？</h5><p>举例说明，给定一个包含6个元素，层数为4的跳表，现在新增一个节点值为80，层数为5，插入前后的变化如下：</p>
-<p><img src="/2020/12/05/2020-12-05-design-skiplist-by-c/image7.png"></p>
+<p><img data-src="/2020/12/05/2020-12-05-design-skiplist-by-c/image7.png"></p>
 <p>可以看出，往跳表中插入元素，<strong>只需在遍历跳表的过程中，保存这5条链表待插入位置的前驱节点(红圈表示)，再分别对每条单链表执行插入操作即可，最后更新跳表的长度和层高</strong>。代码实现如下：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 跳表的插入 O(logN)</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">skiplistAdd</span><span class="params">(Skiplist* obj, <span class="type">int</span> num)</span> &#123;</span><br><span class="line">    SkiplistNode *p = obj-&gt;head;</span><br><span class="line">    <span class="type">int</span> levelIdx = obj-&gt;level - <span class="number">1</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">SkiplistNode</span> *<span class="title">preNodes</span>[<span class="title">SKIPLIST_MAXLEVEL</span>];</span> <span class="comment">// 保存待插入节点的所有前驱节点的值</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = obj-&gt;level; i &lt; SKIPLIST_MAXLEVEL; ++i) &#123;</span><br><span class="line">        preNodes[i] = obj-&gt;head;					  <span class="comment">// 初始化值为附加头结点</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = levelIdx; i &gt;= <span class="number">0</span>; --i) &#123;</span><br><span class="line">        <span class="comment">// 如果第i层节点值小于target, 沿当前层继续查找插入的位置</span></span><br><span class="line">        <span class="keyword">while</span>( p-&gt;level[i].next &amp;&amp; p-&gt;level[i].next-&gt;value &lt; num) &#123;</span><br><span class="line">            p = p-&gt;level[i].next;</span><br><span class="line">        &#125;</span><br><span class="line">        preNodes[i] = p;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> newLevel = GetSkipNodeRandomLevel();		<span class="comment">// 计算新插入节点的层数</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">SkiplistNode</span> *<span class="title">newNode</span> =</span> skiplistNodeCreate(newLevel, num);</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; newLevel; ++i) &#123;</span><br><span class="line">        newNode-&gt;level[i].next = preNodes[i]-&gt;level[i].next;</span><br><span class="line">        preNodes[i]-&gt;level[i].next = newNode;</span><br><span class="line">    &#125;</span><br><span class="line">    obj-&gt;level = max(obj-&gt;level, newLevel);         <span class="comment">// 完成插入动作后，更新跳跃表当前层数</span></span><br><span class="line">    ++obj-&gt;length;									<span class="comment">// 完成插入动作后，更新跳跃表长度</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -508,6 +508,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -554,39 +559,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -601,6 +576,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

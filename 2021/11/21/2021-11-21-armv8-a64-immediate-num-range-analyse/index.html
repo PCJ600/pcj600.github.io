@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="问题描述ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？ 在Stackoverflow上发现类似的讨论：https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;30904718&#x2F;range-of-immediate-values-in-armv8-a64-assembly">
@@ -287,10 +287,10 @@
 
 
 
-<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>查询ARMv8指令集手册(<code>C4.1 A64 instruction set encoding</code>)，先来看下A64 指令集编码格式：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image1.png"></p>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>查询ARMv8指令集手册(<code>C4.1 A64 instruction set encoding</code>)，先来看下A64 指令集编码格式：<br><img data-src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image1.png"></p>
 <p>可以看出<strong>A64指令长度固定为32位，其中op0(占4位)用于区分不同类型的指令，剩下的28位也不可能全用于表示立即数</strong>。因此，和x86&#x2F;x64这种变长指令集对比，A64中立即数表示范围非常有限。</p>
 <p>解释这个问题，需要查询指令集手册，对比ADD, AND指令的立即数编码格式差异。</p>
-<h3 id="ADD-immediate"><a href="#ADD-immediate" class="headerlink" title="ADD(immediate)"></a>ADD(immediate)</h3><p>ADD指令的编码格式和伪码，可以参考手册 <code>C6.2.4 ADD(immediate)</code>，或下图：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image2.png"></p>
+<h3 id="ADD-immediate"><a href="#ADD-immediate" class="headerlink" title="ADD(immediate)"></a>ADD(immediate)</h3><p>ADD指令的编码格式和伪码，可以参考手册 <code>C6.2.4 ADD(immediate)</code>，或下图：<br><img data-src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image2.png"></p>
 <ul>
 <li><p><code>imm12</code>表示立即数，长度12位，范围0~4095，共4096种取值。</p>
 </li>
@@ -303,7 +303,7 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># aarch64-linux-gnu-objdump -d hello.o</span><br><span class="line">Disassembly of section .text:</span><br><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   913fbd4c        add     x12, x10, #0xfef</span><br></pre></td></tr></table></figure>
 
 <p> <code>0x913fbd4c</code> &#x3D; <code>1001 0001 0011 1111 1011 1101 0100 1100</code> b， 可以看出这条ADD指令的编码和指令集手册规定的编码格式是一致的。（各字段对应的关系参考上图）</p>
-<h3 id="AND-immediate"><a href="#AND-immediate" class="headerlink" title="AND(immediate)"></a>AND(immediate)</h3><p>AND指令的编码格式和伪码参考手册 <code>C6.2.12 AND(immediate)</code>，或下图：<br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image3.png"><br><img src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image4.png"></p>
+<h3 id="AND-immediate"><a href="#AND-immediate" class="headerlink" title="AND(immediate)"></a>AND(immediate)</h3><p>AND指令的编码格式和伪码参考手册 <code>C6.2.12 AND(immediate)</code>，或下图：<br><img data-src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image3.png"><br><img data-src="/2021/11/21/2021-11-21-armv8-a64-immediate-num-range-analyse/image4.png"></p>
 <p>AND指令的伪码不是很直观，详细解释参考老外的这篇<a target="_blank" rel="noopener" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">文章</a>，非常清楚（参考<code>Logical Immediates</code>小节）</p>
 <p><strong>这里给出直观的结论：</strong></p>
 <p>AND指令支持的立即数个数为5334个，结果参考：<a target="_blank" rel="noopener" href="https://gist.github.com/dinfuehr/51a01ac58c0b23e4de9aac313ed6a06a">full output</a></p>
@@ -577,6 +577,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -623,39 +628,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -670,6 +645,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

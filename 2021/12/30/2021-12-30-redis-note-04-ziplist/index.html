@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="背景ziplist是一种为节约内存而开发的数据结构，本质是一个字节数组。 ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。">
@@ -291,14 +291,14 @@
 </ul>
 <h3 id="ziplist的数据结构"><a href="#ziplist的数据结构" class="headerlink" title="ziplist的数据结构"></a>ziplist的数据结构<span id="jump1"></span></h3><p>Redis没有专门定义结构体来表示ziplist，因为ziplist本质就是一个空间连续的字节数组。</p>
 <p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过<code>struct zlentry</code>结构表示。</p>
-<p>ziplist的各组成部分参考如下：<br><img src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image1.png"></p>
+<p>ziplist的各组成部分参考如下：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image1.png"></p>
 <p>可以看出，ziplist由列表头 + 列表节点 + 列表尾这三部分组成。每个组成部分作用说明如下：</p>
 <ul>
 <li><code>zlbytes</code>占4字节，用于记录整个ziplist占用内存的总字节数，对于空表来说，<code>zlbytes</code>等于11，源码参考<code>ziplistNew</code></li>
 </ul>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t)) <span class="comment">// 8 + 2 = 10字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_END_SIZE        (sizeof(uint8_t)) <span class="comment">// 1字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_BYTES(zl)       (*((uint32_t*)(zl)))  <span class="comment">// zlbytes</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Create a new empty ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistNew</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> bytes = ZIPLIST_HEADER_SIZE+ZIPLIST_END_SIZE;	<span class="comment">// zlbytes = 10 + 1 = 11</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *zl = zmalloc(bytes); <span class="comment">// 可以看出，空表分配11字节大小空间</span></span><br><span class="line">    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes);</span><br><span class="line">    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE);</span><br><span class="line">    ZIPLIST_LENGTH(zl) = <span class="number">0</span>;</span><br><span class="line">    zl[bytes<span class="number">-1</span>] = ZIP_END;</span><br><span class="line">    <span class="keyword">return</span> zl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>ziplist为空时的内存空间如下图：<br><img src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image2.png"></p>
+<p>ziplist为空时的内存空间如下图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image2.png"></p>
 <ul>
 <li><code>zltail</code>占4字节，用于记录表尾节点首地址距离ziplist起始地址有多少字节。设计这个字段的目的是为了快速定位表尾节点地址（ZIPLIST_ENTRY_TAIL)。</li>
 <li><code>zllen</code>占2字节，用于记录列表节点总数。注意<code>zllen</code>等于65535时，表示这个列表长度太大，必须通过遍历整个ziplist才能得到真实的长度。参考<code>ziplistLen</code>实现：</li>
@@ -317,7 +317,7 @@
 <li>当前节点编码信息：<code>encoding</code></li>
 <li>当前节点内容：<code>content</code></li>
 </ul>
-<p>ziplist节点的各组成部分示意图：<br><img src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image3.png"></p>
+<p>ziplist节点的各组成部分示意图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image3.png"></p>
 <p>以下分别介绍这三个组成部分：</p>
 <h4 id="1、前一节点长度信息-previous-entry-length"><a href="#1、前一节点长度信息-previous-entry-length" class="headerlink" title="1、前一节点长度信息 previous_entry_length"></a>1、前一节点长度信息 previous_entry_length</h4><p><code>previous_entry_length</code>本身占1字节或5字节，用于记录前一个节点的长度，单位为字节：</p>
 <ul>
@@ -412,7 +412,7 @@
 <p><font color = 'red'>思考问题：</font>创建一个ziplist编码的空列表键，并依次添加两个值”hello”，”10086”，问此时ziplist的长度是多少，内容是什么样的？</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; info  # Redis版本必须为3.2之前的，否则列表键的默认编码为quicklist，而非ziplist!</span><br><span class="line"># Server redis_version:3.0.0</span><br><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">127.0.0.1:6379&gt; rpush key hello 10086 # 新增列表键，依次插入两个key &quot;hello&quot; &quot;10086&quot;</span><br><span class="line">(integer) 2</span><br><span class="line">127.0.0.1:6379&gt; object encoding key   # 确认列表键编码为ziplist</span><br><span class="line">&quot;ziplist&quot;</span><br></pre></td></tr></table></figure>
 
-<p>如果你真的掌握了ziplist节点构成，那么不需要运行Redis，你也可以得出答案：这个ziplist占用22字节，内存如下图所示：<br><img src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image4.png"><br>以下给出GDB的验证方法和验证结果，感兴趣的可以参考：</p>
+<p>如果你真的掌握了ziplist节点构成，那么不需要运行Redis，你也可以得出答案：这个ziplist占用22字节，内存如下图所示：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image4.png"><br>以下给出GDB的验证方法和验证结果，感兴趣的可以参考：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 0、确认ziplist的首地址</span></span><br><span class="line">(gdb) p (sds)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].key</span><br><span class="line">$<span class="number">1</span> = (sds) <span class="number">0x7fc6ac086288</span> <span class="string">&quot;key&quot;</span> <span class="comment">// 键</span></span><br><span class="line">(gdb) p *(robj *)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].v</span><br><span class="line">$<span class="number">2</span> = &#123;type = <span class="number">1</span>, encoding = <span class="number">5</span>, lru = <span class="number">13392586</span>, refcount = <span class="number">1</span>, ptr = <span class="number">0x7fc6ac035d60</span>&#125; <span class="comment">// ptr即为ziplist的首地址！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1、打印zlbytes, zltail, zllen</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d60</span></span><br><span class="line">$<span class="number">3</span> = <span class="number">22</span> <span class="comment">// zlbytes = 22</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d64</span></span><br><span class="line">$<span class="number">4</span> = <span class="number">17</span> <span class="comment">// zltail = 17</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *)<span class="number">0x7fc6ac035d68</span></span><br><span class="line">$<span class="number">5</span> = <span class="number">2</span>  <span class="comment">// zlen = 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、以下开始打印第一个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6a</span></span><br><span class="line"><span class="number">0x7fc6ac035d6a</span>: <span class="number">0x00</span> <span class="comment">// previous_entry_length本身占1字节，长度为0</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6b</span></span><br><span class="line"><span class="number">0x7fc6ac035d6b</span>: <span class="number">0x05</span> <span class="comment">// encoding为00000101, 本身占1字节，表示长度为5的字节数组</span></span><br><span class="line">(gdb) x/<span class="number">5</span>c <span class="number">0x7fc6ac035d6c</span></span><br><span class="line"><span class="number">0x7fc6ac035d6c</span>: <span class="number">104</span> <span class="string">&#x27;h&#x27;</span> <span class="number">101</span> <span class="string">&#x27;e&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">111</span> <span class="string">&#x27;o&#x27;</span>	<span class="comment">// content占5字节，存储&quot;hello&quot;</span></span><br><span class="line"><span class="comment">// 第一个节点总长度为 1 + 1 + 5 = 7 字节</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、以下开始打印第二个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d71</span></span><br><span class="line"><span class="number">0x7fc6ac035d71</span>: <span class="number">0x07</span> <span class="comment">// previous_entry_length本身占1字节，长度为7</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d72</span></span><br><span class="line"><span class="number">0x7fc6ac035d72</span>: <span class="number">0xc0</span> <span class="comment">// encoding为11000000, 本身占1字节, 表示16位的整数</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *) <span class="number">0x7fc6ac035d73</span></span><br><span class="line">$<span class="number">6</span> = <span class="number">10086</span>	<span class="comment">// content本身占2字节，存储内容正是10086</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、标志zlend，占1字节</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d75</span></span><br><span class="line"><span class="number">0x7fc6ac035d75</span>: <span class="number">0xff</span></span><br></pre></td></tr></table></figure>
 
 <h3 id="为什么要设计ziplist"><a href="#为什么要设计ziplist" class="headerlink" title="为什么要设计ziplist"></a>为什么要设计ziplist<span id="jump3"></span></h3><p>还是考虑这个列表键： <code>&quot;hello&quot; -&gt; &quot;10086&quot;</code></p>
@@ -462,7 +462,7 @@
 
 <h4 id="连锁更新问题"><a href="#连锁更新问题" class="headerlink" title="连锁更新问题"></a>连锁更新问题<span id="jump6"></span></h4><p>前面提到，ziplist中每个节点的<code>previous_entry_length</code>记录了前一个节点的长度，考虑在表头插入节点的场景：</p>
 <p>如果列表所有节点长度都在250-253字节之前，且插入节点大于等于254字节，就会导致所有节点的<code>previous_entry_length</code>都必须从1字节扩展为5字节, 即触发了<strong>连锁更新</strong>。</p>
-<p>以下举例说明这个问题：给定一个长度为3的，每个节点大小均为253字节的ziplist，往表头插入一个300字节大小的节点。<br><img src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image5.png"><br>注：除了新增节点会引发连锁更新，删除节点操作也可能引发连锁更新，此处不再赘述。</p>
+<p>以下举例说明这个问题：给定一个长度为3的，每个节点大小均为253字节的ziplist，往表头插入一个300字节大小的节点。<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image5.png"><br>注：除了新增节点会引发连锁更新，删除节点操作也可能引发连锁更新，此处不再赘述。</p>
 <p><font color = 'red'>思考问题：</font>既然连锁更新的最坏复杂度为O(n^2)，为什么Redis还是放心使用ziplist？</p>
 <ul>
 <li>因为连锁更新触发条件苛刻，只有满足存在多个连续长度为250-253之间的节点才能触发。</li>
@@ -624,6 +624,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -670,39 +675,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -717,6 +692,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

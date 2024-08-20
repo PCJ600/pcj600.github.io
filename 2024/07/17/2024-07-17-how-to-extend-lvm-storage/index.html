@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="问题描述VMware Centos环境，根分区为LVM，大小50G，现在需要对根分区扩容。我添加了一块500G的虚拟硬盘(&#x2F;dev&#x2F;sdb)，如何把这500G扩容到根分区？">
@@ -278,14 +278,14 @@
       
         <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>VMware Centos环境，根分区为LVM，大小50G，现在需要对根分区扩容。我添加了一块500G的虚拟硬盘(<code>/dev/sdb</code>)，如何把这500G扩容到根分区？</p>
 <span id="more"></span>
-<p><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image1.png"></p>
-<h2 id="LVM扩容方法"><a href="#LVM扩容方法" class="headerlink" title="LVM扩容方法"></a>LVM扩容方法</h2><h3 id="1-对新磁盘分区"><a href="#1-对新磁盘分区" class="headerlink" title="1. 对新磁盘分区"></a>1. 对新磁盘分区</h3><p>使用<code>fdisk /dev/sdb</code>命令，进行交互式分区操作。依次输入n (new一个分区), 输入p (创建primary分区)，输入Partition number(分区编号)为1，其余选项敲回车默认，最后敲w，创建出一个新分区。<br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image2.png"><br>通过<code>fdisk -l /dev/sdb</code> 查看新分区已成功创建<br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image3.png"></p>
-<h3 id="2-格式化新分区"><a href="#2-格式化新分区" class="headerlink" title="2. 格式化新分区"></a>2. 格式化新分区</h3><p>先确认根分区的文件格式，先通过<code>lsblk | grep -w /</code>查到根分区的逻辑卷为<code>centos-root</code>，再通过<code>blkid</code>命令得到根分区的文件格式为<code>xfs</code><br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image4.png"><br>再使用<code>mkfs -t xfs /dev/sdb1</code>命令格式化新分区。（如果你的分区是<code>ext4</code>格式，就用<code>mkfs -t ext4 /dev/sdb1</code>）<br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image5.png"></p>
-<h3 id="3-创建物理卷"><a href="#3-创建物理卷" class="headerlink" title="3. 创建物理卷"></a>3. 创建物理卷</h3><p>使用<code>pvcreate /dev/sdb1</code>命令创建物理卷<br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image6.png"></p>
-<h3 id="4-扩展逻辑卷组"><a href="#4-扩展逻辑卷组" class="headerlink" title="4. 扩展逻辑卷组"></a>4. 扩展逻辑卷组</h3><p>使用<code>vgs</code>命令查询逻辑卷组(VG)的名称为<code>centos</code>，再使用<code>vgextend centos /dev/sdb1</code>命令扩展逻辑卷组<br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image7.png"><br><code>vgextend</code>执行后，可以看出逻辑卷组大小从511g变成1010.99g，说明扩展成功</p>
-<h3 id="5-扩展逻辑卷"><a href="#5-扩展逻辑卷" class="headerlink" title="5. 扩展逻辑卷"></a>5. 扩展逻辑卷</h3><p>使用<code>lvextend -l +100%FREE /dev/mapper/centos-root</code>命令，将所有空间扩容到逻辑卷<code>centos-root</code><br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image8.png"></p>
-<h3 id="6-调整文件系统大小"><a href="#6-调整文件系统大小" class="headerlink" title="6. 调整文件系统大小"></a>6. 调整文件系统大小</h3><p>对于<code>xfs</code>文件系统，使用<code>xfs_growfs /dev/mapper/centos-root</code>命令调整文件系统大小<br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image9.png"></p>
-<p>最后查看效果，敲 <code>df -h </code>，发现根分区大小从50G变成550G，扩容成功！<br><img src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image10.png"></p>
+<p><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image1.png"></p>
+<h2 id="LVM扩容方法"><a href="#LVM扩容方法" class="headerlink" title="LVM扩容方法"></a>LVM扩容方法</h2><h3 id="1-对新磁盘分区"><a href="#1-对新磁盘分区" class="headerlink" title="1. 对新磁盘分区"></a>1. 对新磁盘分区</h3><p>使用<code>fdisk /dev/sdb</code>命令，进行交互式分区操作。依次输入n (new一个分区), 输入p (创建primary分区)，输入Partition number(分区编号)为1，其余选项敲回车默认，最后敲w，创建出一个新分区。<br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image2.png"><br>通过<code>fdisk -l /dev/sdb</code> 查看新分区已成功创建<br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image3.png"></p>
+<h3 id="2-格式化新分区"><a href="#2-格式化新分区" class="headerlink" title="2. 格式化新分区"></a>2. 格式化新分区</h3><p>先确认根分区的文件格式，先通过<code>lsblk | grep -w /</code>查到根分区的逻辑卷为<code>centos-root</code>，再通过<code>blkid</code>命令得到根分区的文件格式为<code>xfs</code><br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image4.png"><br>再使用<code>mkfs -t xfs /dev/sdb1</code>命令格式化新分区。（如果你的分区是<code>ext4</code>格式，就用<code>mkfs -t ext4 /dev/sdb1</code>）<br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image5.png"></p>
+<h3 id="3-创建物理卷"><a href="#3-创建物理卷" class="headerlink" title="3. 创建物理卷"></a>3. 创建物理卷</h3><p>使用<code>pvcreate /dev/sdb1</code>命令创建物理卷<br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image6.png"></p>
+<h3 id="4-扩展逻辑卷组"><a href="#4-扩展逻辑卷组" class="headerlink" title="4. 扩展逻辑卷组"></a>4. 扩展逻辑卷组</h3><p>使用<code>vgs</code>命令查询逻辑卷组(VG)的名称为<code>centos</code>，再使用<code>vgextend centos /dev/sdb1</code>命令扩展逻辑卷组<br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image7.png"><br><code>vgextend</code>执行后，可以看出逻辑卷组大小从511g变成1010.99g，说明扩展成功</p>
+<h3 id="5-扩展逻辑卷"><a href="#5-扩展逻辑卷" class="headerlink" title="5. 扩展逻辑卷"></a>5. 扩展逻辑卷</h3><p>使用<code>lvextend -l +100%FREE /dev/mapper/centos-root</code>命令，将所有空间扩容到逻辑卷<code>centos-root</code><br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image8.png"></p>
+<h3 id="6-调整文件系统大小"><a href="#6-调整文件系统大小" class="headerlink" title="6. 调整文件系统大小"></a>6. 调整文件系统大小</h3><p>对于<code>xfs</code>文件系统，使用<code>xfs_growfs /dev/mapper/centos-root</code>命令调整文件系统大小<br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image9.png"></p>
+<p>最后查看效果，敲 <code>df -h </code>，发现根分区大小从50G变成550G，扩容成功！<br><img data-src="/2024/07/17/2024-07-17-how-to-extend-lvm-storage/image10.png"></p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/shoufeng/p/10615452.html">Linux - 通过LVM对磁盘进行动态扩容
 </a></p>
 
@@ -442,6 +442,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -488,39 +493,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -535,6 +510,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

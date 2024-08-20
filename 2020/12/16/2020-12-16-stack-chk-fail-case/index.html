@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="问题描述进程收到SIGABRT信号异常退出，异常调用栈显示__stack_chk_fail 原因分析和定位思路原因分析： __stack_chk_fail说明发生了缓冲区溢出，canary被破坏。这说明代码设置GCC编译选项fstack-protector，开启了栈保护机制canary 定位思路：">
@@ -295,7 +295,7 @@
 <p><code>0x00007ffff7fca120 &lt;+11&gt;: mov  %fs:0x28,%rax</code>：其中指令参数<code>$fs:0x28</code>说明<code>canary</code><strong>通过段寻址从内存中读入。canary值存放在一个特殊的段中，标志为只读，这样攻击者就无法覆盖canary的值。</strong></p>
 <p><code>0x00007ffff7fca129 &lt;+20&gt;: mov %rax,-0x8(%rbp)</code>：说明canary在栈上存放地址是<code>$rbp - 0x8</code>。</p>
 <p>根据x86_64过程调用的函数参数传递规则，可确定栈上所有局部变量和<code>canary</code>是如何存放的。<code>func1</code>的栈组织如下：</p>
-<p><img src="/2020/12/16/2020-12-16-stack-chk-fail-case/image1.png"></p>
+<p><img data-src="/2020/12/16/2020-12-16-stack-chk-fail-case/image1.png"></p>
 <h4 id="2-用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令"><a href="#2-用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令" class="headerlink" title="2. 用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令"></a>2. 用GDB对<code>canary</code>的存放地址打数据断点，定位出导致栈破坏的指令</h4><p>对<code>func1</code>打断点，重新执行程序，接着用<code>watch</code>命令，对<code>canary</code>的存放地址打数据断点，操作如下：</p>
 <figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">(gdb) disassemble</span><br><span class="line">Dump of assembler code for function func1:</span><br><span class="line">   0x00007ffff7fca115 &lt;+0&gt;:     push   %rbp</span><br><span class="line">   0x00007ffff7fca116 &lt;+1&gt;:     mov    %rsp,%rbp</span><br><span class="line">   0x00007ffff7fca119 &lt;+4&gt;:     sub    $0x90,%rsp</span><br><span class="line">   0x00007ffff7fca120 &lt;+11&gt;:    mov    %fs:0x28,%rax</span><br><span class="line">   0x00007ffff7fca129 &lt;+20&gt;:    mov    %rax,-0x8(%rbp)</span><br><span class="line">=&gt; 0x00007ffff7fca12d &lt;+24&gt;:    xor    %eax,%eax</span><br><span class="line">   0x00007ffff7fca12f &lt;+26&gt;:    lea    -0x80(%rbp),%rdx</span><br><span class="line">   ......</span><br><span class="line">End of assembler dump.</span><br><span class="line">(gdb) p $rbp - 0x8</span><br><span class="line">$8 = (void *) 0x7fffffffe4a8</span><br><span class="line">(gdb) watch *0x7fffffffe4a8							# 此处对canary在栈中存放的地址打数据断点！</span><br><span class="line">Hardware watchpoint 2: *0x7fffffffe4a8</span><br><span class="line">(gdb) c</span><br><span class="line">Continuing.</span><br><span class="line"></span><br><span class="line">Hardware watchpoint 2: *0x7fffffffe4a8</span><br><span class="line">Old value = 1303192064</span><br><span class="line">New value = 1</span><br><span class="line"></span><br><span class="line">(gdb) disassemble</span><br><span class="line">Dump of assembler code for function func2:</span><br><span class="line">   0x00007ffff7fc50f5 &lt;+0&gt;:     push   %rbp</span><br><span class="line">   0x00007ffff7fc50f6 &lt;+1&gt;:     mov    %rsp,%rbp</span><br><span class="line">   0x00007ffff7fc50f9 &lt;+4&gt;:     mov    %rdi,-0x8(%rbp)     # 第一个入参，lua_Debug *a</span><br><span class="line">   0x00007ffff7fc50fd &lt;+8&gt;:     mov    %rsi,-0x10(%rbp)</span><br><span class="line">   0x00007ffff7fc5101 &lt;+12&gt;:    mov    %edx,-0x14(%rbp)</span><br><span class="line">   0x00007ffff7fc5104 &lt;+15&gt;:    mov    -0x8(%rbp),%rax	   # 第一个入参，lua_Debug *a</span><br><span class="line">   0x00007ffff7fc5108 &lt;+19&gt;:    movq   $0x1,0x78(%rax)     # comp2.c/func2(): a-&gt;i_ci = 1; 这句导致canary被破坏</span><br><span class="line">=&gt; 0x00007ffff7fc5110 &lt;+27&gt;:    nop 	# 箭头指向的指令表示下一步即将执行的指令，也就是说是上一条指令movq $0x1,0x78(%rax)触发的数据断点!</span><br><span class="line">   0x00007ffff7fc5111 &lt;+28&gt;:    pop    %rbp</span><br><span class="line">   0x00007ffff7fc5112 &lt;+29&gt;:    retq</span><br><span class="line">End of assembler dump.</span><br></pre></td></tr></table></figure>
 
@@ -306,7 +306,7 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">(gdb) f 1</span><br><span class="line">#1  0x00007ffff7fca174 in func1 () at /home/pc/LUA/comp1/comp1.c:11</span><br><span class="line">11          func2(&amp;a, b, c);</span><br><span class="line">(gdb) p sizeof(struct lua_Debug)</span><br><span class="line">$24 = 120							# func1中结构体大小为120</span><br><span class="line">(gdb) f 0</span><br><span class="line">#0  func2 (a=0x7fffffffe430, b=0x12345678 &lt;error: Cannot access memory at address 0x12345678&gt;, c=-1) at /home/pc/LUA/comp2/comp2.c:5</span><br><span class="line">5           return;</span><br><span class="line">(gdb) p sizeof(struct lua_Debug)</span><br><span class="line">$27 = 128							# func2中结构体大小为128</span><br></pre></td></tr></table></figure>
 
 <p><code>lua_Debug</code>结构体在<code>lua.h</code>定义的，这个错误原因是<strong>由于两个.so编译使用的lua.h头文件不一致，导致栈溢出问题。</strong>以下分别给出两个.so的<code>lua.h</code>：</p>
-<p><img src="/2020/12/16/2020-12-16-stack-chk-fail-case/image2.png"></p>
+<p><img data-src="/2020/12/16/2020-12-16-stack-chk-fail-case/image2.png"></p>
 <p>根据64位<strong>结构体对齐规则</strong>，左边结构体大小为120，右边结构体大小为128，多出的这8个字节恰好覆盖了<code>canary</code>，导致栈溢出。</p>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
 <li><p>公司的C代码中，多个.so会依赖相同的开源头文件，如果不能保证每个.so各自依赖的头文件版本一致，就可能出现上述的栈溢出问题。</p>
@@ -470,6 +470,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -516,39 +521,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -563,6 +538,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 

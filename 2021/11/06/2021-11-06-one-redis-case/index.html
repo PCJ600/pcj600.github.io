@@ -19,7 +19,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="问题描述业务背景： 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。 问题： 仿真设备启动中，概率出现Redis的某个字符串键被不符合预期地改写成空串，导致客户端Docker从Redis获取的数据有问题。需要定位是哪个Docker上的哪个进程改写了Redis数据库。">
@@ -284,11 +284,11 @@
 </ul>
 <h2 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h2><p>利用tcpdump，在Redis服务端后台抓取对这个字符串键做set操作的报文，再根据报文中的IP和端口号确认进程即可。</p>
 <p>如下图所示，使用命令<code>tcpdump -i any port 6379 | grep set | grep [key]</code> ，得到客户端IP是localhost,端口号是44880。 </p>
-<p><img src="/2021/11/06/2021-11-06-one-redis-case/image1.png"></p>
-<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image2.png"></p>
+<p><img data-src="/2021/11/06/2021-11-06-one-redis-case/image1.png"></p>
+<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img data-src="/2021/11/06/2021-11-06-one-redis-case/image2.png"></p>
 <h4 id="思考："><a href="#思考：" class="headerlink" title="思考："></a>思考：</h4><p>如果我只需要抓取将某个特定字符串键（比如”hello”）写成<strong>某个特定值</strong>（比如写成空串）的报文，怎么做？</p>
 <p>除了<code>grep</code>，下面再给出一种方法，利用<strong>tcpdump的根据报文特征过滤</strong>的技巧：</p>
-<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image3.png"></p>
+<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img data-src="/2021/11/06/2021-11-06-one-redis-case/image3.png"></p>
 <p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
 
@@ -299,7 +299,7 @@
 <li>第一个 $5 表示字符串 “hello” 的长度。</li>
 <li>第二个 $5 表示字符串 “world” 的长度。</li>
 </ul>
-<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img src="/2021/11/06/2021-11-06-one-redis-case/image4.png"></p>
+<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img data-src="/2021/11/06/2021-11-06-one-redis-case/image4.png"></p>
 <h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener" href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
 <p>【2】<a target="_blank" rel="noopener" href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
 
@@ -457,6 +457,11 @@
       </div>
   </nav>
 </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
 
 
 
@@ -503,39 +508,9 @@
   </div>
 -->
 
-<div class="powered-by">
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <i class="fa fa-user-md"></i>
-    <span id="busuanzi_container_site_uv">
-        本站访客数:<span id="busuanzi_value_site_uv"></span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span id="busuanzi_container_site_pv">
-        本站访问量<span id="busuanzi_value_site_pv"></span>
-    </span>
-</div>
-
         
-<div class="busuanzi-count">
-  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-user"></i>
-      </span>
-      <span class="site-uv" title="总访客量">
-        <span id="busuanzi_value_site_uv"></span>
-      </span>
-    </span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
-      <span class="post-meta-item-icon">
-        <i class="fa fa-eye"></i>
-      </span>
-      <span class="site-pv" title="总访问量">
-        <span id="busuanzi_value_site_pv"></span>
-      </span>
-    </span>
-</div>
+  <script async src="/js/busuanzi.js"></script>
+
 
 
 
@@ -550,6 +525,7 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 
