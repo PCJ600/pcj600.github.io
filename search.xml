@@ -78,41 +78,6 @@
       </tags>
   </entry>
   <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>隐式函数声明[-Wimplicit-function-declaration]</title>
     <url>/2020/04/11/2020-04-11-what-is-implicit-function-declaration/</url>
     <content><![CDATA[<h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
@@ -391,6 +356,24 @@
       </tags>
   </entry>
   <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>CSAPP 二进制炸弹实验</title>
     <url>/2020/07/26/2020-07-26-csapp-bomblab/</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>二进制炸弹是一个作为目标代码提供的程序。运行时提示用户输入6个不同的字符串，如其中一个字符串不正确，炸弹会引爆并打印一条错误信息。需要通过反汇编确定输入的6个字符串，从而拆除炸弹。</p>
@@ -642,24 +625,6 @@
       <tags>
         <tag>Assembly</tag>
         <tag>CSAPP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -1286,8 +1251,8 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-        <tag>troubleshooting</tag>
         <tag>C</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -1504,8 +1469,8 @@
         <category>troubleshooting</category>
       </categories>
       <tags>
-        <tag>troubleshooting</tag>
         <tag>GDB</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -2371,6 +2336,41 @@
       </tags>
   </entry>
   <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>C</tag>
+        <tag>troubleshooting</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis抓包分析案例</title>
     <url>/2021/11/06/2021-11-06-one-redis-case/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
@@ -2410,8 +2410,8 @@
         <category>Redis</category>
       </categories>
       <tags>
-        <tag>troubleshooting</tag>
         <tag>Redis</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -2573,76 +2573,8 @@
         <category>Assembly</category>
       </categories>
       <tags>
-        <tag>troubleshooting</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>如何查看Redis订阅的模式字符串</title>
-    <url>/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><code>pubsub channels</code>可以查看Redis中被订阅的频道(<strong>channel</strong>)：</p>
-<span id="more"></span>
-<p><img src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image1.png"></p>
-<p><code>pubsub numpat</code>可以查看被订阅的模式(<strong>pattern</strong>)数量：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># redis-cli pubsub numpat</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
-
-<p><strong>问题：</strong></p>
-<p>除了查看被订阅模式的数量，我还需要<font color = 'red'><strong>获取每个订阅模式字符串的内容</strong></font>，怎么做 ?</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>google没搜到现成的命令，决定自己修改<code>redis-server</code>源码，打印模式链表的内容，用时3~5分钟，需要了解：</p>
-<ul>
-<li><p>Redis源码编译方法，参考<a href="https://github.com/redis/redis">官网</a>或本人的<a href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
-</li>
-<li><p>Redis服务器将所有模式的订阅信息保存在服务器状态的<code>pubsub_patterns</code>链表中。</p>
-</li>
-</ul>
-<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// pubsub.c</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">myPubsubPatternsPrint</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">list</span> *l = server.pubsub_patterns;</span><br><span class="line">    listNode *cur = l-&gt;head;</span><br><span class="line">    serverLog(LL_NOTICE, <span class="string">&quot;[DEBUG] ALL PUBSUB PATTERNS: &quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        pubsubPattern *pp = (pubsubPattern *)(cur-&gt;value);</span><br><span class="line">        robj *obj = pp-&gt;pattern;</span><br><span class="line">        <span class="type">char</span> *pattern = (<span class="type">char</span> *)obj-&gt;ptr;</span><br><span class="line">        serverLog(LL_NOTICE, <span class="string">&quot;%s&quot;</span>, pattern);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>2、重新编译并安装redis-server，后台gdb call一下自定义的打印函数<code>myPubsubPatternsPrint</code>得到模式链表的内容，如下图所示：<br><img src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image2.png"></p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第18章 发布与订阅</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hiredis查询失败时出现key丢失问题定位</title>
-    <url>/2021/11/30/2021-11-30-redis-key-expired-case/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>hiredis查询key失败后，出现key丢失的问题。</p>
-<p>REDIS版本及源码：<a href="https://github.com/redis/redis/releases/tag/6.0.10">6.0.10</a></p>
-<p>hiredis版本及源码：<a href="https://github.com/redis/hiredis/releases/tag/v1.0.2">v1.0.2</a></p>
-<span id="more"></span>
-
-<p><strong>案例描述：</strong></p>
-<p>REDIS中预先写入1个字符串键”hello”，客户端代码基于hiredis，创建100个读线程和100个写线程，每个线程里发起一次短连接读写key，代码参考：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;hiredis/hiredis.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SERV_IP <span class="string">&quot;127.0.0.1&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SERV_PORT 6379</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NUM_READER 100</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NUM_WRITER 100</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">int</span> OK = <span class="number">0</span>;</span><br><span class="line"><span class="type">pthread_mutex_t</span> mutex = PTHREAD_MUTEX_INITIALIZER;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">DBGetString</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *key, <span class="type">char</span> *value)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">tv</span>;</span></span><br><span class="line">    tv.tv_sec = <span class="number">5</span>; tv.tv_usec = <span class="number">0</span>;</span><br><span class="line">    redisContext *c = redisConnectWithTimeout(SERV_IP, SERV_PORT, tv);</span><br><span class="line">    assert(c != <span class="literal">NULL</span> &amp;&amp; !c-&gt;err);</span><br><span class="line"></span><br><span class="line">    <span class="type">char</span> cmd[<span class="number">256</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(cmd, <span class="string">&quot;GET %s&quot;</span>, key);</span><br><span class="line">    redisReply *reply = (redisReply *)redisCommand(c, cmd);</span><br><span class="line">    assert(reply-&gt;str != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">strcpy</span>(value, reply-&gt;str);</span><br><span class="line">    freeReplyObject(reply);</span><br><span class="line">    redisFree(c);</span><br><span class="line">    <span class="keyword">return</span> OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">DBSetString</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *key, <span class="type">const</span> <span class="type">char</span> *value)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">tv</span>;</span></span><br><span class="line">    tv.tv_sec = <span class="number">5</span>; tv.tv_usec = <span class="number">0</span>;</span><br><span class="line">    redisContext *c = redisConnectWithTimeout(SERV_IP, SERV_PORT, tv);</span><br><span class="line">    assert(c != <span class="literal">NULL</span> &amp;&amp; !c-&gt;err);</span><br><span class="line"></span><br><span class="line">    <span class="type">char</span> cmd[<span class="number">256</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(cmd, <span class="string">&quot;SET %s %s&quot;</span>, key, value);</span><br><span class="line">    redisReply *reply = (redisReply *)redisCommand(c, cmd);</span><br><span class="line">    freeReplyObject(reply);</span><br><span class="line">    redisFree(c);</span><br><span class="line">    <span class="keyword">return</span> OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> *<span class="title function_">Reader</span><span class="params">(<span class="type">void</span> *args)</span> &#123;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">256</span>];</span><br><span class="line">    DBGetString(<span class="string">&quot;hello&quot;</span>, buf);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%s\n&quot;</span>, buf);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> *<span class="title function_">Writer</span><span class="params">(<span class="type">void</span> *args)</span> &#123;</span><br><span class="line">    DBSetString(<span class="string">&quot;hello&quot;</span>, <span class="string">&quot;world&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">testcase</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">time_t</span> t1 = time(<span class="literal">NULL</span>);</span><br><span class="line">    <span class="type">pthread_t</span> wid[NUM_WRITER];</span><br><span class="line">    <span class="type">pthread_t</span> rid[NUM_READER];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_WRITER; ++i) &#123;</span><br><span class="line">        pthread_create(&amp;wid[i], <span class="literal">NULL</span>, Writer, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_READER; ++i) &#123;</span><br><span class="line">        pthread_create(&amp;rid[i], <span class="literal">NULL</span>, Reader, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_WRITER; ++i) &#123;</span><br><span class="line">        pthread_join(wid[i], <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_READER; ++i) &#123;</span><br><span class="line">        pthread_join(rid[i], <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">time_t</span> t2 = time(<span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%ld s\n&quot;</span>, t2 - t1);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    testcase();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h3><p>Redis key丢失一般有如下原因：</p>
-<ul>
-<li>key被客户端删除。</li>
-<li>key是过期键，到期自动删除。</li>
-<li>因为内存不足导致key被逐出。</li>
-</ul>
-<p>本案例中的客户端只有get,set，没有删除操作，未设置键的过期时间，且机器内存也足够（4G以上）。初步分析不出原因，只能结合REDIS源码正向定位，于是有了第二种思路：</p>
-<p><em><strong>REDIS是基于内存的数据库，字符串键肯定在REDIS-SERVER进程中的某个内存地址处，key丢失时这个地址的内容肯定被改写，这时只需要GDB打个数据断点，看下调用栈即可分析原因。</strong></em></p>
-<p>以下给出详细的定位过程。</p>
-<h3 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h3><p>1、使用GCC的-g -O0编译选项，重新编译redis-server, hiredis源代码。（这一步非必要，目的是更方便调试）</p>
-<p>2、GDB打数据断点<br><img src="/2021/11/30/2021-11-30-redis-key-expired-case/image1.png"></p>
-<p>3、断点触发，观察调用栈<br><img src="/2021/11/30/2021-11-30-redis-key-expired-case/image2.png"></p>
-<p>观察第5帧，<code>freeMemoryIfNeeded</code>，说明触发了REDIS的内存淘汰机制，GDB打印出的REDIS配置项<code>maxmemory</code>仅为1048576字节(表示内存大小为1M)，且内存淘汰机制为<code>allkeys-lru</code>，这个机制会导致key被回收。</p>
-<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>修改redis配置项maxmemory，内存给多点。（这里给1073741824，表示1G内存）</p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
         <tag>troubleshooting</tag>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -3001,6 +2933,74 @@
       </categories>
       <tags>
         <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何查看Redis订阅的模式字符串</title>
+    <url>/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><code>pubsub channels</code>可以查看Redis中被订阅的频道(<strong>channel</strong>)：</p>
+<span id="more"></span>
+<p><img src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image1.png"></p>
+<p><code>pubsub numpat</code>可以查看被订阅的模式(<strong>pattern</strong>)数量：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># redis-cli pubsub numpat</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题：</strong></p>
+<p>除了查看被订阅模式的数量，我还需要<font color = 'red'><strong>获取每个订阅模式字符串的内容</strong></font>，怎么做 ?</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>google没搜到现成的命令，决定自己修改<code>redis-server</code>源码，打印模式链表的内容，用时3~5分钟，需要了解：</p>
+<ul>
+<li><p>Redis源码编译方法，参考<a href="https://github.com/redis/redis">官网</a>或本人的<a href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
+</li>
+<li><p>Redis服务器将所有模式的订阅信息保存在服务器状态的<code>pubsub_patterns</code>链表中。</p>
+</li>
+</ul>
+<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// pubsub.c</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">myPubsubPatternsPrint</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">list</span> *l = server.pubsub_patterns;</span><br><span class="line">    listNode *cur = l-&gt;head;</span><br><span class="line">    serverLog(LL_NOTICE, <span class="string">&quot;[DEBUG] ALL PUBSUB PATTERNS: &quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        pubsubPattern *pp = (pubsubPattern *)(cur-&gt;value);</span><br><span class="line">        robj *obj = pp-&gt;pattern;</span><br><span class="line">        <span class="type">char</span> *pattern = (<span class="type">char</span> *)obj-&gt;ptr;</span><br><span class="line">        serverLog(LL_NOTICE, <span class="string">&quot;%s&quot;</span>, pattern);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2、重新编译并安装redis-server，后台gdb call一下自定义的打印函数<code>myPubsubPatternsPrint</code>得到模式链表的内容，如下图所示：<br><img src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image2.png"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第18章 发布与订阅</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hiredis查询失败时出现key丢失问题定位</title>
+    <url>/2021/11/30/2021-11-30-redis-key-expired-case/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>hiredis查询key失败后，出现key丢失的问题。</p>
+<p>REDIS版本及源码：<a href="https://github.com/redis/redis/releases/tag/6.0.10">6.0.10</a></p>
+<p>hiredis版本及源码：<a href="https://github.com/redis/hiredis/releases/tag/v1.0.2">v1.0.2</a></p>
+<span id="more"></span>
+
+<p><strong>案例描述：</strong></p>
+<p>REDIS中预先写入1个字符串键”hello”，客户端代码基于hiredis，创建100个读线程和100个写线程，每个线程里发起一次短连接读写key，代码参考：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;assert.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;time.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;hiredis/hiredis.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pthread.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SERV_IP <span class="string">&quot;127.0.0.1&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SERV_PORT 6379</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NUM_READER 100</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NUM_WRITER 100</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> <span class="type">int</span> OK = <span class="number">0</span>;</span><br><span class="line"><span class="type">pthread_mutex_t</span> mutex = PTHREAD_MUTEX_INITIALIZER;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">DBGetString</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *key, <span class="type">char</span> *value)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">tv</span>;</span></span><br><span class="line">    tv.tv_sec = <span class="number">5</span>; tv.tv_usec = <span class="number">0</span>;</span><br><span class="line">    redisContext *c = redisConnectWithTimeout(SERV_IP, SERV_PORT, tv);</span><br><span class="line">    assert(c != <span class="literal">NULL</span> &amp;&amp; !c-&gt;err);</span><br><span class="line"></span><br><span class="line">    <span class="type">char</span> cmd[<span class="number">256</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(cmd, <span class="string">&quot;GET %s&quot;</span>, key);</span><br><span class="line">    redisReply *reply = (redisReply *)redisCommand(c, cmd);</span><br><span class="line">    assert(reply-&gt;str != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">strcpy</span>(value, reply-&gt;str);</span><br><span class="line">    freeReplyObject(reply);</span><br><span class="line">    redisFree(c);</span><br><span class="line">    <span class="keyword">return</span> OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">DBSetString</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *key, <span class="type">const</span> <span class="type">char</span> *value)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">timeval</span> <span class="title">tv</span>;</span></span><br><span class="line">    tv.tv_sec = <span class="number">5</span>; tv.tv_usec = <span class="number">0</span>;</span><br><span class="line">    redisContext *c = redisConnectWithTimeout(SERV_IP, SERV_PORT, tv);</span><br><span class="line">    assert(c != <span class="literal">NULL</span> &amp;&amp; !c-&gt;err);</span><br><span class="line"></span><br><span class="line">    <span class="type">char</span> cmd[<span class="number">256</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(cmd, <span class="string">&quot;SET %s %s&quot;</span>, key, value);</span><br><span class="line">    redisReply *reply = (redisReply *)redisCommand(c, cmd);</span><br><span class="line">    freeReplyObject(reply);</span><br><span class="line">    redisFree(c);</span><br><span class="line">    <span class="keyword">return</span> OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> *<span class="title function_">Reader</span><span class="params">(<span class="type">void</span> *args)</span> &#123;</span><br><span class="line">    <span class="type">char</span> buf[<span class="number">256</span>];</span><br><span class="line">    DBGetString(<span class="string">&quot;hello&quot;</span>, buf);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%s\n&quot;</span>, buf);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> *<span class="title function_">Writer</span><span class="params">(<span class="type">void</span> *args)</span> &#123;</span><br><span class="line">    DBSetString(<span class="string">&quot;hello&quot;</span>, <span class="string">&quot;world&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">testcase</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">time_t</span> t1 = time(<span class="literal">NULL</span>);</span><br><span class="line">    <span class="type">pthread_t</span> wid[NUM_WRITER];</span><br><span class="line">    <span class="type">pthread_t</span> rid[NUM_READER];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_WRITER; ++i) &#123;</span><br><span class="line">        pthread_create(&amp;wid[i], <span class="literal">NULL</span>, Writer, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_READER; ++i) &#123;</span><br><span class="line">        pthread_create(&amp;rid[i], <span class="literal">NULL</span>, Reader, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_WRITER; ++i) &#123;</span><br><span class="line">        pthread_join(wid[i], <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; NUM_READER; ++i) &#123;</span><br><span class="line">        pthread_join(rid[i], <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">time_t</span> t2 = time(<span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%ld s\n&quot;</span>, t2 - t1);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    testcase();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h3><p>Redis key丢失一般有如下原因：</p>
+<ul>
+<li>key被客户端删除。</li>
+<li>key是过期键，到期自动删除。</li>
+<li>因为内存不足导致key被逐出。</li>
+</ul>
+<p>本案例中的客户端只有get,set，没有删除操作，未设置键的过期时间，且机器内存也足够（4G以上）。初步分析不出原因，只能结合REDIS源码正向定位，于是有了第二种思路：</p>
+<p><em><strong>REDIS是基于内存的数据库，字符串键肯定在REDIS-SERVER进程中的某个内存地址处，key丢失时这个地址的内容肯定被改写，这时只需要GDB打个数据断点，看下调用栈即可分析原因。</strong></em></p>
+<p>以下给出详细的定位过程。</p>
+<h3 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h3><p>1、使用GCC的-g -O0编译选项，重新编译redis-server, hiredis源代码。（这一步非必要，目的是更方便调试）</p>
+<p>2、GDB打数据断点<br><img src="/2021/11/30/2021-11-30-redis-key-expired-case/image1.png"></p>
+<p>3、断点触发，观察调用栈<br><img src="/2021/11/30/2021-11-30-redis-key-expired-case/image2.png"></p>
+<p>观察第5帧，<code>freeMemoryIfNeeded</code>，说明触发了REDIS的内存淘汰机制，GDB打印出的REDIS配置项<code>maxmemory</code>仅为1048576字节(表示内存大小为1M)，且内存淘汰机制为<code>allkeys-lru</code>，这个机制会导致key被回收。</p>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>修改redis配置项maxmemory，内存给多点。（这里给1073741824，表示1G内存）</p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -3705,6 +3705,147 @@
       </tags>
   </entry>
   <entry>
+    <title>2022 Trend Micro 社招面经</title>
+    <url>/2022/03/20/2022-03-20-trendmicro-job-interview/</url>
+    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
+<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
+<li>2022-02-25 官网投递简历，职位：Linux开发</li>
+</ul>
+<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
+
+<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
+<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
+<ul>
+<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
+</li>
+<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
+</li>
+</ul>
+<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
+<p>线上面试，用的微软Teams，二对一，80min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>问项目（30min）</p>
+<ul>
+<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
+<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
+<li>举一个项目中你遇到的难题，如何解决的</li>
+<li>你的项目中为什么用Redis，不用MySQL</li>
+<li>……</li>
+</ul>
+</li>
+<li><p>1道编程题 （15min）</p>
+<ul>
+<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
+</ul>
+</li>
+<li><p>技术问题（25min）</p>
+<ul>
+<li>给每个中国人分一个IP地址，够分吗</li>
+<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
+<li>后台服务变慢，谈谈你的定位思路</li>
+<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
+<li>Redis过期键的实现原理，过期时间怎么存储的</li>
+<li>Redis缓存逐出策略</li>
+<li>全中国人的数据能放到一张MySQL表里吗</li>
+<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
+<li>Linux下如何定时备份一个文件</li>
+</ul>
+</li>
+<li><p>其它问题（10min）</p>
+<ul>
+<li>同事对你的评价</li>
+<li>你的缺点是什么</li>
+<li>同事觉得你有什么阴暗面</li>
+<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
+</ul>
+</li>
+</ul>
+<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
+<p>现场面试，二对一，50min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>简单问项目（10min）</p>
+</li>
+<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
+</li>
+<li><p>你在项目组里还负责了哪些项目和工作</p>
+</li>
+<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
+</li>
+<li><p>你平时用到的开发工具和编程语言</p>
+</li>
+<li><p>说下你的团队成员组成</p>
+</li>
+<li><p>说说你最近在看的书</p>
+</li>
+<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
+<ul>
+<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
+</ul>
+</li>
+<li><p>项目中遇到别人不配合你的工作怎么办</p>
+</li>
+<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
+</li>
+<li><p>评价你同事的水平</p>
+</li>
+<li><p>有没有感觉有技术能力比较弱的同事</p>
+</li>
+<li><p>你还有什么问题（问团队成员组成）</p>
+</li>
+</ul>
+<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
+<p>现场面试，一对一，30min</p>
+<ul>
+<li><p>自我介绍</p>
+</li>
+<li><p>为什么选择我们公司，选择这个职位</p>
+</li>
+<li><p>你为什么离职</p>
+</li>
+<li><p>你当初考虑XX公司的原因是什么</p>
+</li>
+<li><p>你有考虑过内部转岗吗</p>
+</li>
+<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
+</li>
+<li><p>你同事对你的评价</p>
+</li>
+<li><p>说说你的优点</p>
+</li>
+<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
+</li>
+</ul>
+<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
+<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
+<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
+<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
+<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
+<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
+<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
+<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
+<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
+<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
+<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
+<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
+<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
+<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
+<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
+<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/01/29/2022-01-29-redis-pubsub-study/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -3981,147 +4122,6 @@
       </tags>
   </entry>
   <entry>
-    <title>2022 Trend Micro 社招面经</title>
-    <url>/2022/03/20/2022-03-20-trendmicro-job-interview/</url>
-    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
-<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
-<li>2022-02-25 官网投递简历，职位：Linux开发</li>
-</ul>
-<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
-
-<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
-<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
-<ul>
-<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
-</li>
-<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
-</li>
-</ul>
-<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
-<p>线上面试，用的微软Teams，二对一，80min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>问项目（30min）</p>
-<ul>
-<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
-<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
-<li>举一个项目中你遇到的难题，如何解决的</li>
-<li>你的项目中为什么用Redis，不用MySQL</li>
-<li>……</li>
-</ul>
-</li>
-<li><p>1道编程题 （15min）</p>
-<ul>
-<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
-</ul>
-</li>
-<li><p>技术问题（25min）</p>
-<ul>
-<li>给每个中国人分一个IP地址，够分吗</li>
-<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
-<li>后台服务变慢，谈谈你的定位思路</li>
-<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
-<li>Redis过期键的实现原理，过期时间怎么存储的</li>
-<li>Redis缓存逐出策略</li>
-<li>全中国人的数据能放到一张MySQL表里吗</li>
-<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
-<li>Linux下如何定时备份一个文件</li>
-</ul>
-</li>
-<li><p>其它问题（10min）</p>
-<ul>
-<li>同事对你的评价</li>
-<li>你的缺点是什么</li>
-<li>同事觉得你有什么阴暗面</li>
-<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
-</ul>
-</li>
-</ul>
-<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
-<p>现场面试，二对一，50min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>简单问项目（10min）</p>
-</li>
-<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
-</li>
-<li><p>你在项目组里还负责了哪些项目和工作</p>
-</li>
-<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
-</li>
-<li><p>你平时用到的开发工具和编程语言</p>
-</li>
-<li><p>说下你的团队成员组成</p>
-</li>
-<li><p>说说你最近在看的书</p>
-</li>
-<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
-<ul>
-<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
-</ul>
-</li>
-<li><p>项目中遇到别人不配合你的工作怎么办</p>
-</li>
-<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
-</li>
-<li><p>评价你同事的水平</p>
-</li>
-<li><p>有没有感觉有技术能力比较弱的同事</p>
-</li>
-<li><p>你还有什么问题（问团队成员组成）</p>
-</li>
-</ul>
-<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
-<p>现场面试，一对一，30min</p>
-<ul>
-<li><p>自我介绍</p>
-</li>
-<li><p>为什么选择我们公司，选择这个职位</p>
-</li>
-<li><p>你为什么离职</p>
-</li>
-<li><p>你当初考虑XX公司的原因是什么</p>
-</li>
-<li><p>你有考虑过内部转岗吗</p>
-</li>
-<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
-</li>
-<li><p>你同事对你的评价</p>
-</li>
-<li><p>说说你的优点</p>
-</li>
-<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
-</li>
-</ul>
-<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
-<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
-<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
-<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
-<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
-<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
-<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
-<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
-<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
-<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
-<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
-<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
-<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
-<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
-<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
-<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>k8s删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/11/16/2022-11-06-k8s-delete-ns-failed-case/</url>
     <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>强制删除deployment和pod后，问题解决：</p>
@@ -4145,25 +4145,6 @@
       </categories>
       <tags>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
-    <url>/2023/02/01/2023-02-01-rpm-build-use-python3/</url>
-    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -4239,17 +4220,36 @@
       </tags>
   </entry>
   <entry>
-    <title>如何查看Microk8s的apiserver证书过期时间</title>
-    <url>/2023/03/30/2023-03-30-how-to-lookup-apiserver-cert-expired-time-in-microk8s/</url>
+    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
+    <url>/2023/02/01/2023-02-01-rpm-build-use-python3/</url>
+    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何在Centos7上安装Microk8s</title>
+    <url>/2023/03/31/2023-03-31-how-to-install-microk8s-on-centos7/</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
 <li><p>安装snap</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
 </li>
 <li><p>安装microk8s</p>
 </li>
 </ol>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic --channel=1.23/stable</span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
 
 <ol start="3">
 <li>安装microk8s插件(addons)<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure></li>
@@ -4290,17 +4290,17 @@
       </tags>
   </entry>
   <entry>
-    <title>如何在Centos7上安装Microk8s</title>
-    <url>/2023/03/31/2023-03-31-how-to-install-microk8s-on-centos7/</url>
+    <title>如何查看Microk8s的apiserver证书过期时间</title>
+    <url>/2023/03/30/2023-03-30-how-to-lookup-apiserver-cert-expired-time-in-microk8s/</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
 <li><p>安装snap</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
 </li>
 <li><p>安装microk8s</p>
 </li>
 </ol>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic --channel=1.23/stable</span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
 
 <ol start="3">
 <li>安装microk8s插件(addons)<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure></li>
@@ -4376,6 +4376,24 @@
       </tags>
   </entry>
   <entry>
+    <title>crontab执行失败返回127的原因和解决方法</title>
+    <url>/2023/05/08/2023-05-08-cronjob-return-127-case/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>crontab</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>pip3只下载不安装以及离线安装的方法</title>
     <url>/2023/05/08/2023-05-08-how-to-download-only-with-pip3/</url>
     <content><![CDATA[<h3 id="只下载不安装"><a href="#只下载不安装" class="headerlink" title="只下载不安装"></a>只下载不安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
@@ -4393,24 +4411,6 @@
       </categories>
       <tags>
         <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>crontab执行失败返回127的原因和解决方法</title>
-    <url>/2023/05/08/2023-05-08-cronjob-return-127-case/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>crontab</tag>
       </tags>
   </entry>
   <entry>
@@ -4569,23 +4569,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Windows上通过git bash执行python卡住的解决方法</title>
-    <url>/2023/06/26/2023-06-26-win-git-bash-fail-due-to-python/</url>
-    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img src="/2023/06/26/2023-06-26-win-git-bash-fail-due-to-python/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
-<span id="more"></span>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
-        <tag>Win</tag>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>pip基础用法示例</title>
     <url>/2023/05/25/2023-05-25-pip-basic-usage/</url>
     <content><![CDATA[<h2 id="配置国内源"><a href="#配置国内源" class="headerlink" title="配置国内源"></a>配置国内源</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[global]</span><br><span class="line">index-url = https://pypi.tuna.tsinghua.edu.cn/simple</span><br><span class="line">[install]</span><br><span class="line">trusted-host = https://pypi.tuna.tsinghua.edu.cn</span><br></pre></td></tr></table></figure>
@@ -4617,6 +4600,23 @@
         <category>Python</category>
       </categories>
       <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Windows上通过git bash执行python卡住的解决方法</title>
+    <url>/2023/06/26/2023-06-26-win-git-bash-fail-due-to-python/</url>
+    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img src="/2023/06/26/2023-06-26-win-git-bash-fail-due-to-python/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
+<span id="more"></span>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+        <tag>Win</tag>
         <tag>Python</tag>
       </tags>
   </entry>
@@ -5491,6 +5491,52 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>如何自定义Squid日志格式, 添加请求方法等参数</title>
+    <url>/2024/03/21/2024-03-21-how-to-modify-squid-logformat/</url>
+    <content><![CDATA[<p>查<a href="http://www.squid-cache.org/Doc/config/logformat/">Squid手册</a>，找到你需要添加的参数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Field name syntax keys:</span><br><span class="line">	...</span><br><span class="line">	%rm</span><br><span class="line">	Request method</span><br><span class="line">	%ru</span><br><span class="line">	Request URL, without the query string</span><br><span class="line">	...</span><br></pre></td></tr></table></figure>
+
+<p>修改Squid配置文件<code>/etc/squid/squid.conf</code>，在<code>logformat</code>开头的这一行中添加<code>%rm %ru</code>参数，如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">logformat customized  %tl %ts %6tr %&gt;a %Ss %03&gt;Hs %&gt;st %&lt;st %[un %Sh %&lt;A %mt <span class="string">&quot;%&#123;User-Agent&#125;&gt;h&quot;</span> %03&lt;Hs <span class="string">&quot;%rm %ru HTTP/%rv&quot;</span> %err_code</span><br><span class="line">access_log  /var/log/squid/access.log customized</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>重启Squid, 查看<code>access.log</code>, 发现日志格式已成功修改<br><img src="/2024/03/21/2024-03-21-how-to-modify-squid-logformat/image1.png"></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="http://www.squid-cache.org/Doc/config/logformat/">http://www.squid-cache.org/Doc/config/logformat/</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>标普500LOF又来送钱，一拖七拖拉机开起来！</title>
+    <url>/2024/03/22/2024-03-22-sp500-lof-give-money/</url>
+    <content><![CDATA[<p>标普500LOF(161125)公告，3月22日开放申购，限额申购100元，溢价率达到了离谱的40%！！！为了平抑这不合理的溢价，我决定用一拖七拖拉机狠狠拖它一把！</p>
+<span id="more"></span>
+<p><img src="/2024/03/22/2024-03-22-sp500-lof-give-money/image1.png"><br><strong>一拖七的注意事项：</strong></p>
+<ul>
+<li>标普500LOF属于深市基金，一个身份证可以使用3个深A账户+3个深基金账户+1个场外账户进行一拖七申购，这样每天可以申购100*7&#x3D;700元，收益放大七倍，多个身份证可以继续放大收益。</li>
+<li>T日(3月22日)申购的份额，在T+2日(3月26日)晚上到达持仓, 在T+3日(3月27日)早盘可以卖出。</li>
+<li>必须记住T日的操作是场内申购，千万别点错点成在场内买入！</li>
+<li>你需要有场内申购费1折+没有最低5元消费限制的券商，否则申购100元的交易成本高达6%以上，纯给券商打工。</li>
+</ul>
+<p><strong>如何打造一拖七拖拉机：</strong></p>
+<ul>
+<li>你需要有华宝和银河账户，支持加挂3个深市股东号和3个深基金号，实现一键拖拉机申购，如下：<br><img src="/2024/03/22/2024-03-22-sp500-lof-give-money/image2.jpeg"></li>
+<li>没有开满6个深市股东&#x2F;基金号的，可以在银河增开。可以在公众号”中国结算营业厅”里查询自己所有的股东号。</li>
+<li>增开可以在非交易时间进行。每次增开时，勾选1个深a加1个深基金，需上传身份证照片和视频，做电话回访，开满6个深市股东&#x2F;基金号需要最多3天时间。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>套利往事</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>GRUB菜单不显示问题定位</title>
     <url>/2024/03/21/2024-03-21-grub-menu-not-display-troubleshooting/</url>
     <content><![CDATA[<h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>Rocky Linux 9.2环境，手工配置了<code>GRUB_TIMEOUT</code>为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。</p>
@@ -5521,71 +5567,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>Linux</tag>
         <tag>troubleshooting</tag>
         <tag>GRUB</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>如何自定义Squid日志格式, 添加请求方法等参数</title>
-    <url>/2024/03/21/2024-03-21-how-to-modify-squid-logformat/</url>
-    <content><![CDATA[<p>查<a href="http://www.squid-cache.org/Doc/config/logformat/">Squid手册</a>，找到你需要添加的参数：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Field name syntax keys:</span><br><span class="line">	...</span><br><span class="line">	%rm</span><br><span class="line">	Request method</span><br><span class="line">	%ru</span><br><span class="line">	Request URL, without the query string</span><br><span class="line">	...</span><br></pre></td></tr></table></figure>
-
-<p>修改Squid配置文件<code>/etc/squid/squid.conf</code>，在<code>logformat</code>开头的这一行中添加<code>%rm %ru</code>参数，如下所示：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">logformat customized  %tl %ts %6tr %&gt;a %Ss %03&gt;Hs %&gt;st %&lt;st %[un %Sh %&lt;A %mt <span class="string">&quot;%&#123;User-Agent&#125;&gt;h&quot;</span> %03&lt;Hs <span class="string">&quot;%rm %ru HTTP/%rv&quot;</span> %err_code</span><br><span class="line">access_log  /var/log/squid/access.log customized</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>重启Squid, 查看<code>access.log</code>, 发现日志格式已成功修改<br><img src="/2024/03/21/2024-03-21-how-to-modify-squid-logformat/image1.png"></p>
-<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="http://www.squid-cache.org/Doc/config/logformat/">http://www.squid-cache.org/Doc/config/logformat/</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>购买基金前应阅读基金招募说明书</title>
-    <url>/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/</url>
-    <content><![CDATA[<p>3月8号，华泰天金ETF(511670)离奇暴涨6.17%, 收盘价106.17元。作为一个净值100元的货币基金，正常收益一年也就2%，单日6%的溢价相当于用1天时间提前兑现3年的收益，一个货币基金也可以玩这么嗨，我实在是无法理解！</p>
-<span id="more"></span>
-<p><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image1.png"></p>
-<p>据传言，是因为大爷大妈们看到基金的名字中带有黄金，误以为是投资黄金的ETF，所以一通乱买把价格炒上去了。3月12日，华泰天金ETF以100.999元收盘，单日暴跌7%，高溢价买入的”投资者”们损失惨重，着实当了一回韭菜。</p>
-<p>从韭菜们的经历中，我们可以吸取教训：<strong>在购买一个基金前，我们需要知道这个基金的底层资产是什么</strong>，了解这个基金的投资范围，投资策略，基金费用，交易规则，这些信息可以在基金招募说明书里找到。</p>
-<p>以华泰天金ETF为例，可以从华泰官网上找到基金招募说明书。查看“基金的投资”部分，可以看出这是货币基金。<br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image2.png"></p>
-<p>查看基金说明书中“基金份额的申购与赎回”部分，发现华泰天金ETF的净值始终为100元，无申购赎回费，T日申购T+2日到账。<br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image3.png"><br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image4.png"></p>
-<p>这意味着，如果你在3月8号以净值100元申购，3月12日以开盘价102元卖出，4天收益率2%，年化收益高达182%！<strong>韭菜们的钱，挺容易赚的</strong> ^_^</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>标普500LOF又来送钱，一拖七拖拉机开起来！</title>
-    <url>/2024/03/22/2024-03-22-sp500-lof-give-money/</url>
-    <content><![CDATA[<p>标普500LOF(161125)公告，3月22日开放申购，限额申购100元，溢价率达到了离谱的40%！！！为了平抑这不合理的溢价，我决定用一拖七拖拉机狠狠拖它一把！</p>
-<span id="more"></span>
-<p><img src="/2024/03/22/2024-03-22-sp500-lof-give-money/image1.png"><br><strong>一拖七的注意事项：</strong></p>
-<ul>
-<li>标普500LOF属于深市基金，一个身份证可以使用3个深A账户+3个深基金账户+1个场外账户进行一拖七申购，这样每天可以申购100*7&#x3D;700元，收益放大七倍，多个身份证可以继续放大收益。</li>
-<li>T日(3月22日)申购的份额，在T+2日(3月26日)晚上到达持仓, 在T+3日(3月27日)早盘可以卖出。</li>
-<li>必须记住T日的操作是场内申购，千万别点错点成在场内买入！</li>
-<li>你需要有场内申购费1折+没有最低5元消费限制的券商，否则申购100元的交易成本高达6%以上，纯给券商打工。</li>
-</ul>
-<p><strong>如何打造一拖七拖拉机：</strong></p>
-<ul>
-<li>你需要有华宝和银河账户，支持加挂3个深市股东号和3个深基金号，实现一键拖拉机申购，如下：<br><img src="/2024/03/22/2024-03-22-sp500-lof-give-money/image2.jpeg"></li>
-<li>没有开满6个深市股东&#x2F;基金号的，可以在银河增开。可以在公众号”中国结算营业厅”里查询自己所有的股东号。</li>
-<li>增开可以在非交易时间进行。每次增开时，勾选1个深a加1个深基金，需上传身份证照片和视频，做电话回访，开满6个深市股东&#x2F;基金号需要最多3天时间。</li>
-</ul>
-]]></content>
-      <categories>
-        <category>套利往事</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -5624,6 +5605,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Shell</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>购买基金前应阅读基金招募说明书</title>
+    <url>/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/</url>
+    <content><![CDATA[<p>3月8号，华泰天金ETF(511670)离奇暴涨6.17%, 收盘价106.17元。作为一个净值100元的货币基金，正常收益一年也就2%，单日6%的溢价相当于用1天时间提前兑现3年的收益，一个货币基金也可以玩这么嗨，我实在是无法理解！</p>
+<span id="more"></span>
+<p><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image1.png"></p>
+<p>据传言，是因为大爷大妈们看到基金的名字中带有黄金，误以为是投资黄金的ETF，所以一通乱买把价格炒上去了。3月12日，华泰天金ETF以100.999元收盘，单日暴跌7%，高溢价买入的”投资者”们损失惨重，着实当了一回韭菜。</p>
+<p>从韭菜们的经历中，我们可以吸取教训：<strong>在购买一个基金前，我们需要知道这个基金的底层资产是什么</strong>，了解这个基金的投资范围，投资策略，基金费用，交易规则，这些信息可以在基金招募说明书里找到。</p>
+<p>以华泰天金ETF为例，可以从华泰官网上找到基金招募说明书。查看“基金的投资”部分，可以看出这是货币基金。<br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image2.png"></p>
+<p>查看基金说明书中“基金份额的申购与赎回”部分，发现华泰天金ETF的净值始终为100元，无申购赎回费，T日申购T+2日到账。<br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image3.png"><br><img src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image4.png"></p>
+<p>这意味着，如果你在3月8号以净值100元申购，3月12日以开盘价102元卖出，4天收益率2%，年化收益高达182%！<strong>韭菜们的钱，挺容易赚的</strong> ^_^</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -5772,24 +5772,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Shell函数中使用echo返回了错误字符串问题定位</title>
-    <url>/2024/04/12/2024-04-12-echo-return-wrong-str-in-shell/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>在Vmware虚拟机上，执行如下Shell代码获取VM类型</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">get_VM_infra</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> infra=$(dmidecode -t system | grep <span class="string">&quot;Manufacturer&quot;</span>)</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$infra</span>&quot;</span> | grep <span class="string">&quot;VMware&quot;</span> <span class="comment"># 判断VM平台类型是否为VMware</span></span><br><span class="line">    <span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;VMware&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;Other Type&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">infra=$(get_VM_infra)</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;infra: <span class="variable">$infra</span>&quot;</span></span><br></pre></td></tr></table></figure>
-<p>预期返回<code>&quot;VMware&quot;</code>，实际返回<code>&quot;Manufacturer: VMware, Inc.\nVMware&quot;</code>，这个返回的结果是错误的</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># infra:  Manufacturer: VMware, Inc.</span><br><span class="line"># VMware</span><br></pre></td></tr></table></figure>
-<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><span id="more"></span>
-<p>问题出在<code>echo &quot;$infra&quot; | grep &quot;VMware&quot;</code>，<strong>这行代码判断虚拟机类型的时候，也使用了echo，导致返回的字符串多了一行</strong>(Manufacturer: VMware, Inc.)。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>方法1：<br><code>echo &quot;$infra&quot; | grep &quot;VMware&quot;</code> 改成 <code>echo &quot;$infra&quot; | grep &quot;VMware&quot; &gt; /dev/null 2&gt;&amp;1</code></p>
-<p>方法2:<br>直接定义全局变量保存字符串，回避echo语句的副作用</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://linuxsimply.com/bash-scripting-tutorial/functions/return-values/return-string-function/">How to Return String From Bash Function</a></p>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
+<span id="more"></span>
+<p><img src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
 ]]></content>
       <categories>
-        <category>troubleshooting</category>
+        <category>套利往事</category>
       </categories>
       <tags>
-        <tag>troubleshooting</tag>
-        <tag>shell</tag>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -5832,25 +5830,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
-    <url>/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/</url>
-    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
-<span id="more"></span>
-<p><img src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image1.png"></p>
-<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
-<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
-<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
-<p><img src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image2.png"></p>
-<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
-]]></content>
-      <categories>
-        <category>套利往事</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>掌握夜市委托，出货快人一步</title>
     <url>/2024/05/19/2024-05-19-learn-night-market-order-and-sell-stock-faster/</url>
     <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
@@ -5880,53 +5859,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>iptables规则转换为nftables的方法</title>
-    <url>/2024/05/21/2024-05-21-convert-iptables-to-nftables/</url>
-    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
-<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>iptables</category>
-      </categories>
-      <tags>
-        <tag>iptables</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Microk8s启动失败，Failed to start Service for snap application microk8s.daemon-containerd 问题定位</title>
-    <url>/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.3 x86_64</p>
-<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>microk8s启动失败，microk8s.daemon-containerd服务启动失败，报“Failed to start Service for snap application microk8s.daemon-containerd”</p>
-<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><span id="more"></span>
-<ol>
-<li>敲<code>microk8s inspect</code>，检查相关service启动是否正常，发现snap.microk8s.daemon-containerd服务没有running.<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image1.png"></li>
-<li>敲<code>journal -u snap.microk8s.daemon-containerd</code>，查看服务启动失败原因：<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image2.png"></li>
-<li>观察上面的journal日志发现，microk8s.daemon-containerd反复尝试获取默认路由失败，因此怀疑是网卡配置有问题，敲<code>route</code>发现路由表为空，敲<code>ifconfig</code>发现主网卡没有配置IP地址。<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image3.png"></li>
-<li>检查VMware虚拟机设置，找到网卡没有IP地址原因：主网卡没有<strong>connect</strong><br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image4.png"></li>
-</ol>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>Vmware VM设置里勾选网卡状态为connect，再设置主网卡IP, Gateway, DNS，重启microk8s问题解决。<br>配置网卡使用<code>nmcli</code>命令，方法如下：</p>
-<ul>
-<li>修改已存在的connection<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv4.addresses <span class="string">&quot;<span class="variable">$&#123;ip&#125;</span>&quot;</span></span><br><span class="line">nmcli con mod eth0 ipv4.dns <span class="string">&quot;<span class="variable">$&#123;dns&#125;</span>&quot;</span></span><br><span class="line">nmcli con mod eth0 ipv4.gateway <span class="string">&quot;<span class="variable">$&#123;gw&#125;</span>&quot;</span></span><br><span class="line">nmcli con up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure></li>
-<li>connection不存在，需要新增<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli con add con-name eth0 autoconnect <span class="built_in">yes</span>  <span class="built_in">type</span> ethernet ifname eth0 ipv4.method manual ip4 <span class="string">&quot;<span class="variable">$&#123;ip&#125;</span>&quot;</span> gw4 <span class="string">&quot;<span class="variable">$&#123;gw&#125;</span>&quot;</span> ipv4.dns <span class="string">&quot;<span class="variable">$&#123;dns&#125;</span>&quot;</span></span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure></li>
-</ul>
-]]></content>
-      <categories>
-        <category>k8s</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何在centos7上安装ansible</title>
     <url>/2024/05/24/2024-05-24-how-to-install-ansible-on-centos7/</url>
     <content><![CDATA[<p>先安装python3, 再通过pip安装ansible，最后把ansible安装路径添加到环境变量PATH，如下：</p>
@@ -5945,15 +5877,24 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Notepad++不显示CRLF的方法</title>
-    <url>/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/</url>
-    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img src="/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/image1.png"></p>
+    <title>iptables规则转换为nftables的方法</title>
+    <url>/2024/05/21/2024-05-21-convert-iptables-to-nftables/</url>
+    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
+<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
+</ul>
 ]]></content>
       <categories>
-        <category>other</category>
+        <category>iptables</category>
       </categories>
       <tags>
-        <tag>other</tag>
+        <tag>iptables</tag>
       </tags>
   </entry>
   <entry>
@@ -6066,6 +6007,60 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Microk8s启动失败，Failed to start Service for snap application microk8s.daemon-containerd 问题定位</title>
+    <url>/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.3 x86_64</p>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>microk8s启动失败，microk8s.daemon-containerd服务启动失败，报“Failed to start Service for snap application microk8s.daemon-containerd”</p>
+<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><span id="more"></span>
+<ol>
+<li>敲<code>microk8s inspect</code>，检查相关service启动是否正常，发现snap.microk8s.daemon-containerd服务没有running.<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image1.png"></li>
+<li>敲<code>journal -u snap.microk8s.daemon-containerd</code>，查看服务启动失败原因：<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image2.png"></li>
+<li>观察上面的journal日志发现，microk8s.daemon-containerd反复尝试获取默认路由失败，因此怀疑是网卡配置有问题，敲<code>route</code>发现路由表为空，敲<code>ifconfig</code>发现主网卡没有配置IP地址。<br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image3.png"></li>
+<li>检查VMware虚拟机设置，找到网卡没有IP地址原因：主网卡没有<strong>connect</strong><br><img src="/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/image4.png"></li>
+</ol>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>Vmware VM设置里勾选网卡状态为connect，再设置主网卡IP, Gateway, DNS，重启microk8s问题解决。<br>配置网卡使用<code>nmcli</code>命令，方法如下：</p>
+<ul>
+<li>修改已存在的connection<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv4.addresses <span class="string">&quot;<span class="variable">$&#123;ip&#125;</span>&quot;</span></span><br><span class="line">nmcli con mod eth0 ipv4.dns <span class="string">&quot;<span class="variable">$&#123;dns&#125;</span>&quot;</span></span><br><span class="line">nmcli con mod eth0 ipv4.gateway <span class="string">&quot;<span class="variable">$&#123;gw&#125;</span>&quot;</span></span><br><span class="line">nmcli con up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure></li>
+<li>connection不存在，需要新增<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli con add con-name eth0 autoconnect <span class="built_in">yes</span>  <span class="built_in">type</span> ethernet ifname eth0 ipv4.method manual ip4 <span class="string">&quot;<span class="variable">$&#123;ip&#125;</span>&quot;</span> gw4 <span class="string">&quot;<span class="variable">$&#123;gw&#125;</span>&quot;</span> ipv4.dns <span class="string">&quot;<span class="variable">$&#123;dns&#125;</span>&quot;</span></span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure></li>
+</ul>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img src="/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>curl代理用户名或密码出现特殊字符时需要转义</title>
+    <url>/2024/07/04/2024-07-04-how-to-escape-special-char-when-use-proxy-auth-in-curl/</url>
+    <content><![CDATA[<p>举例：使用代理<code>127.0.0.1:3128</code>访问百度, 用户名<code>peter</code>, 密码<code>123!</code></p>
+<p>密码中包含<code>！</code>特殊字符，需要转义。 查询<a href="https://www.urlencoder.org/zh/">在线URL编码工具</a>, <code>%21</code>是<code>!</code>的URL编码，<code>curl</code>使用方法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x peter:123%21@127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+
+<p>参考<br><a href="https://www.urlencoder.org/zh/">https://www.urlencoder.org/zh/</a></p>
+]]></content>
+      <categories>
+        <category>curl</category>
+      </categories>
+      <tags>
+        <tag>curl</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>RHEL9中找不到/var/log/dmesg日志文件问题</title>
     <url>/2024/07/03/2024-07-03-cannot-find-dmesg-file-in-rhel9/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>在Rocky Linux 9 服务器上查看启动日志，发现没有<code>/var/log/dmesg</code>文件。</p>
@@ -6088,6 +6083,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Shell函数中使用echo返回了错误字符串问题定位</title>
+    <url>/2024/04/12/2024-04-12-echo-return-wrong-str-in-shell/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>在Vmware虚拟机上，执行如下Shell代码获取VM类型</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">get_VM_infra</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> infra=$(dmidecode -t system | grep <span class="string">&quot;Manufacturer&quot;</span>)</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$infra</span>&quot;</span> | grep <span class="string">&quot;VMware&quot;</span> <span class="comment"># 判断VM平台类型是否为VMware</span></span><br><span class="line">    <span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;VMware&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;Other Type&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">infra=$(get_VM_infra)</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;infra: <span class="variable">$infra</span>&quot;</span></span><br></pre></td></tr></table></figure>
+<p>预期返回<code>&quot;VMware&quot;</code>，实际返回<code>&quot;Manufacturer: VMware, Inc.\nVMware&quot;</code>，这个返回的结果是错误的</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># infra:  Manufacturer: VMware, Inc.</span><br><span class="line"># VMware</span><br></pre></td></tr></table></figure>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><span id="more"></span>
+<p>问题出在<code>echo &quot;$infra&quot; | grep &quot;VMware&quot;</code>，<strong>这行代码判断虚拟机类型的时候，也使用了echo，导致返回的字符串多了一行</strong>(Manufacturer: VMware, Inc.)。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>方法1：<br><code>echo &quot;$infra&quot; | grep &quot;VMware&quot;</code> 改成 <code>echo &quot;$infra&quot; | grep &quot;VMware&quot; &gt; /dev/null 2&gt;&amp;1</code></p>
+<p>方法2:<br>直接定义全局变量保存字符串，回避echo语句的副作用</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://linuxsimply.com/bash-scripting-tutorial/functions/return-values/return-string-function/">How to Return String From Bash Function</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>shell</tag>
       </tags>
   </entry>
   <entry>
@@ -6119,22 +6135,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>curl代理用户名或密码出现特殊字符时需要转义</title>
-    <url>/2024/07/04/2024-07-04-how-to-escape-special-char-when-use-proxy-auth-in-curl/</url>
-    <content><![CDATA[<p>举例：使用代理<code>127.0.0.1:3128</code>访问百度, 用户名<code>peter</code>, 密码<code>123!</code></p>
-<p>密码中包含<code>！</code>特殊字符，需要转义。 查询<a href="https://www.urlencoder.org/zh/">在线URL编码工具</a>, <code>%21</code>是<code>!</code>的URL编码，<code>curl</code>使用方法如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x peter:123%21@127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-
-<p>参考<br><a href="https://www.urlencoder.org/zh/">https://www.urlencoder.org/zh/</a></p>
-]]></content>
-      <categories>
-        <category>curl</category>
-      </categories>
-      <tags>
-        <tag>curl</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>使用arping检测IP地址是否冲突</title>
     <url>/2024/07/04/2024-07-04-use-arping-to-detect-ip-conflicts/</url>
     <content><![CDATA[<h2 id="arping简介"><a href="#arping简介" class="headerlink" title="arping简介"></a>arping简介</h2><p>在Linux中，<code>arping</code>是一个用来发送ARP请求到一个相邻主机的工具，通常用于检测网络上的IP地址冲突。</p>
@@ -6153,21 +6153,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Win11右键默认显示更多选项的方法</title>
-    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
-<span id="more"></span>
-<p><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
-<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
-]]></content>
-      <categories>
-        <category>Win</category>
-      </categories>
-      <tags>
-        <tag>Win</tag>
       </tags>
   </entry>
   <entry>
@@ -6214,6 +6199,62 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Win11右键默认显示更多选项的方法</title>
+    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
+<span id="more"></span>
+<p><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
+<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
+]]></content>
+      <categories>
+        <category>Win</category>
+      </categories>
+      <tags>
+        <tag>Win</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>川大智胜果然开盘涨停，这就是A股的尿性！</title>
+    <url>/2024/07/15/2024-07-15-this-is-the-urinary-nature-of-MIAN-A/</url>
+    <content><![CDATA[<p>昨天特朗普被刺杀未遂，提前赢得了大选。今天A股的川大智胜(002253)开盘即涨停，毫无悬念。</p>
+<span id="more"></span>
+
+<p><img src="/2024/07/15/2024-07-15-this-is-the-urinary-nature-of-MIAN-A/image1.png"><br>不要觉得奇怪，这就是缅A一直以来的尿性！什么炒龙凤，炒麻将，炒数字，炒AI，炒美国大选，炒娱乐明星，市场资金总能在这个粪坑里不断炒出新的玄学概念，无厘头炒作堪称一绝。</p>
+<p>这就是A股，一个散户交易量占主导地位的市场。大量的散户在股市里快进快出，玩击鼓传花的游戏，导致股价经常出现背离基本面的剧烈波动。有句话说得好，傻X们的共识也是共识！</p>
+<p>一天抓一个涨停板，对韭菜来说，诱惑力确实相当大，但是作为普通人，还是不要妄想自己拥有这种神奇的能力。而是要关注基本面和长期价值，不被市场概念炒作左右，避免被割韭菜。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>自定义iptables链，阻止所有进入流量的方法</title>
+    <url>/2024/07/23/2024-07-23-block-imcoming-traffic-by-iptables/</url>
+    <content><![CDATA[<h2 id="需求描述"><a href="#需求描述" class="headerlink" title="需求描述"></a>需求描述</h2><p>客户的Linux主机出现网络安全事件时, 需要先帮客户止血，再分析定位。</p>
+<p>打开止血功能后，需要阻止所有进入流量(22号端口除外，系统内部流量和出去流量不受影响)；关闭止血功能后，解除限制，且原有的iptables规则要保持不变，如何实现？</p>
+<h2 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h2><h3 id="阻止所有进入流量的方法-22号端口除外"><a href="#阻止所有进入流量的方法-22号端口除外" class="headerlink" title="阻止所有进入流量的方法(22号端口除外)"></a>阻止所有进入流量的方法(22号端口除外)</h3><ol>
+<li>先自定义一个链BLOCK_IN, 新增规则: 22号端口ACCEPT, 其余端口DROP, 如下：<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -N BLOCK_IN 							 <span class="comment"># 创建一个自定义链，名字是BLOCK_IN</span></span><br><span class="line">iptables -A BLOCK_IN -p tcp --dport 22 -j ACCEPT <span class="comment"># 允许22号端口通过</span></span><br><span class="line">iptables -A BLOCK_IN -j DROP 					 <span class="comment"># 丢弃</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<span id="more"></span>
+
+<ol start="2">
+<li>再从INPUT链的首部新增一条规则：从网卡eth0进来的流量跳转到自定义链BLOCK_IN（注意这里把eth0替换成你机器的网卡名），如下:<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -I INPUT -i eth0 -j BLOCK_IN</span><br></pre></td></tr></table></figure>
+在另一台机器上测试端口，发现超时，再测试SSH可以连接成功，说明修改生效。 使用<code>iptables -L BLOCK_IN -v -x</code>查看接收和丢弃的流量计数。</li>
+</ol>
+<h3 id="解除限制，放开进入流量"><a href="#解除限制，放开进入流量" class="headerlink" title="解除限制，放开进入流量"></a>解除限制，放开进入流量</h3><p>只需删除这个自定义链即可，原有的规则不受影响。方法如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -D INPUT -i eth0 -j BLOCK_IN	<span class="comment"># 删除之前创建的规则，这一步不做后面删除链的时候会失败</span></span><br><span class="line">iptables -F BLOCK_IN 					<span class="comment"># 清空BLOCK_IN链的规则</span></span><br><span class="line">iptables -X BLOCK_IN 					<span class="comment"># 删除整个BLOCK_IN链</span></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>iptables</category>
+      </categories>
+      <tags>
+        <tag>iptables</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>标普印度基金关门，继续套利美元债LOF</title>
     <url>/2024/07/14/2024-07-14-india-fund-close-and-arbitrage-usd-bond-lof/</url>
     <content><![CDATA[<p>7月8号印度基金(164824)宣布暂停申购，7月11号标普信息科技(161128)也宣布关门。</p>
@@ -6240,23 +6281,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>川大智胜果然开盘涨停，这就是A股的尿性！</title>
-    <url>/2024/07/15/2024-07-15-this-is-the-urinary-nature-of-MIAN-A/</url>
-    <content><![CDATA[<p>昨天特朗普被刺杀未遂，提前赢得了大选。今天A股的川大智胜(002253)开盘即涨停，毫无悬念。</p>
-<span id="more"></span>
-
-<p><img src="/2024/07/15/2024-07-15-this-is-the-urinary-nature-of-MIAN-A/image1.png"><br>不要觉得奇怪，这就是缅A一直以来的尿性！什么炒龙凤，炒麻将，炒数字，炒AI，炒美国大选，炒娱乐明星，市场资金总能在这个粪坑里不断炒出新的玄学概念，无厘头炒作堪称一绝。</p>
-<p>这就是A股，一个散户交易量占主导地位的市场。大量的散户在股市里快进快出，玩击鼓传花的游戏，导致股价经常出现背离基本面的剧烈波动。有句话说得好，傻X们的共识也是共识！</p>
-<p>一天抓一个涨停板，对韭菜来说，诱惑力确实相当大，但是作为普通人，还是不要妄想自己拥有这种神奇的能力。而是要关注基本面和长期价值，不被市场概念炒作左右，避免被割韭菜。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Linux LVM扩容方法实践</title>
     <url>/2024/07/17/2024-07-17-how-to-extend-lvm-storage/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>VMware Centos环境，根分区为LVM，大小50G，现在需要对根分区扩容。我添加了一块500G的虚拟硬盘(<code>/dev/sdb</code>)，如何把这500G扩容到根分区？</p>
@@ -6277,30 +6301,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>自定义iptables链，阻止所有进入流量的方法</title>
-    <url>/2024/07/23/2024-07-23-block-imcoming-traffic-by-iptables/</url>
-    <content><![CDATA[<h2 id="需求描述"><a href="#需求描述" class="headerlink" title="需求描述"></a>需求描述</h2><p>客户的Linux主机出现网络安全事件时, 需要先帮客户止血，再分析定位。</p>
-<p>打开止血功能后，需要阻止所有进入流量(22号端口除外，系统内部流量和出去流量不受影响)；关闭止血功能后，解除限制，且原有的iptables规则要保持不变，如何实现？</p>
-<h2 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h2><h3 id="阻止所有进入流量的方法-22号端口除外"><a href="#阻止所有进入流量的方法-22号端口除外" class="headerlink" title="阻止所有进入流量的方法(22号端口除外)"></a>阻止所有进入流量的方法(22号端口除外)</h3><ol>
-<li>先自定义一个链BLOCK_IN, 新增规则: 22号端口ACCEPT, 其余端口DROP, 如下：<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -N BLOCK_IN 							 <span class="comment"># 创建一个自定义链，名字是BLOCK_IN</span></span><br><span class="line">iptables -A BLOCK_IN -p tcp --dport 22 -j ACCEPT <span class="comment"># 允许22号端口通过</span></span><br><span class="line">iptables -A BLOCK_IN -j DROP 					 <span class="comment"># 丢弃</span></span><br></pre></td></tr></table></figure></li>
-</ol>
-<span id="more"></span>
-
-<ol start="2">
-<li>再从INPUT链的首部新增一条规则：从网卡eth0进来的流量跳转到自定义链BLOCK_IN（注意这里把eth0替换成你机器的网卡名），如下:<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -I INPUT -i eth0 -j BLOCK_IN</span><br></pre></td></tr></table></figure>
-在另一台机器上测试端口，发现超时，再测试SSH可以连接成功，说明修改生效。 使用<code>iptables -L BLOCK_IN -v -x</code>查看接收和丢弃的流量计数。</li>
-</ol>
-<h3 id="解除限制，放开进入流量"><a href="#解除限制，放开进入流量" class="headerlink" title="解除限制，放开进入流量"></a>解除限制，放开进入流量</h3><p>只需删除这个自定义链即可，原有的规则不受影响。方法如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">iptables -D INPUT -i eth0 -j BLOCK_IN	<span class="comment"># 删除之前创建的规则，这一步不做后面删除链的时候会失败</span></span><br><span class="line">iptables -F BLOCK_IN 					<span class="comment"># 清空BLOCK_IN链的规则</span></span><br><span class="line">iptables -X BLOCK_IN 					<span class="comment"># 删除整个BLOCK_IN链</span></span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>iptables</category>
-      </categories>
-      <tags>
-        <tag>iptables</tag>
       </tags>
   </entry>
   <entry>
@@ -6353,6 +6353,42 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>CLISH</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>awk 删除第一行并提取第一列</title>
+    <url>/2024/08/20/2024-08-20-awk-delete-first-line-and-select-first-column/</url>
+    <content><![CDATA[<p>例：用kubectl获取某个namespace下的所有pod</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod</span><br><span class="line">NAME                                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-64c6478b6c-wz58l                   1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-node-xq2hw                          1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2   1/1     Running   1 (32h ago)   15d</span><br><span class="line">metrics-server-679c5f986d-p5pcc            1/1     Running   0             32h</span><br></pre></td></tr></table></figure>
+
+<p>使用awk删除第一行并提取第一列，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod | awk &#x27;NR &gt; 1 &#123;print $1&#125;&#x27;</span><br><span class="line">coredns-64c6478b6c-wz58l</span><br><span class="line">calico-node-xq2hw</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2</span><br><span class="line">metrics-server-679c5f986d-p5pcc</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>awk</category>
+      </categories>
+      <tags>
+        <tag>awk</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何查看Squid的DNS缓存</title>
+    <url>/2024/08/20/2024-08-20-how-to-lookup-squid-dns-cache/</url>
+    <content><![CDATA[<p>使用<code>squidclient mgr:ipcache</code>命令查看Squid的DNS缓存记录<br>如果squid端口不是3128, 需要指定端口号, <code>squidclient -p &#123;port&#125; mgr:ipcache</code></p>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># squidclient mgr:ipcache</span><br><span class="line">...</span><br><span class="line">IP Cache Statistics:</span><br><span class="line">...</span><br><span class="line">IP Cache Contents:</span><br><span class="line"> Hostname                        Flg lstref    TTL  N(b)</span><br><span class="line"> www.trendmicro.com                      19     41  1( 0)                                 23.195.109.63-OK</span><br><span class="line"> localhost6.localdomain6          H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost6                       H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost.localdomain            H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost                        H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost4.localdomain4          H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> localhost4                       H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> www.baidu.com                         1139  -1079  2( 0)                                103.235.47.188-OK</span><br><span class="line">                                                                                          103.235.46.96-OK</span><br></pre></td></tr></table></figure>
+
+<p>抓包</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tcpdump udp port 53 -w dns.pcap</span><br><span class="line">curl -x 127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<p><img src="/2024/08/20/2024-08-20-how-to-lookup-squid-dns-cache/image1.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://wiki.squid-cache.org/Features/CacheManager/IpCache">https://wiki.squid-cache.org/Features/CacheManager/IpCache</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
       </tags>
   </entry>
 </search>
