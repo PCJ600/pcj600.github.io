@@ -14,6 +14,8 @@
 
 
 <link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
@@ -29,7 +31,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://pcj600.github.io/2024/08/20/2024-08-20-how-to-lookup-squid-dns-cache/image1.png">
 <meta property="article:published_time" content="2024-08-20T11:48:46.000Z">
-<meta property="article:modified_time" content="2024-08-20T11:49:45.308Z">
+<meta property="article:modified_time" content="2024-08-20T11:51:36.573Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="Squid">
 <meta name="twitter:card" content="summary">
@@ -124,12 +126,17 @@
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">29</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">35</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">117</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -236,7 +243,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>643</span>
+              <span>675</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -260,9 +267,8 @@
 
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># squidclient mgr:ipcache</span><br><span class="line">...</span><br><span class="line">IP Cache Statistics:</span><br><span class="line">...</span><br><span class="line">IP Cache Contents:</span><br><span class="line"> Hostname                        Flg lstref    TTL  N(b)</span><br><span class="line"> www.trendmicro.com                      19     41  1( 0)                                 23.195.109.63-OK</span><br><span class="line"> localhost6.localdomain6          H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost6                       H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost.localdomain            H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost                        H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost4.localdomain4          H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> localhost4                       H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> www.baidu.com                         1139  -1079  2( 0)                                103.235.47.188-OK</span><br><span class="line">                                                                                          103.235.46.96-OK</span><br></pre></td></tr></table></figure>
 
-<p>抓包</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tcpdump udp port 53 -w dns.pcap</span><br><span class="line">curl -x 127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-<p><img src="/2024/08/20/2024-08-20-how-to-lookup-squid-dns-cache/image1.png"></p>
+<h2 id="DNS请求抓包"><a href="#DNS请求抓包" class="headerlink" title="DNS请求抓包"></a>DNS请求抓包</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tcpdump udp port 53 -w dns.pcap</span><br><span class="line">curl -x 127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<p>10.206.216.93为nameserver的IP<br><img src="/2024/08/20/2024-08-20-how-to-lookup-squid-dns-cache/image1.png"></p>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://wiki.squid-cache.org/Features/CacheManager/IpCache">https://wiki.squid-cache.org/Features/CacheManager/IpCache</a></p>
 
     </div>
@@ -270,6 +276,23 @@
     
     
     
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2024/08/20/2024-08-20-how-to-lookup-squid-dns-cache/" title="如何查看Squid的DNS缓存">https://pcj600.github.io/2024/08/20/2024-08-20-how-to-lookup-squid-dns-cache/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
 
       <footer class="post-footer">
           <div class="post-tags">
@@ -344,7 +367,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">1.</span> <span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#DNS%E8%AF%B7%E6%B1%82%E6%8A%93%E5%8C%85"><span class="nav-number">1.</span> <span class="nav-text">DNS请求抓包</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">2.</span> <span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -367,11 +390,12 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-count">29</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
+          
         <span class="site-state-item-count">35</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
