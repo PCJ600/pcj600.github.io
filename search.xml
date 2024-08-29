@@ -391,6 +391,24 @@
       </tags>
   </entry>
   <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>CSAPP 二进制炸弹实验</title>
     <url>/2020/07/26/2020-07-26-csapp-bomblab/</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>二进制炸弹是一个作为目标代码提供的程序。运行时提示用户输入6个不同的字符串，如其中一个字符串不正确，炸弹会引爆并打印一条错误信息。需要通过反汇编确定输入的6个字符串，从而拆除炸弹。</p>
@@ -642,24 +660,6 @@
       <tags>
         <tag>Assembly</tag>
         <tag>CSAPP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -1509,76 +1509,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Redis学习笔记(四)——跳跃表</title>
-    <url>/2021/01/23/2021-01-23-redis-note-04-skiplist/</url>
-    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。</p>
-<p>Redis使用跳跃表作为<strong>有序集合键</strong>的底层实现之一。</p>
-<p>跳表的基本实现原理参考：<a href="http://www.cl.cam.ac.uk/teaching/0506/Algorithms/skiplists.pdf">《Skip lists: a probabilistic alternative to balanced trees》</a></p>
-<h3 id="Redis中的跳表实现"><a href="#Redis中的跳表实现" class="headerlink" title="Redis中的跳表实现"></a>Redis中的跳表实现</h3><span id="more"></span>
-
-<p>Redis的跳表由zskiplistNode, zskiplist两个数据结构定义。</p>
-<p>跳跃表节点的实现如下，由<code>redis.h/zskiplistNode</code>定义：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* ZSETs use a specialized version of Skiplists */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line">    sds ele;							<span class="comment">// 成员对象，唯一</span></span><br><span class="line">    <span class="type">double</span> score;						<span class="comment">// 跳表按分值排序，不唯一</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span>		<span class="comment">// 后退指针，用于表尾到表头访问</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">forward</span>;</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> span;				<span class="comment">// 跨度</span></span><br><span class="line">    &#125; level[];							<span class="comment">// 层</span></span><br><span class="line">&#125; zskiplistNode;</span><br></pre></td></tr></table></figure>
-
-<p>Redis中跳表和普通跳表区别如下：</p>
-<ul>
-<li>添加span属性，表示跨度，用于计算排位。</li>
-<li>添加backward后退指针，用于表尾到表头访问节点，每次只能后退一个节点。</li>
-<li>ele表示SDS对象，必须是唯一的，而普通跳表存储的值可以不唯一。</li>
-<li>添加score属性，表示分值，这是Redis跳表排序的依据，score的值允许重复。如score值相同，按ele字典序排列</li>
-</ul>
-<p>Redis通过zskiplist结构来持有跳表：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplist</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">header</span>, *<span class="title">tail</span>;</span>	<span class="comment">// 定位表头、表尾复杂度为O(1)</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> length;					<span class="comment">// O(1)获取跳表长度</span></span><br><span class="line">    <span class="type">int</span> level;								<span class="comment">// 层高，注意表头节点的层高不计算在内</span></span><br><span class="line">&#125; zskiplist;</span><br></pre></td></tr></table></figure>
-
-<h3 id="跳表API"><a href="#跳表API" class="headerlink" title="跳表API"></a>跳表API</h3><table>
-<thead>
-<tr>
-<th align="left">API</th>
-<th align="left">功能</th>
-<th align="left">复杂度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">zskiplist *zslCreate(void);</td>
-<td align="left">创建跳表</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">void zslFree(zskiplist *zsl);</td>
-<td align="left">释放跳表</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">zskiplistNode *zslInsert(zskiplist *zsl, double score, sds ele);</td>
-<td align="left">插入</td>
-<td align="left">O(logN)</td>
-</tr>
-<tr>
-<td align="left">int zslDelete(zskiplist *zsl, double score, sds ele, zskiplistNode **node);</td>
-<td align="left">删除跳表</td>
-<td align="left">O(logN)</td>
-</tr>
-<tr>
-<td align="left">unsigned long zslGetRank(zskiplist *zsl, double score, sds ele);</td>
-<td align="left">返回给定节点的排位</td>
-<td align="left">O(logN)</td>
-</tr>
-<tr>
-<td align="left">zskiplistNode* zslGetElementByRank(zskiplist *zsl, unsigned long rank);</td>
-<td align="left">返回指定排位的节点</td>
-<td align="left">O(logN)</td>
-</tr>
-</tbody></table>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Redis设计与实现》第5章 跳跃表</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis学习笔记(六)——对象系统</title>
     <url>/2021/01/23/2021-01-23-redis-note-06-object/</url>
     <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis没有直接使用基础数据结构来实现数据库，而是基于这些数据结构创建了一个对象系统。这个系统包含字符串对象、列表对象、哈希对象、集合对象、有序集合对象。</p>
@@ -1829,6 +1759,76 @@
 <li>Redis的对象带有访问事件记录信息，用于计算数据库键的空转时长，空转时长可以用于服务器的内存回收算法。</li>
 </ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Redis设计与实现》 —— 第8章 对象</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis学习笔记(四)——跳跃表</title>
+    <url>/2021/01/23/2021-01-23-redis-note-04-skiplist/</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。</p>
+<p>Redis使用跳跃表作为<strong>有序集合键</strong>的底层实现之一。</p>
+<p>跳表的基本实现原理参考：<a href="http://www.cl.cam.ac.uk/teaching/0506/Algorithms/skiplists.pdf">《Skip lists: a probabilistic alternative to balanced trees》</a></p>
+<h3 id="Redis中的跳表实现"><a href="#Redis中的跳表实现" class="headerlink" title="Redis中的跳表实现"></a>Redis中的跳表实现</h3><span id="more"></span>
+
+<p>Redis的跳表由zskiplistNode, zskiplist两个数据结构定义。</p>
+<p>跳跃表节点的实现如下，由<code>redis.h/zskiplistNode</code>定义：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* ZSETs use a specialized version of Skiplists */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> &#123;</span></span><br><span class="line">    sds ele;							<span class="comment">// 成员对象，唯一</span></span><br><span class="line">    <span class="type">double</span> score;						<span class="comment">// 跳表按分值排序，不唯一</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">backward</span>;</span>		<span class="comment">// 后退指针，用于表尾到表头访问</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistLevel</span> &#123;</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">forward</span>;</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">long</span> span;				<span class="comment">// 跨度</span></span><br><span class="line">    &#125; level[];							<span class="comment">// 层</span></span><br><span class="line">&#125; zskiplistNode;</span><br></pre></td></tr></table></figure>
+
+<p>Redis中跳表和普通跳表区别如下：</p>
+<ul>
+<li>添加span属性，表示跨度，用于计算排位。</li>
+<li>添加backward后退指针，用于表尾到表头访问节点，每次只能后退一个节点。</li>
+<li>ele表示SDS对象，必须是唯一的，而普通跳表存储的值可以不唯一。</li>
+<li>添加score属性，表示分值，这是Redis跳表排序的依据，score的值允许重复。如score值相同，按ele字典序排列</li>
+</ul>
+<p>Redis通过zskiplist结构来持有跳表：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zskiplist</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">zskiplistNode</span> *<span class="title">header</span>, *<span class="title">tail</span>;</span>	<span class="comment">// 定位表头、表尾复杂度为O(1)</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> length;					<span class="comment">// O(1)获取跳表长度</span></span><br><span class="line">    <span class="type">int</span> level;								<span class="comment">// 层高，注意表头节点的层高不计算在内</span></span><br><span class="line">&#125; zskiplist;</span><br></pre></td></tr></table></figure>
+
+<h3 id="跳表API"><a href="#跳表API" class="headerlink" title="跳表API"></a>跳表API</h3><table>
+<thead>
+<tr>
+<th align="left">API</th>
+<th align="left">功能</th>
+<th align="left">复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">zskiplist *zslCreate(void);</td>
+<td align="left">创建跳表</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">void zslFree(zskiplist *zsl);</td>
+<td align="left">释放跳表</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">zskiplistNode *zslInsert(zskiplist *zsl, double score, sds ele);</td>
+<td align="left">插入</td>
+<td align="left">O(logN)</td>
+</tr>
+<tr>
+<td align="left">int zslDelete(zskiplist *zsl, double score, sds ele, zskiplistNode **node);</td>
+<td align="left">删除跳表</td>
+<td align="left">O(logN)</td>
+</tr>
+<tr>
+<td align="left">unsigned long zslGetRank(zskiplist *zsl, double score, sds ele);</td>
+<td align="left">返回给定节点的排位</td>
+<td align="left">O(logN)</td>
+</tr>
+<tr>
+<td align="left">zskiplistNode* zslGetElementByRank(zskiplist *zsl, unsigned long rank);</td>
+<td align="left">返回指定排位的节点</td>
+<td align="left">O(logN)</td>
+</tr>
+</tbody></table>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Redis设计与实现》第5章 跳跃表</p>
 ]]></content>
       <categories>
         <category>Redis</category>
@@ -2224,29 +2224,6 @@
       </tags>
   </entry>
   <entry>
-    <title>配置Git代理，解决下载龟速问题</title>
-    <url>/2021/06/05/2021-06-05-git-download-too-slow/</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
-<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>首先，你的本地机器必须有socks5代理</p>
-<p>进<code>git bash</code>，敲如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global http.sslverify false</span><br><span class="line">git config -l</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<h4 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h4><p>git clone报错: fatal: unable to access XXX.git: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443</p>
-<h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><p>StackOverFlow上能搜到同样问题，参考：<a href="https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error">https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error</a></p>
-<p>进<code>git bash</code>，敲如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global --add remote.origin.proxy &quot;127.0.0.1:1087&quot;</span><br></pre></td></tr></table></figure>
-
-<p>其中1087为http端口，打开你的ss软件，在设置中查看端口号即可：<br><img data-src="/2021/06/05/2021-06-05-git-download-too-slow/image1.png"></p>
-]]></content>
-      <categories>
-        <category>Git</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Leetcode 664 奇怪的打印机</title>
     <url>/2021/08/15/2021-08-15-leetcode-664-weird-printer/</url>
     <content><![CDATA[<h3 id="题目描述"><a href="#题目描述" class="headerlink" title="题目描述"></a>题目描述</h3><p><a href="https://leetcode-cn.com/problems/strange-printer">https://leetcode-cn.com/problems/strange-printer</a></p>
@@ -2280,6 +2257,29 @@
       </categories>
       <tags>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>配置Git代理，解决下载龟速问题</title>
+    <url>/2021/06/05/2021-06-05-git-download-too-slow/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
+<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>首先，你的本地机器必须有socks5代理</p>
+<p>进<code>git bash</code>，敲如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global http.sslverify false</span><br><span class="line">git config -l</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h4 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h4><p>git clone报错: fatal: unable to access XXX.git: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443</p>
+<h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><p>StackOverFlow上能搜到同样问题，参考：<a href="https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error">https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error</a></p>
+<p>进<code>git bash</code>，敲如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global --add remote.origin.proxy &quot;127.0.0.1:1087&quot;</span><br></pre></td></tr></table></figure>
+
+<p>其中1087为http端口，打开你的ss软件，在设置中查看端口号即可：<br><img data-src="/2021/06/05/2021-06-05-git-download-too-slow/image1.png"></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -2645,6 +2645,136 @@
       </tags>
   </entry>
   <entry>
+    <title>Redis学习笔记(二)——链表</title>
+    <url>/2021/12/12/2021-12-12-redis-note-02-linkedlist/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>链表在Redis中的应用非常广泛，链表是列表键的底层实现之一，发布订阅，慢查询，监视器等功能也用到了链表。</p>
+<p>以下给出Redis中链表相关的一些思考问题，通过源码分析，给出问题的答案，掌握链表的底层实现原理和设计思路。</p>
+<p>源码版本：<a href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+<span id="more"></span>
+
+<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>C语言中如何设计一个通用的泛型链表？</p>
+<ul>
+<li><p><a href="#jump1">Redis中的链表和链表节点的实现</a></p>
+<ul>
+<li><a href="#jump2">节点值的类型是void *，这样设计有什么好处？</a></li>
+<li><a href="#jump3">仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表？</a></li>
+<li><a href="#jump4">为什么用双向链表，不用单链表？</a></li>
+</ul>
+</li>
+<li><p><a href="#jump5">双向链表API实现分析</a></p>
+<ul>
+<li><a href="#jump6">链表创建</a></li>
+<li><a href="#jump7">链表销毁</a></li>
+<li><a href="#jump8">头部插入节点</a></li>
+<li><a href="#jump9">尾部插入节点</a></li>
+<li><a href="#jump10">指定位置前后插入节点</a></li>
+<li><a href="#jump11">删除指定节点</a></li>
+<li><a href="#jump12">链表迭代器的设计实现</a></li>
+<li><a href="#jump13">查找指定节点</a></li>
+<li><a href="#jump14">复制链表</a></li>
+<li><a href="#jump15">表头节点移动到表尾</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="链表和链表节点的实现"><a href="#链表和链表节点的实现" class="headerlink" title="链表和链表节点的实现"></a>链表和链表节点的实现<span id="jump1"></span></h3><p>以REDIS 6.0.10源码为例，链表的实现参考<code>adlist.h</code>, <code>adlist.c</code></p>
+<p>链表节点通过listNode结构体实现，定义如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">void</span> *value;</span><br><span class="line">&#125; listNode;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出这是一个双向链表，value存储节点值，其类型为void *</p>
+<h4 id="节点值的类型为void-，这样设计有什么好处？"><a href="#节点值的类型为void-，这样设计有什么好处？" class="headerlink" title="节点值的类型为void *，这样设计有什么好处？"></a>节点值的类型为void *，这样设计有什么好处？<span id="jump2"></span></h4><p>节点值设置void *类型，目的是实现一个通用的泛型链表，提高代码复用性。（类似C++的STL容器，多态思想）</p>
+<p>考虑实际应用场景中，链表节点值的类型可以是int, float, double等基本类型, 或者是自定义结构体类型，如果简单将value定义为某个具体类型，就只能为每个节点类型定义一个listNodeXX的结构体，同时需额外为每个节点类型新增一套增、删、改、查的API，实现非常繁琐，如下所示：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeInt</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">int</span> value;</span><br><span class="line">&#125; listNodeInt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeDouble</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">double</span> value;</span><br><span class="line">&#125; listNodeDouble;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 增加一个节点到链表头部</span></span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadInt</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> value)</span>;</span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadDouble</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">double</span> value)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，这种实现方式的问题在于<strong>代码重复度过高，难以维护，且扩展性差，每支持一个新的节点类型都要新增代码</strong>，这显然是不能接受的。所以节点值类型要设计为void *</p>
+<h4 id="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？"><a href="#仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？" class="headerlink" title="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？"></a>仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？<span id="jump3"></span></h4><p>Redis中额外使用list结构，用于持有链表，简化操作。list结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">list</span> &#123;</span></span><br><span class="line">    listNode *head;</span><br><span class="line">    listNode *tail;</span><br><span class="line">    <span class="type">void</span> *(*dup)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">void</span> (*<span class="built_in">free</span>)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">int</span> (*match)(<span class="type">void</span> *ptr, <span class="type">void</span> *key);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">&#125; <span class="built_in">list</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>head, tail用于记录表头指针和表尾指针，好处是获取表头节点或表尾节点的时间复杂度为O(1)</p>
+</li>
+<li><p>len类型用于记录链表长度， 好处是获取链表节点总数的时间复杂度为O(1)</p>
+</li>
+<li><p>dup, free, match成员用于实现多态链表，对于不同类型的节点，挂接不同的函数钩子，设置特定的复制、释放、比较操作。</p>
+<ul>
+<li>dup函数用于复制节点值</li>
+<li>free函数用于释放节点值</li>
+<li>match函数用于比较两个节点值是否相等</li>
+</ul>
+</li>
+</ul>
+<p><strong>举例</strong>：一个长度为2的双向链表示意图：<br><img data-src="/2021/12/12/2021-12-12-redis-note-02-linkedlist/image1.png"></p>
+<h3 id="为什么用双向链表，不用单链表？"><a href="#为什么用双向链表，不用单链表？" class="headerlink" title="为什么用双向链表，不用单链表？"></a>为什么用双向链表，不用单链表？<span id="jump4"></span></h3><p>双向链表相较于单链表，有如下优点：</p>
+<ul>
+<li>支持双向查找节点，且查找给定节点的前驱节点的时间复杂度为O(1)</li>
+<li>尾部插入节点快，时间复杂度为O(1)</li>
+</ul>
+<h3 id="双向链表API实现分析"><a href="#双向链表API实现分析" class="headerlink" title="双向链表API实现分析"></a>双向链表API实现分析<span id="jump5"></span></h3><h4 id="链表创建"><a href="#链表创建" class="headerlink" title="链表创建"></a>链表创建<span id="jump6"></span></h4><p>调用<code>listCreate</code>，创建一个空的双向链表，时间复杂度O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listCreate</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list</span> *<span class="title">list</span>;</span></span><br><span class="line">    <span class="keyword">if</span> ((<span class="built_in">list</span> = zmalloc(<span class="keyword">sizeof</span>(*<span class="built_in">list</span>))) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;dup = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;<span class="built_in">free</span> = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;match = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">list</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="链表销毁"><a href="#链表销毁" class="headerlink" title="链表销毁"></a>链表销毁<span id="jump7"></span></h4><p>调用<code>listRelease</code>，释放链表，时间复杂度O(N)，N为链表长度</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRelease</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    listEmpty(<span class="built_in">list</span>);</span><br><span class="line">    zfree(<span class="built_in">list</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listEmpty</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">    listNode *current, *next;</span><br><span class="line"></span><br><span class="line">    current = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    len = <span class="built_in">list</span>-&gt;len;</span><br><span class="line">    <span class="keyword">while</span>(len--) &#123;</span><br><span class="line">        next = current-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">list</span>-&gt;<span class="built_in">free</span>) <span class="built_in">list</span>-&gt;<span class="built_in">free</span>(current-&gt;value);	<span class="comment">// 不同的节点类型，挂接不同的free函数钩子，实现多态链表的释放操作。</span></span><br><span class="line">        zfree(current);</span><br><span class="line">        current = next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="头部插入节点"><a href="#头部插入节点" class="headerlink" title="头部插入节点"></a>头部插入节点<span id="jump8"></span></h4><p>调用<code>listAddNodeHead</code>，在链表头部插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeHead(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = NULL;</span><br><span class="line">        node-&gt;next = list-&gt;head;</span><br><span class="line">        list-&gt;head-&gt;prev = node;</span><br><span class="line">        list-&gt;head = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="尾部插入节点"><a href="#尾部插入节点" class="headerlink" title="尾部插入节点"></a>尾部插入节点<span id="jump9"></span></h4><p>调用<code>listAddNodeTail</code>, 在链表尾部插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeTail(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = list-&gt;tail;</span><br><span class="line">        node-&gt;next = NULL;</span><br><span class="line">        list-&gt;tail-&gt;next = node;</span><br><span class="line">        list-&gt;tail = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="指定位置前后插入节点"><a href="#指定位置前后插入节点" class="headerlink" title="指定位置前后插入节点"></a>指定位置前后插入节点<span id="jump10"></span></h4><p>调用<code>listInsertNode</code>，在指定位置之前或之后插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listInsertNode(list *list, listNode *old_node, void *value, int after) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (after) &#123;</span><br><span class="line">        node-&gt;prev = old_node;</span><br><span class="line">        node-&gt;next = old_node-&gt;next;</span><br><span class="line">        if (list-&gt;tail == old_node) &#123;</span><br><span class="line">            list-&gt;tail = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;next = old_node;</span><br><span class="line">        node-&gt;prev = old_node-&gt;prev;</span><br><span class="line">        if (list-&gt;head == old_node) &#123;</span><br><span class="line">            list-&gt;head = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;prev != NULL) &#123;</span><br><span class="line">        node-&gt;prev-&gt;next = node;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;next != NULL) &#123;</span><br><span class="line">        node-&gt;next-&gt;prev = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>after等于1时，在给定old_node节点之后插入，否则在给定节点前插入。</p>
+<h4 id="删除指定节点"><a href="#删除指定节点" class="headerlink" title="删除指定节点"></a>删除指定节点<span id="jump11"></span></h4><p>调用<code>listDelNode</code>， 删除指定节点，时间复杂度为O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">void listDelNode(list *list, listNode *node) &#123;</span><br><span class="line">    if (node-&gt;prev)</span><br><span class="line">        node-&gt;prev-&gt;next = node-&gt;next;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;head = node-&gt;next;</span><br><span class="line">    if (node-&gt;next)</span><br><span class="line">        node-&gt;next-&gt;prev = node-&gt;prev;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;tail = node-&gt;prev;</span><br><span class="line">    if (list-&gt;free) list-&gt;free(node-&gt;value);</span><br><span class="line">    zfree(node);</span><br><span class="line">    list-&gt;len--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="链表迭代器的设计实现"><a href="#链表迭代器的设计实现" class="headerlink" title="链表迭代器的设计实现"></a>链表迭代器的设计实现<span id="jump12"></span></h4><p>定义<code>struct listIter</code>结构体实现链表的迭代器，支持双向迭代。(类似C++容器的begin()和rbegin()操作)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Directions for iterators */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_HEAD 0			<span class="comment">// 正向迭代, head -&gt; tail</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_TAIL 1			<span class="comment">// 反向迭代，tail -&gt; head</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listIter</span> &#123;</span></span><br><span class="line">    listNode *next;</span><br><span class="line">    <span class="type">int</span> direction;	<span class="comment">// 取值有两种，AL_START_HEAD或AL_START_TAIL，支持双向迭代。</span></span><br><span class="line">&#125; listIter;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listGetIterator</code>，创建一个正向&#x2F;反向迭代器：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listIter *<span class="title function_">listGetIterator</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> direction)</span> &#123;</span><br><span class="line">    listIter *iter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((iter = zmalloc(<span class="keyword">sizeof</span>(*iter))) == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (direction == AL_START_HEAD)		<span class="comment">// 正向迭代器</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;tail;		<span class="comment">// 反向迭代器</span></span><br><span class="line">    iter-&gt;direction = direction;</span><br><span class="line">    <span class="keyword">return</span> iter;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重置迭代器, 通过<code>listRewind</code>和<code>listRewindTail</code>方法：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRewind</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    li-&gt;direction = AL_START_HEAD;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listRewindTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    li-&gt;direction = AL_START_TAIL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listNext</code>，访问迭代器中的下一个元素：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listNode *<span class="title function_">listNext</span><span class="params">(listIter *iter)</span> &#123;</span><br><span class="line">    listNode *current = iter-&gt;next;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (current != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (iter-&gt;direction == AL_START_HEAD)</span><br><span class="line">            iter-&gt;next = current-&gt;next;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            iter-&gt;next = current-&gt;prev;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> current;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump13"></span></h4><p>调用<code>listSearchKey</code>，查找指定节点，平均时间复杂度O(N)，N为链表长度。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">listNode *listSearchKey(list *list, void *key) &#123;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    listRewind(list, &amp;iter);</span><br><span class="line">    while((node = listNext(&amp;iter)) != NULL) &#123;</span><br><span class="line">        if (list-&gt;match) &#123;</span><br><span class="line">            if (list-&gt;match(node-&gt;value, key)) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if (key == node-&gt;value) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return NULL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="复制链表"><a href="#复制链表" class="headerlink" title="复制链表"></a>复制链表<span id="jump14"></span></h4><p>调用<code>listDup</code>，复制链表，时间复杂度O(N)，N为链表长度。</p>
+<p><strong>实现技巧分析</strong>：通过迭代器隐藏链表内部实现，简化链表遍历操作；通过dup函数指针，统一了不同类型链表节点的复制流程，实现简洁优雅，值得一学。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listDup</span><span class="params">(<span class="built_in">list</span> *orig)</span> &#123;</span><br><span class="line">    <span class="built_in">list</span> *copy;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((copy = listCreate()) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    copy-&gt;dup = orig-&gt;dup;</span><br><span class="line">    copy-&gt;<span class="built_in">free</span> = orig-&gt;<span class="built_in">free</span>;</span><br><span class="line">    copy-&gt;match = orig-&gt;match;</span><br><span class="line">    listRewind(orig, &amp;iter);</span><br><span class="line">    <span class="keyword">while</span>((node = listNext(&amp;iter)) != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="type">void</span> *value;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (copy-&gt;dup) &#123;</span><br><span class="line">            value = copy-&gt;dup(node-&gt;value);</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                listRelease(copy);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span></span><br><span class="line">            value = node-&gt;value;</span><br><span class="line">        <span class="keyword">if</span> (listAddNodeTail(copy, value) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            listRelease(copy);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="表头节点移动到表尾"><a href="#表头节点移动到表尾" class="headerlink" title="表头节点移动到表尾"></a>表头节点移动到表尾<span id="jump15"></span></h4><p>通过<code>listRotateHeadToTail</code>，实现表头节点移动到表尾，时间复杂度为O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateHeadToTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    listNode *head = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="comment">/* Detach current head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head = head-&gt;next;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as tail */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = head;</span><br><span class="line">    head-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    head-&gt;prev = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listRotateTailToHead</code>，实现表尾节点移动到表头，时间复杂度为O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateTailToHead</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Detach current tail */</span></span><br><span class="line">    listNode *tail = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = tail-&gt;prev;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = tail;</span><br><span class="line">    tail-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    tail-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = tail;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第3章 链表</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis学习笔记(一)——简单动态字符串</title>
     <url>/2021/12/11/2021-12-11-redis-note-01-sds/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Redis是用C语言开发的，但并没有直接使用C语言数组去表示字符串，而是使用简单动态字符串(Simple dynamic String，简称SDS)作为字符串的底层实现。</p>
@@ -3003,127 +3133,207 @@
       </tags>
   </entry>
   <entry>
-    <title>Redis学习笔记(二)——链表</title>
-    <url>/2021/12/12/2021-12-12-redis-note-02-linkedlist/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>链表在Redis中的应用非常广泛，链表是列表键的底层实现之一，发布订阅，慢查询，监视器等功能也用到了链表。</p>
-<p>以下给出Redis中链表相关的一些思考问题，通过源码分析，给出问题的答案，掌握链表的底层实现原理和设计思路。</p>
-<p>源码版本：<a href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+    <title>Redis学习笔记(四)——ziplist</title>
+    <url>/2021/12/30/2021-12-30-redis-note-04-ziplist/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>ziplist是一种为节约内存而开发的数据结构，本质是一个字节数组。</p>
+<p>ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
 <span id="more"></span>
 
-<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>C语言中如何设计一个通用的泛型链表？</p>
+<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>双向链表结构，在<font color = 'red'>存储数据本身长度远小于链表节点大小</font>的场景下，有严重的内存浪费问题。针对这种情况，Redis设计了ziplist这种节约内存的数据结构。以下给出ziplist相关的思考问题，了解ziplist的实现原理和设计思路。</p>
 <ul>
-<li><p><a href="#jump1">Redis中的链表和链表节点的实现</a></p>
-<ul>
-<li><a href="#jump2">节点值的类型是void *，这样设计有什么好处？</a></li>
-<li><a href="#jump3">仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表？</a></li>
-<li><a href="#jump4">为什么用双向链表，不用单链表？</a></li>
+<li><a href="#jump1">ziplist的数据结构</a></li>
+<li><a href="#jump2">ziplist节点构成</a></li>
+<li><a href="#jump3">为什么要设计ziplist</a></li>
+<li><a href="#jump4">ziplist相关操作</a><ul>
+<li><a href="#jump5">查找指定节点</a></li>
+<li><a href="#jump6">连锁更新问题</a></li>
 </ul>
 </li>
-<li><p><a href="#jump5">双向链表API实现分析</a></p>
+<li>quicklist的数据结构</li>
+<li>为什么要设计quicklist</li>
+<li>quicklist的增、删、改、查操作</li>
+</ul>
+<h3 id="ziplist的数据结构"><a href="#ziplist的数据结构" class="headerlink" title="ziplist的数据结构"></a>ziplist的数据结构<span id="jump1"></span></h3><p>Redis没有专门定义结构体来表示ziplist，因为ziplist本质就是一个空间连续的字节数组。</p>
+<p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过<code>struct zlentry</code>结构表示。</p>
+<p>ziplist的各组成部分参考如下：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image1.png"></p>
+<p>可以看出，ziplist由列表头 + 列表节点 + 列表尾这三部分组成。每个组成部分作用说明如下：</p>
 <ul>
-<li><a href="#jump6">链表创建</a></li>
-<li><a href="#jump7">链表销毁</a></li>
-<li><a href="#jump8">头部插入节点</a></li>
-<li><a href="#jump9">尾部插入节点</a></li>
-<li><a href="#jump10">指定位置前后插入节点</a></li>
-<li><a href="#jump11">删除指定节点</a></li>
-<li><a href="#jump12">链表迭代器的设计实现</a></li>
-<li><a href="#jump13">查找指定节点</a></li>
-<li><a href="#jump14">复制链表</a></li>
-<li><a href="#jump15">表头节点移动到表尾</a></li>
+<li><code>zlbytes</code>占4字节，用于记录整个ziplist占用内存的总字节数，对于空表来说，<code>zlbytes</code>等于11，源码参考<code>ziplistNew</code></li>
 </ul>
-</li>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t)) <span class="comment">// 8 + 2 = 10字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_END_SIZE        (sizeof(uint8_t)) <span class="comment">// 1字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_BYTES(zl)       (*((uint32_t*)(zl)))  <span class="comment">// zlbytes</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Create a new empty ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistNew</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> bytes = ZIPLIST_HEADER_SIZE+ZIPLIST_END_SIZE;	<span class="comment">// zlbytes = 10 + 1 = 11</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *zl = zmalloc(bytes); <span class="comment">// 可以看出，空表分配11字节大小空间</span></span><br><span class="line">    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes);</span><br><span class="line">    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE);</span><br><span class="line">    ZIPLIST_LENGTH(zl) = <span class="number">0</span>;</span><br><span class="line">    zl[bytes<span class="number">-1</span>] = ZIP_END;</span><br><span class="line">    <span class="keyword">return</span> zl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ziplist为空时的内存空间如下图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image2.png"></p>
+<ul>
+<li><code>zltail</code>占4字节，用于记录表尾节点首地址距离ziplist起始地址有多少字节。设计这个字段的目的是为了快速定位表尾节点地址（ZIPLIST_ENTRY_TAIL)。</li>
+<li><code>zllen</code>占2字节，用于记录列表节点总数。注意<code>zllen</code>等于65535时，表示这个列表长度太大，必须通过遍历整个ziplist才能得到真实的长度。参考<code>ziplistLen</code>实现：</li>
 </ul>
-<h3 id="链表和链表节点的实现"><a href="#链表和链表节点的实现" class="headerlink" title="链表和链表节点的实现"></a>链表和链表节点的实现<span id="jump1"></span></h3><p>以REDIS 6.0.10源码为例，链表的实现参考<code>adlist.h</code>, <code>adlist.c</code></p>
-<p>链表节点通过listNode结构体实现，定义如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">void</span> *value;</span><br><span class="line">&#125; listNode;</span><br></pre></td></tr></table></figure>
-
-<p>可以看出这是一个双向链表，value存储节点值，其类型为void *</p>
-<h4 id="节点值的类型为void-，这样设计有什么好处？"><a href="#节点值的类型为void-，这样设计有什么好处？" class="headerlink" title="节点值的类型为void *，这样设计有什么好处？"></a>节点值的类型为void *，这样设计有什么好处？<span id="jump2"></span></h4><p>节点值设置void *类型，目的是实现一个通用的泛型链表，提高代码复用性。（类似C++的STL容器，多态思想）</p>
-<p>考虑实际应用场景中，链表节点值的类型可以是int, float, double等基本类型, 或者是自定义结构体类型，如果简单将value定义为某个具体类型，就只能为每个节点类型定义一个listNodeXX的结构体，同时需额外为每个节点类型新增一套增、删、改、查的API，实现非常繁琐，如下所示：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeInt</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">int</span> value;</span><br><span class="line">&#125; listNodeInt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeDouble</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">double</span> value;</span><br><span class="line">&#125; listNodeDouble;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 增加一个节点到链表头部</span></span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadInt</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> value)</span>;</span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadDouble</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">double</span> value)</span>;</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，这种实现方式的问题在于<strong>代码重复度过高，难以维护，且扩展性差，每支持一个新的节点类型都要新增代码</strong>，这显然是不能接受的。所以节点值类型要设计为void *</p>
-<h4 id="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？"><a href="#仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？" class="headerlink" title="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？"></a>仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？<span id="jump3"></span></h4><p>Redis中额外使用list结构，用于持有链表，简化操作。list结构体定义如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">list</span> &#123;</span></span><br><span class="line">    listNode *head;</span><br><span class="line">    listNode *tail;</span><br><span class="line">    <span class="type">void</span> *(*dup)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">void</span> (*<span class="built_in">free</span>)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">int</span> (*match)(<span class="type">void</span> *ptr, <span class="type">void</span> *key);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">&#125; <span class="built_in">list</span>;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> UINT16_MAX 65535</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">ziplistLen</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (intrev16ifbe(ZIPLIST_LENGTH(zl)) &lt; UINT16_MAX) &#123;</span><br><span class="line">        len = intrev16ifbe(ZIPLIST_LENGTH(zl)); <span class="comment">// zllen &lt; 65535时，O(1)复杂度获取ziplist长度</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *p = zl+ZIPLIST_HEADER_SIZE;</span><br><span class="line">        <span class="keyword">while</span> (*p != ZIP_END) &#123;			<span class="comment">// zllen = 65535时，O(N)复杂度获取ziplist长度</span></span><br><span class="line">            p += zipRawEntryLength(p);</span><br><span class="line">            len++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Re-store length if small enough */</span></span><br><span class="line">        <span class="keyword">if</span> (len &lt; UINT16_MAX) ZIPLIST_LENGTH(zl) = intrev16ifbe(len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <ul>
-<li><p>head, tail用于记录表头指针和表尾指针，好处是获取表头节点或表尾节点的时间复杂度为O(1)</p>
-</li>
-<li><p>len类型用于记录链表长度， 好处是获取链表节点总数的时间复杂度为O(1)</p>
-</li>
-<li><p>dup, free, match成员用于实现多态链表，对于不同类型的节点，挂接不同的函数钩子，设置特定的复制、释放、比较操作。</p>
+<li><code>zlend</code>占1字节，用于标记ziplist的结束，内容固定为0xFF(十进制的255)</li>
+</ul>
+<h3 id="ziplist节点构成"><a href="#ziplist节点构成" class="headerlink" title="ziplist节点构成"></a>ziplist节点构成<span id="jump2"></span></h3><p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过struct zlentry结构表示。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zlentry</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlensize; <span class="comment">/* Bytes used to encode the previous entry len*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlen;     <span class="comment">/* Previous entry len. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> lensize;        <span class="comment">/* Bytes used to encode this entry type/len.</span></span><br><span class="line"><span class="comment">                                    For example strings have a 1, 2 or 5 bytes</span></span><br><span class="line"><span class="comment">                                    header. Integers always use a single byte.*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len;            <span class="comment">/* Bytes used to represent the actual entry.</span></span><br><span class="line"><span class="comment">                                    For strings this is just the string length</span></span><br><span class="line"><span class="comment">                                    while for integers it is 1, 2, 3, 4, 8 or</span></span><br><span class="line"><span class="comment">                                    0 (for 4 bit immediate) depending on the</span></span><br><span class="line"><span class="comment">                                    number range. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> headersize;     <span class="comment">/* prevrawlensize + lensize. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> encoding;      <span class="comment">/* Set to ZIP_STR_* or ZIP_INT_* depending on</span></span><br><span class="line"><span class="comment">                                    the entry encoding. However for 4 bits</span></span><br><span class="line"><span class="comment">                                    immediate integers this can assume a range</span></span><br><span class="line"><span class="comment">                                    of values and must be range-checked. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *p;            <span class="comment">/* Pointer to the very start of the entry, that</span></span><br><span class="line"><span class="comment">                                    is, this points to prev-entry-len field. */</span></span><br><span class="line">&#125; zlentry;</span><br></pre></td></tr></table></figure>
+
+<p>前面提到，ziplist本质是一个字节数组，Redis为了操作方便，才专门定义zlentry结构体，并解析某个entry的信息到zlentry中，<strong>注意ziplist字节数组本身并不存储zlentry；</strong> ziplist的每个entry结构都由三部分组成：</p>
 <ul>
-<li>dup函数用于复制节点值</li>
-<li>free函数用于释放节点值</li>
-<li>match函数用于比较两个节点值是否相等</li>
+<li>前一节点长度信息：<code>previous_entry_length</code></li>
+<li>当前节点编码信息：<code>encoding</code></li>
+<li>当前节点内容：<code>content</code></li>
 </ul>
-</li>
-</ul>
-<p><strong>举例</strong>：一个长度为2的双向链表示意图：<br><img data-src="/2021/12/12/2021-12-12-redis-note-02-linkedlist/image1.png"></p>
-<h3 id="为什么用双向链表，不用单链表？"><a href="#为什么用双向链表，不用单链表？" class="headerlink" title="为什么用双向链表，不用单链表？"></a>为什么用双向链表，不用单链表？<span id="jump4"></span></h3><p>双向链表相较于单链表，有如下优点：</p>
+<p>ziplist节点的各组成部分示意图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image3.png"></p>
+<p>以下分别介绍这三个组成部分：</p>
+<h4 id="1、前一节点长度信息-previous-entry-length"><a href="#1、前一节点长度信息-previous-entry-length" class="headerlink" title="1、前一节点长度信息 previous_entry_length"></a>1、前一节点长度信息 previous_entry_length</h4><p><code>previous_entry_length</code>本身占1字节或5字节，用于记录前一个节点的长度，单位为字节：</p>
 <ul>
-<li>支持双向查找节点，且查找给定节点的前驱节点的时间复杂度为O(1)</li>
-<li>尾部插入节点快，时间复杂度为O(1)</li>
+<li>如果前一个节点长度小于254字节，<code>previous_entry_length</code>就只占1字节，直接保存前一个节点长度。</li>
+<li>如果前一个节点长度大于等于254字节，<code>previous_entry_length</code>就占5字节，其中第一个字节固定为0xFE，后4个字节保存前一个节点长度。</li>
 </ul>
-<h3 id="双向链表API实现分析"><a href="#双向链表API实现分析" class="headerlink" title="双向链表API实现分析"></a>双向链表API实现分析<span id="jump5"></span></h3><h4 id="链表创建"><a href="#链表创建" class="headerlink" title="链表创建"></a>链表创建<span id="jump6"></span></h4><p>调用<code>listCreate</code>，创建一个空的双向链表，时间复杂度O(1)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listCreate</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list</span> *<span class="title">list</span>;</span></span><br><span class="line">    <span class="keyword">if</span> ((<span class="built_in">list</span> = zmalloc(<span class="keyword">sizeof</span>(*<span class="built_in">list</span>))) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;dup = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;<span class="built_in">free</span> = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;match = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">list</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>源码参考<code>ZIP_DECODE_PREVLENSIZE</code>，这个宏根据前一个节点长度，返回<code>previous_entry_length</code>占用的字节数：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_BIG_PREVLEN 254</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do &#123;                          \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((ptr)[0] &lt; ZIP_BIG_PREVLEN) &#123;                                          \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
 
+<p>Q：为什么要设计<code>previous_entry_length</code>字段，有什么作用？</p>
+<p>A：用于支持从表尾向表头方向遍历。比如我们有指向某个节点起始地址的指针p，用p减去这个节点的<code>previous_entry_length</code>，就能得到前一节点的起始地址。</p>
+<p>访问ziplist当前节点的前一个节点，参考源码<code>ziplistPrev</code>的实现：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Return pointer to previous entry in ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistPrev</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl, <span class="type">unsigned</span> <span class="type">char</span> *p)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevlensize, prevlen = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (p[<span class="number">0</span>] == ZIP_END) &#123;	<span class="comment">// p指向ZIPLIST_ENTRY_END，前一个节点就是最后一个节点，即ZIPLIST_ENTRY_TAIL</span></span><br><span class="line">        p = ZIPLIST_ENTRY_TAIL(zl);</span><br><span class="line">        <span class="keyword">return</span> (p[<span class="number">0</span>] == ZIP_END) ? <span class="literal">NULL</span> : p;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (p == ZIPLIST_ENTRY_HEAD(zl)) &#123;	<span class="comment">// p为表头，说明前一个节点为NULL</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);	<span class="comment">// p减去这个节点的previous_entry_length</span></span><br><span class="line">        assert(prevlen &gt; <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span> p-prevlen;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<h4 id="2、当前节点编码信息-encoding，当前节点内容content"><a href="#2、当前节点编码信息-encoding，当前节点内容content" class="headerlink" title="2、当前节点编码信息 encoding，当前节点内容content"></a>2、当前节点编码信息 encoding，当前节点内容content</h4><p> <code>encoding</code>用于记录当前节点内容的实际类型（字符串还是整数），以及长度：</p>
+<ul>
+<li><code>encoding</code>长度可以是1字节、2字节、或5字节。其中<code>encoding</code>最高两位为00, 01, 或10时表示存储的值类型为字符串；<code>encoding</code>最高两位为11表示存储的值类型为整数。</li>
+</ul>
+<p>每一种<code>encoding</code>对应的编码长度和content类型，参考如下源码：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ziplist.c</span></span><br><span class="line"><span class="comment">/* Different encoding/length possibilities */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_MASK 0xc0			<span class="comment">// 11000000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_MASK 0x30			<span class="comment">// 00110000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_06B (0 &lt;&lt; 6)		<span class="comment">// 00bbbbbb （长度小于等于63）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_14B (1 &lt;&lt; 6)		<span class="comment">// 01bbbbbb bbbbbbbb  (长度大于63且小于等于16383)</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_32B (2 &lt;&lt; 6)		<span class="comment">// 10______ bbbbbbbb bbbbbbbb bbbbbbbb bbbbbbbb（长度大于16384）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_16B (0xc0 | 0&lt;&lt;4)	<span class="comment">// 11000000  16位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_32B (0xc0 | 1&lt;&lt;4)	<span class="comment">// 11010000  32位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_64B (0xc0 | 2&lt;&lt;4)	<span class="comment">// 11100000  64位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_24B (0xc0 | 3&lt;&lt;4)	<span class="comment">// 11110000  24位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_8B 0xfe				<span class="comment">// 11111110  8位整数</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 4 bit integer immediate encoding |1111xxxx| with xxxx between</span></span><br><span class="line"><span class="comment"> * 0001 and 1101. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MASK 0x0f   <span class="comment">/* Mask to extract the 4 bits value. To add</span></span></span><br><span class="line"><span class="comment"><span class="meta">                                   one is needed to reconstruct the value. */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MIN 0xf1    <span class="comment">/* 11110001 */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MAX 0xfd    <span class="comment">/* 11111101 */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MAX 0x7fffff</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MIN (-INT24_MAX - 1)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Macro to determine if the entry is a string. String entries never start</span></span><br><span class="line"><span class="comment"> * with &quot;11&quot; as most significant bits of the first byte. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_IS_STR(enc) (((enc) &amp; ZIP_STR_MASK) &lt; ZIP_STR_MASK)  <span class="comment">// 判断是否为字节数组编码！！！</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Extract the encoding from the byte pointed by &#x27;ptr&#x27; and set it into</span></span><br><span class="line"><span class="comment"> * &#x27;encoding&#x27; field of the zlentry structure. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_ENTRY_ENCODING(ptr, encoding) do &#123;  \</span></span><br><span class="line"><span class="meta">    (encoding) = (ptr[0]); \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) (encoding) &amp;= ZIP_STR_MASK; \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Decode the entry encoding type and data length (string length for strings,</span></span><br><span class="line"><span class="comment"> * number of bytes used for the integer for integer entries) encoded in &#x27;ptr&#x27;.</span></span><br><span class="line"><span class="comment"> * The &#x27;encoding&#x27; variable will hold the entry encoding, the &#x27;lensize&#x27;</span></span><br><span class="line"><span class="comment"> * variable will hold the number of bytes required to encode the entry</span></span><br><span class="line"><span class="comment"> * length, and the &#x27;len&#x27; variable will hold the entry length. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_LENGTH(ptr, encoding, lensize, len) do &#123;                    \</span></span><br><span class="line"><span class="meta">    ZIP_ENTRY_ENCODING((ptr), (encoding));                                     \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) &#123;                                           \</span></span><br><span class="line"><span class="meta">        <span class="keyword">if</span> ((encoding) == ZIP_STR_06B) &#123;                                       \</span></span><br><span class="line"><span class="meta">            (lensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (ptr)[0] &amp; 0x3f;                                           \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_14B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 2;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (((ptr)[0] &amp; 0x3f) &lt;&lt; 8) | (ptr)[1];                       \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_32B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = ((ptr)[1] &lt;&lt; 24) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[2] &lt;&lt; 16) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[3] &lt;&lt;  8) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[4]);                                                \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> &#123;                                                               \</span></span><br><span class="line"><span class="meta">            panic(<span class="string">&quot;Invalid string encoding 0x%02X&quot;</span>, (encoding));               \</span></span><br><span class="line"><span class="meta">        &#125;                                                                      \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (lensize) = 1;                                                         \</span></span><br><span class="line"><span class="meta">        (len) = zipIntSize(encoding);                                          \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
 
-<h4 id="链表销毁"><a href="#链表销毁" class="headerlink" title="链表销毁"></a>链表销毁<span id="jump7"></span></h4><p>调用<code>listRelease</code>，释放链表，时间复杂度O(N)，N为链表长度</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRelease</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    listEmpty(<span class="built_in">list</span>);</span><br><span class="line">    zfree(<span class="built_in">list</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listEmpty</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">    listNode *current, *next;</span><br><span class="line"></span><br><span class="line">    current = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    len = <span class="built_in">list</span>-&gt;len;</span><br><span class="line">    <span class="keyword">while</span>(len--) &#123;</span><br><span class="line">        next = current-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">list</span>-&gt;<span class="built_in">free</span>) <span class="built_in">list</span>-&gt;<span class="built_in">free</span>(current-&gt;value);	<span class="comment">// 不同的节点类型，挂接不同的free函数钩子，实现多态链表的释放操作。</span></span><br><span class="line">        zfree(current);</span><br><span class="line">        current = next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>整数编码：</p>
+<table>
+<thead>
+<tr>
+<th align="left">encoding</th>
+<th align="left">encoding长度</th>
+<th align="left">content长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">11111110 (ZIP_INT_8B)</td>
+<td align="left">1字节</td>
+<td align="left">8位整数</td>
+</tr>
+<tr>
+<td align="left">11000000 (ZIP_INT_16B)</td>
+<td align="left">1字节</td>
+<td align="left">16位整数</td>
+</tr>
+<tr>
+<td align="left">11110000(ZIP_INT_24B)</td>
+<td align="left">1字节</td>
+<td align="left">24位整数</td>
+</tr>
+<tr>
+<td align="left">11010000(ZIP_INT_32B)</td>
+<td align="left">1字节</td>
+<td align="left">32位整数</td>
+</tr>
+<tr>
+<td align="left">11100000(ZIP_INT_64B)</td>
+<td align="left">1字节</td>
+<td align="left">64位整数</td>
+</tr>
+<tr>
+<td align="left">1111xxxx</td>
+<td align="left">1字节</td>
+<td align="left">0-12之间的整数。此时没有content部分，值存储在encoding的xxxx四个位</td>
+</tr>
+</tbody></table>
+<p>字节数组编码：</p>
+<table>
+<thead>
+<tr>
+<th align="left">encoding</th>
+<th align="left">encoding说明</th>
+<th align="left">encoding长度</th>
+<th align="left">content长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">00xxxxxx (ZIP_STR_06B)</td>
+<td align="left">后6位表示字节数组的长度</td>
+<td align="left">1字节</td>
+<td align="left">保存长度小于等于63字节的字节数组</td>
+</tr>
+<tr>
+<td align="left">01xxxxxx xxxxxxxx (ZIP_STR_14B)</td>
+<td align="left">后14位表示字节数组的长度</td>
+<td align="left">2字节</td>
+<td align="left">保存长度大于63， 小于等于16383字节的字节数组</td>
+</tr>
+<tr>
+<td align="left">10______ xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx (ZIP_STR_32B)</td>
+<td align="left">最后24位表示字节数组的长度，第3-8位留空</td>
+<td align="left">5字节</td>
+<td align="left">保存长度大于16384，小于 2^32 - 1字节的字节数组</td>
+</tr>
+</tbody></table>
+<p>总结：Redis根据ziplist节点存储内容的类型和大小，使用不同的编码表示，目的在于最大限度地节省空间。</p>
+<p><font color = 'red'>思考问题：</font>创建一个ziplist编码的空列表键，并依次添加两个值”hello”，”10086”，问此时ziplist的长度是多少，内容是什么样的？</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; info  # Redis版本必须为3.2之前的，否则列表键的默认编码为quicklist，而非ziplist!</span><br><span class="line"># Server redis_version:3.0.0</span><br><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">127.0.0.1:6379&gt; rpush key hello 10086 # 新增列表键，依次插入两个key &quot;hello&quot; &quot;10086&quot;</span><br><span class="line">(integer) 2</span><br><span class="line">127.0.0.1:6379&gt; object encoding key   # 确认列表键编码为ziplist</span><br><span class="line">&quot;ziplist&quot;</span><br></pre></td></tr></table></figure>
 
+<p>如果你真的掌握了ziplist节点构成，那么不需要运行Redis，你也可以得出答案：这个ziplist占用22字节，内存如下图所示：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image4.png"><br>以下给出GDB的验证方法和验证结果，感兴趣的可以参考：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 0、确认ziplist的首地址</span></span><br><span class="line">(gdb) p (sds)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].key</span><br><span class="line">$<span class="number">1</span> = (sds) <span class="number">0x7fc6ac086288</span> <span class="string">&quot;key&quot;</span> <span class="comment">// 键</span></span><br><span class="line">(gdb) p *(robj *)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].v</span><br><span class="line">$<span class="number">2</span> = &#123;type = <span class="number">1</span>, encoding = <span class="number">5</span>, lru = <span class="number">13392586</span>, refcount = <span class="number">1</span>, ptr = <span class="number">0x7fc6ac035d60</span>&#125; <span class="comment">// ptr即为ziplist的首地址！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1、打印zlbytes, zltail, zllen</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d60</span></span><br><span class="line">$<span class="number">3</span> = <span class="number">22</span> <span class="comment">// zlbytes = 22</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d64</span></span><br><span class="line">$<span class="number">4</span> = <span class="number">17</span> <span class="comment">// zltail = 17</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *)<span class="number">0x7fc6ac035d68</span></span><br><span class="line">$<span class="number">5</span> = <span class="number">2</span>  <span class="comment">// zlen = 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、以下开始打印第一个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6a</span></span><br><span class="line"><span class="number">0x7fc6ac035d6a</span>: <span class="number">0x00</span> <span class="comment">// previous_entry_length本身占1字节，长度为0</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6b</span></span><br><span class="line"><span class="number">0x7fc6ac035d6b</span>: <span class="number">0x05</span> <span class="comment">// encoding为00000101, 本身占1字节，表示长度为5的字节数组</span></span><br><span class="line">(gdb) x/<span class="number">5</span>c <span class="number">0x7fc6ac035d6c</span></span><br><span class="line"><span class="number">0x7fc6ac035d6c</span>: <span class="number">104</span> <span class="string">&#x27;h&#x27;</span> <span class="number">101</span> <span class="string">&#x27;e&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">111</span> <span class="string">&#x27;o&#x27;</span>	<span class="comment">// content占5字节，存储&quot;hello&quot;</span></span><br><span class="line"><span class="comment">// 第一个节点总长度为 1 + 1 + 5 = 7 字节</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、以下开始打印第二个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d71</span></span><br><span class="line"><span class="number">0x7fc6ac035d71</span>: <span class="number">0x07</span> <span class="comment">// previous_entry_length本身占1字节，长度为7</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d72</span></span><br><span class="line"><span class="number">0x7fc6ac035d72</span>: <span class="number">0xc0</span> <span class="comment">// encoding为11000000, 本身占1字节, 表示16位的整数</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *) <span class="number">0x7fc6ac035d73</span></span><br><span class="line">$<span class="number">6</span> = <span class="number">10086</span>	<span class="comment">// content本身占2字节，存储内容正是10086</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、标志zlend，占1字节</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d75</span></span><br><span class="line"><span class="number">0x7fc6ac035d75</span>: <span class="number">0xff</span></span><br></pre></td></tr></table></figure>
 
+<h3 id="为什么要设计ziplist"><a href="#为什么要设计ziplist" class="headerlink" title="为什么要设计ziplist"></a>为什么要设计ziplist<span id="jump3"></span></h3><p>还是考虑这个列表键： <code>&quot;hello&quot; -&gt; &quot;10086&quot;</code></p>
+<ul>
+<li>如果用ziplist编码，仅需22个字节存储。</li>
+<li>如果用linkedlist编码，以64位环境为例，光链表节点就需要2 * sizeof(listNode) &#x3D; 48个字节，这个大小远超过了数据本身的大小，导致严重的内存浪费。</li>
+</ul>
+<p>可以看出，ziplist设计思想是以时间换空间，目的是节省宝贵的内存资源。</p>
+<p>Redis中，ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
+<h3 id="ziplist相关操作"><a href="#ziplist相关操作" class="headerlink" title="ziplist相关操作"></a>ziplist相关操作<span id="jump4"></span></h3><p>压缩列表的增、删、改、查API如下：</p>
+<table>
+<thead>
+<tr>
+<th align="left">API</th>
+<th align="left">功能</th>
+<th align="left">时间复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">ziplistPush</td>
+<td align="left">插入指定节点到表头或表尾</td>
+<td align="left">平均O(N)，连锁更新场景为O(N^2)</td>
+</tr>
+<tr>
+<td align="left">ziplistDelete</td>
+<td align="left">删除指定节点</td>
+<td align="left">平均O(N)，连续更新场景为O(N^2)</td>
+</tr>
+<tr>
+<td align="left">ziplistFind</td>
+<td align="left">查找指定节点</td>
+<td align="left">O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</td>
+</tr>
+<tr>
+<td align="left">ziplistNext</td>
+<td align="left">返回给定节点的下一个节点</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">ziplistPrev</td>
+<td align="left">返回给定节点的前一个节点</td>
+<td align="left">O(1)</td>
+</tr>
+</tbody></table>
+<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump5"></span></h4><p>源码参考<code>ziplistFind</code>，时间复杂度为O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 功能：寻找ziplist中，节点值和vstr相等的节点并返回</span></span><br><span class="line"><span class="comment">// skip表示跳过的节点数</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistFind</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *p, <span class="type">unsigned</span> <span class="type">char</span> *vstr, <span class="type">unsigned</span> <span class="type">int</span> vlen, <span class="type">unsigned</span> <span class="type">int</span> skip)</span> &#123;</span><br><span class="line">    <span class="type">int</span> skipcnt = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> vencoding = <span class="number">0</span>;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> vll = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (p[<span class="number">0</span>] != ZIP_END) &#123;	<span class="comment">// 如果没有达到列表尾，就一直循环遍历！</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">int</span> prevlensize, encoding, lensize, len;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *q;</span><br><span class="line"></span><br><span class="line">        ZIP_DECODE_PREVLENSIZE(p, prevlensize);</span><br><span class="line">        ZIP_DECODE_LENGTH(p + prevlensize, encoding, lensize, len);</span><br><span class="line">        q = p + prevlensize + lensize;	<span class="comment">// 此时q指向节点p的content</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (skipcnt == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">/* Compare current entry with specified entry */</span></span><br><span class="line">            <span class="keyword">if</span> (ZIP_IS_STR(encoding)) &#123;	<span class="comment">// 如果是字符串，memcmp比较是否相等，复杂度O(N)</span></span><br><span class="line">                <span class="keyword">if</span> (len == vlen &amp;&amp; <span class="built_in">memcmp</span>(q, vstr, vlen) == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> p;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">/* Find out if the searched field can be encoded. Note that</span></span><br><span class="line"><span class="comment">                 * we do it only the first time, once done vencoding is set</span></span><br><span class="line"><span class="comment">                 * to non-zero and vll is set to the integer value. */</span></span><br><span class="line">                <span class="comment">// 对于传入的vstr, 解码动作只需做一次， vencoding相当于一个flag</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!zipTryEncoding(vstr, vlen, &amp;vll, &amp;vencoding)) &#123;</span><br><span class="line">                        <span class="comment">/* If the entry can&#x27;t be encoded we set it to</span></span><br><span class="line"><span class="comment">                         * UCHAR_MAX so that we don&#x27;t retry again the next</span></span><br><span class="line"><span class="comment">                         * time. */</span></span><br><span class="line">                        vencoding = UCHAR_MAX;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">/* Must be non-zero by now */</span></span><br><span class="line">                    assert(vencoding);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">/* Compare current entry with specified entry, do it only</span></span><br><span class="line"><span class="comment">                 * if vencoding != UCHAR_MAX because if there is no encoding</span></span><br><span class="line"><span class="comment">                 * possible for the field it can&#x27;t be a valid integer. */</span></span><br><span class="line">                <span class="comment">// 如果解码成功，比较整数值是否相等</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding != UCHAR_MAX) &#123;</span><br><span class="line">                    <span class="type">long</span> <span class="type">long</span> ll = zipLoadInteger(q, encoding);</span><br><span class="line">                    <span class="keyword">if</span> (ll == vll) &#123;</span><br><span class="line">                        <span class="keyword">return</span> p;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/* Reset skip count */</span></span><br><span class="line">            skipcnt = skip;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/* Skip entry */</span></span><br><span class="line">            skipcnt--;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* Move to next entry */</span></span><br><span class="line">        <span class="comment">// q指向content, len就是content的长度, 所以 q + len即为下一个节点的首地址！！</span></span><br><span class="line">        p = q + len;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h4 id="头部插入节点"><a href="#头部插入节点" class="headerlink" title="头部插入节点"></a>头部插入节点<span id="jump8"></span></h4><p>调用<code>listAddNodeHead</code>，在链表头部插入节点，时间复杂度O(1)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeHead(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = NULL;</span><br><span class="line">        node-&gt;next = list-&gt;head;</span><br><span class="line">        list-&gt;head-&gt;prev = node;</span><br><span class="line">        list-&gt;head = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="尾部插入节点"><a href="#尾部插入节点" class="headerlink" title="尾部插入节点"></a>尾部插入节点<span id="jump9"></span></h4><p>调用<code>listAddNodeTail</code>, 在链表尾部插入节点，时间复杂度O(1)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeTail(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = list-&gt;tail;</span><br><span class="line">        node-&gt;next = NULL;</span><br><span class="line">        list-&gt;tail-&gt;next = node;</span><br><span class="line">        list-&gt;tail = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="指定位置前后插入节点"><a href="#指定位置前后插入节点" class="headerlink" title="指定位置前后插入节点"></a>指定位置前后插入节点<span id="jump10"></span></h4><p>调用<code>listInsertNode</code>，在指定位置之前或之后插入节点，时间复杂度O(1)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listInsertNode(list *list, listNode *old_node, void *value, int after) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (after) &#123;</span><br><span class="line">        node-&gt;prev = old_node;</span><br><span class="line">        node-&gt;next = old_node-&gt;next;</span><br><span class="line">        if (list-&gt;tail == old_node) &#123;</span><br><span class="line">            list-&gt;tail = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;next = old_node;</span><br><span class="line">        node-&gt;prev = old_node-&gt;prev;</span><br><span class="line">        if (list-&gt;head == old_node) &#123;</span><br><span class="line">            list-&gt;head = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;prev != NULL) &#123;</span><br><span class="line">        node-&gt;prev-&gt;next = node;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;next != NULL) &#123;</span><br><span class="line">        node-&gt;next-&gt;prev = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>after等于1时，在给定old_node节点之后插入，否则在给定节点前插入。</p>
-<h4 id="删除指定节点"><a href="#删除指定节点" class="headerlink" title="删除指定节点"></a>删除指定节点<span id="jump11"></span></h4><p>调用<code>listDelNode</code>， 删除指定节点，时间复杂度为O(1)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">void listDelNode(list *list, listNode *node) &#123;</span><br><span class="line">    if (node-&gt;prev)</span><br><span class="line">        node-&gt;prev-&gt;next = node-&gt;next;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;head = node-&gt;next;</span><br><span class="line">    if (node-&gt;next)</span><br><span class="line">        node-&gt;next-&gt;prev = node-&gt;prev;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;tail = node-&gt;prev;</span><br><span class="line">    if (list-&gt;free) list-&gt;free(node-&gt;value);</span><br><span class="line">    zfree(node);</span><br><span class="line">    list-&gt;len--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="链表迭代器的设计实现"><a href="#链表迭代器的设计实现" class="headerlink" title="链表迭代器的设计实现"></a>链表迭代器的设计实现<span id="jump12"></span></h4><p>定义<code>struct listIter</code>结构体实现链表的迭代器，支持双向迭代。(类似C++容器的begin()和rbegin()操作)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Directions for iterators */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_HEAD 0			<span class="comment">// 正向迭代, head -&gt; tail</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_TAIL 1			<span class="comment">// 反向迭代，tail -&gt; head</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listIter</span> &#123;</span></span><br><span class="line">    listNode *next;</span><br><span class="line">    <span class="type">int</span> direction;	<span class="comment">// 取值有两种，AL_START_HEAD或AL_START_TAIL，支持双向迭代。</span></span><br><span class="line">&#125; listIter;</span><br></pre></td></tr></table></figure>
-
-<p>通过<code>listGetIterator</code>，创建一个正向&#x2F;反向迭代器：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listIter *<span class="title function_">listGetIterator</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> direction)</span> &#123;</span><br><span class="line">    listIter *iter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((iter = zmalloc(<span class="keyword">sizeof</span>(*iter))) == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (direction == AL_START_HEAD)		<span class="comment">// 正向迭代器</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;tail;		<span class="comment">// 反向迭代器</span></span><br><span class="line">    iter-&gt;direction = direction;</span><br><span class="line">    <span class="keyword">return</span> iter;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>重置迭代器, 通过<code>listRewind</code>和<code>listRewindTail</code>方法：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRewind</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    li-&gt;direction = AL_START_HEAD;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listRewindTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    li-&gt;direction = AL_START_TAIL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>通过<code>listNext</code>，访问迭代器中的下一个元素：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listNode *<span class="title function_">listNext</span><span class="params">(listIter *iter)</span> &#123;</span><br><span class="line">    listNode *current = iter-&gt;next;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (current != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (iter-&gt;direction == AL_START_HEAD)</span><br><span class="line">            iter-&gt;next = current-&gt;next;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            iter-&gt;next = current-&gt;prev;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> current;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump13"></span></h4><p>调用<code>listSearchKey</code>，查找指定节点，平均时间复杂度O(N)，N为链表长度。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">listNode *listSearchKey(list *list, void *key) &#123;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    listRewind(list, &amp;iter);</span><br><span class="line">    while((node = listNext(&amp;iter)) != NULL) &#123;</span><br><span class="line">        if (list-&gt;match) &#123;</span><br><span class="line">            if (list-&gt;match(node-&gt;value, key)) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if (key == node-&gt;value) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return NULL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="复制链表"><a href="#复制链表" class="headerlink" title="复制链表"></a>复制链表<span id="jump14"></span></h4><p>调用<code>listDup</code>，复制链表，时间复杂度O(N)，N为链表长度。</p>
-<p><strong>实现技巧分析</strong>：通过迭代器隐藏链表内部实现，简化链表遍历操作；通过dup函数指针，统一了不同类型链表节点的复制流程，实现简洁优雅，值得一学。</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listDup</span><span class="params">(<span class="built_in">list</span> *orig)</span> &#123;</span><br><span class="line">    <span class="built_in">list</span> *copy;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((copy = listCreate()) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    copy-&gt;dup = orig-&gt;dup;</span><br><span class="line">    copy-&gt;<span class="built_in">free</span> = orig-&gt;<span class="built_in">free</span>;</span><br><span class="line">    copy-&gt;match = orig-&gt;match;</span><br><span class="line">    listRewind(orig, &amp;iter);</span><br><span class="line">    <span class="keyword">while</span>((node = listNext(&amp;iter)) != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="type">void</span> *value;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (copy-&gt;dup) &#123;</span><br><span class="line">            value = copy-&gt;dup(node-&gt;value);</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                listRelease(copy);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span></span><br><span class="line">            value = node-&gt;value;</span><br><span class="line">        <span class="keyword">if</span> (listAddNodeTail(copy, value) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            listRelease(copy);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="表头节点移动到表尾"><a href="#表头节点移动到表尾" class="headerlink" title="表头节点移动到表尾"></a>表头节点移动到表尾<span id="jump15"></span></h4><p>通过<code>listRotateHeadToTail</code>，实现表头节点移动到表尾，时间复杂度为O(1)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateHeadToTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    listNode *head = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="comment">/* Detach current head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head = head-&gt;next;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as tail */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = head;</span><br><span class="line">    head-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    head-&gt;prev = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>通过<code>listRotateTailToHead</code>，实现表尾节点移动到表头，时间复杂度为O(1)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateTailToHead</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Detach current tail */</span></span><br><span class="line">    listNode *tail = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = tail-&gt;prev;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = tail;</span><br><span class="line">    tail-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    tail-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = tail;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第3章 链表</p>
+<h4 id="连锁更新问题"><a href="#连锁更新问题" class="headerlink" title="连锁更新问题"></a>连锁更新问题<span id="jump6"></span></h4><p>前面提到，ziplist中每个节点的<code>previous_entry_length</code>记录了前一个节点的长度，考虑在表头插入节点的场景：</p>
+<p>如果列表所有节点长度都在250-253字节之前，且插入节点大于等于254字节，就会导致所有节点的<code>previous_entry_length</code>都必须从1字节扩展为5字节, 即触发了<strong>连锁更新</strong>。</p>
+<p>以下举例说明这个问题：给定一个长度为3的，每个节点大小均为253字节的ziplist，往表头插入一个300字节大小的节点。<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image5.png"><br>注：除了新增节点会引发连锁更新，删除节点操作也可能引发连锁更新，此处不再赘述。</p>
+<p><font color = 'red'>思考问题：</font>既然连锁更新的最坏复杂度为O(n^2)，为什么Redis还是放心使用ziplist？</p>
+<ul>
+<li>因为连锁更新触发条件苛刻，只有满足存在多个连续长度为250-253之间的节点才能触发。</li>
+<li>ziplist只应用于节点数少且数据小的场景，即使出现了连续更新，需要更新的节点数量也很少，不会出现性能问题。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第7章 压缩列表</p>
+<p>【2】[Redis源码解析-基础数据-ziplist(压缩列表)](</p>
 ]]></content>
       <categories>
         <category>Redis</category>
@@ -3485,216 +3695,6 @@
 <p>【2】<a href="https://juejin.cn/post/6844903702373859335">Copy On Write机制了解一下</a></p>
 <p>【3】<a href="https://tech.meituan.com/2018/07/27/redis-rehash-practice-optimization.html">美团针对Redis Rehash机制的探索和实践</a></p>
 <p>【4】<a href="https://cloud.tencent.com/developer/article/1672781">解决哈希冲突的常用方法分析</a></p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis学习笔记(四)——ziplist</title>
-    <url>/2021/12/30/2021-12-30-redis-note-04-ziplist/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>ziplist是一种为节约内存而开发的数据结构，本质是一个字节数组。</p>
-<p>ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
-<span id="more"></span>
-
-<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>双向链表结构，在<font color = 'red'>存储数据本身长度远小于链表节点大小</font>的场景下，有严重的内存浪费问题。针对这种情况，Redis设计了ziplist这种节约内存的数据结构。以下给出ziplist相关的思考问题，了解ziplist的实现原理和设计思路。</p>
-<ul>
-<li><a href="#jump1">ziplist的数据结构</a></li>
-<li><a href="#jump2">ziplist节点构成</a></li>
-<li><a href="#jump3">为什么要设计ziplist</a></li>
-<li><a href="#jump4">ziplist相关操作</a><ul>
-<li><a href="#jump5">查找指定节点</a></li>
-<li><a href="#jump6">连锁更新问题</a></li>
-</ul>
-</li>
-<li>quicklist的数据结构</li>
-<li>为什么要设计quicklist</li>
-<li>quicklist的增、删、改、查操作</li>
-</ul>
-<h3 id="ziplist的数据结构"><a href="#ziplist的数据结构" class="headerlink" title="ziplist的数据结构"></a>ziplist的数据结构<span id="jump1"></span></h3><p>Redis没有专门定义结构体来表示ziplist，因为ziplist本质就是一个空间连续的字节数组。</p>
-<p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过<code>struct zlentry</code>结构表示。</p>
-<p>ziplist的各组成部分参考如下：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image1.png"></p>
-<p>可以看出，ziplist由列表头 + 列表节点 + 列表尾这三部分组成。每个组成部分作用说明如下：</p>
-<ul>
-<li><code>zlbytes</code>占4字节，用于记录整个ziplist占用内存的总字节数，对于空表来说，<code>zlbytes</code>等于11，源码参考<code>ziplistNew</code></li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t)) <span class="comment">// 8 + 2 = 10字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_END_SIZE        (sizeof(uint8_t)) <span class="comment">// 1字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_BYTES(zl)       (*((uint32_t*)(zl)))  <span class="comment">// zlbytes</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Create a new empty ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistNew</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> bytes = ZIPLIST_HEADER_SIZE+ZIPLIST_END_SIZE;	<span class="comment">// zlbytes = 10 + 1 = 11</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *zl = zmalloc(bytes); <span class="comment">// 可以看出，空表分配11字节大小空间</span></span><br><span class="line">    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes);</span><br><span class="line">    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE);</span><br><span class="line">    ZIPLIST_LENGTH(zl) = <span class="number">0</span>;</span><br><span class="line">    zl[bytes<span class="number">-1</span>] = ZIP_END;</span><br><span class="line">    <span class="keyword">return</span> zl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>ziplist为空时的内存空间如下图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image2.png"></p>
-<ul>
-<li><code>zltail</code>占4字节，用于记录表尾节点首地址距离ziplist起始地址有多少字节。设计这个字段的目的是为了快速定位表尾节点地址（ZIPLIST_ENTRY_TAIL)。</li>
-<li><code>zllen</code>占2字节，用于记录列表节点总数。注意<code>zllen</code>等于65535时，表示这个列表长度太大，必须通过遍历整个ziplist才能得到真实的长度。参考<code>ziplistLen</code>实现：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> UINT16_MAX 65535</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">ziplistLen</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (intrev16ifbe(ZIPLIST_LENGTH(zl)) &lt; UINT16_MAX) &#123;</span><br><span class="line">        len = intrev16ifbe(ZIPLIST_LENGTH(zl)); <span class="comment">// zllen &lt; 65535时，O(1)复杂度获取ziplist长度</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *p = zl+ZIPLIST_HEADER_SIZE;</span><br><span class="line">        <span class="keyword">while</span> (*p != ZIP_END) &#123;			<span class="comment">// zllen = 65535时，O(N)复杂度获取ziplist长度</span></span><br><span class="line">            p += zipRawEntryLength(p);</span><br><span class="line">            len++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Re-store length if small enough */</span></span><br><span class="line">        <span class="keyword">if</span> (len &lt; UINT16_MAX) ZIPLIST_LENGTH(zl) = intrev16ifbe(len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>zlend</code>占1字节，用于标记ziplist的结束，内容固定为0xFF(十进制的255)</li>
-</ul>
-<h3 id="ziplist节点构成"><a href="#ziplist节点构成" class="headerlink" title="ziplist节点构成"></a>ziplist节点构成<span id="jump2"></span></h3><p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过struct zlentry结构表示。</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zlentry</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlensize; <span class="comment">/* Bytes used to encode the previous entry len*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlen;     <span class="comment">/* Previous entry len. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> lensize;        <span class="comment">/* Bytes used to encode this entry type/len.</span></span><br><span class="line"><span class="comment">                                    For example strings have a 1, 2 or 5 bytes</span></span><br><span class="line"><span class="comment">                                    header. Integers always use a single byte.*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len;            <span class="comment">/* Bytes used to represent the actual entry.</span></span><br><span class="line"><span class="comment">                                    For strings this is just the string length</span></span><br><span class="line"><span class="comment">                                    while for integers it is 1, 2, 3, 4, 8 or</span></span><br><span class="line"><span class="comment">                                    0 (for 4 bit immediate) depending on the</span></span><br><span class="line"><span class="comment">                                    number range. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> headersize;     <span class="comment">/* prevrawlensize + lensize. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> encoding;      <span class="comment">/* Set to ZIP_STR_* or ZIP_INT_* depending on</span></span><br><span class="line"><span class="comment">                                    the entry encoding. However for 4 bits</span></span><br><span class="line"><span class="comment">                                    immediate integers this can assume a range</span></span><br><span class="line"><span class="comment">                                    of values and must be range-checked. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *p;            <span class="comment">/* Pointer to the very start of the entry, that</span></span><br><span class="line"><span class="comment">                                    is, this points to prev-entry-len field. */</span></span><br><span class="line">&#125; zlentry;</span><br></pre></td></tr></table></figure>
-
-<p>前面提到，ziplist本质是一个字节数组，Redis为了操作方便，才专门定义zlentry结构体，并解析某个entry的信息到zlentry中，<strong>注意ziplist字节数组本身并不存储zlentry；</strong> ziplist的每个entry结构都由三部分组成：</p>
-<ul>
-<li>前一节点长度信息：<code>previous_entry_length</code></li>
-<li>当前节点编码信息：<code>encoding</code></li>
-<li>当前节点内容：<code>content</code></li>
-</ul>
-<p>ziplist节点的各组成部分示意图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image3.png"></p>
-<p>以下分别介绍这三个组成部分：</p>
-<h4 id="1、前一节点长度信息-previous-entry-length"><a href="#1、前一节点长度信息-previous-entry-length" class="headerlink" title="1、前一节点长度信息 previous_entry_length"></a>1、前一节点长度信息 previous_entry_length</h4><p><code>previous_entry_length</code>本身占1字节或5字节，用于记录前一个节点的长度，单位为字节：</p>
-<ul>
-<li>如果前一个节点长度小于254字节，<code>previous_entry_length</code>就只占1字节，直接保存前一个节点长度。</li>
-<li>如果前一个节点长度大于等于254字节，<code>previous_entry_length</code>就占5字节，其中第一个字节固定为0xFE，后4个字节保存前一个节点长度。</li>
-</ul>
-<p>源码参考<code>ZIP_DECODE_PREVLENSIZE</code>，这个宏根据前一个节点长度，返回<code>previous_entry_length</code>占用的字节数：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_BIG_PREVLEN 254</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do &#123;                          \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((ptr)[0] &lt; ZIP_BIG_PREVLEN) &#123;                                          \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
-
-<p>Q：为什么要设计<code>previous_entry_length</code>字段，有什么作用？</p>
-<p>A：用于支持从表尾向表头方向遍历。比如我们有指向某个节点起始地址的指针p，用p减去这个节点的<code>previous_entry_length</code>，就能得到前一节点的起始地址。</p>
-<p>访问ziplist当前节点的前一个节点，参考源码<code>ziplistPrev</code>的实现：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Return pointer to previous entry in ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistPrev</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl, <span class="type">unsigned</span> <span class="type">char</span> *p)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevlensize, prevlen = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (p[<span class="number">0</span>] == ZIP_END) &#123;	<span class="comment">// p指向ZIPLIST_ENTRY_END，前一个节点就是最后一个节点，即ZIPLIST_ENTRY_TAIL</span></span><br><span class="line">        p = ZIPLIST_ENTRY_TAIL(zl);</span><br><span class="line">        <span class="keyword">return</span> (p[<span class="number">0</span>] == ZIP_END) ? <span class="literal">NULL</span> : p;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (p == ZIPLIST_ENTRY_HEAD(zl)) &#123;	<span class="comment">// p为表头，说明前一个节点为NULL</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);	<span class="comment">// p减去这个节点的previous_entry_length</span></span><br><span class="line">        assert(prevlen &gt; <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span> p-prevlen;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="2、当前节点编码信息-encoding，当前节点内容content"><a href="#2、当前节点编码信息-encoding，当前节点内容content" class="headerlink" title="2、当前节点编码信息 encoding，当前节点内容content"></a>2、当前节点编码信息 encoding，当前节点内容content</h4><p> <code>encoding</code>用于记录当前节点内容的实际类型（字符串还是整数），以及长度：</p>
-<ul>
-<li><code>encoding</code>长度可以是1字节、2字节、或5字节。其中<code>encoding</code>最高两位为00, 01, 或10时表示存储的值类型为字符串；<code>encoding</code>最高两位为11表示存储的值类型为整数。</li>
-</ul>
-<p>每一种<code>encoding</code>对应的编码长度和content类型，参考如下源码：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ziplist.c</span></span><br><span class="line"><span class="comment">/* Different encoding/length possibilities */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_MASK 0xc0			<span class="comment">// 11000000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_MASK 0x30			<span class="comment">// 00110000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_06B (0 &lt;&lt; 6)		<span class="comment">// 00bbbbbb （长度小于等于63）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_14B (1 &lt;&lt; 6)		<span class="comment">// 01bbbbbb bbbbbbbb  (长度大于63且小于等于16383)</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_32B (2 &lt;&lt; 6)		<span class="comment">// 10______ bbbbbbbb bbbbbbbb bbbbbbbb bbbbbbbb（长度大于16384）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_16B (0xc0 | 0&lt;&lt;4)	<span class="comment">// 11000000  16位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_32B (0xc0 | 1&lt;&lt;4)	<span class="comment">// 11010000  32位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_64B (0xc0 | 2&lt;&lt;4)	<span class="comment">// 11100000  64位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_24B (0xc0 | 3&lt;&lt;4)	<span class="comment">// 11110000  24位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_8B 0xfe				<span class="comment">// 11111110  8位整数</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 4 bit integer immediate encoding |1111xxxx| with xxxx between</span></span><br><span class="line"><span class="comment"> * 0001 and 1101. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MASK 0x0f   <span class="comment">/* Mask to extract the 4 bits value. To add</span></span></span><br><span class="line"><span class="comment"><span class="meta">                                   one is needed to reconstruct the value. */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MIN 0xf1    <span class="comment">/* 11110001 */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MAX 0xfd    <span class="comment">/* 11111101 */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MAX 0x7fffff</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MIN (-INT24_MAX - 1)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Macro to determine if the entry is a string. String entries never start</span></span><br><span class="line"><span class="comment"> * with &quot;11&quot; as most significant bits of the first byte. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_IS_STR(enc) (((enc) &amp; ZIP_STR_MASK) &lt; ZIP_STR_MASK)  <span class="comment">// 判断是否为字节数组编码！！！</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Extract the encoding from the byte pointed by &#x27;ptr&#x27; and set it into</span></span><br><span class="line"><span class="comment"> * &#x27;encoding&#x27; field of the zlentry structure. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_ENTRY_ENCODING(ptr, encoding) do &#123;  \</span></span><br><span class="line"><span class="meta">    (encoding) = (ptr[0]); \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) (encoding) &amp;= ZIP_STR_MASK; \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Decode the entry encoding type and data length (string length for strings,</span></span><br><span class="line"><span class="comment"> * number of bytes used for the integer for integer entries) encoded in &#x27;ptr&#x27;.</span></span><br><span class="line"><span class="comment"> * The &#x27;encoding&#x27; variable will hold the entry encoding, the &#x27;lensize&#x27;</span></span><br><span class="line"><span class="comment"> * variable will hold the number of bytes required to encode the entry</span></span><br><span class="line"><span class="comment"> * length, and the &#x27;len&#x27; variable will hold the entry length. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_LENGTH(ptr, encoding, lensize, len) do &#123;                    \</span></span><br><span class="line"><span class="meta">    ZIP_ENTRY_ENCODING((ptr), (encoding));                                     \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) &#123;                                           \</span></span><br><span class="line"><span class="meta">        <span class="keyword">if</span> ((encoding) == ZIP_STR_06B) &#123;                                       \</span></span><br><span class="line"><span class="meta">            (lensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (ptr)[0] &amp; 0x3f;                                           \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_14B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 2;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (((ptr)[0] &amp; 0x3f) &lt;&lt; 8) | (ptr)[1];                       \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_32B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = ((ptr)[1] &lt;&lt; 24) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[2] &lt;&lt; 16) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[3] &lt;&lt;  8) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[4]);                                                \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> &#123;                                                               \</span></span><br><span class="line"><span class="meta">            panic(<span class="string">&quot;Invalid string encoding 0x%02X&quot;</span>, (encoding));               \</span></span><br><span class="line"><span class="meta">        &#125;                                                                      \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (lensize) = 1;                                                         \</span></span><br><span class="line"><span class="meta">        (len) = zipIntSize(encoding);                                          \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
-
-<p>整数编码：</p>
-<table>
-<thead>
-<tr>
-<th align="left">encoding</th>
-<th align="left">encoding长度</th>
-<th align="left">content长度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">11111110 (ZIP_INT_8B)</td>
-<td align="left">1字节</td>
-<td align="left">8位整数</td>
-</tr>
-<tr>
-<td align="left">11000000 (ZIP_INT_16B)</td>
-<td align="left">1字节</td>
-<td align="left">16位整数</td>
-</tr>
-<tr>
-<td align="left">11110000(ZIP_INT_24B)</td>
-<td align="left">1字节</td>
-<td align="left">24位整数</td>
-</tr>
-<tr>
-<td align="left">11010000(ZIP_INT_32B)</td>
-<td align="left">1字节</td>
-<td align="left">32位整数</td>
-</tr>
-<tr>
-<td align="left">11100000(ZIP_INT_64B)</td>
-<td align="left">1字节</td>
-<td align="left">64位整数</td>
-</tr>
-<tr>
-<td align="left">1111xxxx</td>
-<td align="left">1字节</td>
-<td align="left">0-12之间的整数。此时没有content部分，值存储在encoding的xxxx四个位</td>
-</tr>
-</tbody></table>
-<p>字节数组编码：</p>
-<table>
-<thead>
-<tr>
-<th align="left">encoding</th>
-<th align="left">encoding说明</th>
-<th align="left">encoding长度</th>
-<th align="left">content长度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">00xxxxxx (ZIP_STR_06B)</td>
-<td align="left">后6位表示字节数组的长度</td>
-<td align="left">1字节</td>
-<td align="left">保存长度小于等于63字节的字节数组</td>
-</tr>
-<tr>
-<td align="left">01xxxxxx xxxxxxxx (ZIP_STR_14B)</td>
-<td align="left">后14位表示字节数组的长度</td>
-<td align="left">2字节</td>
-<td align="left">保存长度大于63， 小于等于16383字节的字节数组</td>
-</tr>
-<tr>
-<td align="left">10______ xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx (ZIP_STR_32B)</td>
-<td align="left">最后24位表示字节数组的长度，第3-8位留空</td>
-<td align="left">5字节</td>
-<td align="left">保存长度大于16384，小于 2^32 - 1字节的字节数组</td>
-</tr>
-</tbody></table>
-<p>总结：Redis根据ziplist节点存储内容的类型和大小，使用不同的编码表示，目的在于最大限度地节省空间。</p>
-<p><font color = 'red'>思考问题：</font>创建一个ziplist编码的空列表键，并依次添加两个值”hello”，”10086”，问此时ziplist的长度是多少，内容是什么样的？</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; info  # Redis版本必须为3.2之前的，否则列表键的默认编码为quicklist，而非ziplist!</span><br><span class="line"># Server redis_version:3.0.0</span><br><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">127.0.0.1:6379&gt; rpush key hello 10086 # 新增列表键，依次插入两个key &quot;hello&quot; &quot;10086&quot;</span><br><span class="line">(integer) 2</span><br><span class="line">127.0.0.1:6379&gt; object encoding key   # 确认列表键编码为ziplist</span><br><span class="line">&quot;ziplist&quot;</span><br></pre></td></tr></table></figure>
-
-<p>如果你真的掌握了ziplist节点构成，那么不需要运行Redis，你也可以得出答案：这个ziplist占用22字节，内存如下图所示：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image4.png"><br>以下给出GDB的验证方法和验证结果，感兴趣的可以参考：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 0、确认ziplist的首地址</span></span><br><span class="line">(gdb) p (sds)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].key</span><br><span class="line">$<span class="number">1</span> = (sds) <span class="number">0x7fc6ac086288</span> <span class="string">&quot;key&quot;</span> <span class="comment">// 键</span></span><br><span class="line">(gdb) p *(robj *)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].v</span><br><span class="line">$<span class="number">2</span> = &#123;type = <span class="number">1</span>, encoding = <span class="number">5</span>, lru = <span class="number">13392586</span>, refcount = <span class="number">1</span>, ptr = <span class="number">0x7fc6ac035d60</span>&#125; <span class="comment">// ptr即为ziplist的首地址！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1、打印zlbytes, zltail, zllen</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d60</span></span><br><span class="line">$<span class="number">3</span> = <span class="number">22</span> <span class="comment">// zlbytes = 22</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d64</span></span><br><span class="line">$<span class="number">4</span> = <span class="number">17</span> <span class="comment">// zltail = 17</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *)<span class="number">0x7fc6ac035d68</span></span><br><span class="line">$<span class="number">5</span> = <span class="number">2</span>  <span class="comment">// zlen = 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、以下开始打印第一个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6a</span></span><br><span class="line"><span class="number">0x7fc6ac035d6a</span>: <span class="number">0x00</span> <span class="comment">// previous_entry_length本身占1字节，长度为0</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6b</span></span><br><span class="line"><span class="number">0x7fc6ac035d6b</span>: <span class="number">0x05</span> <span class="comment">// encoding为00000101, 本身占1字节，表示长度为5的字节数组</span></span><br><span class="line">(gdb) x/<span class="number">5</span>c <span class="number">0x7fc6ac035d6c</span></span><br><span class="line"><span class="number">0x7fc6ac035d6c</span>: <span class="number">104</span> <span class="string">&#x27;h&#x27;</span> <span class="number">101</span> <span class="string">&#x27;e&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">111</span> <span class="string">&#x27;o&#x27;</span>	<span class="comment">// content占5字节，存储&quot;hello&quot;</span></span><br><span class="line"><span class="comment">// 第一个节点总长度为 1 + 1 + 5 = 7 字节</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、以下开始打印第二个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d71</span></span><br><span class="line"><span class="number">0x7fc6ac035d71</span>: <span class="number">0x07</span> <span class="comment">// previous_entry_length本身占1字节，长度为7</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d72</span></span><br><span class="line"><span class="number">0x7fc6ac035d72</span>: <span class="number">0xc0</span> <span class="comment">// encoding为11000000, 本身占1字节, 表示16位的整数</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *) <span class="number">0x7fc6ac035d73</span></span><br><span class="line">$<span class="number">6</span> = <span class="number">10086</span>	<span class="comment">// content本身占2字节，存储内容正是10086</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、标志zlend，占1字节</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d75</span></span><br><span class="line"><span class="number">0x7fc6ac035d75</span>: <span class="number">0xff</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="为什么要设计ziplist"><a href="#为什么要设计ziplist" class="headerlink" title="为什么要设计ziplist"></a>为什么要设计ziplist<span id="jump3"></span></h3><p>还是考虑这个列表键： <code>&quot;hello&quot; -&gt; &quot;10086&quot;</code></p>
-<ul>
-<li>如果用ziplist编码，仅需22个字节存储。</li>
-<li>如果用linkedlist编码，以64位环境为例，光链表节点就需要2 * sizeof(listNode) &#x3D; 48个字节，这个大小远超过了数据本身的大小，导致严重的内存浪费。</li>
-</ul>
-<p>可以看出，ziplist设计思想是以时间换空间，目的是节省宝贵的内存资源。</p>
-<p>Redis中，ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
-<h3 id="ziplist相关操作"><a href="#ziplist相关操作" class="headerlink" title="ziplist相关操作"></a>ziplist相关操作<span id="jump4"></span></h3><p>压缩列表的增、删、改、查API如下：</p>
-<table>
-<thead>
-<tr>
-<th align="left">API</th>
-<th align="left">功能</th>
-<th align="left">时间复杂度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">ziplistPush</td>
-<td align="left">插入指定节点到表头或表尾</td>
-<td align="left">平均O(N)，连锁更新场景为O(N^2)</td>
-</tr>
-<tr>
-<td align="left">ziplistDelete</td>
-<td align="left">删除指定节点</td>
-<td align="left">平均O(N)，连续更新场景为O(N^2)</td>
-</tr>
-<tr>
-<td align="left">ziplistFind</td>
-<td align="left">查找指定节点</td>
-<td align="left">O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</td>
-</tr>
-<tr>
-<td align="left">ziplistNext</td>
-<td align="left">返回给定节点的下一个节点</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">ziplistPrev</td>
-<td align="left">返回给定节点的前一个节点</td>
-<td align="left">O(1)</td>
-</tr>
-</tbody></table>
-<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump5"></span></h4><p>源码参考<code>ziplistFind</code>，时间复杂度为O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 功能：寻找ziplist中，节点值和vstr相等的节点并返回</span></span><br><span class="line"><span class="comment">// skip表示跳过的节点数</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistFind</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *p, <span class="type">unsigned</span> <span class="type">char</span> *vstr, <span class="type">unsigned</span> <span class="type">int</span> vlen, <span class="type">unsigned</span> <span class="type">int</span> skip)</span> &#123;</span><br><span class="line">    <span class="type">int</span> skipcnt = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> vencoding = <span class="number">0</span>;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> vll = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (p[<span class="number">0</span>] != ZIP_END) &#123;	<span class="comment">// 如果没有达到列表尾，就一直循环遍历！</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">int</span> prevlensize, encoding, lensize, len;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *q;</span><br><span class="line"></span><br><span class="line">        ZIP_DECODE_PREVLENSIZE(p, prevlensize);</span><br><span class="line">        ZIP_DECODE_LENGTH(p + prevlensize, encoding, lensize, len);</span><br><span class="line">        q = p + prevlensize + lensize;	<span class="comment">// 此时q指向节点p的content</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (skipcnt == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">/* Compare current entry with specified entry */</span></span><br><span class="line">            <span class="keyword">if</span> (ZIP_IS_STR(encoding)) &#123;	<span class="comment">// 如果是字符串，memcmp比较是否相等，复杂度O(N)</span></span><br><span class="line">                <span class="keyword">if</span> (len == vlen &amp;&amp; <span class="built_in">memcmp</span>(q, vstr, vlen) == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> p;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">/* Find out if the searched field can be encoded. Note that</span></span><br><span class="line"><span class="comment">                 * we do it only the first time, once done vencoding is set</span></span><br><span class="line"><span class="comment">                 * to non-zero and vll is set to the integer value. */</span></span><br><span class="line">                <span class="comment">// 对于传入的vstr, 解码动作只需做一次， vencoding相当于一个flag</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!zipTryEncoding(vstr, vlen, &amp;vll, &amp;vencoding)) &#123;</span><br><span class="line">                        <span class="comment">/* If the entry can&#x27;t be encoded we set it to</span></span><br><span class="line"><span class="comment">                         * UCHAR_MAX so that we don&#x27;t retry again the next</span></span><br><span class="line"><span class="comment">                         * time. */</span></span><br><span class="line">                        vencoding = UCHAR_MAX;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">/* Must be non-zero by now */</span></span><br><span class="line">                    assert(vencoding);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">/* Compare current entry with specified entry, do it only</span></span><br><span class="line"><span class="comment">                 * if vencoding != UCHAR_MAX because if there is no encoding</span></span><br><span class="line"><span class="comment">                 * possible for the field it can&#x27;t be a valid integer. */</span></span><br><span class="line">                <span class="comment">// 如果解码成功，比较整数值是否相等</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding != UCHAR_MAX) &#123;</span><br><span class="line">                    <span class="type">long</span> <span class="type">long</span> ll = zipLoadInteger(q, encoding);</span><br><span class="line">                    <span class="keyword">if</span> (ll == vll) &#123;</span><br><span class="line">                        <span class="keyword">return</span> p;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/* Reset skip count */</span></span><br><span class="line">            skipcnt = skip;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/* Skip entry */</span></span><br><span class="line">            skipcnt--;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* Move to next entry */</span></span><br><span class="line">        <span class="comment">// q指向content, len就是content的长度, 所以 q + len即为下一个节点的首地址！！</span></span><br><span class="line">        p = q + len;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="连锁更新问题"><a href="#连锁更新问题" class="headerlink" title="连锁更新问题"></a>连锁更新问题<span id="jump6"></span></h4><p>前面提到，ziplist中每个节点的<code>previous_entry_length</code>记录了前一个节点的长度，考虑在表头插入节点的场景：</p>
-<p>如果列表所有节点长度都在250-253字节之前，且插入节点大于等于254字节，就会导致所有节点的<code>previous_entry_length</code>都必须从1字节扩展为5字节, 即触发了<strong>连锁更新</strong>。</p>
-<p>以下举例说明这个问题：给定一个长度为3的，每个节点大小均为253字节的ziplist，往表头插入一个300字节大小的节点。<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image5.png"><br>注：除了新增节点会引发连锁更新，删除节点操作也可能引发连锁更新，此处不再赘述。</p>
-<p><font color = 'red'>思考问题：</font>既然连锁更新的最坏复杂度为O(n^2)，为什么Redis还是放心使用ziplist？</p>
-<ul>
-<li>因为连锁更新触发条件苛刻，只有满足存在多个连续长度为250-253之间的节点才能触发。</li>
-<li>ziplist只应用于节点数少且数据小的场景，即使出现了连续更新，需要更新的节点数量也很少，不会出现性能问题。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第7章 压缩列表</p>
-<p>【2】[Redis源码解析-基础数据-ziplist(压缩列表)](</p>
 ]]></content>
       <categories>
         <category>Redis</category>
@@ -4476,24 +4476,6 @@
       </tags>
   </entry>
   <entry>
-    <title>在Docker中使用GDB调试的方法</title>
-    <url>/2023/05/09/2023-05-09-how-to-use-gdb-in-docker/</url>
-    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
-<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
-<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>GDB</category>
-      </categories>
-      <tags>
-        <tag>GDB</tag>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>LeetCode 常用数据结构和算法(C++)</title>
     <url>/2023/05/09/2023-05-09-leetcode-common-datastructure-and-algorithm-cplusplus/</url>
     <content><![CDATA[<h2 id="list"><a href="#list" class="headerlink" title="list"></a>list</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">list&lt;<span class="type">int</span>&gt; list;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs )</span></span>;				<span class="comment">// 全部移动</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs, iterator ix )</span></span>;	<span class="comment">// 移一个</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs, iterator first, iterator last )</span></span>;	<span class="comment">// 移一组</span></span><br></pre></td></tr></table></figure>
@@ -4520,6 +4502,24 @@
       </categories>
       <tags>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在Docker中使用GDB调试的方法</title>
+    <url>/2023/05/09/2023-05-09-how-to-use-gdb-in-docker/</url>
+    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
+<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
+<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
+        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -6303,6 +6303,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>可转债违约是实体经济高质量发展的一大步？</title>
+    <url>/2024/08/18/2024-08-18-is-bond-default-a-big-step-for-high-quality-development-of-economy/</url>
+    <content><![CDATA[<p>8月14日，岭南股份公告其发行的可转债无法按期兑付，出现实质违约。8月16日，证券时报发表了一篇“雄文”《国企可转债的刚兑信仰该放下了》，引爆了舆论。</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/08/18/2024-08-18-is-bond-default-a-big-step-for-high-quality-development-of-economy/image1.png"></p>
+<p>文章内容总结下，就是对投资者一顿批评教育，批评投资者惰性思维，执迷于国资背景的刚性兑付。结尾直接称转债违约是可转债市场的一小步，经济高质量发展的一大步，TM脸都不要了。</p>
+<p>诚然，作为投资者，需要考察企业的财务状况和偿债能力，打破”下有保底上不封顶”的思维惯性。但是作为一家权威的证券媒体，搞丧事喜办，公然对违约行为唱赞歌，去鼓励上市公司逃废债，这样的行为缺乏对投资者基本的尊重，简直是令人作呕。</p>
+<p>原文百度搜不到了，我找了个截图，大家感受下这篇文章什么水平。</p>
+<p><img data-src="/2024/08/18/2024-08-18-is-bond-default-a-big-step-for-high-quality-development-of-economy/image2.png"></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>CLISH logout后没有执行自定义脚本问题的解决方法</title>
     <url>/2024/08/19/2024-08-19-clish-custom-script-not-executed-after-logout/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我有一个On-Premises Appliance使用了<a href="https://clish.sourceforge.net/">CLISH</a>(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。</p>
@@ -6333,25 +6352,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>CLISH</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>可转债违约是实体经济高质量发展的一大步？</title>
-    <url>/2024/08/18/2024-08-18-is-bond-default-a-big-step-for-high-quality-development-of-economy/</url>
-    <content><![CDATA[<p>8月14日，岭南股份公告其发行的可转债无法按期兑付，出现实质违约。8月16日，证券时报发表了一篇“雄文”《国企可转债的刚兑信仰该放下了》，引爆了舆论。</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/08/18/2024-08-18-is-bond-default-a-big-step-for-high-quality-development-of-economy/image1.png"></p>
-<p>文章内容总结下，就是对投资者一顿批评教育，批评投资者惰性思维，执迷于国资背景的刚性兑付。结尾直接称转债违约是可转债市场的一小步，经济高质量发展的一大步，TM脸都不要了。</p>
-<p>诚然，作为投资者，需要考察企业的财务状况和偿债能力，打破”下有保底上不封顶”的思维惯性。但是作为一家权威的证券媒体，搞丧事喜办，公然对违约行为唱赞歌，去鼓励上市公司逃废债，这样的行为缺乏对投资者基本的尊重，简直是令人作呕。</p>
-<p>原文百度搜不到了，我找了个截图，大家感受下这篇文章什么水平。</p>
-<p><img data-src="/2024/08/18/2024-08-18-is-bond-default-a-big-step-for-high-quality-development-of-economy/image2.png"></p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -6415,14 +6415,14 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
     <url>/2024/08/27/2024-08-27-frontend-basic/</url>
     <content><![CDATA[<h1 id="Flask快速上手"><a href="#Flask快速上手" class="headerlink" title="Flask快速上手"></a>Flask快速上手</h1><p>FLask官方文档: <a href="https://flask.palletsprojects.com/en/3.0.x/quickstart/#a-minimal-application">https://flask.palletsprojects.com/en/3.0.x/quickstart/#a-minimal-application</a></p>
 <h2 id="第一个Flask-App"><a href="#第一个Flask-App" class="headerlink" title="第一个Flask App"></a>第一个Flask App</h2><p>Linux上安装Flask</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 install Flask</span><br><span class="line">flask --version | grep Flask</span><br><span class="line">Flask 3.0.3</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pip3 install Flask</span><br><span class="line">flask --version | grep Flask</span><br><span class="line">Flask 3.0.3</span><br></pre></td></tr></table></figure>
 <p>写一个最小的Flask App, 添加web.py：</p>
 <figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/&#x27;</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;hello&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    app.run()</span><br></pre></td></tr></table></figure>
 <p>运行App</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">flask --app web run # 只允许本地访问, 端口号默认5000</span><br><span class="line">flask --app web run --host=0.0.0.0 # 允许从外部访问</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">flask --app web run <span class="comment"># 只允许本地访问, 端口号默认5000</span></span><br><span class="line">flask --app web run --host=0.0.0.0 <span class="comment"># 允许从外部访问</span></span><br></pre></td></tr></table></figure>
 
 <p>Flask提供render_template方法, 返回一个HTML页面</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">@app.route(&#x27;/show/info&#x27;)</span><br><span class="line">def index():</span><br><span class="line">	# 默认从当前项目目录的templates文件夹中寻找index.html文件</span><br><span class="line">	return render_template(&quot;index.html&quot;)</span><br></pre></td></tr></table></figure>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/show/info&#x27;</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>():</span><br><span class="line">	<span class="comment"># 默认从当前项目目录的templates文件夹中寻找index.html文件</span></span><br><span class="line">	<span class="keyword">return</span> render_template(<span class="string">&quot;index.html&quot;</span>)</span><br></pre></td></tr></table></figure>
 
 <span id="more"></span>
 
@@ -6445,7 +6445,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>显示自己的本地图片</p>
 <figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;/static/image1.png&quot;</span> /&gt;</span> <span class="comment">&lt;!-- Flask项目中创建static目录, 图片放在static目录下--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">style</span>=<span class="string">&quot;height: 100px;&quot;</span> <span class="attr">src</span>=<span class="string">&quot;/static/image1.png&quot;</span> /&gt;</span> <span class="comment">&lt;!-- 指定高度 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">img</span> <span class="attr">style</span>=<span class="string">&quot;width: 20%&quot;</span> <span class="attr">src</span>=<span class="string">&quot;/static/image1.png&quot;</span> /&gt;</span> <span class="comment">&lt;!-- 指定宽度 --&gt;</span></span><br></pre></td></tr></table></figure>
 <p>标签可以嵌套，例如实现点击图片跳转链接功能</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;a href=&quot;https://www.baidu.com&quot; target=&quot;_blank&quot;&gt;</span><br><span class="line">	&lt;img src=&quot;/static/image1.png&quot; /&gt;</span><br><span class="line">&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">&quot;https://www.baidu.com&quot;</span> <span class="attr">target</span>=<span class="string">&quot;_blank&quot;</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;/static/image1.png&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
 <h3 id="列表"><a href="#列表" class="headerlink" title="列表"></a>列表</h3><figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 项目编号是圆点 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>中国移动<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>中国联通<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>中国电信<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!-- 项目编号是数字(1,2,3) --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">ol</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>中国移动<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>中国联通<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">li</span>&gt;</span>中国电信<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ol</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
@@ -6465,6 +6465,63 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>测试，浏览器中访问注册页面 https:&#x2F;&#x2F;{server_ip}&#x2F;register 填写注册信息:<br><img data-src="/2024/08/27/2024-08-27-frontend-basic/image1.png"></p>
 <p>提交注册表单后，在flask日志中查看表单参数:</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ImmutableMultiDict([(&#x27;user&#x27;, &#x27;peter&#x27;), (&#x27;pwd&#x27;, &#x27;123456&#x27;), (&#x27;gender&#x27;, &#x27;1&#x27;), (&#x27;hobby&#x27;, &#x27;1&#x27;), (&#x27;hobby&#x27;, &#x27;2&#x27;), (&#x27;city&#x27;, &#x27;bj&#x27;), (&#x27;skill&#x27;, &#x27;1&#x27;), (&#x27;skill&#x27;, &#x27;2&#x27;)])</span><br><span class="line">user:  peter</span><br><span class="line">pwd:  123456</span><br><span class="line">gender:  [&#x27;1&#x27;]</span><br><span class="line">city:  bj</span><br><span class="line">skill_list:  1</span><br></pre></td></tr></table></figure>
+
+<h1 id="CSS"><a href="#CSS" class="headerlink" title="CSS"></a>CSS</h1><p>用来”美化”标签</p>
+<h2 id="CSS应用方式"><a href="#CSS应用方式" class="headerlink" title="CSS应用方式"></a>CSS应用方式</h2><ol>
+<li><p>在head标签中添加style标签</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">		<span class="selector-class">.c1</span>&#123;</span></span><br><span class="line"><span class="language-css">			<span class="attribute">color</span>:red;</span></span><br><span class="line"><span class="language-css">		&#125;</span></span><br><span class="line"><span class="language-css">	</span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">h1</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>标题<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>写到CSS文件里<br>以Flask App为例，在static目录下创建test.css</p>
+<figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="selector-class">.c1</span>&#123;</span><br><span class="line">	<span class="attribute">color</span>:red;</span><br><span class="line">&#125;</span><br><span class="line"><span class="selector-class">.c2</span>&#123;</span><br><span class="line">	<span class="attribute">color</span>:blue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>templates目录下创建test.html</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;stylesheet&quot;</span> <span class="attr">href</span>=<span class="string">&quot;/static/test.css&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>红标题<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span> <span class="attr">class</span>=<span class="string">&quot;c2&quot;</span>&gt;</span>蓝标题<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>web.py下新增路由</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/test&#x27;</span>, methods=[<span class="string">&#x27;GET&#x27;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">test</span>():</span><br><span class="line">    <span class="keyword">return</span> render_template(<span class="string">&#x27;test.html&#x27;</span>)</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="CSS选择器"><a href="#CSS选择器" class="headerlink" title="CSS选择器"></a>CSS选择器</h2><p>分类: ID选择器、类选择器、标签选择器、属性选择器、后代选择器</p>
+<h3 id="类选择器-最常用"><a href="#类选择器-最常用" class="headerlink" title="类选择器 (最常用)"></a>类选择器 (最常用)</h3><figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="selector-class">.cl</span>&#123;</span><br><span class="line">	<span class="attribute">color</span>: red;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="ID选择器"><a href="#ID选择器" class="headerlink" title="ID选择器"></a>ID选择器</h3><p>用的少, 因为id不能重复，只能修改一个标签的样式</p>
+<figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="selector-id">#c2</span>&#123;</span><br><span class="line">	<span class="attribute">color</span>: green;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="标签选择器"><a href="#标签选择器" class="headerlink" title="标签选择器"></a>标签选择器</h3><p>为所有li标签定义样式</p>
+<figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="selector-tag">li</span>&#123;</span><br><span class="line">	<span class="attribute">color</span>: blue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="属性选择器"><a href="#属性选择器" class="headerlink" title="属性选择器"></a>属性选择器</h3><p>在input标签中选择type&#x3D;’text’的标签</p>
+<figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="selector-tag">input</span><span class="selector-attr">[type=<span class="string">&#x27;text&#x27;</span>]</span>&#123;</span><br><span class="line">	<span class="attribute">border</span>: <span class="number">2px</span> solid pink;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在class为v1的标签中选择属性a&#x3D;1的标签</p>
+<figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="selector-class">.v1</span><span class="selector-attr">[a=<span class="string">&quot;1&quot;</span>]</span>&#123;</span><br><span class="line">	<span class="attribute">color</span>: gold;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="后代选择器"><a href="#后代选择器" class="headerlink" title="后代选择器"></a>后代选择器</h3><figure class="highlight css"><table><tr><td class="code"><pre><span class="line"><span class="selector-class">.xx</span> <span class="selector-tag">li</span>&#123;</span><br><span class="line">	<span class="attribute">color</span>: gold;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>CSS选择器例子</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">        <span class="selector-class">.c1</span>&#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">color</span>: red;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">        <span class="selector-id">#c2</span>&#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">color</span>: green;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">        <span class="selector-tag">li</span>&#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">color</span>: blue;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">		<span class="selector-tag">input</span><span class="selector-attr">[type=<span class="string">&quot;text&quot;</span>]</span>&#123;</span></span><br><span class="line"><span class="language-css">			<span class="attribute">border</span>: <span class="number">2px</span> solid pink;</span></span><br><span class="line"><span class="language-css">		&#125;</span></span><br><span class="line"><span class="language-css">		<span class="selector-class">.v1</span><span class="selector-attr">[a=<span class="string">&quot;1&quot;</span>]</span>&#123;</span></span><br><span class="line"><span class="language-css">			<span class="attribute">color</span>: red;</span></span><br><span class="line"><span class="language-css">		&#125;</span></span><br><span class="line"><span class="language-css">		<span class="selector-class">.xx</span> <span class="selector-tag">li</span>&#123;</span></span><br><span class="line"><span class="language-css">			<span class="attribute">color</span>: gold;</span></span><br><span class="line"><span class="language-css">		&#125;</span></span><br><span class="line"><span class="language-css">    </span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 类选择器--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>标题1<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- ID选择器--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span> <span class="attr">id</span>=<span class="string">&quot;c2&quot;</span>&gt;</span>标题2<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 标签选择器--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">li</span>&gt;</span>移动<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">li</span>&gt;</span>联通<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 属性选择器--&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;v1&quot;</span> <span class="attr">a</span>=<span class="string">&quot;0&quot;</span>&gt;</span>V0<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;v1&quot;</span> <span class="attr">a</span>=<span class="string">&quot;1&quot;</span>&gt;</span>V1<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">	<span class="comment">&lt;!-- 后代选择器 --&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;xx&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">li</span>&gt;</span>上海<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">li</span>&gt;</span>北京<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>页面效果<br><img data-src="/2024/08/27/2024-08-27-frontend-basic/image2.png"></p>
+<h2 id="样式"><a href="#样式" class="headerlink" title="样式"></a>样式</h2><h3 id="高度和宽度"><a href="#高度和宽度" class="headerlink" title="高度和宽度"></a>高度和宽度</h3><figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">	<span class="selector-class">.c1</span>&#123;</span></span><br><span class="line"><span class="language-css">		<span class="attribute">height</span>: <span class="number">300px</span>;</span></span><br><span class="line"><span class="language-css">		<span class="attribute">width</span>: <span class="number">50%</span></span></span><br><span class="line"><span class="language-css">	&#125;</span></span><br><span class="line"><span class="language-css"></span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>北京<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">span</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>上海<span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>宽度支持百分比</li>
+<li>对于行内标签, 设置高度和宽度默认无效</li>
+<li>对于块级标签默认有效, 但右侧空白区域不能被其他标签利用</li>
+</ul>
+<h3 id="display-inline-block"><a href="#display-inline-block" class="headerlink" title="display:inline-block"></a>display:inline-block</h3><p>display:inline-block使标签同时具备块级和行内的特点</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">        <span class="selector-class">.c1</span>&#123;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">display</span>: inline-block;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">height</span>: <span class="number">100px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">width</span>: <span class="number">300px</span>;</span></span><br><span class="line"><span class="language-css">            <span class="attribute">border</span>: <span class="number">1px</span> solid red;</span></span><br><span class="line"><span class="language-css">        &#125;</span></span><br><span class="line"><span class="language-css">    </span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>上海<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">span</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>北京<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="display-block-display-inline"><a href="#display-block-display-inline" class="headerlink" title="display:block, display:inline"></a>display:block, display:inline</h3><figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">style</span>=<span class="string">&quot;display: inline;&quot;</span>&gt;</span>上海<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">span</span> <span class="attr">style</span>=<span class="string">&quot;display: block;&quot;</span>&gt;</span>北京<span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>display:block 可以把标签转为块级标签</li>
+<li>display:inline 可以把标签转为内联标签</li>
+</ul>
+<p>Google浏览器 按F12 -&gt; Elements -&gt; 查看两个标签的宽和高，确认修改生效</p>
+<h3 id="字体"><a href="#字体" class="headerlink" title="字体"></a>字体</h3><p>查HTML颜色代码网站： <a href="https://htmlcolorcodes.com/">HTML Color Codes</a></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">	<span class="selector-class">.c1</span> &#123;</span></span><br><span class="line"><span class="language-css">		<span class="attribute">color</span>: <span class="number">#00FE7F</span>; <span class="comment">/* 颜色 */</span></span></span><br><span class="line"><span class="language-css">		<span class="attribute">font-size</span>: <span class="number">44px</span>; <span class="comment">/* 字体大小 */</span></span></span><br><span class="line"><span class="language-css">		<span class="attribute">font-weight</span>: <span class="number">500</span>; <span class="comment">/* 加粗 */</span></span></span><br><span class="line"><span class="language-css">		<span class="attribute">font-family</span>: Microsoft Yahei; <span class="comment">/* 字体 */</span></span></span><br><span class="line"><span class="language-css">	&#125;</span></span><br><span class="line"><span class="language-css"></span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>上海<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>color指定颜色</li>
+<li>font-size指定字体大小</li>
+<li>font-weight指定加粗</li>
+<li>font-family指定字体</li>
+</ul>
+<h3 id="文字对齐方式"><a href="#文字对齐方式" class="headerlink" title="文字对齐方式"></a>文字对齐方式</h3><figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">		<span class="selector-class">.cl</span> &#123;</span></span><br><span class="line"><span class="language-css">			<span class="attribute">height</span>: <span class="number">60px</span>;</span></span><br><span class="line"><span class="language-css">			<span class="attribute">width</span>: <span class="number">300px</span>;</span></span><br><span class="line"><span class="language-css">			<span class="attribute">border</span>: <span class="number">1px</span> solid red;</span></span><br><span class="line"><span class="language-css">			<span class="attribute">text-align</span>: center; <span class="comment">/* 水平居中 */</span></span></span><br><span class="line"><span class="language-css">			<span class="attribute">line-height</span>: <span class="number">59px</span>; <span class="comment">/* 垂直居中 */</span></span></span><br><span class="line"><span class="language-css">		&#125;</span></span><br><span class="line"><span class="language-css">	</span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">&quot;c1&quot;</span>&gt;</span>北京<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>text-align: center 表示水平方向居中</li>
+<li>垂直方向居中用line-height1</li>
+</ul>
+<p>TO BE CONTINUED …</p>
 ]]></content>
       <categories>
         <category>draft</category>
