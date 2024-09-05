@@ -2054,6 +2054,76 @@
       </tags>
   </entry>
   <entry>
+    <title>Redis学习笔记(八)——RDB持久化</title>
+    <url>/2021/03/14/2021-03-14-redis-note-08-rdb/</url>
+    <content><![CDATA[<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Redis是基于内存的数据库，服务器进程退出后，内存中的数据会丢失。为了解决这个问题，Redis提供了RDB持久化机制，将内存中的数据保存到硬盘，从而避免数据意外丢失。</p>
+<h2 id="RDB持久化"><a href="#RDB持久化" class="headerlink" title="RDB持久化"></a>RDB持久化</h2><p>RDB持久化将某个时间点上的数据库状态保存到一个RDB文件，这个RDB文件是一个经过压缩的二进制文件，Redis服务器可以通过读取RDB文件还原数据库状态。</p>
+<span id="more"></span>
+
+<p>RDB文件的生成路径和文件名通过配置文件指定，如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># dbfilename指定RDB文件名</span><br><span class="line">dbfilename dump.rdb</span><br><span class="line"></span><br><span class="line"># dir表示工作目录, RDB文件会写入这个目录</span><br><span class="line">dir /var/redis/6379</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-RDB文件如何创建"><a href="#1-RDB文件如何创建" class="headerlink" title="1. RDB文件如何创建"></a>1. RDB文件如何创建</h3><p>RDB持久化既可以手动触发，也可以通过配置文件的选项定期触发。</p>
+<h4 id="1-1-save-bgsave命令"><a href="#1-1-save-bgsave命令" class="headerlink" title="1.1 save, bgsave命令"></a>1.1 save, bgsave命令</h4><p>执行<code>save</code>, <code>bgsave</code>命令，可以手动生成RDB文件。两者的区别如下：</p>
+<ul>
+<li><code>save</code>命令会阻塞Redis服务器进程，直到RDB文件创建完毕；阻塞期间服务器无法处理任何请求。</li>
+<li><code>bgsave</code>命令会fork一个子进程，由子进程负责创建RDB文件，父进程能够继续处理命令请求。</li>
+</ul>
+<p><strong>注：</strong><code>bgsave</code>命令执行期间，服务器会拒绝执行客户端的<code>save</code>, <code>bgsave</code>命令，原因是防止竞争条件。</p>
+<p>创建RDB文件的实际动作通过<code>rdb.c/rdbSave</code>函数完成,3.0版本的实现细节如下:</p>
+<ul>
+<li><p>先创建临时文件<code>&quot;temp-%d.rdb&quot;</code>, 其中%d为当前进程id。</p>
+</li>
+<li><p>遍历所有数据库,将数据库状态写入到该临时文件, 写入完成后调用<code>fflush</code>, <code>fsync</code>确保数据被写入硬盘。</p>
+</li>
+<li><p>调用<code>rename</code>方法,原子性地覆盖旧的RDB文件，覆盖成功后，将<code>dirty</code>计数器清零并记录当前时间(即最后一次完成RDB持久化的时间)。</p>
+</li>
+</ul>
+<h4 id="1-2-定期触发"><a href="#1-2-定期触发" class="headerlink" title="1.2 定期触发"></a>1.2 定期触发</h4><h5 id="1-2-1-保存条件怎么设置"><a href="#1-2-1-保存条件怎么设置" class="headerlink" title="1.2.1 保存条件怎么设置"></a>1.2.1 保存条件怎么设置</h5><p>在配置文件中更改<code>save &lt;seconds&gt; &lt;changes&gt;</code>选项，可以设置多个<strong>保存条件</strong>。只要其中某个保存条件被满足，服务器就执行<code>bgsave</code>命令。</p>
+<p>官方给出的save选项的典型设置和意义如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Save the DB on disk:</span><br><span class="line">#   save &lt;seconds&gt; &lt;changes&gt;</span><br><span class="line">#</span><br><span class="line">#   Will save the DB if both the given number of seconds and the given</span><br><span class="line">#   number of write operations against the DB occurred.</span><br><span class="line">#</span><br><span class="line">#   In the example below the behavior will be to save:</span><br><span class="line">#   after 900 sec (15 min) if at least 1 key changed</span><br><span class="line">#   after 300 sec (5 min) if at least 10 keys changed</span><br><span class="line">#   after 60 sec if at least 10000 keys changed</span><br><span class="line">#</span><br><span class="line">#   Note: you can disable saving completely by commenting out all &quot;save&quot; lines.</span><br><span class="line">#</span><br><span class="line">#   It is also possible to remove all the previously configured save</span><br><span class="line">#   points by adding a save directive with a single empty string argument</span><br><span class="line">#   like in the following example:</span><br><span class="line">#</span><br><span class="line">#   save &quot;&quot;</span><br><span class="line"></span><br><span class="line">save 900 1				# 如果900秒内至少1个键被修改，就执行bgsave命令</span><br><span class="line">save 300 10				# 300秒内至少10个键被修改，就执行bgsave命令</span><br><span class="line">save 60 10000			# 60秒内至少10000个键被修改，就执行bgsave命令</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，如果想关闭RDB功能，只需注释掉所有save选项后，再添加<code>save &quot;&quot;</code>即可</p>
+<h5 id="1-2-2-实现细节"><a href="#1-2-2-实现细节" class="headerlink" title="1.2.2 实现细节"></a>1.2.2 实现细节</h5><p>Redis服务器状态通过redisServer结构表示，其中<code>saveparams</code>属性用于记录所有的保存条件，如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">saveparams</span>;</span> <span class="comment">// 一维数组, = &#123;&#123;900, 1&#125;, &#123;300, 10&#125;, &#123;60, 10000&#125;&#125;</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> &#123;</span></span><br><span class="line">	<span class="type">time_t</span> seconds;	<span class="comment">// 秒数</span></span><br><span class="line">	<span class="type">int</span> changes;	<span class="comment">// 修改数</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>光有保存条件还不行，我们还需要知道<strong>上一次成功执行RDB持久化的时间</strong>，以及<strong>距离上一次成功执行RDB持久化，服务器对数据库总共做了多少次修改</strong>，这样才能和每个保存条件做比较，最终判断某个保存条件是否被满足。</p>
+<p>因此，redisServer结构中新增<code>dirty</code>计数器和<code>lastsave</code>属性，如下：</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">struct</span> redisServer &#123;</span><br><span class="line">	<span class="built_in">long</span> <span class="built_in">long</span> dirty;	<span class="comment">// 计数器</span></span><br><span class="line">	time_t lastsave;	<span class="comment">// 上一次成功执行持久化的时间，格式是UNIX时间戳</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>dirty</code>计数器记录距离上一次成功执行RDB持久化，服务器对数据库一共做了多少次修改。</li>
+<li><code>lastsave</code>属性记录上一次成功执行RDB持久化的时间，格式为UNIX时间戳。</li>
+</ul>
+<p>Redis服务器会周期性地检查保存条件是否满足, 源码实现可参考<code>redis.c/ServerCron</code></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// serverCron是Redis服务器的时间事件，周期性执行，默认周期为0.1s, 可以通过改配置选项hz修改这个默认周期</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">serverCron</span><span class="params">(<span class="keyword">struct</span> aeEventLoop *eventLoop, <span class="type">long</span> <span class="type">long</span> id, <span class="type">void</span> *clientData)</span> &#123;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; server.saveparamslen; j++) &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">sp</span> =</span> server.saveparams+j;</span><br><span class="line">        <span class="keyword">if</span> (server.dirty &gt;= sp-&gt;changes &amp;&amp;</span><br><span class="line">            server.unixtime-server.lastsave &gt; sp-&gt;seconds &amp;&amp;</span><br><span class="line">            (server.unixtime-server.lastbgsave_try &gt;</span><br><span class="line">            REDIS_BGSAVE_RETRY_DELAY ||</span><br><span class="line">            server.lastbgsave_status == REDIS_OK)) &#123;</span><br><span class="line">            rdbSaveBackground(server.rdb_filename); <span class="comment">// 某个保存条件满足，就执行BGSAVE命令</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-RDB文件如何加载"><a href="#2-RDB文件如何加载" class="headerlink" title="2. RDB文件如何加载"></a>2. RDB文件如何加载</h3><p>Redis没有提供专门加载RDB文件的命令，只要Redis在启动时检测到了RDB文件的存在，就会自动加载RDB文件，加载RDB文件的动作由<code>rdb.c/rdbLoad</code>函数完成。</p>
+<p><strong>注</strong>: 如果Redis开启了AOF持久化功能, 服务器会优先使用AOF文件而不是RDB文件还原数据库。</p>
+<h3 id="3-RDB文件结构和解析方法"><a href="#3-RDB文件结构和解析方法" class="headerlink" title="3. RDB文件结构和解析方法"></a>3. RDB文件结构和解析方法</h3><p>能借助工具离线分析RDB文件即可, 掌握RDB文件结构是非必要的，只需了解：</p>
+<ul>
+<li>RDB文件是一个经过压缩的二进制文件，对于不同类型的键，会使用不同的方式去存储。</li>
+<li>RDB文件不保存已过期的键，但是会保存键的过期时间。</li>
+</ul>
+<p>Redis官方提供了<code>redis-check-rdb</code>工具用于检测RDB文件。</p>
+<p>举例，在某个空的redis数据库中新增5个key，如下所示：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 每种类型键增加1个						    # 查询键的命令</span><br><span class="line">set key1 123								# get key1</span><br><span class="line">rpush list1 1 2 3							# lrange 0 -1</span><br><span class="line">hset hashtable1 k1 v1 k2 v2 k3 v3 			# hgetall hashtable1</span><br><span class="line">sadd set1 1 2 3								# smembers set1</span><br><span class="line">zadd zset1 1.0 m1 2.0 m2 3.0 m3				# zrange zset1 0 -1 withscores</span><br></pre></td></tr></table></figure>
+
+<p>可以通过<code>ob -cx dump.rdb</code>命令解析这个RDB文件, 但输出结果不够直观；更好的方式是借助开源社区已有的RDB分析工具, 可以参考：<a href="https://github.com/sripathikrishnan/redis-rdb-tools">https://github.com/sripathikrishnan/redis-rdb-tools</a></p>
+<p>这里将RDB文件转换为json格式查看，命令如下：</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line"># rdb -c json /var/redis/6379/dump.rdb</span><br><span class="line">[&#123;</span><br><span class="line">&quot;set1&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;],</span><br><span class="line">&quot;zset1&quot;:&#123;&quot;m1&quot;:&quot;1&quot;,&quot;m2&quot;:&quot;2&quot;,&quot;m3&quot;:&quot;3&quot;&#125;,</span><br><span class="line">&quot;hashtable1&quot;:&#123;&quot;k1&quot;:&quot;v1&quot;,&quot;k2&quot;:&quot;v2&quot;,&quot;k3&quot;:&quot;v3&quot;&#125;,</span><br><span class="line">&quot;list1&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;],</span><br><span class="line">&quot;str1&quot;:&quot;123&quot;&#125;]</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》  第10章 RDB持久化</p>
+<p>【2】<a href="https://cloud.tencent.com/developer/article/1394329">Redis RDB文件离线分析</a></p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis学习笔记(九)——AOF持久化</title>
     <url>/2021/03/20/2021-03-20-redis-note-09-aof/</url>
     <content><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>Redis提供了AOF(append only file)持久化功能，通过保存服务器执行的写命令的方式记录数据库状态。本文介绍如下内容：</p>
@@ -2145,76 +2215,6 @@
 </li>
 </ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》第11章 AOF持久化<br>【2】<a href="https://gitchat.csdn.net/activity/5d5117876f8c3424da08b7af?utm_source=so">Redis 持久化 RDB&#x2F;AOF 详解与实践</a></p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis学习笔记(八)——RDB持久化</title>
-    <url>/2021/03/14/2021-03-14-redis-note-08-rdb/</url>
-    <content><![CDATA[<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>Redis是基于内存的数据库，服务器进程退出后，内存中的数据会丢失。为了解决这个问题，Redis提供了RDB持久化机制，将内存中的数据保存到硬盘，从而避免数据意外丢失。</p>
-<h2 id="RDB持久化"><a href="#RDB持久化" class="headerlink" title="RDB持久化"></a>RDB持久化</h2><p>RDB持久化将某个时间点上的数据库状态保存到一个RDB文件，这个RDB文件是一个经过压缩的二进制文件，Redis服务器可以通过读取RDB文件还原数据库状态。</p>
-<span id="more"></span>
-
-<p>RDB文件的生成路径和文件名通过配置文件指定，如下所示：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># dbfilename指定RDB文件名</span><br><span class="line">dbfilename dump.rdb</span><br><span class="line"></span><br><span class="line"># dir表示工作目录, RDB文件会写入这个目录</span><br><span class="line">dir /var/redis/6379</span><br></pre></td></tr></table></figure>
-
-<h3 id="1-RDB文件如何创建"><a href="#1-RDB文件如何创建" class="headerlink" title="1. RDB文件如何创建"></a>1. RDB文件如何创建</h3><p>RDB持久化既可以手动触发，也可以通过配置文件的选项定期触发。</p>
-<h4 id="1-1-save-bgsave命令"><a href="#1-1-save-bgsave命令" class="headerlink" title="1.1 save, bgsave命令"></a>1.1 save, bgsave命令</h4><p>执行<code>save</code>, <code>bgsave</code>命令，可以手动生成RDB文件。两者的区别如下：</p>
-<ul>
-<li><code>save</code>命令会阻塞Redis服务器进程，直到RDB文件创建完毕；阻塞期间服务器无法处理任何请求。</li>
-<li><code>bgsave</code>命令会fork一个子进程，由子进程负责创建RDB文件，父进程能够继续处理命令请求。</li>
-</ul>
-<p><strong>注：</strong><code>bgsave</code>命令执行期间，服务器会拒绝执行客户端的<code>save</code>, <code>bgsave</code>命令，原因是防止竞争条件。</p>
-<p>创建RDB文件的实际动作通过<code>rdb.c/rdbSave</code>函数完成,3.0版本的实现细节如下:</p>
-<ul>
-<li><p>先创建临时文件<code>&quot;temp-%d.rdb&quot;</code>, 其中%d为当前进程id。</p>
-</li>
-<li><p>遍历所有数据库,将数据库状态写入到该临时文件, 写入完成后调用<code>fflush</code>, <code>fsync</code>确保数据被写入硬盘。</p>
-</li>
-<li><p>调用<code>rename</code>方法,原子性地覆盖旧的RDB文件，覆盖成功后，将<code>dirty</code>计数器清零并记录当前时间(即最后一次完成RDB持久化的时间)。</p>
-</li>
-</ul>
-<h4 id="1-2-定期触发"><a href="#1-2-定期触发" class="headerlink" title="1.2 定期触发"></a>1.2 定期触发</h4><h5 id="1-2-1-保存条件怎么设置"><a href="#1-2-1-保存条件怎么设置" class="headerlink" title="1.2.1 保存条件怎么设置"></a>1.2.1 保存条件怎么设置</h5><p>在配置文件中更改<code>save &lt;seconds&gt; &lt;changes&gt;</code>选项，可以设置多个<strong>保存条件</strong>。只要其中某个保存条件被满足，服务器就执行<code>bgsave</code>命令。</p>
-<p>官方给出的save选项的典型设置和意义如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Save the DB on disk:</span><br><span class="line">#   save &lt;seconds&gt; &lt;changes&gt;</span><br><span class="line">#</span><br><span class="line">#   Will save the DB if both the given number of seconds and the given</span><br><span class="line">#   number of write operations against the DB occurred.</span><br><span class="line">#</span><br><span class="line">#   In the example below the behavior will be to save:</span><br><span class="line">#   after 900 sec (15 min) if at least 1 key changed</span><br><span class="line">#   after 300 sec (5 min) if at least 10 keys changed</span><br><span class="line">#   after 60 sec if at least 10000 keys changed</span><br><span class="line">#</span><br><span class="line">#   Note: you can disable saving completely by commenting out all &quot;save&quot; lines.</span><br><span class="line">#</span><br><span class="line">#   It is also possible to remove all the previously configured save</span><br><span class="line">#   points by adding a save directive with a single empty string argument</span><br><span class="line">#   like in the following example:</span><br><span class="line">#</span><br><span class="line">#   save &quot;&quot;</span><br><span class="line"></span><br><span class="line">save 900 1				# 如果900秒内至少1个键被修改，就执行bgsave命令</span><br><span class="line">save 300 10				# 300秒内至少10个键被修改，就执行bgsave命令</span><br><span class="line">save 60 10000			# 60秒内至少10000个键被修改，就执行bgsave命令</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，如果想关闭RDB功能，只需注释掉所有save选项后，再添加<code>save &quot;&quot;</code>即可</p>
-<h5 id="1-2-2-实现细节"><a href="#1-2-2-实现细节" class="headerlink" title="1.2.2 实现细节"></a>1.2.2 实现细节</h5><p>Redis服务器状态通过redisServer结构表示，其中<code>saveparams</code>属性用于记录所有的保存条件，如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span> &#123;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">saveparams</span>;</span> <span class="comment">// 一维数组, = &#123;&#123;900, 1&#125;, &#123;300, 10&#125;, &#123;60, 10000&#125;&#125;</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> &#123;</span></span><br><span class="line">	<span class="type">time_t</span> seconds;	<span class="comment">// 秒数</span></span><br><span class="line">	<span class="type">int</span> changes;	<span class="comment">// 修改数</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>光有保存条件还不行，我们还需要知道<strong>上一次成功执行RDB持久化的时间</strong>，以及<strong>距离上一次成功执行RDB持久化，服务器对数据库总共做了多少次修改</strong>，这样才能和每个保存条件做比较，最终判断某个保存条件是否被满足。</p>
-<p>因此，redisServer结构中新增<code>dirty</code>计数器和<code>lastsave</code>属性，如下：</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">struct</span> redisServer &#123;</span><br><span class="line">	<span class="built_in">long</span> <span class="built_in">long</span> dirty;	<span class="comment">// 计数器</span></span><br><span class="line">	time_t lastsave;	<span class="comment">// 上一次成功执行持久化的时间，格式是UNIX时间戳</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>dirty</code>计数器记录距离上一次成功执行RDB持久化，服务器对数据库一共做了多少次修改。</li>
-<li><code>lastsave</code>属性记录上一次成功执行RDB持久化的时间，格式为UNIX时间戳。</li>
-</ul>
-<p>Redis服务器会周期性地检查保存条件是否满足, 源码实现可参考<code>redis.c/ServerCron</code></p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// serverCron是Redis服务器的时间事件，周期性执行，默认周期为0.1s, 可以通过改配置选项hz修改这个默认周期</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">serverCron</span><span class="params">(<span class="keyword">struct</span> aeEventLoop *eventLoop, <span class="type">long</span> <span class="type">long</span> id, <span class="type">void</span> *clientData)</span> &#123;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; server.saveparamslen; j++) &#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">saveparam</span> *<span class="title">sp</span> =</span> server.saveparams+j;</span><br><span class="line">        <span class="keyword">if</span> (server.dirty &gt;= sp-&gt;changes &amp;&amp;</span><br><span class="line">            server.unixtime-server.lastsave &gt; sp-&gt;seconds &amp;&amp;</span><br><span class="line">            (server.unixtime-server.lastbgsave_try &gt;</span><br><span class="line">            REDIS_BGSAVE_RETRY_DELAY ||</span><br><span class="line">            server.lastbgsave_status == REDIS_OK)) &#123;</span><br><span class="line">            rdbSaveBackground(server.rdb_filename); <span class="comment">// 某个保存条件满足，就执行BGSAVE命令</span></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">         &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="2-RDB文件如何加载"><a href="#2-RDB文件如何加载" class="headerlink" title="2. RDB文件如何加载"></a>2. RDB文件如何加载</h3><p>Redis没有提供专门加载RDB文件的命令，只要Redis在启动时检测到了RDB文件的存在，就会自动加载RDB文件，加载RDB文件的动作由<code>rdb.c/rdbLoad</code>函数完成。</p>
-<p><strong>注</strong>: 如果Redis开启了AOF持久化功能, 服务器会优先使用AOF文件而不是RDB文件还原数据库。</p>
-<h3 id="3-RDB文件结构和解析方法"><a href="#3-RDB文件结构和解析方法" class="headerlink" title="3. RDB文件结构和解析方法"></a>3. RDB文件结构和解析方法</h3><p>能借助工具离线分析RDB文件即可, 掌握RDB文件结构是非必要的，只需了解：</p>
-<ul>
-<li>RDB文件是一个经过压缩的二进制文件，对于不同类型的键，会使用不同的方式去存储。</li>
-<li>RDB文件不保存已过期的键，但是会保存键的过期时间。</li>
-</ul>
-<p>Redis官方提供了<code>redis-check-rdb</code>工具用于检测RDB文件。</p>
-<p>举例，在某个空的redis数据库中新增5个key，如下所示：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 每种类型键增加1个						    # 查询键的命令</span><br><span class="line">set key1 123								# get key1</span><br><span class="line">rpush list1 1 2 3							# lrange 0 -1</span><br><span class="line">hset hashtable1 k1 v1 k2 v2 k3 v3 			# hgetall hashtable1</span><br><span class="line">sadd set1 1 2 3								# smembers set1</span><br><span class="line">zadd zset1 1.0 m1 2.0 m2 3.0 m3				# zrange zset1 0 -1 withscores</span><br></pre></td></tr></table></figure>
-
-<p>可以通过<code>ob -cx dump.rdb</code>命令解析这个RDB文件, 但输出结果不够直观；更好的方式是借助开源社区已有的RDB分析工具, 可以参考：<a href="https://github.com/sripathikrishnan/redis-rdb-tools">https://github.com/sripathikrishnan/redis-rdb-tools</a></p>
-<p>这里将RDB文件转换为json格式查看，命令如下：</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line"># rdb -c json /var/redis/6379/dump.rdb</span><br><span class="line">[&#123;</span><br><span class="line">&quot;set1&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;],</span><br><span class="line">&quot;zset1&quot;:&#123;&quot;m1&quot;:&quot;1&quot;,&quot;m2&quot;:&quot;2&quot;,&quot;m3&quot;:&quot;3&quot;&#125;,</span><br><span class="line">&quot;hashtable1&quot;:&#123;&quot;k1&quot;:&quot;v1&quot;,&quot;k2&quot;:&quot;v2&quot;,&quot;k3&quot;:&quot;v3&quot;&#125;,</span><br><span class="line">&quot;list1&quot;:[&quot;1&quot;,&quot;2&quot;,&quot;3&quot;],</span><br><span class="line">&quot;str1&quot;:&quot;123&quot;&#125;]</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》  第10章 RDB持久化</p>
-<p>【2】<a href="https://cloud.tencent.com/developer/article/1394329">Redis RDB文件离线分析</a></p>
 ]]></content>
       <categories>
         <category>Redis</category>
@@ -3133,216 +3133,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Redis学习笔记(四)——ziplist</title>
-    <url>/2021/12/30/2021-12-30-redis-note-04-ziplist/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>ziplist是一种为节约内存而开发的数据结构，本质是一个字节数组。</p>
-<p>ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
-<span id="more"></span>
-
-<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>双向链表结构，在<font color = 'red'>存储数据本身长度远小于链表节点大小</font>的场景下，有严重的内存浪费问题。针对这种情况，Redis设计了ziplist这种节约内存的数据结构。以下给出ziplist相关的思考问题，了解ziplist的实现原理和设计思路。</p>
-<ul>
-<li><a href="#jump1">ziplist的数据结构</a></li>
-<li><a href="#jump2">ziplist节点构成</a></li>
-<li><a href="#jump3">为什么要设计ziplist</a></li>
-<li><a href="#jump4">ziplist相关操作</a><ul>
-<li><a href="#jump5">查找指定节点</a></li>
-<li><a href="#jump6">连锁更新问题</a></li>
-</ul>
-</li>
-<li>quicklist的数据结构</li>
-<li>为什么要设计quicklist</li>
-<li>quicklist的增、删、改、查操作</li>
-</ul>
-<h3 id="ziplist的数据结构"><a href="#ziplist的数据结构" class="headerlink" title="ziplist的数据结构"></a>ziplist的数据结构<span id="jump1"></span></h3><p>Redis没有专门定义结构体来表示ziplist，因为ziplist本质就是一个空间连续的字节数组。</p>
-<p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过<code>struct zlentry</code>结构表示。</p>
-<p>ziplist的各组成部分参考如下：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image1.png"></p>
-<p>可以看出，ziplist由列表头 + 列表节点 + 列表尾这三部分组成。每个组成部分作用说明如下：</p>
-<ul>
-<li><code>zlbytes</code>占4字节，用于记录整个ziplist占用内存的总字节数，对于空表来说，<code>zlbytes</code>等于11，源码参考<code>ziplistNew</code></li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t)) <span class="comment">// 8 + 2 = 10字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_END_SIZE        (sizeof(uint8_t)) <span class="comment">// 1字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_BYTES(zl)       (*((uint32_t*)(zl)))  <span class="comment">// zlbytes</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Create a new empty ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistNew</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> bytes = ZIPLIST_HEADER_SIZE+ZIPLIST_END_SIZE;	<span class="comment">// zlbytes = 10 + 1 = 11</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *zl = zmalloc(bytes); <span class="comment">// 可以看出，空表分配11字节大小空间</span></span><br><span class="line">    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes);</span><br><span class="line">    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE);</span><br><span class="line">    ZIPLIST_LENGTH(zl) = <span class="number">0</span>;</span><br><span class="line">    zl[bytes<span class="number">-1</span>] = ZIP_END;</span><br><span class="line">    <span class="keyword">return</span> zl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>ziplist为空时的内存空间如下图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image2.png"></p>
-<ul>
-<li><code>zltail</code>占4字节，用于记录表尾节点首地址距离ziplist起始地址有多少字节。设计这个字段的目的是为了快速定位表尾节点地址（ZIPLIST_ENTRY_TAIL)。</li>
-<li><code>zllen</code>占2字节，用于记录列表节点总数。注意<code>zllen</code>等于65535时，表示这个列表长度太大，必须通过遍历整个ziplist才能得到真实的长度。参考<code>ziplistLen</code>实现：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> UINT16_MAX 65535</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">ziplistLen</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (intrev16ifbe(ZIPLIST_LENGTH(zl)) &lt; UINT16_MAX) &#123;</span><br><span class="line">        len = intrev16ifbe(ZIPLIST_LENGTH(zl)); <span class="comment">// zllen &lt; 65535时，O(1)复杂度获取ziplist长度</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *p = zl+ZIPLIST_HEADER_SIZE;</span><br><span class="line">        <span class="keyword">while</span> (*p != ZIP_END) &#123;			<span class="comment">// zllen = 65535时，O(N)复杂度获取ziplist长度</span></span><br><span class="line">            p += zipRawEntryLength(p);</span><br><span class="line">            len++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Re-store length if small enough */</span></span><br><span class="line">        <span class="keyword">if</span> (len &lt; UINT16_MAX) ZIPLIST_LENGTH(zl) = intrev16ifbe(len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>zlend</code>占1字节，用于标记ziplist的结束，内容固定为0xFF(十进制的255)</li>
-</ul>
-<h3 id="ziplist节点构成"><a href="#ziplist节点构成" class="headerlink" title="ziplist节点构成"></a>ziplist节点构成<span id="jump2"></span></h3><p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过struct zlentry结构表示。</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zlentry</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlensize; <span class="comment">/* Bytes used to encode the previous entry len*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlen;     <span class="comment">/* Previous entry len. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> lensize;        <span class="comment">/* Bytes used to encode this entry type/len.</span></span><br><span class="line"><span class="comment">                                    For example strings have a 1, 2 or 5 bytes</span></span><br><span class="line"><span class="comment">                                    header. Integers always use a single byte.*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len;            <span class="comment">/* Bytes used to represent the actual entry.</span></span><br><span class="line"><span class="comment">                                    For strings this is just the string length</span></span><br><span class="line"><span class="comment">                                    while for integers it is 1, 2, 3, 4, 8 or</span></span><br><span class="line"><span class="comment">                                    0 (for 4 bit immediate) depending on the</span></span><br><span class="line"><span class="comment">                                    number range. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> headersize;     <span class="comment">/* prevrawlensize + lensize. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> encoding;      <span class="comment">/* Set to ZIP_STR_* or ZIP_INT_* depending on</span></span><br><span class="line"><span class="comment">                                    the entry encoding. However for 4 bits</span></span><br><span class="line"><span class="comment">                                    immediate integers this can assume a range</span></span><br><span class="line"><span class="comment">                                    of values and must be range-checked. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *p;            <span class="comment">/* Pointer to the very start of the entry, that</span></span><br><span class="line"><span class="comment">                                    is, this points to prev-entry-len field. */</span></span><br><span class="line">&#125; zlentry;</span><br></pre></td></tr></table></figure>
-
-<p>前面提到，ziplist本质是一个字节数组，Redis为了操作方便，才专门定义zlentry结构体，并解析某个entry的信息到zlentry中，<strong>注意ziplist字节数组本身并不存储zlentry；</strong> ziplist的每个entry结构都由三部分组成：</p>
-<ul>
-<li>前一节点长度信息：<code>previous_entry_length</code></li>
-<li>当前节点编码信息：<code>encoding</code></li>
-<li>当前节点内容：<code>content</code></li>
-</ul>
-<p>ziplist节点的各组成部分示意图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image3.png"></p>
-<p>以下分别介绍这三个组成部分：</p>
-<h4 id="1、前一节点长度信息-previous-entry-length"><a href="#1、前一节点长度信息-previous-entry-length" class="headerlink" title="1、前一节点长度信息 previous_entry_length"></a>1、前一节点长度信息 previous_entry_length</h4><p><code>previous_entry_length</code>本身占1字节或5字节，用于记录前一个节点的长度，单位为字节：</p>
-<ul>
-<li>如果前一个节点长度小于254字节，<code>previous_entry_length</code>就只占1字节，直接保存前一个节点长度。</li>
-<li>如果前一个节点长度大于等于254字节，<code>previous_entry_length</code>就占5字节，其中第一个字节固定为0xFE，后4个字节保存前一个节点长度。</li>
-</ul>
-<p>源码参考<code>ZIP_DECODE_PREVLENSIZE</code>，这个宏根据前一个节点长度，返回<code>previous_entry_length</code>占用的字节数：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_BIG_PREVLEN 254</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do &#123;                          \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((ptr)[0] &lt; ZIP_BIG_PREVLEN) &#123;                                          \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
-
-<p>Q：为什么要设计<code>previous_entry_length</code>字段，有什么作用？</p>
-<p>A：用于支持从表尾向表头方向遍历。比如我们有指向某个节点起始地址的指针p，用p减去这个节点的<code>previous_entry_length</code>，就能得到前一节点的起始地址。</p>
-<p>访问ziplist当前节点的前一个节点，参考源码<code>ziplistPrev</code>的实现：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Return pointer to previous entry in ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistPrev</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl, <span class="type">unsigned</span> <span class="type">char</span> *p)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevlensize, prevlen = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (p[<span class="number">0</span>] == ZIP_END) &#123;	<span class="comment">// p指向ZIPLIST_ENTRY_END，前一个节点就是最后一个节点，即ZIPLIST_ENTRY_TAIL</span></span><br><span class="line">        p = ZIPLIST_ENTRY_TAIL(zl);</span><br><span class="line">        <span class="keyword">return</span> (p[<span class="number">0</span>] == ZIP_END) ? <span class="literal">NULL</span> : p;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (p == ZIPLIST_ENTRY_HEAD(zl)) &#123;	<span class="comment">// p为表头，说明前一个节点为NULL</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);	<span class="comment">// p减去这个节点的previous_entry_length</span></span><br><span class="line">        assert(prevlen &gt; <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span> p-prevlen;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="2、当前节点编码信息-encoding，当前节点内容content"><a href="#2、当前节点编码信息-encoding，当前节点内容content" class="headerlink" title="2、当前节点编码信息 encoding，当前节点内容content"></a>2、当前节点编码信息 encoding，当前节点内容content</h4><p> <code>encoding</code>用于记录当前节点内容的实际类型（字符串还是整数），以及长度：</p>
-<ul>
-<li><code>encoding</code>长度可以是1字节、2字节、或5字节。其中<code>encoding</code>最高两位为00, 01, 或10时表示存储的值类型为字符串；<code>encoding</code>最高两位为11表示存储的值类型为整数。</li>
-</ul>
-<p>每一种<code>encoding</code>对应的编码长度和content类型，参考如下源码：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ziplist.c</span></span><br><span class="line"><span class="comment">/* Different encoding/length possibilities */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_MASK 0xc0			<span class="comment">// 11000000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_MASK 0x30			<span class="comment">// 00110000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_06B (0 &lt;&lt; 6)		<span class="comment">// 00bbbbbb （长度小于等于63）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_14B (1 &lt;&lt; 6)		<span class="comment">// 01bbbbbb bbbbbbbb  (长度大于63且小于等于16383)</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_32B (2 &lt;&lt; 6)		<span class="comment">// 10______ bbbbbbbb bbbbbbbb bbbbbbbb bbbbbbbb（长度大于16384）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_16B (0xc0 | 0&lt;&lt;4)	<span class="comment">// 11000000  16位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_32B (0xc0 | 1&lt;&lt;4)	<span class="comment">// 11010000  32位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_64B (0xc0 | 2&lt;&lt;4)	<span class="comment">// 11100000  64位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_24B (0xc0 | 3&lt;&lt;4)	<span class="comment">// 11110000  24位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_8B 0xfe				<span class="comment">// 11111110  8位整数</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 4 bit integer immediate encoding |1111xxxx| with xxxx between</span></span><br><span class="line"><span class="comment"> * 0001 and 1101. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MASK 0x0f   <span class="comment">/* Mask to extract the 4 bits value. To add</span></span></span><br><span class="line"><span class="comment"><span class="meta">                                   one is needed to reconstruct the value. */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MIN 0xf1    <span class="comment">/* 11110001 */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MAX 0xfd    <span class="comment">/* 11111101 */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MAX 0x7fffff</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MIN (-INT24_MAX - 1)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Macro to determine if the entry is a string. String entries never start</span></span><br><span class="line"><span class="comment"> * with &quot;11&quot; as most significant bits of the first byte. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_IS_STR(enc) (((enc) &amp; ZIP_STR_MASK) &lt; ZIP_STR_MASK)  <span class="comment">// 判断是否为字节数组编码！！！</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Extract the encoding from the byte pointed by &#x27;ptr&#x27; and set it into</span></span><br><span class="line"><span class="comment"> * &#x27;encoding&#x27; field of the zlentry structure. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_ENTRY_ENCODING(ptr, encoding) do &#123;  \</span></span><br><span class="line"><span class="meta">    (encoding) = (ptr[0]); \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) (encoding) &amp;= ZIP_STR_MASK; \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Decode the entry encoding type and data length (string length for strings,</span></span><br><span class="line"><span class="comment"> * number of bytes used for the integer for integer entries) encoded in &#x27;ptr&#x27;.</span></span><br><span class="line"><span class="comment"> * The &#x27;encoding&#x27; variable will hold the entry encoding, the &#x27;lensize&#x27;</span></span><br><span class="line"><span class="comment"> * variable will hold the number of bytes required to encode the entry</span></span><br><span class="line"><span class="comment"> * length, and the &#x27;len&#x27; variable will hold the entry length. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_LENGTH(ptr, encoding, lensize, len) do &#123;                    \</span></span><br><span class="line"><span class="meta">    ZIP_ENTRY_ENCODING((ptr), (encoding));                                     \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) &#123;                                           \</span></span><br><span class="line"><span class="meta">        <span class="keyword">if</span> ((encoding) == ZIP_STR_06B) &#123;                                       \</span></span><br><span class="line"><span class="meta">            (lensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (ptr)[0] &amp; 0x3f;                                           \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_14B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 2;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (((ptr)[0] &amp; 0x3f) &lt;&lt; 8) | (ptr)[1];                       \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_32B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = ((ptr)[1] &lt;&lt; 24) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[2] &lt;&lt; 16) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[3] &lt;&lt;  8) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[4]);                                                \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> &#123;                                                               \</span></span><br><span class="line"><span class="meta">            panic(<span class="string">&quot;Invalid string encoding 0x%02X&quot;</span>, (encoding));               \</span></span><br><span class="line"><span class="meta">        &#125;                                                                      \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (lensize) = 1;                                                         \</span></span><br><span class="line"><span class="meta">        (len) = zipIntSize(encoding);                                          \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
-
-<p>整数编码：</p>
-<table>
-<thead>
-<tr>
-<th align="left">encoding</th>
-<th align="left">encoding长度</th>
-<th align="left">content长度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">11111110 (ZIP_INT_8B)</td>
-<td align="left">1字节</td>
-<td align="left">8位整数</td>
-</tr>
-<tr>
-<td align="left">11000000 (ZIP_INT_16B)</td>
-<td align="left">1字节</td>
-<td align="left">16位整数</td>
-</tr>
-<tr>
-<td align="left">11110000(ZIP_INT_24B)</td>
-<td align="left">1字节</td>
-<td align="left">24位整数</td>
-</tr>
-<tr>
-<td align="left">11010000(ZIP_INT_32B)</td>
-<td align="left">1字节</td>
-<td align="left">32位整数</td>
-</tr>
-<tr>
-<td align="left">11100000(ZIP_INT_64B)</td>
-<td align="left">1字节</td>
-<td align="left">64位整数</td>
-</tr>
-<tr>
-<td align="left">1111xxxx</td>
-<td align="left">1字节</td>
-<td align="left">0-12之间的整数。此时没有content部分，值存储在encoding的xxxx四个位</td>
-</tr>
-</tbody></table>
-<p>字节数组编码：</p>
-<table>
-<thead>
-<tr>
-<th align="left">encoding</th>
-<th align="left">encoding说明</th>
-<th align="left">encoding长度</th>
-<th align="left">content长度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">00xxxxxx (ZIP_STR_06B)</td>
-<td align="left">后6位表示字节数组的长度</td>
-<td align="left">1字节</td>
-<td align="left">保存长度小于等于63字节的字节数组</td>
-</tr>
-<tr>
-<td align="left">01xxxxxx xxxxxxxx (ZIP_STR_14B)</td>
-<td align="left">后14位表示字节数组的长度</td>
-<td align="left">2字节</td>
-<td align="left">保存长度大于63， 小于等于16383字节的字节数组</td>
-</tr>
-<tr>
-<td align="left">10______ xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx (ZIP_STR_32B)</td>
-<td align="left">最后24位表示字节数组的长度，第3-8位留空</td>
-<td align="left">5字节</td>
-<td align="left">保存长度大于16384，小于 2^32 - 1字节的字节数组</td>
-</tr>
-</tbody></table>
-<p>总结：Redis根据ziplist节点存储内容的类型和大小，使用不同的编码表示，目的在于最大限度地节省空间。</p>
-<p><font color = 'red'>思考问题：</font>创建一个ziplist编码的空列表键，并依次添加两个值”hello”，”10086”，问此时ziplist的长度是多少，内容是什么样的？</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; info  # Redis版本必须为3.2之前的，否则列表键的默认编码为quicklist，而非ziplist!</span><br><span class="line"># Server redis_version:3.0.0</span><br><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">127.0.0.1:6379&gt; rpush key hello 10086 # 新增列表键，依次插入两个key &quot;hello&quot; &quot;10086&quot;</span><br><span class="line">(integer) 2</span><br><span class="line">127.0.0.1:6379&gt; object encoding key   # 确认列表键编码为ziplist</span><br><span class="line">&quot;ziplist&quot;</span><br></pre></td></tr></table></figure>
-
-<p>如果你真的掌握了ziplist节点构成，那么不需要运行Redis，你也可以得出答案：这个ziplist占用22字节，内存如下图所示：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image4.png"><br>以下给出GDB的验证方法和验证结果，感兴趣的可以参考：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 0、确认ziplist的首地址</span></span><br><span class="line">(gdb) p (sds)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].key</span><br><span class="line">$<span class="number">1</span> = (sds) <span class="number">0x7fc6ac086288</span> <span class="string">&quot;key&quot;</span> <span class="comment">// 键</span></span><br><span class="line">(gdb) p *(robj *)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].v</span><br><span class="line">$<span class="number">2</span> = &#123;type = <span class="number">1</span>, encoding = <span class="number">5</span>, lru = <span class="number">13392586</span>, refcount = <span class="number">1</span>, ptr = <span class="number">0x7fc6ac035d60</span>&#125; <span class="comment">// ptr即为ziplist的首地址！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1、打印zlbytes, zltail, zllen</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d60</span></span><br><span class="line">$<span class="number">3</span> = <span class="number">22</span> <span class="comment">// zlbytes = 22</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d64</span></span><br><span class="line">$<span class="number">4</span> = <span class="number">17</span> <span class="comment">// zltail = 17</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *)<span class="number">0x7fc6ac035d68</span></span><br><span class="line">$<span class="number">5</span> = <span class="number">2</span>  <span class="comment">// zlen = 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、以下开始打印第一个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6a</span></span><br><span class="line"><span class="number">0x7fc6ac035d6a</span>: <span class="number">0x00</span> <span class="comment">// previous_entry_length本身占1字节，长度为0</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6b</span></span><br><span class="line"><span class="number">0x7fc6ac035d6b</span>: <span class="number">0x05</span> <span class="comment">// encoding为00000101, 本身占1字节，表示长度为5的字节数组</span></span><br><span class="line">(gdb) x/<span class="number">5</span>c <span class="number">0x7fc6ac035d6c</span></span><br><span class="line"><span class="number">0x7fc6ac035d6c</span>: <span class="number">104</span> <span class="string">&#x27;h&#x27;</span> <span class="number">101</span> <span class="string">&#x27;e&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">111</span> <span class="string">&#x27;o&#x27;</span>	<span class="comment">// content占5字节，存储&quot;hello&quot;</span></span><br><span class="line"><span class="comment">// 第一个节点总长度为 1 + 1 + 5 = 7 字节</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、以下开始打印第二个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d71</span></span><br><span class="line"><span class="number">0x7fc6ac035d71</span>: <span class="number">0x07</span> <span class="comment">// previous_entry_length本身占1字节，长度为7</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d72</span></span><br><span class="line"><span class="number">0x7fc6ac035d72</span>: <span class="number">0xc0</span> <span class="comment">// encoding为11000000, 本身占1字节, 表示16位的整数</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *) <span class="number">0x7fc6ac035d73</span></span><br><span class="line">$<span class="number">6</span> = <span class="number">10086</span>	<span class="comment">// content本身占2字节，存储内容正是10086</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、标志zlend，占1字节</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d75</span></span><br><span class="line"><span class="number">0x7fc6ac035d75</span>: <span class="number">0xff</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="为什么要设计ziplist"><a href="#为什么要设计ziplist" class="headerlink" title="为什么要设计ziplist"></a>为什么要设计ziplist<span id="jump3"></span></h3><p>还是考虑这个列表键： <code>&quot;hello&quot; -&gt; &quot;10086&quot;</code></p>
-<ul>
-<li>如果用ziplist编码，仅需22个字节存储。</li>
-<li>如果用linkedlist编码，以64位环境为例，光链表节点就需要2 * sizeof(listNode) &#x3D; 48个字节，这个大小远超过了数据本身的大小，导致严重的内存浪费。</li>
-</ul>
-<p>可以看出，ziplist设计思想是以时间换空间，目的是节省宝贵的内存资源。</p>
-<p>Redis中，ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
-<h3 id="ziplist相关操作"><a href="#ziplist相关操作" class="headerlink" title="ziplist相关操作"></a>ziplist相关操作<span id="jump4"></span></h3><p>压缩列表的增、删、改、查API如下：</p>
-<table>
-<thead>
-<tr>
-<th align="left">API</th>
-<th align="left">功能</th>
-<th align="left">时间复杂度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">ziplistPush</td>
-<td align="left">插入指定节点到表头或表尾</td>
-<td align="left">平均O(N)，连锁更新场景为O(N^2)</td>
-</tr>
-<tr>
-<td align="left">ziplistDelete</td>
-<td align="left">删除指定节点</td>
-<td align="left">平均O(N)，连续更新场景为O(N^2)</td>
-</tr>
-<tr>
-<td align="left">ziplistFind</td>
-<td align="left">查找指定节点</td>
-<td align="left">O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</td>
-</tr>
-<tr>
-<td align="left">ziplistNext</td>
-<td align="left">返回给定节点的下一个节点</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">ziplistPrev</td>
-<td align="left">返回给定节点的前一个节点</td>
-<td align="left">O(1)</td>
-</tr>
-</tbody></table>
-<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump5"></span></h4><p>源码参考<code>ziplistFind</code>，时间复杂度为O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 功能：寻找ziplist中，节点值和vstr相等的节点并返回</span></span><br><span class="line"><span class="comment">// skip表示跳过的节点数</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistFind</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *p, <span class="type">unsigned</span> <span class="type">char</span> *vstr, <span class="type">unsigned</span> <span class="type">int</span> vlen, <span class="type">unsigned</span> <span class="type">int</span> skip)</span> &#123;</span><br><span class="line">    <span class="type">int</span> skipcnt = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> vencoding = <span class="number">0</span>;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> vll = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (p[<span class="number">0</span>] != ZIP_END) &#123;	<span class="comment">// 如果没有达到列表尾，就一直循环遍历！</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">int</span> prevlensize, encoding, lensize, len;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *q;</span><br><span class="line"></span><br><span class="line">        ZIP_DECODE_PREVLENSIZE(p, prevlensize);</span><br><span class="line">        ZIP_DECODE_LENGTH(p + prevlensize, encoding, lensize, len);</span><br><span class="line">        q = p + prevlensize + lensize;	<span class="comment">// 此时q指向节点p的content</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (skipcnt == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">/* Compare current entry with specified entry */</span></span><br><span class="line">            <span class="keyword">if</span> (ZIP_IS_STR(encoding)) &#123;	<span class="comment">// 如果是字符串，memcmp比较是否相等，复杂度O(N)</span></span><br><span class="line">                <span class="keyword">if</span> (len == vlen &amp;&amp; <span class="built_in">memcmp</span>(q, vstr, vlen) == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> p;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">/* Find out if the searched field can be encoded. Note that</span></span><br><span class="line"><span class="comment">                 * we do it only the first time, once done vencoding is set</span></span><br><span class="line"><span class="comment">                 * to non-zero and vll is set to the integer value. */</span></span><br><span class="line">                <span class="comment">// 对于传入的vstr, 解码动作只需做一次， vencoding相当于一个flag</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!zipTryEncoding(vstr, vlen, &amp;vll, &amp;vencoding)) &#123;</span><br><span class="line">                        <span class="comment">/* If the entry can&#x27;t be encoded we set it to</span></span><br><span class="line"><span class="comment">                         * UCHAR_MAX so that we don&#x27;t retry again the next</span></span><br><span class="line"><span class="comment">                         * time. */</span></span><br><span class="line">                        vencoding = UCHAR_MAX;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">/* Must be non-zero by now */</span></span><br><span class="line">                    assert(vencoding);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">/* Compare current entry with specified entry, do it only</span></span><br><span class="line"><span class="comment">                 * if vencoding != UCHAR_MAX because if there is no encoding</span></span><br><span class="line"><span class="comment">                 * possible for the field it can&#x27;t be a valid integer. */</span></span><br><span class="line">                <span class="comment">// 如果解码成功，比较整数值是否相等</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding != UCHAR_MAX) &#123;</span><br><span class="line">                    <span class="type">long</span> <span class="type">long</span> ll = zipLoadInteger(q, encoding);</span><br><span class="line">                    <span class="keyword">if</span> (ll == vll) &#123;</span><br><span class="line">                        <span class="keyword">return</span> p;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/* Reset skip count */</span></span><br><span class="line">            skipcnt = skip;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/* Skip entry */</span></span><br><span class="line">            skipcnt--;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* Move to next entry */</span></span><br><span class="line">        <span class="comment">// q指向content, len就是content的长度, 所以 q + len即为下一个节点的首地址！！</span></span><br><span class="line">        p = q + len;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="连锁更新问题"><a href="#连锁更新问题" class="headerlink" title="连锁更新问题"></a>连锁更新问题<span id="jump6"></span></h4><p>前面提到，ziplist中每个节点的<code>previous_entry_length</code>记录了前一个节点的长度，考虑在表头插入节点的场景：</p>
-<p>如果列表所有节点长度都在250-253字节之前，且插入节点大于等于254字节，就会导致所有节点的<code>previous_entry_length</code>都必须从1字节扩展为5字节, 即触发了<strong>连锁更新</strong>。</p>
-<p>以下举例说明这个问题：给定一个长度为3的，每个节点大小均为253字节的ziplist，往表头插入一个300字节大小的节点。<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image5.png"><br>注：除了新增节点会引发连锁更新，删除节点操作也可能引发连锁更新，此处不再赘述。</p>
-<p><font color = 'red'>思考问题：</font>既然连锁更新的最坏复杂度为O(n^2)，为什么Redis还是放心使用ziplist？</p>
-<ul>
-<li>因为连锁更新触发条件苛刻，只有满足存在多个连续长度为250-253之间的节点才能触发。</li>
-<li>ziplist只应用于节点数少且数据小的场景，即使出现了连续更新，需要更新的节点数量也很少，不会出现性能问题。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第7章 压缩列表</p>
-<p>【2】[Redis源码解析-基础数据-ziplist(压缩列表)](</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis学习笔记(三)——字典</title>
     <url>/2021/12/21/2021-12-21-redis-note-03-dict/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>字典是一种用于保存键值对的数据结构，Redis数据库使用字典做为底层实现，字典也是哈希键的底层实现之一。</p>
@@ -3695,6 +3485,216 @@
 <p>【2】<a href="https://juejin.cn/post/6844903702373859335">Copy On Write机制了解一下</a></p>
 <p>【3】<a href="https://tech.meituan.com/2018/07/27/redis-rehash-practice-optimization.html">美团针对Redis Rehash机制的探索和实践</a></p>
 <p>【4】<a href="https://cloud.tencent.com/developer/article/1672781">解决哈希冲突的常用方法分析</a></p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis学习笔记(四)——ziplist</title>
+    <url>/2021/12/30/2021-12-30-redis-note-04-ziplist/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>ziplist是一种为节约内存而开发的数据结构，本质是一个字节数组。</p>
+<p>ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
+<span id="more"></span>
+
+<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>双向链表结构，在<font color = 'red'>存储数据本身长度远小于链表节点大小</font>的场景下，有严重的内存浪费问题。针对这种情况，Redis设计了ziplist这种节约内存的数据结构。以下给出ziplist相关的思考问题，了解ziplist的实现原理和设计思路。</p>
+<ul>
+<li><a href="#jump1">ziplist的数据结构</a></li>
+<li><a href="#jump2">ziplist节点构成</a></li>
+<li><a href="#jump3">为什么要设计ziplist</a></li>
+<li><a href="#jump4">ziplist相关操作</a><ul>
+<li><a href="#jump5">查找指定节点</a></li>
+<li><a href="#jump6">连锁更新问题</a></li>
+</ul>
+</li>
+<li>quicklist的数据结构</li>
+<li>为什么要设计quicklist</li>
+<li>quicklist的增、删、改、查操作</li>
+</ul>
+<h3 id="ziplist的数据结构"><a href="#ziplist的数据结构" class="headerlink" title="ziplist的数据结构"></a>ziplist的数据结构<span id="jump1"></span></h3><p>Redis没有专门定义结构体来表示ziplist，因为ziplist本质就是一个空间连续的字节数组。</p>
+<p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过<code>struct zlentry</code>结构表示。</p>
+<p>ziplist的各组成部分参考如下：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image1.png"></p>
+<p>可以看出，ziplist由列表头 + 列表节点 + 列表尾这三部分组成。每个组成部分作用说明如下：</p>
+<ul>
+<li><code>zlbytes</code>占4字节，用于记录整个ziplist占用内存的总字节数，对于空表来说，<code>zlbytes</code>等于11，源码参考<code>ziplistNew</code></li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t)) <span class="comment">// 8 + 2 = 10字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_END_SIZE        (sizeof(uint8_t)) <span class="comment">// 1字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_BYTES(zl)       (*((uint32_t*)(zl)))  <span class="comment">// zlbytes</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Create a new empty ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistNew</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> bytes = ZIPLIST_HEADER_SIZE+ZIPLIST_END_SIZE;	<span class="comment">// zlbytes = 10 + 1 = 11</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *zl = zmalloc(bytes); <span class="comment">// 可以看出，空表分配11字节大小空间</span></span><br><span class="line">    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes);</span><br><span class="line">    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE);</span><br><span class="line">    ZIPLIST_LENGTH(zl) = <span class="number">0</span>;</span><br><span class="line">    zl[bytes<span class="number">-1</span>] = ZIP_END;</span><br><span class="line">    <span class="keyword">return</span> zl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ziplist为空时的内存空间如下图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image2.png"></p>
+<ul>
+<li><code>zltail</code>占4字节，用于记录表尾节点首地址距离ziplist起始地址有多少字节。设计这个字段的目的是为了快速定位表尾节点地址（ZIPLIST_ENTRY_TAIL)。</li>
+<li><code>zllen</code>占2字节，用于记录列表节点总数。注意<code>zllen</code>等于65535时，表示这个列表长度太大，必须通过遍历整个ziplist才能得到真实的长度。参考<code>ziplistLen</code>实现：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> UINT16_MAX 65535</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">ziplistLen</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (intrev16ifbe(ZIPLIST_LENGTH(zl)) &lt; UINT16_MAX) &#123;</span><br><span class="line">        len = intrev16ifbe(ZIPLIST_LENGTH(zl)); <span class="comment">// zllen &lt; 65535时，O(1)复杂度获取ziplist长度</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *p = zl+ZIPLIST_HEADER_SIZE;</span><br><span class="line">        <span class="keyword">while</span> (*p != ZIP_END) &#123;			<span class="comment">// zllen = 65535时，O(N)复杂度获取ziplist长度</span></span><br><span class="line">            p += zipRawEntryLength(p);</span><br><span class="line">            len++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Re-store length if small enough */</span></span><br><span class="line">        <span class="keyword">if</span> (len &lt; UINT16_MAX) ZIPLIST_LENGTH(zl) = intrev16ifbe(len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>zlend</code>占1字节，用于标记ziplist的结束，内容固定为0xFF(十进制的255)</li>
+</ul>
+<h3 id="ziplist节点构成"><a href="#ziplist节点构成" class="headerlink" title="ziplist节点构成"></a>ziplist节点构成<span id="jump2"></span></h3><p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过struct zlentry结构表示。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zlentry</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlensize; <span class="comment">/* Bytes used to encode the previous entry len*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlen;     <span class="comment">/* Previous entry len. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> lensize;        <span class="comment">/* Bytes used to encode this entry type/len.</span></span><br><span class="line"><span class="comment">                                    For example strings have a 1, 2 or 5 bytes</span></span><br><span class="line"><span class="comment">                                    header. Integers always use a single byte.*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len;            <span class="comment">/* Bytes used to represent the actual entry.</span></span><br><span class="line"><span class="comment">                                    For strings this is just the string length</span></span><br><span class="line"><span class="comment">                                    while for integers it is 1, 2, 3, 4, 8 or</span></span><br><span class="line"><span class="comment">                                    0 (for 4 bit immediate) depending on the</span></span><br><span class="line"><span class="comment">                                    number range. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> headersize;     <span class="comment">/* prevrawlensize + lensize. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> encoding;      <span class="comment">/* Set to ZIP_STR_* or ZIP_INT_* depending on</span></span><br><span class="line"><span class="comment">                                    the entry encoding. However for 4 bits</span></span><br><span class="line"><span class="comment">                                    immediate integers this can assume a range</span></span><br><span class="line"><span class="comment">                                    of values and must be range-checked. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *p;            <span class="comment">/* Pointer to the very start of the entry, that</span></span><br><span class="line"><span class="comment">                                    is, this points to prev-entry-len field. */</span></span><br><span class="line">&#125; zlentry;</span><br></pre></td></tr></table></figure>
+
+<p>前面提到，ziplist本质是一个字节数组，Redis为了操作方便，才专门定义zlentry结构体，并解析某个entry的信息到zlentry中，<strong>注意ziplist字节数组本身并不存储zlentry；</strong> ziplist的每个entry结构都由三部分组成：</p>
+<ul>
+<li>前一节点长度信息：<code>previous_entry_length</code></li>
+<li>当前节点编码信息：<code>encoding</code></li>
+<li>当前节点内容：<code>content</code></li>
+</ul>
+<p>ziplist节点的各组成部分示意图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image3.png"></p>
+<p>以下分别介绍这三个组成部分：</p>
+<h4 id="1、前一节点长度信息-previous-entry-length"><a href="#1、前一节点长度信息-previous-entry-length" class="headerlink" title="1、前一节点长度信息 previous_entry_length"></a>1、前一节点长度信息 previous_entry_length</h4><p><code>previous_entry_length</code>本身占1字节或5字节，用于记录前一个节点的长度，单位为字节：</p>
+<ul>
+<li>如果前一个节点长度小于254字节，<code>previous_entry_length</code>就只占1字节，直接保存前一个节点长度。</li>
+<li>如果前一个节点长度大于等于254字节，<code>previous_entry_length</code>就占5字节，其中第一个字节固定为0xFE，后4个字节保存前一个节点长度。</li>
+</ul>
+<p>源码参考<code>ZIP_DECODE_PREVLENSIZE</code>，这个宏根据前一个节点长度，返回<code>previous_entry_length</code>占用的字节数：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_BIG_PREVLEN 254</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do &#123;                          \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((ptr)[0] &lt; ZIP_BIG_PREVLEN) &#123;                                          \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
+
+<p>Q：为什么要设计<code>previous_entry_length</code>字段，有什么作用？</p>
+<p>A：用于支持从表尾向表头方向遍历。比如我们有指向某个节点起始地址的指针p，用p减去这个节点的<code>previous_entry_length</code>，就能得到前一节点的起始地址。</p>
+<p>访问ziplist当前节点的前一个节点，参考源码<code>ziplistPrev</code>的实现：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Return pointer to previous entry in ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistPrev</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl, <span class="type">unsigned</span> <span class="type">char</span> *p)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevlensize, prevlen = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (p[<span class="number">0</span>] == ZIP_END) &#123;	<span class="comment">// p指向ZIPLIST_ENTRY_END，前一个节点就是最后一个节点，即ZIPLIST_ENTRY_TAIL</span></span><br><span class="line">        p = ZIPLIST_ENTRY_TAIL(zl);</span><br><span class="line">        <span class="keyword">return</span> (p[<span class="number">0</span>] == ZIP_END) ? <span class="literal">NULL</span> : p;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (p == ZIPLIST_ENTRY_HEAD(zl)) &#123;	<span class="comment">// p为表头，说明前一个节点为NULL</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);	<span class="comment">// p减去这个节点的previous_entry_length</span></span><br><span class="line">        assert(prevlen &gt; <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span> p-prevlen;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2、当前节点编码信息-encoding，当前节点内容content"><a href="#2、当前节点编码信息-encoding，当前节点内容content" class="headerlink" title="2、当前节点编码信息 encoding，当前节点内容content"></a>2、当前节点编码信息 encoding，当前节点内容content</h4><p> <code>encoding</code>用于记录当前节点内容的实际类型（字符串还是整数），以及长度：</p>
+<ul>
+<li><code>encoding</code>长度可以是1字节、2字节、或5字节。其中<code>encoding</code>最高两位为00, 01, 或10时表示存储的值类型为字符串；<code>encoding</code>最高两位为11表示存储的值类型为整数。</li>
+</ul>
+<p>每一种<code>encoding</code>对应的编码长度和content类型，参考如下源码：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ziplist.c</span></span><br><span class="line"><span class="comment">/* Different encoding/length possibilities */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_MASK 0xc0			<span class="comment">// 11000000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_MASK 0x30			<span class="comment">// 00110000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_06B (0 &lt;&lt; 6)		<span class="comment">// 00bbbbbb （长度小于等于63）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_14B (1 &lt;&lt; 6)		<span class="comment">// 01bbbbbb bbbbbbbb  (长度大于63且小于等于16383)</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_32B (2 &lt;&lt; 6)		<span class="comment">// 10______ bbbbbbbb bbbbbbbb bbbbbbbb bbbbbbbb（长度大于16384）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_16B (0xc0 | 0&lt;&lt;4)	<span class="comment">// 11000000  16位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_32B (0xc0 | 1&lt;&lt;4)	<span class="comment">// 11010000  32位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_64B (0xc0 | 2&lt;&lt;4)	<span class="comment">// 11100000  64位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_24B (0xc0 | 3&lt;&lt;4)	<span class="comment">// 11110000  24位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_8B 0xfe				<span class="comment">// 11111110  8位整数</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 4 bit integer immediate encoding |1111xxxx| with xxxx between</span></span><br><span class="line"><span class="comment"> * 0001 and 1101. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MASK 0x0f   <span class="comment">/* Mask to extract the 4 bits value. To add</span></span></span><br><span class="line"><span class="comment"><span class="meta">                                   one is needed to reconstruct the value. */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MIN 0xf1    <span class="comment">/* 11110001 */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MAX 0xfd    <span class="comment">/* 11111101 */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MAX 0x7fffff</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MIN (-INT24_MAX - 1)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Macro to determine if the entry is a string. String entries never start</span></span><br><span class="line"><span class="comment"> * with &quot;11&quot; as most significant bits of the first byte. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_IS_STR(enc) (((enc) &amp; ZIP_STR_MASK) &lt; ZIP_STR_MASK)  <span class="comment">// 判断是否为字节数组编码！！！</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Extract the encoding from the byte pointed by &#x27;ptr&#x27; and set it into</span></span><br><span class="line"><span class="comment"> * &#x27;encoding&#x27; field of the zlentry structure. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_ENTRY_ENCODING(ptr, encoding) do &#123;  \</span></span><br><span class="line"><span class="meta">    (encoding) = (ptr[0]); \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) (encoding) &amp;= ZIP_STR_MASK; \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Decode the entry encoding type and data length (string length for strings,</span></span><br><span class="line"><span class="comment"> * number of bytes used for the integer for integer entries) encoded in &#x27;ptr&#x27;.</span></span><br><span class="line"><span class="comment"> * The &#x27;encoding&#x27; variable will hold the entry encoding, the &#x27;lensize&#x27;</span></span><br><span class="line"><span class="comment"> * variable will hold the number of bytes required to encode the entry</span></span><br><span class="line"><span class="comment"> * length, and the &#x27;len&#x27; variable will hold the entry length. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_LENGTH(ptr, encoding, lensize, len) do &#123;                    \</span></span><br><span class="line"><span class="meta">    ZIP_ENTRY_ENCODING((ptr), (encoding));                                     \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) &#123;                                           \</span></span><br><span class="line"><span class="meta">        <span class="keyword">if</span> ((encoding) == ZIP_STR_06B) &#123;                                       \</span></span><br><span class="line"><span class="meta">            (lensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (ptr)[0] &amp; 0x3f;                                           \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_14B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 2;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (((ptr)[0] &amp; 0x3f) &lt;&lt; 8) | (ptr)[1];                       \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_32B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = ((ptr)[1] &lt;&lt; 24) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[2] &lt;&lt; 16) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[3] &lt;&lt;  8) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[4]);                                                \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> &#123;                                                               \</span></span><br><span class="line"><span class="meta">            panic(<span class="string">&quot;Invalid string encoding 0x%02X&quot;</span>, (encoding));               \</span></span><br><span class="line"><span class="meta">        &#125;                                                                      \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (lensize) = 1;                                                         \</span></span><br><span class="line"><span class="meta">        (len) = zipIntSize(encoding);                                          \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
+
+<p>整数编码：</p>
+<table>
+<thead>
+<tr>
+<th align="left">encoding</th>
+<th align="left">encoding长度</th>
+<th align="left">content长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">11111110 (ZIP_INT_8B)</td>
+<td align="left">1字节</td>
+<td align="left">8位整数</td>
+</tr>
+<tr>
+<td align="left">11000000 (ZIP_INT_16B)</td>
+<td align="left">1字节</td>
+<td align="left">16位整数</td>
+</tr>
+<tr>
+<td align="left">11110000(ZIP_INT_24B)</td>
+<td align="left">1字节</td>
+<td align="left">24位整数</td>
+</tr>
+<tr>
+<td align="left">11010000(ZIP_INT_32B)</td>
+<td align="left">1字节</td>
+<td align="left">32位整数</td>
+</tr>
+<tr>
+<td align="left">11100000(ZIP_INT_64B)</td>
+<td align="left">1字节</td>
+<td align="left">64位整数</td>
+</tr>
+<tr>
+<td align="left">1111xxxx</td>
+<td align="left">1字节</td>
+<td align="left">0-12之间的整数。此时没有content部分，值存储在encoding的xxxx四个位</td>
+</tr>
+</tbody></table>
+<p>字节数组编码：</p>
+<table>
+<thead>
+<tr>
+<th align="left">encoding</th>
+<th align="left">encoding说明</th>
+<th align="left">encoding长度</th>
+<th align="left">content长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">00xxxxxx (ZIP_STR_06B)</td>
+<td align="left">后6位表示字节数组的长度</td>
+<td align="left">1字节</td>
+<td align="left">保存长度小于等于63字节的字节数组</td>
+</tr>
+<tr>
+<td align="left">01xxxxxx xxxxxxxx (ZIP_STR_14B)</td>
+<td align="left">后14位表示字节数组的长度</td>
+<td align="left">2字节</td>
+<td align="left">保存长度大于63， 小于等于16383字节的字节数组</td>
+</tr>
+<tr>
+<td align="left">10______ xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx (ZIP_STR_32B)</td>
+<td align="left">最后24位表示字节数组的长度，第3-8位留空</td>
+<td align="left">5字节</td>
+<td align="left">保存长度大于16384，小于 2^32 - 1字节的字节数组</td>
+</tr>
+</tbody></table>
+<p>总结：Redis根据ziplist节点存储内容的类型和大小，使用不同的编码表示，目的在于最大限度地节省空间。</p>
+<p><font color = 'red'>思考问题：</font>创建一个ziplist编码的空列表键，并依次添加两个值”hello”，”10086”，问此时ziplist的长度是多少，内容是什么样的？</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; info  # Redis版本必须为3.2之前的，否则列表键的默认编码为quicklist，而非ziplist!</span><br><span class="line"># Server redis_version:3.0.0</span><br><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">127.0.0.1:6379&gt; rpush key hello 10086 # 新增列表键，依次插入两个key &quot;hello&quot; &quot;10086&quot;</span><br><span class="line">(integer) 2</span><br><span class="line">127.0.0.1:6379&gt; object encoding key   # 确认列表键编码为ziplist</span><br><span class="line">&quot;ziplist&quot;</span><br></pre></td></tr></table></figure>
+
+<p>如果你真的掌握了ziplist节点构成，那么不需要运行Redis，你也可以得出答案：这个ziplist占用22字节，内存如下图所示：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image4.png"><br>以下给出GDB的验证方法和验证结果，感兴趣的可以参考：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 0、确认ziplist的首地址</span></span><br><span class="line">(gdb) p (sds)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].key</span><br><span class="line">$<span class="number">1</span> = (sds) <span class="number">0x7fc6ac086288</span> <span class="string">&quot;key&quot;</span> <span class="comment">// 键</span></span><br><span class="line">(gdb) p *(robj *)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].v</span><br><span class="line">$<span class="number">2</span> = &#123;type = <span class="number">1</span>, encoding = <span class="number">5</span>, lru = <span class="number">13392586</span>, refcount = <span class="number">1</span>, ptr = <span class="number">0x7fc6ac035d60</span>&#125; <span class="comment">// ptr即为ziplist的首地址！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1、打印zlbytes, zltail, zllen</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d60</span></span><br><span class="line">$<span class="number">3</span> = <span class="number">22</span> <span class="comment">// zlbytes = 22</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d64</span></span><br><span class="line">$<span class="number">4</span> = <span class="number">17</span> <span class="comment">// zltail = 17</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *)<span class="number">0x7fc6ac035d68</span></span><br><span class="line">$<span class="number">5</span> = <span class="number">2</span>  <span class="comment">// zlen = 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、以下开始打印第一个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6a</span></span><br><span class="line"><span class="number">0x7fc6ac035d6a</span>: <span class="number">0x00</span> <span class="comment">// previous_entry_length本身占1字节，长度为0</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6b</span></span><br><span class="line"><span class="number">0x7fc6ac035d6b</span>: <span class="number">0x05</span> <span class="comment">// encoding为00000101, 本身占1字节，表示长度为5的字节数组</span></span><br><span class="line">(gdb) x/<span class="number">5</span>c <span class="number">0x7fc6ac035d6c</span></span><br><span class="line"><span class="number">0x7fc6ac035d6c</span>: <span class="number">104</span> <span class="string">&#x27;h&#x27;</span> <span class="number">101</span> <span class="string">&#x27;e&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">111</span> <span class="string">&#x27;o&#x27;</span>	<span class="comment">// content占5字节，存储&quot;hello&quot;</span></span><br><span class="line"><span class="comment">// 第一个节点总长度为 1 + 1 + 5 = 7 字节</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、以下开始打印第二个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d71</span></span><br><span class="line"><span class="number">0x7fc6ac035d71</span>: <span class="number">0x07</span> <span class="comment">// previous_entry_length本身占1字节，长度为7</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d72</span></span><br><span class="line"><span class="number">0x7fc6ac035d72</span>: <span class="number">0xc0</span> <span class="comment">// encoding为11000000, 本身占1字节, 表示16位的整数</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *) <span class="number">0x7fc6ac035d73</span></span><br><span class="line">$<span class="number">6</span> = <span class="number">10086</span>	<span class="comment">// content本身占2字节，存储内容正是10086</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、标志zlend，占1字节</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d75</span></span><br><span class="line"><span class="number">0x7fc6ac035d75</span>: <span class="number">0xff</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="为什么要设计ziplist"><a href="#为什么要设计ziplist" class="headerlink" title="为什么要设计ziplist"></a>为什么要设计ziplist<span id="jump3"></span></h3><p>还是考虑这个列表键： <code>&quot;hello&quot; -&gt; &quot;10086&quot;</code></p>
+<ul>
+<li>如果用ziplist编码，仅需22个字节存储。</li>
+<li>如果用linkedlist编码，以64位环境为例，光链表节点就需要2 * sizeof(listNode) &#x3D; 48个字节，这个大小远超过了数据本身的大小，导致严重的内存浪费。</li>
+</ul>
+<p>可以看出，ziplist设计思想是以时间换空间，目的是节省宝贵的内存资源。</p>
+<p>Redis中，ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
+<h3 id="ziplist相关操作"><a href="#ziplist相关操作" class="headerlink" title="ziplist相关操作"></a>ziplist相关操作<span id="jump4"></span></h3><p>压缩列表的增、删、改、查API如下：</p>
+<table>
+<thead>
+<tr>
+<th align="left">API</th>
+<th align="left">功能</th>
+<th align="left">时间复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">ziplistPush</td>
+<td align="left">插入指定节点到表头或表尾</td>
+<td align="left">平均O(N)，连锁更新场景为O(N^2)</td>
+</tr>
+<tr>
+<td align="left">ziplistDelete</td>
+<td align="left">删除指定节点</td>
+<td align="left">平均O(N)，连续更新场景为O(N^2)</td>
+</tr>
+<tr>
+<td align="left">ziplistFind</td>
+<td align="left">查找指定节点</td>
+<td align="left">O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</td>
+</tr>
+<tr>
+<td align="left">ziplistNext</td>
+<td align="left">返回给定节点的下一个节点</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">ziplistPrev</td>
+<td align="left">返回给定节点的前一个节点</td>
+<td align="left">O(1)</td>
+</tr>
+</tbody></table>
+<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump5"></span></h4><p>源码参考<code>ziplistFind</code>，时间复杂度为O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 功能：寻找ziplist中，节点值和vstr相等的节点并返回</span></span><br><span class="line"><span class="comment">// skip表示跳过的节点数</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistFind</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *p, <span class="type">unsigned</span> <span class="type">char</span> *vstr, <span class="type">unsigned</span> <span class="type">int</span> vlen, <span class="type">unsigned</span> <span class="type">int</span> skip)</span> &#123;</span><br><span class="line">    <span class="type">int</span> skipcnt = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> vencoding = <span class="number">0</span>;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> vll = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (p[<span class="number">0</span>] != ZIP_END) &#123;	<span class="comment">// 如果没有达到列表尾，就一直循环遍历！</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">int</span> prevlensize, encoding, lensize, len;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *q;</span><br><span class="line"></span><br><span class="line">        ZIP_DECODE_PREVLENSIZE(p, prevlensize);</span><br><span class="line">        ZIP_DECODE_LENGTH(p + prevlensize, encoding, lensize, len);</span><br><span class="line">        q = p + prevlensize + lensize;	<span class="comment">// 此时q指向节点p的content</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (skipcnt == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">/* Compare current entry with specified entry */</span></span><br><span class="line">            <span class="keyword">if</span> (ZIP_IS_STR(encoding)) &#123;	<span class="comment">// 如果是字符串，memcmp比较是否相等，复杂度O(N)</span></span><br><span class="line">                <span class="keyword">if</span> (len == vlen &amp;&amp; <span class="built_in">memcmp</span>(q, vstr, vlen) == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> p;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">/* Find out if the searched field can be encoded. Note that</span></span><br><span class="line"><span class="comment">                 * we do it only the first time, once done vencoding is set</span></span><br><span class="line"><span class="comment">                 * to non-zero and vll is set to the integer value. */</span></span><br><span class="line">                <span class="comment">// 对于传入的vstr, 解码动作只需做一次， vencoding相当于一个flag</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!zipTryEncoding(vstr, vlen, &amp;vll, &amp;vencoding)) &#123;</span><br><span class="line">                        <span class="comment">/* If the entry can&#x27;t be encoded we set it to</span></span><br><span class="line"><span class="comment">                         * UCHAR_MAX so that we don&#x27;t retry again the next</span></span><br><span class="line"><span class="comment">                         * time. */</span></span><br><span class="line">                        vencoding = UCHAR_MAX;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">/* Must be non-zero by now */</span></span><br><span class="line">                    assert(vencoding);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">/* Compare current entry with specified entry, do it only</span></span><br><span class="line"><span class="comment">                 * if vencoding != UCHAR_MAX because if there is no encoding</span></span><br><span class="line"><span class="comment">                 * possible for the field it can&#x27;t be a valid integer. */</span></span><br><span class="line">                <span class="comment">// 如果解码成功，比较整数值是否相等</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding != UCHAR_MAX) &#123;</span><br><span class="line">                    <span class="type">long</span> <span class="type">long</span> ll = zipLoadInteger(q, encoding);</span><br><span class="line">                    <span class="keyword">if</span> (ll == vll) &#123;</span><br><span class="line">                        <span class="keyword">return</span> p;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/* Reset skip count */</span></span><br><span class="line">            skipcnt = skip;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/* Skip entry */</span></span><br><span class="line">            skipcnt--;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* Move to next entry */</span></span><br><span class="line">        <span class="comment">// q指向content, len就是content的长度, 所以 q + len即为下一个节点的首地址！！</span></span><br><span class="line">        p = q + len;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="连锁更新问题"><a href="#连锁更新问题" class="headerlink" title="连锁更新问题"></a>连锁更新问题<span id="jump6"></span></h4><p>前面提到，ziplist中每个节点的<code>previous_entry_length</code>记录了前一个节点的长度，考虑在表头插入节点的场景：</p>
+<p>如果列表所有节点长度都在250-253字节之前，且插入节点大于等于254字节，就会导致所有节点的<code>previous_entry_length</code>都必须从1字节扩展为5字节, 即触发了<strong>连锁更新</strong>。</p>
+<p>以下举例说明这个问题：给定一个长度为3的，每个节点大小均为253字节的ziplist，往表头插入一个300字节大小的节点。<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image5.png"><br>注：除了新增节点会引发连锁更新，删除节点操作也可能引发连锁更新，此处不再赘述。</p>
+<p><font color = 'red'>思考问题：</font>既然连锁更新的最坏复杂度为O(n^2)，为什么Redis还是放心使用ziplist？</p>
+<ul>
+<li>因为连锁更新触发条件苛刻，只有满足存在多个连续长度为250-253之间的节点才能触发。</li>
+<li>ziplist只应用于节点数少且数据小的场景，即使出现了连续更新，需要更新的节点数量也很少，不会出现性能问题。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第7章 压缩列表</p>
+<p>【2】[Redis源码解析-基础数据-ziplist(压缩列表)](</p>
 ]]></content>
       <categories>
         <category>Redis</category>
@@ -5562,6 +5562,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Linux双网卡环境概率出现DNS解析错误</title>
+    <url>/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
+<span id="more"></span>
+<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img data-src="/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
+<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
+<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>标普500LOF又来送钱，一拖七拖拉机开起来！</title>
     <url>/2024/03/22/2024-03-22-sp500-lof-give-money/</url>
     <content><![CDATA[<p>标普500LOF(161125)公告，3月22日开放申购，限额申购100元，溢价率达到了离谱的40%！！！为了平抑这不合理的溢价，我决定用一拖七拖拉机狠狠拖它一把！</p>
@@ -5585,27 +5606,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Linux双网卡环境概率出现DNS解析错误</title>
-    <url>/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
-<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
-<span id="more"></span>
-<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img data-src="/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
-<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
-<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -5792,25 +5792,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
-    <url>/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/</url>
-    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
-<span id="more"></span>
-<p><img data-src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image1.png"></p>
-<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
-<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
-<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
-<p><img data-src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image2.png"></p>
-<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
-]]></content>
-      <categories>
-        <category>套利往事</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>投资组合中是否应该包括黄金</title>
     <url>/2024/04/13/2024-04-13-should-gold-be-included-in-an-investment-portfolio/</url>
     <content><![CDATA[<p>最近有朋友问我，你对黄金怎么看？现在可以买黄金吗？</p>
@@ -5844,6 +5825,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 ]]></content>
       <categories>
         <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
+<span id="more"></span>
+<p><img data-src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img data-src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
+]]></content>
+      <categories>
+        <category>套利往事</category>
       </categories>
       <tags>
         <tag>investment</tag>
