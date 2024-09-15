@@ -1451,64 +1451,6 @@
       </tags>
   </entry>
   <entry>
-    <title>__stack_chk_fail栈溢出问题定位</title>
-    <url>/2020/12/16/2020-12-16-stack-chk-fail-case/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>进程收到<code>SIGABRT</code>信号异常退出，异常调用栈显示<code>__stack_chk_fail</code></p>
-<h3 id="原因分析和定位思路"><a href="#原因分析和定位思路" class="headerlink" title="原因分析和定位思路"></a>原因分析和定位思路</h3><p><strong>原因分析：</strong> <code>__stack_chk_fail</code>说明<strong>发生了缓冲区溢出，canary被破坏</strong>。这说明代码设置GCC编译选项<strong>fstack-protector</strong>，开启了<a href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/mitigation/canary-zh/">栈保护机制canary</a></p>
-<p><strong>定位思路：</strong></p>
-<span id="more"></span>
-
-<ul>
-<li>先通过反汇编找到<code>canary</code>在栈上的存放地址。</li>
-<li>用GDB对<code>canary</code>的存放地址打数据断点，定位出导致栈破坏的指令，再结合C代码具体分析。</li>
-</ul>
-<h3 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h3><p>以下给出一个简化案例：一个可执行程序test, 依赖两个.so：<code>libcomp1.so</code>, <code>libcomp2.so</code>。执行<code>test</code>程序后会异常退出，调用栈显示<code>__stack_chk_fail</code></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">├── CMakeLists.txt			—— 可执行程序 test, 依赖libcomp1.so, libcomp2.so</span><br><span class="line">├── comp1</span><br><span class="line">│   ├── CMakeLists.txt		—— libcomp1.so</span><br><span class="line">│   ├── comp1.c</span><br><span class="line">│   ├── lua.h</span><br><span class="line">├── comp2</span><br><span class="line">│   ├── CMakeLists.txt		-- libcomp2.so</span><br><span class="line">│   ├── comp2.c</span><br><span class="line">│   ├── lua.h</span><br><span class="line">├── main.c</span><br></pre></td></tr></table></figure>
-
-<p>C代码如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// main.c</span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">void</span> <span class="title function_">func1</span><span class="params">()</span>;	<span class="comment">// defined in libcomp1.so</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    func1();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// comp1/comp1.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lua.h&quot;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="title function_">func2</span><span class="params">(<span class="keyword">struct</span> lua_Debug *a, <span class="type">char</span> *b, <span class="type">int</span> c)</span>; <span class="comment">// defined in libcomp2.so</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">func1</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">lua_Debug</span> <span class="title">a</span> =</span> &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    <span class="type">char</span> *b = <span class="number">0x12345678</span>;</span><br><span class="line">    <span class="type">int</span> c = <span class="number">0xFFFFFFFF</span>;</span><br><span class="line">    func2(&amp;a, b, c);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// comp2/comp2.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lua.h&quot;</span></span></span><br><span class="line"><span class="type">void</span> <span class="title function_">func2</span><span class="params">(<span class="keyword">struct</span> lua_Debug *a, <span class="type">char</span> *b, <span class="type">int</span> c)</span> &#123;</span><br><span class="line">    a-&gt;i_ci = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>用GDB调试test程序，出现如下的异常调用栈</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) bt</span><br><span class="line">#0  __GI_raise (sig=sig@entry=6) at ../sysdeps/unix/sysv/linux/raise.c:50</span><br><span class="line">#1  0x00007ffff7e1c535 in __GI_abort () at abort.c:79</span><br><span class="line">#2  0x00007ffff7e73508 in __libc_message (action=&lt;optimized out&gt;, fmt=fmt@entry=0x7ffff7f7e07b &quot;*** %s ***: %s terminated\n&quot;)</span><br><span class="line">    at ../sysdeps/posix/libc_fatal.c:181</span><br><span class="line">#3  0x00007ffff7f0480d in __GI___fortify_fail_abort (need_backtrace=need_backtrace@entry=false,</span><br><span class="line">    msg=msg@entry=0x7ffff7f7e059 &quot;stack smashing detected&quot;) at fortify_fail.c:28</span><br><span class="line">#4  0x00007ffff7f047c2 in __stack_chk_fail () at stack_chk_fail.c:29</span><br><span class="line">#5  0x00007ffff7fca189 in func1 () at /home/pc/LUA/comp1/comp1.c:13</span><br><span class="line">#6  0x0000555555555143 in main () at /home/pc/LUA/main.c:7</span><br></pre></td></tr></table></figure>
-
-<p>第4帧出现<code>__stack_chk_fail</code>，这表示程序出现了栈溢出。定位思路如下：</p>
-<h4 id="1-先通过反汇编找到canary在栈上的存放地址。"><a href="#1-先通过反汇编找到canary在栈上的存放地址。" class="headerlink" title="1. 先通过反汇编找到canary在栈上的存放地址。"></a>1. 先通过反汇编找到<code>canary</code>在栈上的存放地址。</h4><p>用gdb查看出现<code>__stack_chk_fail</code>的前一个函数帧，即第5帧的汇编代码。通过<code>frame</code>命令切换函数帧，<code>disassemble</code>查看反汇编代码。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) frame 5</span><br><span class="line">#5  0x00007ffff7fca189 in func1 () at /home/pc/LUA/comp1/comp1.c:13</span><br><span class="line">13      &#125;</span><br><span class="line">(gdb) disassemble</span><br><span class="line">Dump of assembler code for function func1:</span><br><span class="line">   0x00007ffff7fca115 &lt;+0&gt;:     push   %rbp</span><br><span class="line">   0x00007ffff7fca116 &lt;+1&gt;:     mov    %rsp,%rbp</span><br><span class="line">   0x00007ffff7fca119 &lt;+4&gt;:     sub    $0x90,%rsp				# 栈上共分配144字节空间: (8字节canary + 120字节lua_Debug + 8字节char * + 4字节int, 4字节对齐 = 144字节)</span><br><span class="line">   0x00007ffff7fca120 &lt;+11&gt;:    mov    %fs:0x28,%rax			# %fs:0x28说明，canary值是通过段寻址方式从内存中读入的</span><br><span class="line">   0x00007ffff7fca129 &lt;+20&gt;:    mov    %rax,-0x8(%rbp)			# 将canary存储到栈中，位于$rbp - 0x8处</span><br><span class="line">   0x00007ffff7fca12d &lt;+24&gt;:    xor    %eax,%eax</span><br><span class="line">   0x00007ffff7fca12f &lt;+26&gt;:    lea    -0x80(%rbp),%rdx			# comp1.c/func1(): struct lua_Debug a = &#123;0&#125;;</span><br><span class="line">   0x00007ffff7fca133 &lt;+30&gt;:    mov    $0x0,%eax</span><br><span class="line">   0x00007ffff7fca138 &lt;+35&gt;:    mov    $0xf,%ecx</span><br><span class="line">   0x00007ffff7fca13d &lt;+40&gt;:    mov    %rdx,%rdi</span><br><span class="line">   0x00007ffff7fca140 &lt;+43&gt;:    rep stos %rax,%es:(%rdi)</span><br><span class="line">   0x00007ffff7fca143 &lt;+46&gt;:    movq   $0x12345678,-0x88(%rbp)	# comp1.c/func1(): char *b = 0x12345678;</span><br><span class="line">   0x00007ffff7fca14e &lt;+57&gt;:    movl   $0xffffffff,-0x8c(%rbp)	# comp1.c/func1(): int c = 0xFFFFFFFF;</span><br><span class="line">   0x00007ffff7fca158 &lt;+67&gt;:    mov    -0x8c(%rbp),%edx			# c</span><br><span class="line">   0x00007ffff7fca15e &lt;+73&gt;:    mov    -0x88(%rbp),%rcx			# b</span><br><span class="line">   0x00007ffff7fca165 &lt;+80&gt;:    lea    -0x80(%rbp),%rax			# a</span><br><span class="line">   0x00007ffff7fca169 &lt;+84&gt;:    mov    %rcx,%rsi</span><br><span class="line">   0x00007ffff7fca16c &lt;+87&gt;:    mov    %rax,%rdi</span><br><span class="line">   0x00007ffff7fca16f &lt;+90&gt;:    callq  0x7ffff7fca040 &lt;func2@plt&gt;</span><br><span class="line">   0x00007ffff7fca174 &lt;+95&gt;:    nop</span><br><span class="line">   0x00007ffff7fca175 &lt;+96&gt;:    mov    -0x8(%rbp),%rax</span><br><span class="line">   0x00007ffff7fca179 &lt;+100&gt;:   xor    %fs:0x28,%rax			 # 从段寄存器取出canary的值，和栈上$rbp - 0x8处比较，如果发现canary被修改, 调用__stack_chk_fail进行错误处理</span><br><span class="line">   0x00007ffff7fca182 &lt;+109&gt;:   je     0x7ffff7fca189 &lt;func1+116&gt;</span><br><span class="line">   0x00007ffff7fca184 &lt;+111&gt;:   callq  0x7ffff7fca030 &lt;__stack_chk_fail@plt&gt;</span><br><span class="line">=&gt; 0x00007ffff7fca189 &lt;+116&gt;:   leaveq # movq %rbp %rsp, popq %rbp</span><br><span class="line">   0x00007ffff7fca18a &lt;+117&gt;:   retq</span><br><span class="line">End of assembler dump.</span><br></pre></td></tr></table></figure>
-
-<p><code>0x00007ffff7fca119：sub $0x90,%rsp</code>：表示栈上分配了<strong>144</strong>个字节，依次存放三个局部变量a, b, c</p>
-<p><code>0x00007ffff7fca120 &lt;+11&gt;: mov  %fs:0x28,%rax</code>：其中指令参数<code>$fs:0x28</code>说明<code>canary</code><strong>通过段寻址从内存中读入。canary值存放在一个特殊的段中，标志为只读，这样攻击者就无法覆盖canary的值。</strong></p>
-<p><code>0x00007ffff7fca129 &lt;+20&gt;: mov %rax,-0x8(%rbp)</code>：说明canary在栈上存放地址是<code>$rbp - 0x8</code>。</p>
-<p>根据x86_64过程调用的函数参数传递规则，可确定栈上所有局部变量和<code>canary</code>是如何存放的。<code>func1</code>的栈组织如下：</p>
-<p><img data-src="/2020/12/16/2020-12-16-stack-chk-fail-case/image1.png"></p>
-<h4 id="2-用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令"><a href="#2-用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令" class="headerlink" title="2. 用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令"></a>2. 用GDB对<code>canary</code>的存放地址打数据断点，定位出导致栈破坏的指令</h4><p>对<code>func1</code>打断点，重新执行程序，接着用<code>watch</code>命令，对<code>canary</code>的存放地址打数据断点，操作如下：</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble</span><br><span class="line">Dump of assembler code for function func1:</span><br><span class="line">   0x00007ffff7fca115 &lt;+0&gt;:     push   %rbp</span><br><span class="line">   0x00007ffff7fca116 &lt;+1&gt;:     mov    %rsp,%rbp</span><br><span class="line">   0x00007ffff7fca119 &lt;+4&gt;:     sub    $0x90,%rsp</span><br><span class="line">   0x00007ffff7fca120 &lt;+11&gt;:    mov    %fs:0x28,%rax</span><br><span class="line">   0x00007ffff7fca129 &lt;+20&gt;:    mov    %rax,-0x8(%rbp)</span><br><span class="line">=&gt; 0x00007ffff7fca12d &lt;+24&gt;:    xor    %eax,%eax</span><br><span class="line">   0x00007ffff7fca12f &lt;+26&gt;:    lea    -0x80(%rbp),%rdx</span><br><span class="line">   ......</span><br><span class="line">End of assembler dump.</span><br><span class="line">(gdb) p $rbp - 0x8</span><br><span class="line">$8 = (void *) 0x7fffffffe4a8</span><br><span class="line">(gdb) watch *0x7fffffffe4a8							# 此处对canary在栈中存放的地址打数据断点！</span><br><span class="line">Hardware watchpoint 2: *0x7fffffffe4a8</span><br><span class="line">(gdb) c</span><br><span class="line">Continuing.</span><br><span class="line"></span><br><span class="line">Hardware watchpoint 2: *0x7fffffffe4a8</span><br><span class="line">Old value = 1303192064</span><br><span class="line">New value = 1</span><br><span class="line"></span><br><span class="line">(gdb) disassemble</span><br><span class="line">Dump of assembler code for function func2:</span><br><span class="line">   0x00007ffff7fc50f5 &lt;+0&gt;:     push   %rbp</span><br><span class="line">   0x00007ffff7fc50f6 &lt;+1&gt;:     mov    %rsp,%rbp</span><br><span class="line">   0x00007ffff7fc50f9 &lt;+4&gt;:     mov    %rdi,-0x8(%rbp)     # 第一个入参，lua_Debug *a</span><br><span class="line">   0x00007ffff7fc50fd &lt;+8&gt;:     mov    %rsi,-0x10(%rbp)</span><br><span class="line">   0x00007ffff7fc5101 &lt;+12&gt;:    mov    %edx,-0x14(%rbp)</span><br><span class="line">   0x00007ffff7fc5104 &lt;+15&gt;:    mov    -0x8(%rbp),%rax	   # 第一个入参，lua_Debug *a</span><br><span class="line">   0x00007ffff7fc5108 &lt;+19&gt;:    movq   $0x1,0x78(%rax)     # comp2.c/func2(): a-&gt;i_ci = 1; 这句导致canary被破坏</span><br><span class="line">=&gt; 0x00007ffff7fc5110 &lt;+27&gt;:    nop 	# 箭头指向的指令表示下一步即将执行的指令，也就是说是上一条指令movq $0x1,0x78(%rax)触发的数据断点!</span><br><span class="line">   0x00007ffff7fc5111 &lt;+28&gt;:    pop    %rbp</span><br><span class="line">   0x00007ffff7fc5112 &lt;+29&gt;:    retq</span><br><span class="line">End of assembler dump.</span><br></pre></td></tr></table></figure>
-
-<p>数据断点被触发，定位出<code>0x00007ffff7fc5108: $0x1,0x78(%rax)</code>导致<code>canary</code>破坏，结合汇编上下文和C码确定，这条指令关联的C语句是<code>a-&gt;i_ci = 1;</code></p>
-<h4 id="为什么对lua-Debug结构体的成员赋值会导致栈溢出？"><a href="#为什么对lua-Debug结构体的成员赋值会导致栈溢出？" class="headerlink" title="为什么对lua_Debug结构体的成员赋值会导致栈溢出？"></a>为什么对lua_Debug结构体的成员赋值会导致栈溢出？</h4><p>由<code>$0x1,0x78(%rax)</code>可以确定<code>i_ci</code>成员距离结构体首地址的偏移为0x78，即120字节。事实上，在<code>func2</code>的函数帧中，<code>lua_Debug</code>结构体大小为128字节，而<code>func1</code>中的<code>lua_Debug</code>结构体只有120字节。</p>
-<p>结合<code>func1</code>的栈帧发现栈溢出的直接原因：<font color = 'red'><strong>a-&gt;i_ci &#x3D; 1; 语句执行后，恰好导致canary的值被改写为1。</font></strong></p>
-<p>通过<code>gdb</code>也能发现两个.so中的结构体大小不一致问题：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) f 1</span><br><span class="line">#1  0x00007ffff7fca174 in func1 () at /home/pc/LUA/comp1/comp1.c:11</span><br><span class="line">11          func2(&amp;a, b, c);</span><br><span class="line">(gdb) p sizeof(struct lua_Debug)</span><br><span class="line">$24 = 120							# func1中结构体大小为120</span><br><span class="line">(gdb) f 0</span><br><span class="line">#0  func2 (a=0x7fffffffe430, b=0x12345678 &lt;error: Cannot access memory at address 0x12345678&gt;, c=-1) at /home/pc/LUA/comp2/comp2.c:5</span><br><span class="line">5           return;</span><br><span class="line">(gdb) p sizeof(struct lua_Debug)</span><br><span class="line">$27 = 128							# func2中结构体大小为128</span><br></pre></td></tr></table></figure>
-
-<p><code>lua_Debug</code>结构体在<code>lua.h</code>定义的，这个错误原因是<strong>由于两个.so编译使用的lua.h头文件不一致，导致栈溢出问题。</strong>以下分别给出两个.so的<code>lua.h</code>：</p>
-<p><img data-src="/2020/12/16/2020-12-16-stack-chk-fail-case/image2.png"></p>
-<p>根据64位<strong>结构体对齐规则</strong>，左边结构体大小为120，右边结构体大小为128，多出的这8个字节恰好覆盖了<code>canary</code>，导致栈溢出。</p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
-<li><p>公司的C代码中，多个.so会依赖相同的开源头文件，如果不能保证每个.so各自依赖的头文件版本一致，就可能出现上述的栈溢出问题。</p>
-</li>
-<li><p>通过设置GCC的编译选项fstack-protector开启栈保护机制，便于栈溢出问题的定位。</p>
-</li>
-</ul>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《深入理解计算机系统 原书第3版》 3.10.4.2 栈破坏检测</p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>GDB</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis学习笔记(四)——跳跃表</title>
     <url>/2021/01/23/2021-01-23-redis-note-04-skiplist/</url>
     <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。</p>
@@ -1576,6 +1518,124 @@
       </categories>
       <tags>
         <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>__stack_chk_fail栈溢出问题定位</title>
+    <url>/2020/12/16/2020-12-16-stack-chk-fail-case/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>进程收到<code>SIGABRT</code>信号异常退出，异常调用栈显示<code>__stack_chk_fail</code></p>
+<h3 id="原因分析和定位思路"><a href="#原因分析和定位思路" class="headerlink" title="原因分析和定位思路"></a>原因分析和定位思路</h3><p><strong>原因分析：</strong> <code>__stack_chk_fail</code>说明<strong>发生了缓冲区溢出，canary被破坏</strong>。这说明代码设置GCC编译选项<strong>fstack-protector</strong>，开启了<a href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/mitigation/canary-zh/">栈保护机制canary</a></p>
+<p><strong>定位思路：</strong></p>
+<span id="more"></span>
+
+<ul>
+<li>先通过反汇编找到<code>canary</code>在栈上的存放地址。</li>
+<li>用GDB对<code>canary</code>的存放地址打数据断点，定位出导致栈破坏的指令，再结合C代码具体分析。</li>
+</ul>
+<h3 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h3><p>以下给出一个简化案例：一个可执行程序test, 依赖两个.so：<code>libcomp1.so</code>, <code>libcomp2.so</code>。执行<code>test</code>程序后会异常退出，调用栈显示<code>__stack_chk_fail</code></p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">├── CMakeLists.txt			—— 可执行程序 test, 依赖libcomp1.so, libcomp2.so</span><br><span class="line">├── comp1</span><br><span class="line">│   ├── CMakeLists.txt		—— libcomp1.so</span><br><span class="line">│   ├── comp1.c</span><br><span class="line">│   ├── lua.h</span><br><span class="line">├── comp2</span><br><span class="line">│   ├── CMakeLists.txt		-- libcomp2.so</span><br><span class="line">│   ├── comp2.c</span><br><span class="line">│   ├── lua.h</span><br><span class="line">├── main.c</span><br></pre></td></tr></table></figure>
+
+<p>C代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// main.c</span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">void</span> <span class="title function_">func1</span><span class="params">()</span>;	<span class="comment">// defined in libcomp1.so</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    func1();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// comp1/comp1.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lua.h&quot;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="title function_">func2</span><span class="params">(<span class="keyword">struct</span> lua_Debug *a, <span class="type">char</span> *b, <span class="type">int</span> c)</span>; <span class="comment">// defined in libcomp2.so</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">func1</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">lua_Debug</span> <span class="title">a</span> =</span> &#123;<span class="number">0</span>&#125;;</span><br><span class="line">    <span class="type">char</span> *b = <span class="number">0x12345678</span>;</span><br><span class="line">    <span class="type">int</span> c = <span class="number">0xFFFFFFFF</span>;</span><br><span class="line">    func2(&amp;a, b, c);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// comp2/comp2.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lua.h&quot;</span></span></span><br><span class="line"><span class="type">void</span> <span class="title function_">func2</span><span class="params">(<span class="keyword">struct</span> lua_Debug *a, <span class="type">char</span> *b, <span class="type">int</span> c)</span> &#123;</span><br><span class="line">    a-&gt;i_ci = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>用GDB调试test程序，出现如下的异常调用栈</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) bt</span><br><span class="line">#0  __GI_raise (sig=sig@entry=6) at ../sysdeps/unix/sysv/linux/raise.c:50</span><br><span class="line">#1  0x00007ffff7e1c535 in __GI_abort () at abort.c:79</span><br><span class="line">#2  0x00007ffff7e73508 in __libc_message (action=&lt;optimized out&gt;, fmt=fmt@entry=0x7ffff7f7e07b &quot;*** %s ***: %s terminated\n&quot;)</span><br><span class="line">    at ../sysdeps/posix/libc_fatal.c:181</span><br><span class="line">#3  0x00007ffff7f0480d in __GI___fortify_fail_abort (need_backtrace=need_backtrace@entry=false,</span><br><span class="line">    msg=msg@entry=0x7ffff7f7e059 &quot;stack smashing detected&quot;) at fortify_fail.c:28</span><br><span class="line">#4  0x00007ffff7f047c2 in __stack_chk_fail () at stack_chk_fail.c:29</span><br><span class="line">#5  0x00007ffff7fca189 in func1 () at /home/pc/LUA/comp1/comp1.c:13</span><br><span class="line">#6  0x0000555555555143 in main () at /home/pc/LUA/main.c:7</span><br></pre></td></tr></table></figure>
+
+<p>第4帧出现<code>__stack_chk_fail</code>，这表示程序出现了栈溢出。定位思路如下：</p>
+<h4 id="1-先通过反汇编找到canary在栈上的存放地址。"><a href="#1-先通过反汇编找到canary在栈上的存放地址。" class="headerlink" title="1. 先通过反汇编找到canary在栈上的存放地址。"></a>1. 先通过反汇编找到<code>canary</code>在栈上的存放地址。</h4><p>用gdb查看出现<code>__stack_chk_fail</code>的前一个函数帧，即第5帧的汇编代码。通过<code>frame</code>命令切换函数帧，<code>disassemble</code>查看反汇编代码。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) frame 5</span><br><span class="line">#5  0x00007ffff7fca189 in func1 () at /home/pc/LUA/comp1/comp1.c:13</span><br><span class="line">13      &#125;</span><br><span class="line">(gdb) disassemble</span><br><span class="line">Dump of assembler code for function func1:</span><br><span class="line">   0x00007ffff7fca115 &lt;+0&gt;:     push   %rbp</span><br><span class="line">   0x00007ffff7fca116 &lt;+1&gt;:     mov    %rsp,%rbp</span><br><span class="line">   0x00007ffff7fca119 &lt;+4&gt;:     sub    $0x90,%rsp				# 栈上共分配144字节空间: (8字节canary + 120字节lua_Debug + 8字节char * + 4字节int, 4字节对齐 = 144字节)</span><br><span class="line">   0x00007ffff7fca120 &lt;+11&gt;:    mov    %fs:0x28,%rax			# %fs:0x28说明，canary值是通过段寻址方式从内存中读入的</span><br><span class="line">   0x00007ffff7fca129 &lt;+20&gt;:    mov    %rax,-0x8(%rbp)			# 将canary存储到栈中，位于$rbp - 0x8处</span><br><span class="line">   0x00007ffff7fca12d &lt;+24&gt;:    xor    %eax,%eax</span><br><span class="line">   0x00007ffff7fca12f &lt;+26&gt;:    lea    -0x80(%rbp),%rdx			# comp1.c/func1(): struct lua_Debug a = &#123;0&#125;;</span><br><span class="line">   0x00007ffff7fca133 &lt;+30&gt;:    mov    $0x0,%eax</span><br><span class="line">   0x00007ffff7fca138 &lt;+35&gt;:    mov    $0xf,%ecx</span><br><span class="line">   0x00007ffff7fca13d &lt;+40&gt;:    mov    %rdx,%rdi</span><br><span class="line">   0x00007ffff7fca140 &lt;+43&gt;:    rep stos %rax,%es:(%rdi)</span><br><span class="line">   0x00007ffff7fca143 &lt;+46&gt;:    movq   $0x12345678,-0x88(%rbp)	# comp1.c/func1(): char *b = 0x12345678;</span><br><span class="line">   0x00007ffff7fca14e &lt;+57&gt;:    movl   $0xffffffff,-0x8c(%rbp)	# comp1.c/func1(): int c = 0xFFFFFFFF;</span><br><span class="line">   0x00007ffff7fca158 &lt;+67&gt;:    mov    -0x8c(%rbp),%edx			# c</span><br><span class="line">   0x00007ffff7fca15e &lt;+73&gt;:    mov    -0x88(%rbp),%rcx			# b</span><br><span class="line">   0x00007ffff7fca165 &lt;+80&gt;:    lea    -0x80(%rbp),%rax			# a</span><br><span class="line">   0x00007ffff7fca169 &lt;+84&gt;:    mov    %rcx,%rsi</span><br><span class="line">   0x00007ffff7fca16c &lt;+87&gt;:    mov    %rax,%rdi</span><br><span class="line">   0x00007ffff7fca16f &lt;+90&gt;:    callq  0x7ffff7fca040 &lt;func2@plt&gt;</span><br><span class="line">   0x00007ffff7fca174 &lt;+95&gt;:    nop</span><br><span class="line">   0x00007ffff7fca175 &lt;+96&gt;:    mov    -0x8(%rbp),%rax</span><br><span class="line">   0x00007ffff7fca179 &lt;+100&gt;:   xor    %fs:0x28,%rax			 # 从段寄存器取出canary的值，和栈上$rbp - 0x8处比较，如果发现canary被修改, 调用__stack_chk_fail进行错误处理</span><br><span class="line">   0x00007ffff7fca182 &lt;+109&gt;:   je     0x7ffff7fca189 &lt;func1+116&gt;</span><br><span class="line">   0x00007ffff7fca184 &lt;+111&gt;:   callq  0x7ffff7fca030 &lt;__stack_chk_fail@plt&gt;</span><br><span class="line">=&gt; 0x00007ffff7fca189 &lt;+116&gt;:   leaveq # movq %rbp %rsp, popq %rbp</span><br><span class="line">   0x00007ffff7fca18a &lt;+117&gt;:   retq</span><br><span class="line">End of assembler dump.</span><br></pre></td></tr></table></figure>
+
+<p><code>0x00007ffff7fca119：sub $0x90,%rsp</code>：表示栈上分配了<strong>144</strong>个字节，依次存放三个局部变量a, b, c</p>
+<p><code>0x00007ffff7fca120 &lt;+11&gt;: mov  %fs:0x28,%rax</code>：其中指令参数<code>$fs:0x28</code>说明<code>canary</code><strong>通过段寻址从内存中读入。canary值存放在一个特殊的段中，标志为只读，这样攻击者就无法覆盖canary的值。</strong></p>
+<p><code>0x00007ffff7fca129 &lt;+20&gt;: mov %rax,-0x8(%rbp)</code>：说明canary在栈上存放地址是<code>$rbp - 0x8</code>。</p>
+<p>根据x86_64过程调用的函数参数传递规则，可确定栈上所有局部变量和<code>canary</code>是如何存放的。<code>func1</code>的栈组织如下：</p>
+<p><img data-src="/2020/12/16/2020-12-16-stack-chk-fail-case/image1.png"></p>
+<h4 id="2-用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令"><a href="#2-用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令" class="headerlink" title="2. 用GDB对canary的存放地址打数据断点，定位出导致栈破坏的指令"></a>2. 用GDB对<code>canary</code>的存放地址打数据断点，定位出导致栈破坏的指令</h4><p>对<code>func1</code>打断点，重新执行程序，接着用<code>watch</code>命令，对<code>canary</code>的存放地址打数据断点，操作如下：</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble</span><br><span class="line">Dump of assembler code for function func1:</span><br><span class="line">   0x00007ffff7fca115 &lt;+0&gt;:     push   %rbp</span><br><span class="line">   0x00007ffff7fca116 &lt;+1&gt;:     mov    %rsp,%rbp</span><br><span class="line">   0x00007ffff7fca119 &lt;+4&gt;:     sub    $0x90,%rsp</span><br><span class="line">   0x00007ffff7fca120 &lt;+11&gt;:    mov    %fs:0x28,%rax</span><br><span class="line">   0x00007ffff7fca129 &lt;+20&gt;:    mov    %rax,-0x8(%rbp)</span><br><span class="line">=&gt; 0x00007ffff7fca12d &lt;+24&gt;:    xor    %eax,%eax</span><br><span class="line">   0x00007ffff7fca12f &lt;+26&gt;:    lea    -0x80(%rbp),%rdx</span><br><span class="line">   ......</span><br><span class="line">End of assembler dump.</span><br><span class="line">(gdb) p $rbp - 0x8</span><br><span class="line">$8 = (void *) 0x7fffffffe4a8</span><br><span class="line">(gdb) watch *0x7fffffffe4a8							# 此处对canary在栈中存放的地址打数据断点！</span><br><span class="line">Hardware watchpoint 2: *0x7fffffffe4a8</span><br><span class="line">(gdb) c</span><br><span class="line">Continuing.</span><br><span class="line"></span><br><span class="line">Hardware watchpoint 2: *0x7fffffffe4a8</span><br><span class="line">Old value = 1303192064</span><br><span class="line">New value = 1</span><br><span class="line"></span><br><span class="line">(gdb) disassemble</span><br><span class="line">Dump of assembler code for function func2:</span><br><span class="line">   0x00007ffff7fc50f5 &lt;+0&gt;:     push   %rbp</span><br><span class="line">   0x00007ffff7fc50f6 &lt;+1&gt;:     mov    %rsp,%rbp</span><br><span class="line">   0x00007ffff7fc50f9 &lt;+4&gt;:     mov    %rdi,-0x8(%rbp)     # 第一个入参，lua_Debug *a</span><br><span class="line">   0x00007ffff7fc50fd &lt;+8&gt;:     mov    %rsi,-0x10(%rbp)</span><br><span class="line">   0x00007ffff7fc5101 &lt;+12&gt;:    mov    %edx,-0x14(%rbp)</span><br><span class="line">   0x00007ffff7fc5104 &lt;+15&gt;:    mov    -0x8(%rbp),%rax	   # 第一个入参，lua_Debug *a</span><br><span class="line">   0x00007ffff7fc5108 &lt;+19&gt;:    movq   $0x1,0x78(%rax)     # comp2.c/func2(): a-&gt;i_ci = 1; 这句导致canary被破坏</span><br><span class="line">=&gt; 0x00007ffff7fc5110 &lt;+27&gt;:    nop 	# 箭头指向的指令表示下一步即将执行的指令，也就是说是上一条指令movq $0x1,0x78(%rax)触发的数据断点!</span><br><span class="line">   0x00007ffff7fc5111 &lt;+28&gt;:    pop    %rbp</span><br><span class="line">   0x00007ffff7fc5112 &lt;+29&gt;:    retq</span><br><span class="line">End of assembler dump.</span><br></pre></td></tr></table></figure>
+
+<p>数据断点被触发，定位出<code>0x00007ffff7fc5108: $0x1,0x78(%rax)</code>导致<code>canary</code>破坏，结合汇编上下文和C码确定，这条指令关联的C语句是<code>a-&gt;i_ci = 1;</code></p>
+<h4 id="为什么对lua-Debug结构体的成员赋值会导致栈溢出？"><a href="#为什么对lua-Debug结构体的成员赋值会导致栈溢出？" class="headerlink" title="为什么对lua_Debug结构体的成员赋值会导致栈溢出？"></a>为什么对lua_Debug结构体的成员赋值会导致栈溢出？</h4><p>由<code>$0x1,0x78(%rax)</code>可以确定<code>i_ci</code>成员距离结构体首地址的偏移为0x78，即120字节。事实上，在<code>func2</code>的函数帧中，<code>lua_Debug</code>结构体大小为128字节，而<code>func1</code>中的<code>lua_Debug</code>结构体只有120字节。</p>
+<p>结合<code>func1</code>的栈帧发现栈溢出的直接原因：<font color = 'red'><strong>a-&gt;i_ci &#x3D; 1; 语句执行后，恰好导致canary的值被改写为1。</font></strong></p>
+<p>通过<code>gdb</code>也能发现两个.so中的结构体大小不一致问题：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) f 1</span><br><span class="line">#1  0x00007ffff7fca174 in func1 () at /home/pc/LUA/comp1/comp1.c:11</span><br><span class="line">11          func2(&amp;a, b, c);</span><br><span class="line">(gdb) p sizeof(struct lua_Debug)</span><br><span class="line">$24 = 120							# func1中结构体大小为120</span><br><span class="line">(gdb) f 0</span><br><span class="line">#0  func2 (a=0x7fffffffe430, b=0x12345678 &lt;error: Cannot access memory at address 0x12345678&gt;, c=-1) at /home/pc/LUA/comp2/comp2.c:5</span><br><span class="line">5           return;</span><br><span class="line">(gdb) p sizeof(struct lua_Debug)</span><br><span class="line">$27 = 128							# func2中结构体大小为128</span><br></pre></td></tr></table></figure>
+
+<p><code>lua_Debug</code>结构体在<code>lua.h</code>定义的，这个错误原因是<strong>由于两个.so编译使用的lua.h头文件不一致，导致栈溢出问题。</strong>以下分别给出两个.so的<code>lua.h</code>：</p>
+<p><img data-src="/2020/12/16/2020-12-16-stack-chk-fail-case/image2.png"></p>
+<p>根据64位<strong>结构体对齐规则</strong>，左边结构体大小为120，右边结构体大小为128，多出的这8个字节恰好覆盖了<code>canary</code>，导致栈溢出。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><p>公司的C代码中，多个.so会依赖相同的开源头文件，如果不能保证每个.so各自依赖的头文件版本一致，就可能出现上述的栈溢出问题。</p>
+</li>
+<li><p>通过设置GCC的编译选项fstack-protector开启栈保护机制，便于栈溢出问题的定位。</p>
+</li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《深入理解计算机系统 原书第3版》 3.10.4.2 栈破坏检测</p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>leetcode几道链表题解决思路</title>
+    <url>/2021/02/06/2021-02-06-leetcode-linkedlist-problems/</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>LeetCode链表题汇总，记录解题思路，C&#x2F;C++语言实现。</p>
+<h3 id="LeetCode链表题"><a href="#LeetCode链表题" class="headerlink" title="LeetCode链表题"></a>LeetCode链表题</h3><ul>
+<li><p>判断链表是否有环 ：<a href="https://leetcode-cn.com/problems/linked-list-cycle/">https://leetcode-cn.com/problems/linked-list-cycle/</a></p>
+</li>
+<li><p>输出环形链表的入环点：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">https://leetcode-cn.com/problems/linked-list-cycle-ii/</a></p>
+</li>
+<li><p>输出链表中倒数第k个节点：<a href="https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/">https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/</a></p>
+</li>
+<li><p>反转链表：<a href="https://leetcode-cn.com/problems/reverse-linked-list/">https://leetcode-cn.com/problems/reverse-linked-list/</a></p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h3><h4 id="判断链表是否有环"><a href="#判断链表是否有环" class="headerlink" title="判断链表是否有环"></a>判断链表是否有环</h4><p>思路：快慢指针法。 慢指针每前进一步，快指针就前进两步。如果快慢指针能相遇，证明有环，反之无环。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * struct ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode *next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) : val(x), next(NULL) &#123;&#125;</span></span><br><span class="line"><span class="comment"> * &#125;;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">hasCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast = head;</span><br><span class="line">    ListNode *slow = head;</span><br><span class="line">    <span class="keyword">while</span> (fast != <span class="literal">NULL</span> &amp;&amp; fast-&gt;next != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123; <span class="comment">// 如果快慢指针能相遇，说明有环。</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="输出环形链表的入环点"><a href="#输出环形链表的入环点" class="headerlink" title="输出环形链表的入环点"></a>输出环形链表的入环点</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历一次链表，将遍历到的节点存储到哈希表，如果节点已经在哈希表中，说明有环，输出入环点。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度O(N),  空间复杂度O(N)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    std::unordered_map&lt;ListNode *, <span class="type">int</span>&gt; t; <span class="comment">// 用哈希表将遍历过节点保存下来</span></span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="keyword">if</span> (t.<span class="built_in">find</span>(head) != t.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">return</span> head;</span><br><span class="line">        &#125;</span><br><span class="line">        t[head] = <span class="number">1</span>;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 快慢指针法。创建fast, slow两个指针指向链表头，令fast前进速度为slow的两倍。当快慢指针相遇时，再创建一个指针p指向链表头, 让p和slow等速前进，p和slow必定会相遇，且相遇点即为入环点。</p>
+<p>数学证明参考：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/solution/huan-xing-lian-biao-ii-by-leetcode-solution/">LeetCode官方题解</a></p>
+<p><strong>复杂度分析：</strong> 时间复杂度O(N), 空间复杂度O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast, *slow;</span><br><span class="line">    fast = slow = head;</span><br><span class="line">    <span class="keyword">while</span>(fast) &#123;</span><br><span class="line">        <span class="keyword">if</span> (fast-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// fast前进速度为slow两倍</span></span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="comment">// 快慢指针相遇时，用一个指针p指向链表头，让p和slow同时前进，p和slow相遇点即为入环点，</span></span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123;</span><br><span class="line">            ListNode *p = head;</span><br><span class="line">            <span class="keyword">while</span> (p != slow) &#123;</span><br><span class="line">                p = p-&gt;next;</span><br><span class="line">                slow = slow-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> p;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="输出链表中倒数第k个节点"><a href="#输出链表中倒数第k个节点" class="headerlink" title="输出链表中倒数第k个节点"></a>输出链表中倒数第k个节点</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历两次单链表，第一次遍历求出链表长度记为len, 第二次遍历找到第len - k个节点并输出即可。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">	ListNode *cur = head;</span><br><span class="line">	<span class="keyword">while</span>(cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		++len;</span><br><span class="line">		cur = cur-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; len - k; ++i) &#123;</span><br><span class="line">		head = head-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 双指针法，设指针p, q，初始时将p指向链表头节点，q指向第k+1个节点，然后让p, q指针等速前进，当q为NULL时， p即为所求。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">    ListNode *front = head;</span><br><span class="line">    ListNode *behind = head;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123;</span><br><span class="line">    	front = front-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">while</span>(front != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        front = front-&gt;next;</span><br><span class="line">        behind = behind-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> behind;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="反转链表"><a href="#反转链表" class="headerlink" title="反转链表"></a>反转链表</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历原链表，依次对每个节点用头插法创建新链表并返回。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(N)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *l = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="comment">// 依次对每个节点用头插法创建新链表</span></span><br><span class="line">        ListNode *s = <span class="keyword">new</span> <span class="built_in">ListNode</span>(head-&gt;val, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span> (l == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            s-&gt;next = l;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 迭代法，遍历单链表，依次改变每个节点的next指向即可。注意next指向改变后，就无法访问下一个节点了，所以要在改next指针之前，用一个临时指针保存next指向的节点。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *pre = <span class="literal">NULL</span>;</span><br><span class="line">    ListNode *cur = head;</span><br><span class="line">    <span class="keyword">for</span>( ; cur != <span class="literal">NULL</span> ; ) &#123;</span><br><span class="line">        ListNode *tmpNext = cur-&gt;next; <span class="comment">// 用临时指针暂存next指向的节点</span></span><br><span class="line">        cur-&gt;next = pre;</span><br><span class="line">        pre = cur;</span><br><span class="line">        cur = tmpNext;	<span class="comment">// 当前节点next值改变后，从临时指针恢复下一个需遍历的节点</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> pre;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>LeetCode</category>
+      </categories>
+      <tags>
+        <tag>LeetCode</tag>
       </tags>
   </entry>
   <entry>
@@ -1835,66 +1895,6 @@
       </categories>
       <tags>
         <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>leetcode几道链表题解决思路</title>
-    <url>/2021/02/06/2021-02-06-leetcode-linkedlist-problems/</url>
-    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>LeetCode链表题汇总，记录解题思路，C&#x2F;C++语言实现。</p>
-<h3 id="LeetCode链表题"><a href="#LeetCode链表题" class="headerlink" title="LeetCode链表题"></a>LeetCode链表题</h3><ul>
-<li><p>判断链表是否有环 ：<a href="https://leetcode-cn.com/problems/linked-list-cycle/">https://leetcode-cn.com/problems/linked-list-cycle/</a></p>
-</li>
-<li><p>输出环形链表的入环点：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">https://leetcode-cn.com/problems/linked-list-cycle-ii/</a></p>
-</li>
-<li><p>输出链表中倒数第k个节点：<a href="https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/">https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/</a></p>
-</li>
-<li><p>反转链表：<a href="https://leetcode-cn.com/problems/reverse-linked-list/">https://leetcode-cn.com/problems/reverse-linked-list/</a></p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h3><h4 id="判断链表是否有环"><a href="#判断链表是否有环" class="headerlink" title="判断链表是否有环"></a>判断链表是否有环</h4><p>思路：快慢指针法。 慢指针每前进一步，快指针就前进两步。如果快慢指针能相遇，证明有环，反之无环。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * struct ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode *next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) : val(x), next(NULL) &#123;&#125;</span></span><br><span class="line"><span class="comment"> * &#125;;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">hasCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast = head;</span><br><span class="line">    ListNode *slow = head;</span><br><span class="line">    <span class="keyword">while</span> (fast != <span class="literal">NULL</span> &amp;&amp; fast-&gt;next != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123; <span class="comment">// 如果快慢指针能相遇，说明有环。</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="输出环形链表的入环点"><a href="#输出环形链表的入环点" class="headerlink" title="输出环形链表的入环点"></a>输出环形链表的入环点</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历一次链表，将遍历到的节点存储到哈希表，如果节点已经在哈希表中，说明有环，输出入环点。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度O(N),  空间复杂度O(N)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    std::unordered_map&lt;ListNode *, <span class="type">int</span>&gt; t; <span class="comment">// 用哈希表将遍历过节点保存下来</span></span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="keyword">if</span> (t.<span class="built_in">find</span>(head) != t.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">return</span> head;</span><br><span class="line">        &#125;</span><br><span class="line">        t[head] = <span class="number">1</span>;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 快慢指针法。创建fast, slow两个指针指向链表头，令fast前进速度为slow的两倍。当快慢指针相遇时，再创建一个指针p指向链表头, 让p和slow等速前进，p和slow必定会相遇，且相遇点即为入环点。</p>
-<p>数学证明参考：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/solution/huan-xing-lian-biao-ii-by-leetcode-solution/">LeetCode官方题解</a></p>
-<p><strong>复杂度分析：</strong> 时间复杂度O(N), 空间复杂度O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast, *slow;</span><br><span class="line">    fast = slow = head;</span><br><span class="line">    <span class="keyword">while</span>(fast) &#123;</span><br><span class="line">        <span class="keyword">if</span> (fast-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// fast前进速度为slow两倍</span></span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="comment">// 快慢指针相遇时，用一个指针p指向链表头，让p和slow同时前进，p和slow相遇点即为入环点，</span></span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123;</span><br><span class="line">            ListNode *p = head;</span><br><span class="line">            <span class="keyword">while</span> (p != slow) &#123;</span><br><span class="line">                p = p-&gt;next;</span><br><span class="line">                slow = slow-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> p;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="输出链表中倒数第k个节点"><a href="#输出链表中倒数第k个节点" class="headerlink" title="输出链表中倒数第k个节点"></a>输出链表中倒数第k个节点</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历两次单链表，第一次遍历求出链表长度记为len, 第二次遍历找到第len - k个节点并输出即可。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">	ListNode *cur = head;</span><br><span class="line">	<span class="keyword">while</span>(cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		++len;</span><br><span class="line">		cur = cur-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; len - k; ++i) &#123;</span><br><span class="line">		head = head-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 双指针法，设指针p, q，初始时将p指向链表头节点，q指向第k+1个节点，然后让p, q指针等速前进，当q为NULL时， p即为所求。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">    ListNode *front = head;</span><br><span class="line">    ListNode *behind = head;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123;</span><br><span class="line">    	front = front-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">while</span>(front != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        front = front-&gt;next;</span><br><span class="line">        behind = behind-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> behind;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="反转链表"><a href="#反转链表" class="headerlink" title="反转链表"></a>反转链表</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历原链表，依次对每个节点用头插法创建新链表并返回。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(N)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *l = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="comment">// 依次对每个节点用头插法创建新链表</span></span><br><span class="line">        ListNode *s = <span class="keyword">new</span> <span class="built_in">ListNode</span>(head-&gt;val, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span> (l == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            s-&gt;next = l;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 迭代法，遍历单链表，依次改变每个节点的next指向即可。注意next指向改变后，就无法访问下一个节点了，所以要在改next指针之前，用一个临时指针保存next指向的节点。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *pre = <span class="literal">NULL</span>;</span><br><span class="line">    ListNode *cur = head;</span><br><span class="line">    <span class="keyword">for</span>( ; cur != <span class="literal">NULL</span> ; ) &#123;</span><br><span class="line">        ListNode *tmpNext = cur-&gt;next; <span class="comment">// 用临时指针暂存next指向的节点</span></span><br><span class="line">        cur-&gt;next = pre;</span><br><span class="line">        pre = cur;</span><br><span class="line">        cur = tmpNext;	<span class="comment">// 当前节点next值改变后，从临时指针恢复下一个需遍历的节点</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> pre;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>LeetCode</category>
-      </categories>
-      <tags>
-        <tag>LeetCode</tag>
       </tags>
   </entry>
   <entry>
@@ -2224,29 +2224,6 @@
       </tags>
   </entry>
   <entry>
-    <title>配置Git代理，解决下载龟速问题</title>
-    <url>/2021/06/05/2021-06-05-git-download-too-slow/</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
-<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>首先，你的本地机器必须有socks5代理</p>
-<p>进<code>git bash</code>，敲如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global http.sslverify false</span><br><span class="line">git config -l</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<h4 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h4><p>git clone报错: fatal: unable to access XXX.git: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443</p>
-<h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><p>StackOverFlow上能搜到同样问题，参考：<a href="https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error">https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error</a></p>
-<p>进<code>git bash</code>，敲如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global --add remote.origin.proxy &quot;127.0.0.1:1087&quot;</span><br></pre></td></tr></table></figure>
-
-<p>其中1087为http端口，打开你的ss软件，在设置中查看端口号即可：<br><img data-src="/2021/06/05/2021-06-05-git-download-too-slow/image1.png"></p>
-]]></content>
-      <categories>
-        <category>Git</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Leetcode 664 奇怪的打印机</title>
     <url>/2021/08/15/2021-08-15-leetcode-664-weird-printer/</url>
     <content><![CDATA[<h3 id="题目描述"><a href="#题目描述" class="headerlink" title="题目描述"></a>题目描述</h3><p><a href="https://leetcode-cn.com/problems/strange-printer">https://leetcode-cn.com/problems/strange-printer</a></p>
@@ -2280,6 +2257,29 @@
       </categories>
       <tags>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>配置Git代理，解决下载龟速问题</title>
+    <url>/2021/06/05/2021-06-05-git-download-too-slow/</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
+<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>首先，你的本地机器必须有socks5代理</p>
+<p>进<code>git bash</code>，敲如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global http.sslverify false</span><br><span class="line">git config -l</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h4 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h4><p>git clone报错: fatal: unable to access XXX.git: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443</p>
+<h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><p>StackOverFlow上能搜到同样问题，参考：<a href="https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error">https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error</a></p>
+<p>进<code>git bash</code>，敲如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global --add remote.origin.proxy &quot;127.0.0.1:1087&quot;</span><br></pre></td></tr></table></figure>
+
+<p>其中1087为http端口，打开你的ss软件，在设置中查看端口号即可：<br><img data-src="/2021/06/05/2021-06-05-git-download-too-slow/image1.png"></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -2410,6 +2410,37 @@
       </categories>
       <tags>
         <tag>troubleshooting</tag>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何查看Redis订阅的模式字符串</title>
+    <url>/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><code>pubsub channels</code>可以查看Redis中被订阅的频道(<strong>channel</strong>)：</p>
+<span id="more"></span>
+<p><img data-src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image1.png"></p>
+<p><code>pubsub numpat</code>可以查看被订阅的模式(<strong>pattern</strong>)数量：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># redis-cli pubsub numpat</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题：</strong></p>
+<p>除了查看被订阅模式的数量，我还需要<font color = 'red'><strong>获取每个订阅模式字符串的内容</strong></font>，怎么做 ?</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>google没搜到现成的命令，决定自己修改<code>redis-server</code>源码，打印模式链表的内容，用时3~5分钟，需要了解：</p>
+<ul>
+<li><p>Redis源码编译方法，参考<a href="https://github.com/redis/redis">官网</a>或本人的<a href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
+</li>
+<li><p>Redis服务器将所有模式的订阅信息保存在服务器状态的<code>pubsub_patterns</code>链表中。</p>
+</li>
+</ul>
+<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// pubsub.c</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">myPubsubPatternsPrint</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">list</span> *l = server.pubsub_patterns;</span><br><span class="line">    listNode *cur = l-&gt;head;</span><br><span class="line">    serverLog(LL_NOTICE, <span class="string">&quot;[DEBUG] ALL PUBSUB PATTERNS: &quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        pubsubPattern *pp = (pubsubPattern *)(cur-&gt;value);</span><br><span class="line">        robj *obj = pp-&gt;pattern;</span><br><span class="line">        <span class="type">char</span> *pattern = (<span class="type">char</span> *)obj-&gt;ptr;</span><br><span class="line">        serverLog(LL_NOTICE, <span class="string">&quot;%s&quot;</span>, pattern);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2、重新编译并安装redis-server，后台gdb call一下自定义的打印函数<code>myPubsubPatternsPrint</code>得到模式链表的内容，如下图所示：<br><img data-src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image2.png"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第18章 发布与订阅</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
         <tag>Redis</tag>
       </tags>
   </entry>
@@ -2574,37 +2605,6 @@
       <tags>
         <tag>troubleshooting</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>如何查看Redis订阅的模式字符串</title>
-    <url>/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><code>pubsub channels</code>可以查看Redis中被订阅的频道(<strong>channel</strong>)：</p>
-<span id="more"></span>
-<p><img data-src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image1.png"></p>
-<p><code>pubsub numpat</code>可以查看被订阅的模式(<strong>pattern</strong>)数量：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># redis-cli pubsub numpat</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
-
-<p><strong>问题：</strong></p>
-<p>除了查看被订阅模式的数量，我还需要<font color = 'red'><strong>获取每个订阅模式字符串的内容</strong></font>，怎么做 ?</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>google没搜到现成的命令，决定自己修改<code>redis-server</code>源码，打印模式链表的内容，用时3~5分钟，需要了解：</p>
-<ul>
-<li><p>Redis源码编译方法，参考<a href="https://github.com/redis/redis">官网</a>或本人的<a href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
-</li>
-<li><p>Redis服务器将所有模式的订阅信息保存在服务器状态的<code>pubsub_patterns</code>链表中。</p>
-</li>
-</ul>
-<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// pubsub.c</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">myPubsubPatternsPrint</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">list</span> *l = server.pubsub_patterns;</span><br><span class="line">    listNode *cur = l-&gt;head;</span><br><span class="line">    serverLog(LL_NOTICE, <span class="string">&quot;[DEBUG] ALL PUBSUB PATTERNS: &quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        pubsubPattern *pp = (pubsubPattern *)(cur-&gt;value);</span><br><span class="line">        robj *obj = pp-&gt;pattern;</span><br><span class="line">        <span class="type">char</span> *pattern = (<span class="type">char</span> *)obj-&gt;ptr;</span><br><span class="line">        serverLog(LL_NOTICE, <span class="string">&quot;%s&quot;</span>, pattern);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>2、重新编译并安装redis-server，后台gdb call一下自定义的打印函数<code>myPubsubPatternsPrint</code>得到模式链表的内容，如下图所示：<br><img data-src="/2021/11/21/2021-11-21-how-to-lookup-redis-pattern-string/image2.png"></p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第18章 发布与订阅</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -3494,216 +3494,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Redis学习笔记(四)——ziplist</title>
-    <url>/2021/12/30/2021-12-30-redis-note-04-ziplist/</url>
-    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>ziplist是一种为节约内存而开发的数据结构，本质是一个字节数组。</p>
-<p>ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
-<span id="more"></span>
-
-<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>双向链表结构，在<font color = 'red'>存储数据本身长度远小于链表节点大小</font>的场景下，有严重的内存浪费问题。针对这种情况，Redis设计了ziplist这种节约内存的数据结构。以下给出ziplist相关的思考问题，了解ziplist的实现原理和设计思路。</p>
-<ul>
-<li><a href="#jump1">ziplist的数据结构</a></li>
-<li><a href="#jump2">ziplist节点构成</a></li>
-<li><a href="#jump3">为什么要设计ziplist</a></li>
-<li><a href="#jump4">ziplist相关操作</a><ul>
-<li><a href="#jump5">查找指定节点</a></li>
-<li><a href="#jump6">连锁更新问题</a></li>
-</ul>
-</li>
-<li>quicklist的数据结构</li>
-<li>为什么要设计quicklist</li>
-<li>quicklist的增、删、改、查操作</li>
-</ul>
-<h3 id="ziplist的数据结构"><a href="#ziplist的数据结构" class="headerlink" title="ziplist的数据结构"></a>ziplist的数据结构<span id="jump1"></span></h3><p>Redis没有专门定义结构体来表示ziplist，因为ziplist本质就是一个空间连续的字节数组。</p>
-<p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过<code>struct zlentry</code>结构表示。</p>
-<p>ziplist的各组成部分参考如下：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image1.png"></p>
-<p>可以看出，ziplist由列表头 + 列表节点 + 列表尾这三部分组成。每个组成部分作用说明如下：</p>
-<ul>
-<li><code>zlbytes</code>占4字节，用于记录整个ziplist占用内存的总字节数，对于空表来说，<code>zlbytes</code>等于11，源码参考<code>ziplistNew</code></li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t)) <span class="comment">// 8 + 2 = 10字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_END_SIZE        (sizeof(uint8_t)) <span class="comment">// 1字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_BYTES(zl)       (*((uint32_t*)(zl)))  <span class="comment">// zlbytes</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Create a new empty ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistNew</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> bytes = ZIPLIST_HEADER_SIZE+ZIPLIST_END_SIZE;	<span class="comment">// zlbytes = 10 + 1 = 11</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *zl = zmalloc(bytes); <span class="comment">// 可以看出，空表分配11字节大小空间</span></span><br><span class="line">    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes);</span><br><span class="line">    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE);</span><br><span class="line">    ZIPLIST_LENGTH(zl) = <span class="number">0</span>;</span><br><span class="line">    zl[bytes<span class="number">-1</span>] = ZIP_END;</span><br><span class="line">    <span class="keyword">return</span> zl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>ziplist为空时的内存空间如下图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image2.png"></p>
-<ul>
-<li><code>zltail</code>占4字节，用于记录表尾节点首地址距离ziplist起始地址有多少字节。设计这个字段的目的是为了快速定位表尾节点地址（ZIPLIST_ENTRY_TAIL)。</li>
-<li><code>zllen</code>占2字节，用于记录列表节点总数。注意<code>zllen</code>等于65535时，表示这个列表长度太大，必须通过遍历整个ziplist才能得到真实的长度。参考<code>ziplistLen</code>实现：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> UINT16_MAX 65535</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">ziplistLen</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (intrev16ifbe(ZIPLIST_LENGTH(zl)) &lt; UINT16_MAX) &#123;</span><br><span class="line">        len = intrev16ifbe(ZIPLIST_LENGTH(zl)); <span class="comment">// zllen &lt; 65535时，O(1)复杂度获取ziplist长度</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *p = zl+ZIPLIST_HEADER_SIZE;</span><br><span class="line">        <span class="keyword">while</span> (*p != ZIP_END) &#123;			<span class="comment">// zllen = 65535时，O(N)复杂度获取ziplist长度</span></span><br><span class="line">            p += zipRawEntryLength(p);</span><br><span class="line">            len++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Re-store length if small enough */</span></span><br><span class="line">        <span class="keyword">if</span> (len &lt; UINT16_MAX) ZIPLIST_LENGTH(zl) = intrev16ifbe(len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>zlend</code>占1字节，用于标记ziplist的结束，内容固定为0xFF(十进制的255)</li>
-</ul>
-<h3 id="ziplist节点构成"><a href="#ziplist节点构成" class="headerlink" title="ziplist节点构成"></a>ziplist节点构成<span id="jump2"></span></h3><p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过struct zlentry结构表示。</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zlentry</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlensize; <span class="comment">/* Bytes used to encode the previous entry len*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlen;     <span class="comment">/* Previous entry len. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> lensize;        <span class="comment">/* Bytes used to encode this entry type/len.</span></span><br><span class="line"><span class="comment">                                    For example strings have a 1, 2 or 5 bytes</span></span><br><span class="line"><span class="comment">                                    header. Integers always use a single byte.*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len;            <span class="comment">/* Bytes used to represent the actual entry.</span></span><br><span class="line"><span class="comment">                                    For strings this is just the string length</span></span><br><span class="line"><span class="comment">                                    while for integers it is 1, 2, 3, 4, 8 or</span></span><br><span class="line"><span class="comment">                                    0 (for 4 bit immediate) depending on the</span></span><br><span class="line"><span class="comment">                                    number range. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> headersize;     <span class="comment">/* prevrawlensize + lensize. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> encoding;      <span class="comment">/* Set to ZIP_STR_* or ZIP_INT_* depending on</span></span><br><span class="line"><span class="comment">                                    the entry encoding. However for 4 bits</span></span><br><span class="line"><span class="comment">                                    immediate integers this can assume a range</span></span><br><span class="line"><span class="comment">                                    of values and must be range-checked. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *p;            <span class="comment">/* Pointer to the very start of the entry, that</span></span><br><span class="line"><span class="comment">                                    is, this points to prev-entry-len field. */</span></span><br><span class="line">&#125; zlentry;</span><br></pre></td></tr></table></figure>
-
-<p>前面提到，ziplist本质是一个字节数组，Redis为了操作方便，才专门定义zlentry结构体，并解析某个entry的信息到zlentry中，<strong>注意ziplist字节数组本身并不存储zlentry；</strong> ziplist的每个entry结构都由三部分组成：</p>
-<ul>
-<li>前一节点长度信息：<code>previous_entry_length</code></li>
-<li>当前节点编码信息：<code>encoding</code></li>
-<li>当前节点内容：<code>content</code></li>
-</ul>
-<p>ziplist节点的各组成部分示意图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image3.png"></p>
-<p>以下分别介绍这三个组成部分：</p>
-<h4 id="1、前一节点长度信息-previous-entry-length"><a href="#1、前一节点长度信息-previous-entry-length" class="headerlink" title="1、前一节点长度信息 previous_entry_length"></a>1、前一节点长度信息 previous_entry_length</h4><p><code>previous_entry_length</code>本身占1字节或5字节，用于记录前一个节点的长度，单位为字节：</p>
-<ul>
-<li>如果前一个节点长度小于254字节，<code>previous_entry_length</code>就只占1字节，直接保存前一个节点长度。</li>
-<li>如果前一个节点长度大于等于254字节，<code>previous_entry_length</code>就占5字节，其中第一个字节固定为0xFE，后4个字节保存前一个节点长度。</li>
-</ul>
-<p>源码参考<code>ZIP_DECODE_PREVLENSIZE</code>，这个宏根据前一个节点长度，返回<code>previous_entry_length</code>占用的字节数：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_BIG_PREVLEN 254</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do &#123;                          \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((ptr)[0] &lt; ZIP_BIG_PREVLEN) &#123;                                          \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
-
-<p>Q：为什么要设计<code>previous_entry_length</code>字段，有什么作用？</p>
-<p>A：用于支持从表尾向表头方向遍历。比如我们有指向某个节点起始地址的指针p，用p减去这个节点的<code>previous_entry_length</code>，就能得到前一节点的起始地址。</p>
-<p>访问ziplist当前节点的前一个节点，参考源码<code>ziplistPrev</code>的实现：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Return pointer to previous entry in ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistPrev</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl, <span class="type">unsigned</span> <span class="type">char</span> *p)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevlensize, prevlen = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (p[<span class="number">0</span>] == ZIP_END) &#123;	<span class="comment">// p指向ZIPLIST_ENTRY_END，前一个节点就是最后一个节点，即ZIPLIST_ENTRY_TAIL</span></span><br><span class="line">        p = ZIPLIST_ENTRY_TAIL(zl);</span><br><span class="line">        <span class="keyword">return</span> (p[<span class="number">0</span>] == ZIP_END) ? <span class="literal">NULL</span> : p;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (p == ZIPLIST_ENTRY_HEAD(zl)) &#123;	<span class="comment">// p为表头，说明前一个节点为NULL</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);	<span class="comment">// p减去这个节点的previous_entry_length</span></span><br><span class="line">        assert(prevlen &gt; <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span> p-prevlen;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="2、当前节点编码信息-encoding，当前节点内容content"><a href="#2、当前节点编码信息-encoding，当前节点内容content" class="headerlink" title="2、当前节点编码信息 encoding，当前节点内容content"></a>2、当前节点编码信息 encoding，当前节点内容content</h4><p> <code>encoding</code>用于记录当前节点内容的实际类型（字符串还是整数），以及长度：</p>
-<ul>
-<li><code>encoding</code>长度可以是1字节、2字节、或5字节。其中<code>encoding</code>最高两位为00, 01, 或10时表示存储的值类型为字符串；<code>encoding</code>最高两位为11表示存储的值类型为整数。</li>
-</ul>
-<p>每一种<code>encoding</code>对应的编码长度和content类型，参考如下源码：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ziplist.c</span></span><br><span class="line"><span class="comment">/* Different encoding/length possibilities */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_MASK 0xc0			<span class="comment">// 11000000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_MASK 0x30			<span class="comment">// 00110000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_06B (0 &lt;&lt; 6)		<span class="comment">// 00bbbbbb （长度小于等于63）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_14B (1 &lt;&lt; 6)		<span class="comment">// 01bbbbbb bbbbbbbb  (长度大于63且小于等于16383)</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_32B (2 &lt;&lt; 6)		<span class="comment">// 10______ bbbbbbbb bbbbbbbb bbbbbbbb bbbbbbbb（长度大于16384）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_16B (0xc0 | 0&lt;&lt;4)	<span class="comment">// 11000000  16位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_32B (0xc0 | 1&lt;&lt;4)	<span class="comment">// 11010000  32位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_64B (0xc0 | 2&lt;&lt;4)	<span class="comment">// 11100000  64位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_24B (0xc0 | 3&lt;&lt;4)	<span class="comment">// 11110000  24位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_8B 0xfe				<span class="comment">// 11111110  8位整数</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 4 bit integer immediate encoding |1111xxxx| with xxxx between</span></span><br><span class="line"><span class="comment"> * 0001 and 1101. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MASK 0x0f   <span class="comment">/* Mask to extract the 4 bits value. To add</span></span></span><br><span class="line"><span class="comment"><span class="meta">                                   one is needed to reconstruct the value. */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MIN 0xf1    <span class="comment">/* 11110001 */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MAX 0xfd    <span class="comment">/* 11111101 */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MAX 0x7fffff</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MIN (-INT24_MAX - 1)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Macro to determine if the entry is a string. String entries never start</span></span><br><span class="line"><span class="comment"> * with &quot;11&quot; as most significant bits of the first byte. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_IS_STR(enc) (((enc) &amp; ZIP_STR_MASK) &lt; ZIP_STR_MASK)  <span class="comment">// 判断是否为字节数组编码！！！</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Extract the encoding from the byte pointed by &#x27;ptr&#x27; and set it into</span></span><br><span class="line"><span class="comment"> * &#x27;encoding&#x27; field of the zlentry structure. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_ENTRY_ENCODING(ptr, encoding) do &#123;  \</span></span><br><span class="line"><span class="meta">    (encoding) = (ptr[0]); \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) (encoding) &amp;= ZIP_STR_MASK; \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Decode the entry encoding type and data length (string length for strings,</span></span><br><span class="line"><span class="comment"> * number of bytes used for the integer for integer entries) encoded in &#x27;ptr&#x27;.</span></span><br><span class="line"><span class="comment"> * The &#x27;encoding&#x27; variable will hold the entry encoding, the &#x27;lensize&#x27;</span></span><br><span class="line"><span class="comment"> * variable will hold the number of bytes required to encode the entry</span></span><br><span class="line"><span class="comment"> * length, and the &#x27;len&#x27; variable will hold the entry length. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_LENGTH(ptr, encoding, lensize, len) do &#123;                    \</span></span><br><span class="line"><span class="meta">    ZIP_ENTRY_ENCODING((ptr), (encoding));                                     \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) &#123;                                           \</span></span><br><span class="line"><span class="meta">        <span class="keyword">if</span> ((encoding) == ZIP_STR_06B) &#123;                                       \</span></span><br><span class="line"><span class="meta">            (lensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (ptr)[0] &amp; 0x3f;                                           \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_14B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 2;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (((ptr)[0] &amp; 0x3f) &lt;&lt; 8) | (ptr)[1];                       \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_32B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = ((ptr)[1] &lt;&lt; 24) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[2] &lt;&lt; 16) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[3] &lt;&lt;  8) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[4]);                                                \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> &#123;                                                               \</span></span><br><span class="line"><span class="meta">            panic(<span class="string">&quot;Invalid string encoding 0x%02X&quot;</span>, (encoding));               \</span></span><br><span class="line"><span class="meta">        &#125;                                                                      \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (lensize) = 1;                                                         \</span></span><br><span class="line"><span class="meta">        (len) = zipIntSize(encoding);                                          \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
-
-<p>整数编码：</p>
-<table>
-<thead>
-<tr>
-<th align="left">encoding</th>
-<th align="left">encoding长度</th>
-<th align="left">content长度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">11111110 (ZIP_INT_8B)</td>
-<td align="left">1字节</td>
-<td align="left">8位整数</td>
-</tr>
-<tr>
-<td align="left">11000000 (ZIP_INT_16B)</td>
-<td align="left">1字节</td>
-<td align="left">16位整数</td>
-</tr>
-<tr>
-<td align="left">11110000(ZIP_INT_24B)</td>
-<td align="left">1字节</td>
-<td align="left">24位整数</td>
-</tr>
-<tr>
-<td align="left">11010000(ZIP_INT_32B)</td>
-<td align="left">1字节</td>
-<td align="left">32位整数</td>
-</tr>
-<tr>
-<td align="left">11100000(ZIP_INT_64B)</td>
-<td align="left">1字节</td>
-<td align="left">64位整数</td>
-</tr>
-<tr>
-<td align="left">1111xxxx</td>
-<td align="left">1字节</td>
-<td align="left">0-12之间的整数。此时没有content部分，值存储在encoding的xxxx四个位</td>
-</tr>
-</tbody></table>
-<p>字节数组编码：</p>
-<table>
-<thead>
-<tr>
-<th align="left">encoding</th>
-<th align="left">encoding说明</th>
-<th align="left">encoding长度</th>
-<th align="left">content长度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">00xxxxxx (ZIP_STR_06B)</td>
-<td align="left">后6位表示字节数组的长度</td>
-<td align="left">1字节</td>
-<td align="left">保存长度小于等于63字节的字节数组</td>
-</tr>
-<tr>
-<td align="left">01xxxxxx xxxxxxxx (ZIP_STR_14B)</td>
-<td align="left">后14位表示字节数组的长度</td>
-<td align="left">2字节</td>
-<td align="left">保存长度大于63， 小于等于16383字节的字节数组</td>
-</tr>
-<tr>
-<td align="left">10______ xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx (ZIP_STR_32B)</td>
-<td align="left">最后24位表示字节数组的长度，第3-8位留空</td>
-<td align="left">5字节</td>
-<td align="left">保存长度大于16384，小于 2^32 - 1字节的字节数组</td>
-</tr>
-</tbody></table>
-<p>总结：Redis根据ziplist节点存储内容的类型和大小，使用不同的编码表示，目的在于最大限度地节省空间。</p>
-<p><font color = 'red'>思考问题：</font>创建一个ziplist编码的空列表键，并依次添加两个值”hello”，”10086”，问此时ziplist的长度是多少，内容是什么样的？</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; info  # Redis版本必须为3.2之前的，否则列表键的默认编码为quicklist，而非ziplist!</span><br><span class="line"># Server redis_version:3.0.0</span><br><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">127.0.0.1:6379&gt; rpush key hello 10086 # 新增列表键，依次插入两个key &quot;hello&quot; &quot;10086&quot;</span><br><span class="line">(integer) 2</span><br><span class="line">127.0.0.1:6379&gt; object encoding key   # 确认列表键编码为ziplist</span><br><span class="line">&quot;ziplist&quot;</span><br></pre></td></tr></table></figure>
-
-<p>如果你真的掌握了ziplist节点构成，那么不需要运行Redis，你也可以得出答案：这个ziplist占用22字节，内存如下图所示：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image4.png"><br>以下给出GDB的验证方法和验证结果，感兴趣的可以参考：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 0、确认ziplist的首地址</span></span><br><span class="line">(gdb) p (sds)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].key</span><br><span class="line">$<span class="number">1</span> = (sds) <span class="number">0x7fc6ac086288</span> <span class="string">&quot;key&quot;</span> <span class="comment">// 键</span></span><br><span class="line">(gdb) p *(robj *)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].v</span><br><span class="line">$<span class="number">2</span> = &#123;type = <span class="number">1</span>, encoding = <span class="number">5</span>, lru = <span class="number">13392586</span>, refcount = <span class="number">1</span>, ptr = <span class="number">0x7fc6ac035d60</span>&#125; <span class="comment">// ptr即为ziplist的首地址！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1、打印zlbytes, zltail, zllen</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d60</span></span><br><span class="line">$<span class="number">3</span> = <span class="number">22</span> <span class="comment">// zlbytes = 22</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d64</span></span><br><span class="line">$<span class="number">4</span> = <span class="number">17</span> <span class="comment">// zltail = 17</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *)<span class="number">0x7fc6ac035d68</span></span><br><span class="line">$<span class="number">5</span> = <span class="number">2</span>  <span class="comment">// zlen = 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、以下开始打印第一个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6a</span></span><br><span class="line"><span class="number">0x7fc6ac035d6a</span>: <span class="number">0x00</span> <span class="comment">// previous_entry_length本身占1字节，长度为0</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6b</span></span><br><span class="line"><span class="number">0x7fc6ac035d6b</span>: <span class="number">0x05</span> <span class="comment">// encoding为00000101, 本身占1字节，表示长度为5的字节数组</span></span><br><span class="line">(gdb) x/<span class="number">5</span>c <span class="number">0x7fc6ac035d6c</span></span><br><span class="line"><span class="number">0x7fc6ac035d6c</span>: <span class="number">104</span> <span class="string">&#x27;h&#x27;</span> <span class="number">101</span> <span class="string">&#x27;e&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">111</span> <span class="string">&#x27;o&#x27;</span>	<span class="comment">// content占5字节，存储&quot;hello&quot;</span></span><br><span class="line"><span class="comment">// 第一个节点总长度为 1 + 1 + 5 = 7 字节</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、以下开始打印第二个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d71</span></span><br><span class="line"><span class="number">0x7fc6ac035d71</span>: <span class="number">0x07</span> <span class="comment">// previous_entry_length本身占1字节，长度为7</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d72</span></span><br><span class="line"><span class="number">0x7fc6ac035d72</span>: <span class="number">0xc0</span> <span class="comment">// encoding为11000000, 本身占1字节, 表示16位的整数</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *) <span class="number">0x7fc6ac035d73</span></span><br><span class="line">$<span class="number">6</span> = <span class="number">10086</span>	<span class="comment">// content本身占2字节，存储内容正是10086</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、标志zlend，占1字节</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d75</span></span><br><span class="line"><span class="number">0x7fc6ac035d75</span>: <span class="number">0xff</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="为什么要设计ziplist"><a href="#为什么要设计ziplist" class="headerlink" title="为什么要设计ziplist"></a>为什么要设计ziplist<span id="jump3"></span></h3><p>还是考虑这个列表键： <code>&quot;hello&quot; -&gt; &quot;10086&quot;</code></p>
-<ul>
-<li>如果用ziplist编码，仅需22个字节存储。</li>
-<li>如果用linkedlist编码，以64位环境为例，光链表节点就需要2 * sizeof(listNode) &#x3D; 48个字节，这个大小远超过了数据本身的大小，导致严重的内存浪费。</li>
-</ul>
-<p>可以看出，ziplist设计思想是以时间换空间，目的是节省宝贵的内存资源。</p>
-<p>Redis中，ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
-<h3 id="ziplist相关操作"><a href="#ziplist相关操作" class="headerlink" title="ziplist相关操作"></a>ziplist相关操作<span id="jump4"></span></h3><p>压缩列表的增、删、改、查API如下：</p>
-<table>
-<thead>
-<tr>
-<th align="left">API</th>
-<th align="left">功能</th>
-<th align="left">时间复杂度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">ziplistPush</td>
-<td align="left">插入指定节点到表头或表尾</td>
-<td align="left">平均O(N)，连锁更新场景为O(N^2)</td>
-</tr>
-<tr>
-<td align="left">ziplistDelete</td>
-<td align="left">删除指定节点</td>
-<td align="left">平均O(N)，连续更新场景为O(N^2)</td>
-</tr>
-<tr>
-<td align="left">ziplistFind</td>
-<td align="left">查找指定节点</td>
-<td align="left">O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</td>
-</tr>
-<tr>
-<td align="left">ziplistNext</td>
-<td align="left">返回给定节点的下一个节点</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">ziplistPrev</td>
-<td align="left">返回给定节点的前一个节点</td>
-<td align="left">O(1)</td>
-</tr>
-</tbody></table>
-<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump5"></span></h4><p>源码参考<code>ziplistFind</code>，时间复杂度为O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 功能：寻找ziplist中，节点值和vstr相等的节点并返回</span></span><br><span class="line"><span class="comment">// skip表示跳过的节点数</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistFind</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *p, <span class="type">unsigned</span> <span class="type">char</span> *vstr, <span class="type">unsigned</span> <span class="type">int</span> vlen, <span class="type">unsigned</span> <span class="type">int</span> skip)</span> &#123;</span><br><span class="line">    <span class="type">int</span> skipcnt = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> vencoding = <span class="number">0</span>;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> vll = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (p[<span class="number">0</span>] != ZIP_END) &#123;	<span class="comment">// 如果没有达到列表尾，就一直循环遍历！</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">int</span> prevlensize, encoding, lensize, len;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *q;</span><br><span class="line"></span><br><span class="line">        ZIP_DECODE_PREVLENSIZE(p, prevlensize);</span><br><span class="line">        ZIP_DECODE_LENGTH(p + prevlensize, encoding, lensize, len);</span><br><span class="line">        q = p + prevlensize + lensize;	<span class="comment">// 此时q指向节点p的content</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (skipcnt == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">/* Compare current entry with specified entry */</span></span><br><span class="line">            <span class="keyword">if</span> (ZIP_IS_STR(encoding)) &#123;	<span class="comment">// 如果是字符串，memcmp比较是否相等，复杂度O(N)</span></span><br><span class="line">                <span class="keyword">if</span> (len == vlen &amp;&amp; <span class="built_in">memcmp</span>(q, vstr, vlen) == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> p;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">/* Find out if the searched field can be encoded. Note that</span></span><br><span class="line"><span class="comment">                 * we do it only the first time, once done vencoding is set</span></span><br><span class="line"><span class="comment">                 * to non-zero and vll is set to the integer value. */</span></span><br><span class="line">                <span class="comment">// 对于传入的vstr, 解码动作只需做一次， vencoding相当于一个flag</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!zipTryEncoding(vstr, vlen, &amp;vll, &amp;vencoding)) &#123;</span><br><span class="line">                        <span class="comment">/* If the entry can&#x27;t be encoded we set it to</span></span><br><span class="line"><span class="comment">                         * UCHAR_MAX so that we don&#x27;t retry again the next</span></span><br><span class="line"><span class="comment">                         * time. */</span></span><br><span class="line">                        vencoding = UCHAR_MAX;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">/* Must be non-zero by now */</span></span><br><span class="line">                    assert(vencoding);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">/* Compare current entry with specified entry, do it only</span></span><br><span class="line"><span class="comment">                 * if vencoding != UCHAR_MAX because if there is no encoding</span></span><br><span class="line"><span class="comment">                 * possible for the field it can&#x27;t be a valid integer. */</span></span><br><span class="line">                <span class="comment">// 如果解码成功，比较整数值是否相等</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding != UCHAR_MAX) &#123;</span><br><span class="line">                    <span class="type">long</span> <span class="type">long</span> ll = zipLoadInteger(q, encoding);</span><br><span class="line">                    <span class="keyword">if</span> (ll == vll) &#123;</span><br><span class="line">                        <span class="keyword">return</span> p;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/* Reset skip count */</span></span><br><span class="line">            skipcnt = skip;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/* Skip entry */</span></span><br><span class="line">            skipcnt--;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* Move to next entry */</span></span><br><span class="line">        <span class="comment">// q指向content, len就是content的长度, 所以 q + len即为下一个节点的首地址！！</span></span><br><span class="line">        p = q + len;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="连锁更新问题"><a href="#连锁更新问题" class="headerlink" title="连锁更新问题"></a>连锁更新问题<span id="jump6"></span></h4><p>前面提到，ziplist中每个节点的<code>previous_entry_length</code>记录了前一个节点的长度，考虑在表头插入节点的场景：</p>
-<p>如果列表所有节点长度都在250-253字节之前，且插入节点大于等于254字节，就会导致所有节点的<code>previous_entry_length</code>都必须从1字节扩展为5字节, 即触发了<strong>连锁更新</strong>。</p>
-<p>以下举例说明这个问题：给定一个长度为3的，每个节点大小均为253字节的ziplist，往表头插入一个300字节大小的节点。<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image5.png"><br>注：除了新增节点会引发连锁更新，删除节点操作也可能引发连锁更新，此处不再赘述。</p>
-<p><font color = 'red'>思考问题：</font>既然连锁更新的最坏复杂度为O(n^2)，为什么Redis还是放心使用ziplist？</p>
-<ul>
-<li>因为连锁更新触发条件苛刻，只有满足存在多个连续长度为250-253之间的节点才能触发。</li>
-<li>ziplist只应用于节点数少且数据小的场景，即使出现了连续更新，需要更新的节点数量也很少，不会出现性能问题。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第7章 压缩列表</p>
-<p>【2】[Redis源码解析-基础数据-ziplist(压缩列表)](</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/01/29/2022-01-29-redis-pubsub-study/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -4100,6 +3890,216 @@
       </tags>
   </entry>
   <entry>
+    <title>Redis学习笔记(四)——ziplist</title>
+    <url>/2021/12/30/2021-12-30-redis-note-04-ziplist/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>ziplist是一种为节约内存而开发的数据结构，本质是一个字节数组。</p>
+<p>ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
+<span id="more"></span>
+
+<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>双向链表结构，在<font color = 'red'>存储数据本身长度远小于链表节点大小</font>的场景下，有严重的内存浪费问题。针对这种情况，Redis设计了ziplist这种节约内存的数据结构。以下给出ziplist相关的思考问题，了解ziplist的实现原理和设计思路。</p>
+<ul>
+<li><a href="#jump1">ziplist的数据结构</a></li>
+<li><a href="#jump2">ziplist节点构成</a></li>
+<li><a href="#jump3">为什么要设计ziplist</a></li>
+<li><a href="#jump4">ziplist相关操作</a><ul>
+<li><a href="#jump5">查找指定节点</a></li>
+<li><a href="#jump6">连锁更新问题</a></li>
+</ul>
+</li>
+<li>quicklist的数据结构</li>
+<li>为什么要设计quicklist</li>
+<li>quicklist的增、删、改、查操作</li>
+</ul>
+<h3 id="ziplist的数据结构"><a href="#ziplist的数据结构" class="headerlink" title="ziplist的数据结构"></a>ziplist的数据结构<span id="jump1"></span></h3><p>Redis没有专门定义结构体来表示ziplist，因为ziplist本质就是一个空间连续的字节数组。</p>
+<p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过<code>struct zlentry</code>结构表示。</p>
+<p>ziplist的各组成部分参考如下：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image1.png"></p>
+<p>可以看出，ziplist由列表头 + 列表节点 + 列表尾这三部分组成。每个组成部分作用说明如下：</p>
+<ul>
+<li><code>zlbytes</code>占4字节，用于记录整个ziplist占用内存的总字节数，对于空表来说，<code>zlbytes</code>等于11，源码参考<code>ziplistNew</code></li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_HEADER_SIZE     (sizeof(uint32_t)*2+sizeof(uint16_t)) <span class="comment">// 8 + 2 = 10字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_END_SIZE        (sizeof(uint8_t)) <span class="comment">// 1字节</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIPLIST_BYTES(zl)       (*((uint32_t*)(zl)))  <span class="comment">// zlbytes</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Create a new empty ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistNew</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> bytes = ZIPLIST_HEADER_SIZE+ZIPLIST_END_SIZE;	<span class="comment">// zlbytes = 10 + 1 = 11</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *zl = zmalloc(bytes); <span class="comment">// 可以看出，空表分配11字节大小空间</span></span><br><span class="line">    ZIPLIST_BYTES(zl) = intrev32ifbe(bytes);</span><br><span class="line">    ZIPLIST_TAIL_OFFSET(zl) = intrev32ifbe(ZIPLIST_HEADER_SIZE);</span><br><span class="line">    ZIPLIST_LENGTH(zl) = <span class="number">0</span>;</span><br><span class="line">    zl[bytes<span class="number">-1</span>] = ZIP_END;</span><br><span class="line">    <span class="keyword">return</span> zl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>ziplist为空时的内存空间如下图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image2.png"></p>
+<ul>
+<li><code>zltail</code>占4字节，用于记录表尾节点首地址距离ziplist起始地址有多少字节。设计这个字段的目的是为了快速定位表尾节点地址（ZIPLIST_ENTRY_TAIL)。</li>
+<li><code>zllen</code>占2字节，用于记录列表节点总数。注意<code>zllen</code>等于65535时，表示这个列表长度太大，必须通过遍历整个ziplist才能得到真实的长度。参考<code>ziplistLen</code>实现：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> UINT16_MAX 65535</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">ziplistLen</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (intrev16ifbe(ZIPLIST_LENGTH(zl)) &lt; UINT16_MAX) &#123;</span><br><span class="line">        len = intrev16ifbe(ZIPLIST_LENGTH(zl)); <span class="comment">// zllen &lt; 65535时，O(1)复杂度获取ziplist长度</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *p = zl+ZIPLIST_HEADER_SIZE;</span><br><span class="line">        <span class="keyword">while</span> (*p != ZIP_END) &#123;			<span class="comment">// zllen = 65535时，O(N)复杂度获取ziplist长度</span></span><br><span class="line">            p += zipRawEntryLength(p);</span><br><span class="line">            len++;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Re-store length if small enough */</span></span><br><span class="line">        <span class="keyword">if</span> (len &lt; UINT16_MAX) ZIPLIST_LENGTH(zl) = intrev16ifbe(len);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>zlend</code>占1字节，用于标记ziplist的结束，内容固定为0xFF(十进制的255)</li>
+</ul>
+<h3 id="ziplist节点构成"><a href="#ziplist节点构成" class="headerlink" title="ziplist节点构成"></a>ziplist节点构成<span id="jump2"></span></h3><p>ziplist中包含多个节点(entry)，每个节点存储一个字符串值或整数值，每个节点通过struct zlentry结构表示。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zlentry</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlensize; <span class="comment">/* Bytes used to encode the previous entry len*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevrawlen;     <span class="comment">/* Previous entry len. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> lensize;        <span class="comment">/* Bytes used to encode this entry type/len.</span></span><br><span class="line"><span class="comment">                                    For example strings have a 1, 2 or 5 bytes</span></span><br><span class="line"><span class="comment">                                    header. Integers always use a single byte.*/</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> len;            <span class="comment">/* Bytes used to represent the actual entry.</span></span><br><span class="line"><span class="comment">                                    For strings this is just the string length</span></span><br><span class="line"><span class="comment">                                    while for integers it is 1, 2, 3, 4, 8 or</span></span><br><span class="line"><span class="comment">                                    0 (for 4 bit immediate) depending on the</span></span><br><span class="line"><span class="comment">                                    number range. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> headersize;     <span class="comment">/* prevrawlensize + lensize. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> encoding;      <span class="comment">/* Set to ZIP_STR_* or ZIP_INT_* depending on</span></span><br><span class="line"><span class="comment">                                    the entry encoding. However for 4 bits</span></span><br><span class="line"><span class="comment">                                    immediate integers this can assume a range</span></span><br><span class="line"><span class="comment">                                    of values and must be range-checked. */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> *p;            <span class="comment">/* Pointer to the very start of the entry, that</span></span><br><span class="line"><span class="comment">                                    is, this points to prev-entry-len field. */</span></span><br><span class="line">&#125; zlentry;</span><br></pre></td></tr></table></figure>
+
+<p>前面提到，ziplist本质是一个字节数组，Redis为了操作方便，才专门定义zlentry结构体，并解析某个entry的信息到zlentry中，<strong>注意ziplist字节数组本身并不存储zlentry；</strong> ziplist的每个entry结构都由三部分组成：</p>
+<ul>
+<li>前一节点长度信息：<code>previous_entry_length</code></li>
+<li>当前节点编码信息：<code>encoding</code></li>
+<li>当前节点内容：<code>content</code></li>
+</ul>
+<p>ziplist节点的各组成部分示意图：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image3.png"></p>
+<p>以下分别介绍这三个组成部分：</p>
+<h4 id="1、前一节点长度信息-previous-entry-length"><a href="#1、前一节点长度信息-previous-entry-length" class="headerlink" title="1、前一节点长度信息 previous_entry_length"></a>1、前一节点长度信息 previous_entry_length</h4><p><code>previous_entry_length</code>本身占1字节或5字节，用于记录前一个节点的长度，单位为字节：</p>
+<ul>
+<li>如果前一个节点长度小于254字节，<code>previous_entry_length</code>就只占1字节，直接保存前一个节点长度。</li>
+<li>如果前一个节点长度大于等于254字节，<code>previous_entry_length</code>就占5字节，其中第一个字节固定为0xFE，后4个字节保存前一个节点长度。</li>
+</ul>
+<p>源码参考<code>ZIP_DECODE_PREVLENSIZE</code>，这个宏根据前一个节点长度，返回<code>previous_entry_length</code>占用的字节数：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_BIG_PREVLEN 254</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_PREVLENSIZE(ptr, prevlensize) do &#123;                          \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((ptr)[0] &lt; ZIP_BIG_PREVLEN) &#123;                                          \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (prevlensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
+
+<p>Q：为什么要设计<code>previous_entry_length</code>字段，有什么作用？</p>
+<p>A：用于支持从表尾向表头方向遍历。比如我们有指向某个节点起始地址的指针p，用p减去这个节点的<code>previous_entry_length</code>，就能得到前一节点的起始地址。</p>
+<p>访问ziplist当前节点的前一个节点，参考源码<code>ziplistPrev</code>的实现：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Return pointer to previous entry in ziplist. */</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistPrev</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *zl, <span class="type">unsigned</span> <span class="type">char</span> *p)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> prevlensize, prevlen = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (p[<span class="number">0</span>] == ZIP_END) &#123;	<span class="comment">// p指向ZIPLIST_ENTRY_END，前一个节点就是最后一个节点，即ZIPLIST_ENTRY_TAIL</span></span><br><span class="line">        p = ZIPLIST_ENTRY_TAIL(zl);</span><br><span class="line">        <span class="keyword">return</span> (p[<span class="number">0</span>] == ZIP_END) ? <span class="literal">NULL</span> : p;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (p == ZIPLIST_ENTRY_HEAD(zl)) &#123;	<span class="comment">// p为表头，说明前一个节点为NULL</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ZIP_DECODE_PREVLEN(p, prevlensize, prevlen);	<span class="comment">// p减去这个节点的previous_entry_length</span></span><br><span class="line">        assert(prevlen &gt; <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span> p-prevlen;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="2、当前节点编码信息-encoding，当前节点内容content"><a href="#2、当前节点编码信息-encoding，当前节点内容content" class="headerlink" title="2、当前节点编码信息 encoding，当前节点内容content"></a>2、当前节点编码信息 encoding，当前节点内容content</h4><p> <code>encoding</code>用于记录当前节点内容的实际类型（字符串还是整数），以及长度：</p>
+<ul>
+<li><code>encoding</code>长度可以是1字节、2字节、或5字节。其中<code>encoding</code>最高两位为00, 01, 或10时表示存储的值类型为字符串；<code>encoding</code>最高两位为11表示存储的值类型为整数。</li>
+</ul>
+<p>每一种<code>encoding</code>对应的编码长度和content类型，参考如下源码：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// ziplist.c</span></span><br><span class="line"><span class="comment">/* Different encoding/length possibilities */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_MASK 0xc0			<span class="comment">// 11000000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_MASK 0x30			<span class="comment">// 00110000</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_06B (0 &lt;&lt; 6)		<span class="comment">// 00bbbbbb （长度小于等于63）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_14B (1 &lt;&lt; 6)		<span class="comment">// 01bbbbbb bbbbbbbb  (长度大于63且小于等于16383)</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_STR_32B (2 &lt;&lt; 6)		<span class="comment">// 10______ bbbbbbbb bbbbbbbb bbbbbbbb bbbbbbbb（长度大于16384）</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_16B (0xc0 | 0&lt;&lt;4)	<span class="comment">// 11000000  16位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_32B (0xc0 | 1&lt;&lt;4)	<span class="comment">// 11010000  32位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_64B (0xc0 | 2&lt;&lt;4)	<span class="comment">// 11100000  64位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_24B (0xc0 | 3&lt;&lt;4)	<span class="comment">// 11110000  24位整数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_8B 0xfe				<span class="comment">// 11111110  8位整数</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 4 bit integer immediate encoding |1111xxxx| with xxxx between</span></span><br><span class="line"><span class="comment"> * 0001 and 1101. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MASK 0x0f   <span class="comment">/* Mask to extract the 4 bits value. To add</span></span></span><br><span class="line"><span class="comment"><span class="meta">                                   one is needed to reconstruct the value. */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MIN 0xf1    <span class="comment">/* 11110001 */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_INT_IMM_MAX 0xfd    <span class="comment">/* 11111101 */</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MAX 0x7fffff</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT24_MIN (-INT24_MAX - 1)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Macro to determine if the entry is a string. String entries never start</span></span><br><span class="line"><span class="comment"> * with &quot;11&quot; as most significant bits of the first byte. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_IS_STR(enc) (((enc) &amp; ZIP_STR_MASK) &lt; ZIP_STR_MASK)  <span class="comment">// 判断是否为字节数组编码！！！</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Extract the encoding from the byte pointed by &#x27;ptr&#x27; and set it into</span></span><br><span class="line"><span class="comment"> * &#x27;encoding&#x27; field of the zlentry structure. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_ENTRY_ENCODING(ptr, encoding) do &#123;  \</span></span><br><span class="line"><span class="meta">    (encoding) = (ptr[0]); \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) (encoding) &amp;= ZIP_STR_MASK; \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Decode the entry encoding type and data length (string length for strings,</span></span><br><span class="line"><span class="comment"> * number of bytes used for the integer for integer entries) encoded in &#x27;ptr&#x27;.</span></span><br><span class="line"><span class="comment"> * The &#x27;encoding&#x27; variable will hold the entry encoding, the &#x27;lensize&#x27;</span></span><br><span class="line"><span class="comment"> * variable will hold the number of bytes required to encode the entry</span></span><br><span class="line"><span class="comment"> * length, and the &#x27;len&#x27; variable will hold the entry length. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> ZIP_DECODE_LENGTH(ptr, encoding, lensize, len) do &#123;                    \</span></span><br><span class="line"><span class="meta">    ZIP_ENTRY_ENCODING((ptr), (encoding));                                     \</span></span><br><span class="line"><span class="meta">    <span class="keyword">if</span> ((encoding) &lt; ZIP_STR_MASK) &#123;                                           \</span></span><br><span class="line"><span class="meta">        <span class="keyword">if</span> ((encoding) == ZIP_STR_06B) &#123;                                       \</span></span><br><span class="line"><span class="meta">            (lensize) = 1;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (ptr)[0] &amp; 0x3f;                                           \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_14B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 2;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = (((ptr)[0] &amp; 0x3f) &lt;&lt; 8) | (ptr)[1];                       \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((encoding) == ZIP_STR_32B) &#123;                                \</span></span><br><span class="line"><span class="meta">            (lensize) = 5;                                                     \</span></span><br><span class="line"><span class="meta">            (len) = ((ptr)[1] &lt;&lt; 24) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[2] &lt;&lt; 16) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[3] &lt;&lt;  8) |                                         \</span></span><br><span class="line"><span class="meta">                    ((ptr)[4]);                                                \</span></span><br><span class="line"><span class="meta">        &#125; <span class="keyword">else</span> &#123;                                                               \</span></span><br><span class="line"><span class="meta">            panic(<span class="string">&quot;Invalid string encoding 0x%02X&quot;</span>, (encoding));               \</span></span><br><span class="line"><span class="meta">        &#125;                                                                      \</span></span><br><span class="line"><span class="meta">    &#125; <span class="keyword">else</span> &#123;                                                                   \</span></span><br><span class="line"><span class="meta">        (lensize) = 1;                                                         \</span></span><br><span class="line"><span class="meta">        (len) = zipIntSize(encoding);                                          \</span></span><br><span class="line"><span class="meta">    &#125;                                                                          \</span></span><br><span class="line"><span class="meta">&#125; while(0)</span></span><br></pre></td></tr></table></figure>
+
+<p>整数编码：</p>
+<table>
+<thead>
+<tr>
+<th align="left">encoding</th>
+<th align="left">encoding长度</th>
+<th align="left">content长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">11111110 (ZIP_INT_8B)</td>
+<td align="left">1字节</td>
+<td align="left">8位整数</td>
+</tr>
+<tr>
+<td align="left">11000000 (ZIP_INT_16B)</td>
+<td align="left">1字节</td>
+<td align="left">16位整数</td>
+</tr>
+<tr>
+<td align="left">11110000(ZIP_INT_24B)</td>
+<td align="left">1字节</td>
+<td align="left">24位整数</td>
+</tr>
+<tr>
+<td align="left">11010000(ZIP_INT_32B)</td>
+<td align="left">1字节</td>
+<td align="left">32位整数</td>
+</tr>
+<tr>
+<td align="left">11100000(ZIP_INT_64B)</td>
+<td align="left">1字节</td>
+<td align="left">64位整数</td>
+</tr>
+<tr>
+<td align="left">1111xxxx</td>
+<td align="left">1字节</td>
+<td align="left">0-12之间的整数。此时没有content部分，值存储在encoding的xxxx四个位</td>
+</tr>
+</tbody></table>
+<p>字节数组编码：</p>
+<table>
+<thead>
+<tr>
+<th align="left">encoding</th>
+<th align="left">encoding说明</th>
+<th align="left">encoding长度</th>
+<th align="left">content长度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">00xxxxxx (ZIP_STR_06B)</td>
+<td align="left">后6位表示字节数组的长度</td>
+<td align="left">1字节</td>
+<td align="left">保存长度小于等于63字节的字节数组</td>
+</tr>
+<tr>
+<td align="left">01xxxxxx xxxxxxxx (ZIP_STR_14B)</td>
+<td align="left">后14位表示字节数组的长度</td>
+<td align="left">2字节</td>
+<td align="left">保存长度大于63， 小于等于16383字节的字节数组</td>
+</tr>
+<tr>
+<td align="left">10______ xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx (ZIP_STR_32B)</td>
+<td align="left">最后24位表示字节数组的长度，第3-8位留空</td>
+<td align="left">5字节</td>
+<td align="left">保存长度大于16384，小于 2^32 - 1字节的字节数组</td>
+</tr>
+</tbody></table>
+<p>总结：Redis根据ziplist节点存储内容的类型和大小，使用不同的编码表示，目的在于最大限度地节省空间。</p>
+<p><font color = 'red'>思考问题：</font>创建一个ziplist编码的空列表键，并依次添加两个值”hello”，”10086”，问此时ziplist的长度是多少，内容是什么样的？</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; info  # Redis版本必须为3.2之前的，否则列表键的默认编码为quicklist，而非ziplist!</span><br><span class="line"># Server redis_version:3.0.0</span><br><span class="line">127.0.0.1:6379&gt; flushdb</span><br><span class="line">127.0.0.1:6379&gt; rpush key hello 10086 # 新增列表键，依次插入两个key &quot;hello&quot; &quot;10086&quot;</span><br><span class="line">(integer) 2</span><br><span class="line">127.0.0.1:6379&gt; object encoding key   # 确认列表键编码为ziplist</span><br><span class="line">&quot;ziplist&quot;</span><br></pre></td></tr></table></figure>
+
+<p>如果你真的掌握了ziplist节点构成，那么不需要运行Redis，你也可以得出答案：这个ziplist占用22字节，内存如下图所示：<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image4.png"><br>以下给出GDB的验证方法和验证结果，感兴趣的可以参考：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 0、确认ziplist的首地址</span></span><br><span class="line">(gdb) p (sds)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].key</span><br><span class="line">$<span class="number">1</span> = (sds) <span class="number">0x7fc6ac086288</span> <span class="string">&quot;key&quot;</span> <span class="comment">// 键</span></span><br><span class="line">(gdb) p *(robj *)server.db[<span class="number">0</span>].dict.ht[<span class="number">0</span>].table[<span class="number">3</span>].v</span><br><span class="line">$<span class="number">2</span> = &#123;type = <span class="number">1</span>, encoding = <span class="number">5</span>, lru = <span class="number">13392586</span>, refcount = <span class="number">1</span>, ptr = <span class="number">0x7fc6ac035d60</span>&#125; <span class="comment">// ptr即为ziplist的首地址！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 1、打印zlbytes, zltail, zllen</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d60</span></span><br><span class="line">$<span class="number">3</span> = <span class="number">22</span> <span class="comment">// zlbytes = 22</span></span><br><span class="line">(gdb) p *(<span class="type">int</span> *)<span class="number">0x7fc6ac035d64</span></span><br><span class="line">$<span class="number">4</span> = <span class="number">17</span> <span class="comment">// zltail = 17</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *)<span class="number">0x7fc6ac035d68</span></span><br><span class="line">$<span class="number">5</span> = <span class="number">2</span>  <span class="comment">// zlen = 2</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 2、以下开始打印第一个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6a</span></span><br><span class="line"><span class="number">0x7fc6ac035d6a</span>: <span class="number">0x00</span> <span class="comment">// previous_entry_length本身占1字节，长度为0</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d6b</span></span><br><span class="line"><span class="number">0x7fc6ac035d6b</span>: <span class="number">0x05</span> <span class="comment">// encoding为00000101, 本身占1字节，表示长度为5的字节数组</span></span><br><span class="line">(gdb) x/<span class="number">5</span>c <span class="number">0x7fc6ac035d6c</span></span><br><span class="line"><span class="number">0x7fc6ac035d6c</span>: <span class="number">104</span> <span class="string">&#x27;h&#x27;</span> <span class="number">101</span> <span class="string">&#x27;e&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">108</span> <span class="string">&#x27;l&#x27;</span> <span class="number">111</span> <span class="string">&#x27;o&#x27;</span>	<span class="comment">// content占5字节，存储&quot;hello&quot;</span></span><br><span class="line"><span class="comment">// 第一个节点总长度为 1 + 1 + 5 = 7 字节</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 3、以下开始打印第二个节点</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d71</span></span><br><span class="line"><span class="number">0x7fc6ac035d71</span>: <span class="number">0x07</span> <span class="comment">// previous_entry_length本身占1字节，长度为7</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d72</span></span><br><span class="line"><span class="number">0x7fc6ac035d72</span>: <span class="number">0xc0</span> <span class="comment">// encoding为11000000, 本身占1字节, 表示16位的整数</span></span><br><span class="line">(gdb) p *(<span class="type">short</span> *) <span class="number">0x7fc6ac035d73</span></span><br><span class="line">$<span class="number">6</span> = <span class="number">10086</span>	<span class="comment">// content本身占2字节，存储内容正是10086</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 4、标志zlend，占1字节</span></span><br><span class="line">(gdb) x/xb <span class="number">0x7fc6ac035d75</span></span><br><span class="line"><span class="number">0x7fc6ac035d75</span>: <span class="number">0xff</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="为什么要设计ziplist"><a href="#为什么要设计ziplist" class="headerlink" title="为什么要设计ziplist"></a>为什么要设计ziplist<span id="jump3"></span></h3><p>还是考虑这个列表键： <code>&quot;hello&quot; -&gt; &quot;10086&quot;</code></p>
+<ul>
+<li>如果用ziplist编码，仅需22个字节存储。</li>
+<li>如果用linkedlist编码，以64位环境为例，光链表节点就需要2 * sizeof(listNode) &#x3D; 48个字节，这个大小远超过了数据本身的大小，导致严重的内存浪费。</li>
+</ul>
+<p>可以看出，ziplist设计思想是以时间换空间，目的是节省宝贵的内存资源。</p>
+<p>Redis中，ziplist是列表键和哈希键的底层实现之一，也用于quicklist的实现。</p>
+<h3 id="ziplist相关操作"><a href="#ziplist相关操作" class="headerlink" title="ziplist相关操作"></a>ziplist相关操作<span id="jump4"></span></h3><p>压缩列表的增、删、改、查API如下：</p>
+<table>
+<thead>
+<tr>
+<th align="left">API</th>
+<th align="left">功能</th>
+<th align="left">时间复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">ziplistPush</td>
+<td align="left">插入指定节点到表头或表尾</td>
+<td align="left">平均O(N)，连锁更新场景为O(N^2)</td>
+</tr>
+<tr>
+<td align="left">ziplistDelete</td>
+<td align="left">删除指定节点</td>
+<td align="left">平均O(N)，连续更新场景为O(N^2)</td>
+</tr>
+<tr>
+<td align="left">ziplistFind</td>
+<td align="left">查找指定节点</td>
+<td align="left">O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</td>
+</tr>
+<tr>
+<td align="left">ziplistNext</td>
+<td align="left">返回给定节点的下一个节点</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">ziplistPrev</td>
+<td align="left">返回给定节点的前一个节点</td>
+<td align="left">O(1)</td>
+</tr>
+</tbody></table>
+<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump5"></span></h4><p>源码参考<code>ziplistFind</code>，时间复杂度为O(N^2)，因为节点值可能是字符串，而字符串比较复杂度为O(N)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 功能：寻找ziplist中，节点值和vstr相等的节点并返回</span></span><br><span class="line"><span class="comment">// skip表示跳过的节点数</span></span><br><span class="line"><span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">ziplistFind</span><span class="params">(<span class="type">unsigned</span> <span class="type">char</span> *p, <span class="type">unsigned</span> <span class="type">char</span> *vstr, <span class="type">unsigned</span> <span class="type">int</span> vlen, <span class="type">unsigned</span> <span class="type">int</span> skip)</span> &#123;</span><br><span class="line">    <span class="type">int</span> skipcnt = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> vencoding = <span class="number">0</span>;</span><br><span class="line">    <span class="type">long</span> <span class="type">long</span> vll = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (p[<span class="number">0</span>] != ZIP_END) &#123;	<span class="comment">// 如果没有达到列表尾，就一直循环遍历！</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">int</span> prevlensize, encoding, lensize, len;</span><br><span class="line">        <span class="type">unsigned</span> <span class="type">char</span> *q;</span><br><span class="line"></span><br><span class="line">        ZIP_DECODE_PREVLENSIZE(p, prevlensize);</span><br><span class="line">        ZIP_DECODE_LENGTH(p + prevlensize, encoding, lensize, len);</span><br><span class="line">        q = p + prevlensize + lensize;	<span class="comment">// 此时q指向节点p的content</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (skipcnt == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">/* Compare current entry with specified entry */</span></span><br><span class="line">            <span class="keyword">if</span> (ZIP_IS_STR(encoding)) &#123;	<span class="comment">// 如果是字符串，memcmp比较是否相等，复杂度O(N)</span></span><br><span class="line">                <span class="keyword">if</span> (len == vlen &amp;&amp; <span class="built_in">memcmp</span>(q, vstr, vlen) == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> p;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">/* Find out if the searched field can be encoded. Note that</span></span><br><span class="line"><span class="comment">                 * we do it only the first time, once done vencoding is set</span></span><br><span class="line"><span class="comment">                 * to non-zero and vll is set to the integer value. */</span></span><br><span class="line">                <span class="comment">// 对于传入的vstr, 解码动作只需做一次， vencoding相当于一个flag</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (!zipTryEncoding(vstr, vlen, &amp;vll, &amp;vencoding)) &#123;</span><br><span class="line">                        <span class="comment">/* If the entry can&#x27;t be encoded we set it to</span></span><br><span class="line"><span class="comment">                         * UCHAR_MAX so that we don&#x27;t retry again the next</span></span><br><span class="line"><span class="comment">                         * time. */</span></span><br><span class="line">                        vencoding = UCHAR_MAX;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">/* Must be non-zero by now */</span></span><br><span class="line">                    assert(vencoding);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="comment">/* Compare current entry with specified entry, do it only</span></span><br><span class="line"><span class="comment">                 * if vencoding != UCHAR_MAX because if there is no encoding</span></span><br><span class="line"><span class="comment">                 * possible for the field it can&#x27;t be a valid integer. */</span></span><br><span class="line">                <span class="comment">// 如果解码成功，比较整数值是否相等</span></span><br><span class="line">                <span class="keyword">if</span> (vencoding != UCHAR_MAX) &#123;</span><br><span class="line">                    <span class="type">long</span> <span class="type">long</span> ll = zipLoadInteger(q, encoding);</span><br><span class="line">                    <span class="keyword">if</span> (ll == vll) &#123;</span><br><span class="line">                        <span class="keyword">return</span> p;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/* Reset skip count */</span></span><br><span class="line">            skipcnt = skip;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/* Skip entry */</span></span><br><span class="line">            skipcnt--;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* Move to next entry */</span></span><br><span class="line">        <span class="comment">// q指向content, len就是content的长度, 所以 q + len即为下一个节点的首地址！！</span></span><br><span class="line">        p = q + len;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="连锁更新问题"><a href="#连锁更新问题" class="headerlink" title="连锁更新问题"></a>连锁更新问题<span id="jump6"></span></h4><p>前面提到，ziplist中每个节点的<code>previous_entry_length</code>记录了前一个节点的长度，考虑在表头插入节点的场景：</p>
+<p>如果列表所有节点长度都在250-253字节之前，且插入节点大于等于254字节，就会导致所有节点的<code>previous_entry_length</code>都必须从1字节扩展为5字节, 即触发了<strong>连锁更新</strong>。</p>
+<p>以下举例说明这个问题：给定一个长度为3的，每个节点大小均为253字节的ziplist，往表头插入一个300字节大小的节点。<br><img data-src="/2021/12/30/2021-12-30-redis-note-04-ziplist/image5.png"><br>注：除了新增节点会引发连锁更新，删除节点操作也可能引发连锁更新，此处不再赘述。</p>
+<p><font color = 'red'>思考问题：</font>既然连锁更新的最坏复杂度为O(n^2)，为什么Redis还是放心使用ziplist？</p>
+<ul>
+<li>因为连锁更新触发条件苛刻，只有满足存在多个连续长度为250-253之间的节点才能触发。</li>
+<li>ziplist只应用于节点数少且数据小的场景，即使出现了连续更新，需要更新的节点数量也很少，不会出现性能问题。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第7章 压缩列表</p>
+<p>【2】[Redis源码解析-基础数据-ziplist(压缩列表)](</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>tar打包时去掉目录前缀的方法</title>
     <url>/2022/06/04/2022-06-04-use-tar-to-remove-dir-prefix/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
@@ -4223,21 +4223,6 @@
       </tags>
   </entry>
   <entry>
-    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
-    <url>/2023/03/01/2023-03-01-delete-folder-builid-when-use-rpm/</url>
-    <content><![CDATA[<p>Add following line to spec file</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
-<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
-]]></content>
-      <categories>
-        <category>RPM</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何查看Microk8s的apiserver证书过期时间</title>
     <url>/2023/03/30/2023-03-30-how-to-lookup-apiserver-cert-expired-time-in-microk8s/</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
@@ -4286,6 +4271,21 @@
       </categories>
       <tags>
         <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
+    <url>/2023/03/01/2023-03-01-delete-folder-builid-when-use-rpm/</url>
+    <content><![CDATA[<p>Add following line to spec file</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
+<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
+]]></content>
+      <categories>
+        <category>RPM</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -5831,25 +5831,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
-    <url>/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/</url>
-    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
-<span id="more"></span>
-<p><img data-src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image1.png"></p>
-<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
-<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
-<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
-<p><img data-src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image2.png"></p>
-<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
-]]></content>
-      <categories>
-        <category>套利往事</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>掌握夜市委托，出货快人一步</title>
     <url>/2024/05/19/2024-05-19-learn-night-market-order-and-sell-stock-faster/</url>
     <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
@@ -5900,6 +5881,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
+<span id="more"></span>
+<p><img data-src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img data-src="/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
+]]></content>
+      <categories>
+        <category>套利往事</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Microk8s启动失败，Failed to start Service for snap application microk8s.daemon-containerd 问题定位</title>
     <url>/2024/05/21/2024-05-21-microk8s-start-fail-due-to-snapd/</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.3 x86_64</p>
@@ -5926,18 +5926,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Notepad++不显示CRLF的方法</title>
-    <url>/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/</url>
-    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/image1.png"></p>
-]]></content>
-      <categories>
-        <category>other</category>
-      </categories>
-      <tags>
-        <tag>other</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何在centos7上安装ansible</title>
     <url>/2024/05/24/2024-05-24-how-to-install-ansible-on-centos7/</url>
     <content><![CDATA[<p>先安装python3, 再通过pip安装ansible，最后把ansible安装路径添加到环境变量PATH，如下：</p>
@@ -5953,6 +5941,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>ansible</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/05/28/2024-05-28-not-show-crlf-in-notepadplusplus/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
       </tags>
   </entry>
   <entry>
@@ -6118,6 +6118,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>curl代理用户名或密码出现特殊字符时需要转义</title>
+    <url>/2024/07/04/2024-07-04-how-to-escape-special-char-when-use-proxy-auth-in-curl/</url>
+    <content><![CDATA[<p>举例：使用代理<code>127.0.0.1:3128</code>访问百度, 用户名<code>peter</code>, 密码<code>123!</code></p>
+<p>密码中包含<code>！</code>特殊字符，需要转义。 查询<a href="https://www.urlencoder.org/zh/">在线URL编码工具</a>, <code>%21</code>是<code>!</code>的URL编码，<code>curl</code>使用方法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x peter:123%21@127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+
+<p>参考<br><a href="https://www.urlencoder.org/zh/">https://www.urlencoder.org/zh/</a></p>
+]]></content>
+      <categories>
+        <category>curl</category>
+      </categories>
+      <tags>
+        <tag>curl</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用arping检测IP地址是否冲突</title>
     <url>/2024/07/04/2024-07-04-use-arping-to-detect-ip-conflicts/</url>
     <content><![CDATA[<h2 id="arping简介"><a href="#arping简介" class="headerlink" title="arping简介"></a>arping简介</h2><p>在Linux中，<code>arping</code>是一个用来发送ARP请求到一个相邻主机的工具，通常用于检测网络上的IP地址冲突。</p>
@@ -6136,37 +6152,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>curl代理用户名或密码出现特殊字符时需要转义</title>
-    <url>/2024/07/04/2024-07-04-how-to-escape-special-char-when-use-proxy-auth-in-curl/</url>
-    <content><![CDATA[<p>举例：使用代理<code>127.0.0.1:3128</code>访问百度, 用户名<code>peter</code>, 密码<code>123!</code></p>
-<p>密码中包含<code>！</code>特殊字符，需要转义。 查询<a href="https://www.urlencoder.org/zh/">在线URL编码工具</a>, <code>%21</code>是<code>!</code>的URL编码，<code>curl</code>使用方法如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x peter:123%21@127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-
-<p>参考<br><a href="https://www.urlencoder.org/zh/">https://www.urlencoder.org/zh/</a></p>
-]]></content>
-      <categories>
-        <category>curl</category>
-      </categories>
-      <tags>
-        <tag>curl</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Win11右键默认显示更多选项的方法</title>
-    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
-<span id="more"></span>
-<p><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
-<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
-]]></content>
-      <categories>
-        <category>Win</category>
-      </categories>
-      <tags>
-        <tag>Win</tag>
       </tags>
   </entry>
   <entry>
@@ -6189,6 +6174,21 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Win11右键默认显示更多选项的方法</title>
+    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
+<span id="more"></span>
+<p><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
+<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
+]]></content>
+      <categories>
+        <category>Win</category>
+      </categories>
+      <tags>
+        <tag>Win</tag>
       </tags>
   </entry>
   <entry>
@@ -6801,9 +6801,10 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight py"><table><tr><td class="code"><pre><span class="line">urlpatterns = [</span><br><span class="line">    path(<span class="string">&#x27;index/&#x27;</span>, views.index),</span><br><span class="line">	path(<span class="string">&#x27;user/list/&#x27;</span>, views.user_list),</span><br><span class="line">	path(<span class="string">&#x27;user/add/&#x27;</span>, views.user_add),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
 
 <p>编辑<code>app01/views.py</code>，添加几个函数</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from django.shortcuts import render, HttpResponse</span><br><span class="line"></span><br><span class="line"># Create your views here.</span><br><span class="line">def index(request):</span><br><span class="line">    return HttpResponse(&quot;Hello World&quot;)</span><br><span class="line"></span><br><span class="line">def user_list(request):</span><br><span class="line">    return HttpResponse(&quot;User List&quot;)</span><br><span class="line"></span><br><span class="line">def user_add(request):</span><br><span class="line">    return HttpResponse(&quot;User add&quot;)</span><br></pre></td></tr></table></figure>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.shortcuts <span class="keyword">import</span> render, HttpResponse</span><br><span class="line"></span><br><span class="line"><span class="comment"># Create your views here.</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;Hello World&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">user_list</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;User List&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">user_add</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;User add&quot;</span>)</span><br></pre></td></tr></table></figure>
 
-<h2 id="templates模板的运用"><a href="#templates模板的运用" class="headerlink" title="templates模板的运用"></a>templates模板的运用</h2><p>编辑<code>app01/views.py</code>，使用render返回一个HTML页面</p>
+<h2 id="templates模板的运用"><a href="#templates模板的运用" class="headerlink" title="templates模板的运用"></a>templates模板的运用</h2><span id="more"></span>
+<p>编辑<code>app01/views.py</code>，使用render返回一个HTML页面</p>
 <figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">user_list</span>(<span class="params">request</span>):</span><br><span class="line">	<span class="keyword">return</span> render(request, <span class="string">&quot;user_list.html&quot;</span>)</span><br></pre></td></tr></table></figure>
 
 <p>app01目录下创建<code>templates/user_list.html</code></p>
@@ -6816,6 +6817,20 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight html"><table><tr><td class="code"><pre><span class="line">&#123;% load static %&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Title<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">&quot;stylesheet&quot;</span> <span class="attr">href</span>=<span class="string">&quot;&#123;% static &#x27;plugins/bootstrap-3.4.1/css/bootstrap.css&#x27; %&#125;&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">h1</span>&gt;</span>User List<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span> <span class="attr">class</span>=<span class="string">&quot;btn btn-primary&quot;</span> <span class="attr">value</span>=<span class="string">&quot;Create&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">img</span> <span class="attr">src</span>=<span class="string">&quot;&#123;% static &#x27;img/1.png&#x27; %&#125;&quot;</span> <span class="attr">alt</span>=<span class="string">&quot;&quot;</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;&#123;% static &#x27;js/jquery-3.7.1.min.js&#x27; %&#125;&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;&#123;% static &#x27;plugins/bootstrap-3.4.1/js/bootstrap.js&#x27; %&#125;&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
 <p>Q: 为什么使用load static这种方式引入静态文件？&#x2F;static&#x2F;img&#x2F;1.png不也行吗？<br>A: 如果静态文件移动到别的路径，只需要改settings.py的配置，不需要逐个修改每个页面的路径</p>
+<h1 id="Django模板语法"><a href="#Django模板语法" class="headerlink" title="Django模板语法"></a>Django模板语法</h1><p>什么是Django模板: 在HTML中写一些占位符，由数据对占位符进行替换和处理</p>
+<p>举例:<br>编辑<code>app01/views.py</code></p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">tpl</span>(<span class="params">request</span>):</span><br><span class="line">    name = <span class="string">&#x27;Peter&#x27;</span></span><br><span class="line">    roles = [<span class="string">&#x27;admin&#x27;</span>, <span class="string">&#x27;guest&#x27;</span>]</span><br><span class="line">    user_info = &#123;<span class="string">&#x27;name&#x27;</span>: <span class="string">&#x27;Tony&#x27;</span>, <span class="string">&#x27;salary&#x27;</span>: <span class="number">10000</span>, <span class="string">&#x27;role&#x27;</span>: <span class="string">&#x27;CEO&#x27;</span>&#125;</span><br><span class="line">	data_list = [</span><br><span class="line">        &#123;<span class="string">&quot;name&quot;</span>: <span class="string">&quot;peter&quot;</span>, <span class="string">&quot;salary&quot;</span>: <span class="number">10000</span>, <span class="string">&quot;role&quot;</span>: <span class="string">&quot;CTO&quot;</span>&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;name&quot;</span>: <span class="string">&quot;tony&quot;</span>, <span class="string">&quot;salary&quot;</span>: <span class="number">5000</span>, <span class="string">&quot;role&quot;</span>: <span class="string">&quot;CFO&quot;</span>&#125;</span><br><span class="line">    ]</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&#x27;tpl.html&#x27;</span>, &#123;<span class="string">&quot;n1&quot;</span>: name, <span class="string">&quot;n2&quot;</span>: roles, <span class="string">&quot;n3&quot;</span>: user_info, <span class="string">&quot;n4&quot;</span>: data_list&#125;)</span><br></pre></td></tr></table></figure>
+<p>编辑<code>demo1/urls.py</code></p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line">urlpatterns = [</span><br><span class="line">    path(<span class="string">&#x27;user/tpl/&#x27;</span>, views.tpl),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>新增<code>app01/templates/tpl.html</code></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;&#123; n1 &#125;&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;&#123; n2 &#125;&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;&#123; n2.0 &#125;&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;&#123; n2.1 &#125;&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">div</span>&gt;</span></span><br><span class="line">        &#123;% for item in n2 %&#125;</span><br><span class="line">            <span class="tag">&lt;<span class="name">span</span>&gt;</span>&#123;&#123; item &#125;&#125;<span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">        &#123;% endfor %&#125;</span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">hr</span>/&gt;</span></span><br><span class="line">	</span><br><span class="line">    &#123;&#123; n3.name &#125;&#125;</span><br><span class="line">    &#123;&#123; n3.salary &#125;&#125;</span><br><span class="line">    &#123;&#123; n3.role &#125;&#125;</span><br><span class="line">    &#123;% for k,v in n3.items %&#125;</span><br><span class="line">        <span class="tag">&lt;<span class="name">li</span>&gt;</span>&#123;&#123; k &#125;&#125; == &#123;&#123; v &#125;&#125; <span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">    &#123;% for k in n3.keys %&#125;</span><br><span class="line">        <span class="tag">&lt;<span class="name">li</span>&gt;</span>&#123;&#123; k &#125;&#125; <span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">    &#123;% for v in n3.values %&#125;</span><br><span class="line">        <span class="tag">&lt;<span class="name">li</span>&gt;</span>&#123;&#123; v &#125;&#125; <span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;&#123; n4 &#125;&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    &#123;% for item in n4 %&#125;</span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span>&gt;</span>&#123;&#123; item.name &#125;&#125;, &#123;&#123; item.salary &#125;&#125;<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">	</span><br><span class="line">	&#123;% if n1 == &#x27;Peter&#x27; %&#125;</span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span>&gt;</span>Peter!<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    &#123;% else %&#125;</span><br><span class="line">        <span class="tag">&lt;<span class="name">div</span>&gt;</span>Not Peter!<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    &#123;% endif %&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>curl localhost:8000&#x2F;user&#x2F;tpl&#x2F;</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Peter</span><br><span class="line">[&#x27;admin&#x27;, &#x27;guest&#x27;]</span><br><span class="line">admin</span><br><span class="line">guest</span><br><span class="line">admin guest</span><br><span class="line">Tony 10000 CEO</span><br><span class="line">name == Tony</span><br><span class="line">salary == 10000</span><br><span class="line">role == CEO</span><br><span class="line">name</span><br><span class="line">salary</span><br><span class="line">role</span><br><span class="line">Tony</span><br><span class="line">10000</span><br><span class="line">CEO</span><br><span class="line">[&#123;&#x27;name&#x27;: &#x27;peter&#x27;, &#x27;salary&#x27;: 10000, &#x27;role&#x27;: &#x27;CTO&#x27;&#125;, &#123;&#x27;name&#x27;: &#x27;tony&#x27;, &#x27;salary&#x27;: 5000, &#x27;role&#x27;: &#x27;CFO&#x27;&#125;]</span><br><span class="line">peter, 10000</span><br><span class="line">tony, 5000</span><br><span class="line">Peter!</span><br></pre></td></tr></table></figure>
+
+
+
+
 ]]></content>
       <categories>
         <category>Django</category>
