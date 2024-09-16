@@ -1579,6 +1579,66 @@
       </tags>
   </entry>
   <entry>
+    <title>leetcode几道链表题解决思路</title>
+    <url>/2021/02/06/2021-02-06-leetcode-linkedlist-problems/</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>LeetCode链表题汇总，记录解题思路，C&#x2F;C++语言实现。</p>
+<h3 id="LeetCode链表题"><a href="#LeetCode链表题" class="headerlink" title="LeetCode链表题"></a>LeetCode链表题</h3><ul>
+<li><p>判断链表是否有环 ：<a href="https://leetcode-cn.com/problems/linked-list-cycle/">https://leetcode-cn.com/problems/linked-list-cycle/</a></p>
+</li>
+<li><p>输出环形链表的入环点：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">https://leetcode-cn.com/problems/linked-list-cycle-ii/</a></p>
+</li>
+<li><p>输出链表中倒数第k个节点：<a href="https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/">https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/</a></p>
+</li>
+<li><p>反转链表：<a href="https://leetcode-cn.com/problems/reverse-linked-list/">https://leetcode-cn.com/problems/reverse-linked-list/</a></p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h3><h4 id="判断链表是否有环"><a href="#判断链表是否有环" class="headerlink" title="判断链表是否有环"></a>判断链表是否有环</h4><p>思路：快慢指针法。 慢指针每前进一步，快指针就前进两步。如果快慢指针能相遇，证明有环，反之无环。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * struct ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode *next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) : val(x), next(NULL) &#123;&#125;</span></span><br><span class="line"><span class="comment"> * &#125;;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">hasCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast = head;</span><br><span class="line">    ListNode *slow = head;</span><br><span class="line">    <span class="keyword">while</span> (fast != <span class="literal">NULL</span> &amp;&amp; fast-&gt;next != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123; <span class="comment">// 如果快慢指针能相遇，说明有环。</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="输出环形链表的入环点"><a href="#输出环形链表的入环点" class="headerlink" title="输出环形链表的入环点"></a>输出环形链表的入环点</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历一次链表，将遍历到的节点存储到哈希表，如果节点已经在哈希表中，说明有环，输出入环点。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度O(N),  空间复杂度O(N)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    std::unordered_map&lt;ListNode *, <span class="type">int</span>&gt; t; <span class="comment">// 用哈希表将遍历过节点保存下来</span></span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="keyword">if</span> (t.<span class="built_in">find</span>(head) != t.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">return</span> head;</span><br><span class="line">        &#125;</span><br><span class="line">        t[head] = <span class="number">1</span>;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 快慢指针法。创建fast, slow两个指针指向链表头，令fast前进速度为slow的两倍。当快慢指针相遇时，再创建一个指针p指向链表头, 让p和slow等速前进，p和slow必定会相遇，且相遇点即为入环点。</p>
+<p>数学证明参考：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/solution/huan-xing-lian-biao-ii-by-leetcode-solution/">LeetCode官方题解</a></p>
+<p><strong>复杂度分析：</strong> 时间复杂度O(N), 空间复杂度O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast, *slow;</span><br><span class="line">    fast = slow = head;</span><br><span class="line">    <span class="keyword">while</span>(fast) &#123;</span><br><span class="line">        <span class="keyword">if</span> (fast-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// fast前进速度为slow两倍</span></span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="comment">// 快慢指针相遇时，用一个指针p指向链表头，让p和slow同时前进，p和slow相遇点即为入环点，</span></span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123;</span><br><span class="line">            ListNode *p = head;</span><br><span class="line">            <span class="keyword">while</span> (p != slow) &#123;</span><br><span class="line">                p = p-&gt;next;</span><br><span class="line">                slow = slow-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> p;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="输出链表中倒数第k个节点"><a href="#输出链表中倒数第k个节点" class="headerlink" title="输出链表中倒数第k个节点"></a>输出链表中倒数第k个节点</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历两次单链表，第一次遍历求出链表长度记为len, 第二次遍历找到第len - k个节点并输出即可。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">	ListNode *cur = head;</span><br><span class="line">	<span class="keyword">while</span>(cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		++len;</span><br><span class="line">		cur = cur-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; len - k; ++i) &#123;</span><br><span class="line">		head = head-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 双指针法，设指针p, q，初始时将p指向链表头节点，q指向第k+1个节点，然后让p, q指针等速前进，当q为NULL时， p即为所求。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">    ListNode *front = head;</span><br><span class="line">    ListNode *behind = head;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123;</span><br><span class="line">    	front = front-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">while</span>(front != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        front = front-&gt;next;</span><br><span class="line">        behind = behind-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> behind;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="反转链表"><a href="#反转链表" class="headerlink" title="反转链表"></a>反转链表</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历原链表，依次对每个节点用头插法创建新链表并返回。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(N)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *l = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="comment">// 依次对每个节点用头插法创建新链表</span></span><br><span class="line">        ListNode *s = <span class="keyword">new</span> <span class="built_in">ListNode</span>(head-&gt;val, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span> (l == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            s-&gt;next = l;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 迭代法，遍历单链表，依次改变每个节点的next指向即可。注意next指向改变后，就无法访问下一个节点了，所以要在改next指针之前，用一个临时指针保存next指向的节点。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *pre = <span class="literal">NULL</span>;</span><br><span class="line">    ListNode *cur = head;</span><br><span class="line">    <span class="keyword">for</span>( ; cur != <span class="literal">NULL</span> ; ) &#123;</span><br><span class="line">        ListNode *tmpNext = cur-&gt;next; <span class="comment">// 用临时指针暂存next指向的节点</span></span><br><span class="line">        cur-&gt;next = pre;</span><br><span class="line">        pre = cur;</span><br><span class="line">        cur = tmpNext;	<span class="comment">// 当前节点next值改变后，从临时指针恢复下一个需遍历的节点</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> pre;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>LeetCode</category>
+      </categories>
+      <tags>
+        <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis学习笔记(六)——对象系统</title>
     <url>/2021/01/23/2021-01-23-redis-note-06-object/</url>
     <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis没有直接使用基础数据结构来实现数据库，而是基于这些数据结构创建了一个对象系统。这个系统包含字符串对象、列表对象、哈希对象、集合对象、有序集合对象。</p>
@@ -1835,66 +1895,6 @@
       </categories>
       <tags>
         <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>leetcode几道链表题解决思路</title>
-    <url>/2021/02/06/2021-02-06-leetcode-linkedlist-problems/</url>
-    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>LeetCode链表题汇总，记录解题思路，C&#x2F;C++语言实现。</p>
-<h3 id="LeetCode链表题"><a href="#LeetCode链表题" class="headerlink" title="LeetCode链表题"></a>LeetCode链表题</h3><ul>
-<li><p>判断链表是否有环 ：<a href="https://leetcode-cn.com/problems/linked-list-cycle/">https://leetcode-cn.com/problems/linked-list-cycle/</a></p>
-</li>
-<li><p>输出环形链表的入环点：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">https://leetcode-cn.com/problems/linked-list-cycle-ii/</a></p>
-</li>
-<li><p>输出链表中倒数第k个节点：<a href="https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/">https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/</a></p>
-</li>
-<li><p>反转链表：<a href="https://leetcode-cn.com/problems/reverse-linked-list/">https://leetcode-cn.com/problems/reverse-linked-list/</a></p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h3><h4 id="判断链表是否有环"><a href="#判断链表是否有环" class="headerlink" title="判断链表是否有环"></a>判断链表是否有环</h4><p>思路：快慢指针法。 慢指针每前进一步，快指针就前进两步。如果快慢指针能相遇，证明有环，反之无环。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * struct ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode *next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) : val(x), next(NULL) &#123;&#125;</span></span><br><span class="line"><span class="comment"> * &#125;;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">hasCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast = head;</span><br><span class="line">    ListNode *slow = head;</span><br><span class="line">    <span class="keyword">while</span> (fast != <span class="literal">NULL</span> &amp;&amp; fast-&gt;next != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123; <span class="comment">// 如果快慢指针能相遇，说明有环。</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="输出环形链表的入环点"><a href="#输出环形链表的入环点" class="headerlink" title="输出环形链表的入环点"></a>输出环形链表的入环点</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历一次链表，将遍历到的节点存储到哈希表，如果节点已经在哈希表中，说明有环，输出入环点。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度O(N),  空间复杂度O(N)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    std::unordered_map&lt;ListNode *, <span class="type">int</span>&gt; t; <span class="comment">// 用哈希表将遍历过节点保存下来</span></span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="keyword">if</span> (t.<span class="built_in">find</span>(head) != t.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">return</span> head;</span><br><span class="line">        &#125;</span><br><span class="line">        t[head] = <span class="number">1</span>;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 快慢指针法。创建fast, slow两个指针指向链表头，令fast前进速度为slow的两倍。当快慢指针相遇时，再创建一个指针p指向链表头, 让p和slow等速前进，p和slow必定会相遇，且相遇点即为入环点。</p>
-<p>数学证明参考：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/solution/huan-xing-lian-biao-ii-by-leetcode-solution/">LeetCode官方题解</a></p>
-<p><strong>复杂度分析：</strong> 时间复杂度O(N), 空间复杂度O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast, *slow;</span><br><span class="line">    fast = slow = head;</span><br><span class="line">    <span class="keyword">while</span>(fast) &#123;</span><br><span class="line">        <span class="keyword">if</span> (fast-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// fast前进速度为slow两倍</span></span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="comment">// 快慢指针相遇时，用一个指针p指向链表头，让p和slow同时前进，p和slow相遇点即为入环点，</span></span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123;</span><br><span class="line">            ListNode *p = head;</span><br><span class="line">            <span class="keyword">while</span> (p != slow) &#123;</span><br><span class="line">                p = p-&gt;next;</span><br><span class="line">                slow = slow-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> p;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="输出链表中倒数第k个节点"><a href="#输出链表中倒数第k个节点" class="headerlink" title="输出链表中倒数第k个节点"></a>输出链表中倒数第k个节点</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历两次单链表，第一次遍历求出链表长度记为len, 第二次遍历找到第len - k个节点并输出即可。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">	ListNode *cur = head;</span><br><span class="line">	<span class="keyword">while</span>(cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		++len;</span><br><span class="line">		cur = cur-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; len - k; ++i) &#123;</span><br><span class="line">		head = head-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 双指针法，设指针p, q，初始时将p指向链表头节点，q指向第k+1个节点，然后让p, q指针等速前进，当q为NULL时， p即为所求。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">    ListNode *front = head;</span><br><span class="line">    ListNode *behind = head;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123;</span><br><span class="line">    	front = front-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">while</span>(front != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        front = front-&gt;next;</span><br><span class="line">        behind = behind-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> behind;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="反转链表"><a href="#反转链表" class="headerlink" title="反转链表"></a>反转链表</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历原链表，依次对每个节点用头插法创建新链表并返回。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(N)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *l = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="comment">// 依次对每个节点用头插法创建新链表</span></span><br><span class="line">        ListNode *s = <span class="keyword">new</span> <span class="built_in">ListNode</span>(head-&gt;val, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span> (l == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            s-&gt;next = l;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 迭代法，遍历单链表，依次改变每个节点的next指向即可。注意next指向改变后，就无法访问下一个节点了，所以要在改next指针之前，用一个临时指针保存next指向的节点。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *pre = <span class="literal">NULL</span>;</span><br><span class="line">    ListNode *cur = head;</span><br><span class="line">    <span class="keyword">for</span>( ; cur != <span class="literal">NULL</span> ; ) &#123;</span><br><span class="line">        ListNode *tmpNext = cur-&gt;next; <span class="comment">// 用临时指针暂存next指向的节点</span></span><br><span class="line">        cur-&gt;next = pre;</span><br><span class="line">        pre = cur;</span><br><span class="line">        cur = tmpNext;	<span class="comment">// 当前节点next值改变后，从临时指针恢复下一个需遍历的节点</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> pre;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>LeetCode</category>
-      </categories>
-      <tags>
-        <tag>LeetCode</tag>
       </tags>
   </entry>
   <entry>
@@ -4536,38 +4536,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Traceroute简介和抓包</title>
-    <url>/2023/05/15/2023-05-15-traceroute-intro-and-use/</url>
-    <content><![CDATA[<h2 id="traceroute原理"><a href="#traceroute原理" class="headerlink" title="traceroute原理"></a>traceroute原理</h2><p>Traceroute 是一种网络诊断工具，用于确定数据包从一个源到达目的地所经过的路径。它通过发送一系列的数据包，并观察每个数据包经过的路由器（或称为跃点）来实现这一目的。</p>
-<span id="more"></span>
-
-<p><strong>工作原理：</strong></p>
-<ul>
-<li>Traceroute 发送一系列的 UDP 数据包，每个数据包都具有不同的 TTL（Time to Live）值。TTL 值表示数据包在网络中可经过的最大跃点数。</li>
-<li>当第一个数据包离开源设备时，它的 TTL 值被设置为 1。当该数据包到达网络中的第一个路由器时，路由器会将 TTL 值减 1，并转发该数据包。如果 TTL 值减为 0，路由器将丢弃该数据包并向源设备发送 ICMP 时间超时报文。</li>
-<li>源设备收到 ICMP 时间超时报文后，就知道了到达第一个路由器的路径。然后，源设备增加 TTL 值并发送第二个数据包，以便确定下一个路由器。</li>
-<li>这个过程不断重复，每次 TTL 值增加，直到数据包到达目的地。目的设备将收到数据包并向源设备发送 ICMP 端口不可达报文，从而终止 Traceroute 进程。</li>
-<li>Traceroute 将记录每个数据包的路径，包括每个跃点的 IP 地址和响应时间。最终将呈现给用户一张路由跟踪表，显示了数据包从源到目的地经过的所有路由器。</li>
-</ul>
-<p>总的来说，Traceroute 通过探测数据包的路径和响应时间，帮助网络管理员诊断网络连接问题，定位潜在的瓶颈或故障点。</p>
-<h2 id="traceroute用法"><a href="#traceroute用法" class="headerlink" title="traceroute用法"></a>traceroute用法</h2><p>Linux系统下，traceroute用法：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">traceroute hostname</span><br></pre></td></tr></table></figure>
-<p>Windows系统使用tracert命令:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tracert hostname</span><br></pre></td></tr></table></figure>
-<h2 id="traceroute抓包"><a href="#traceroute抓包" class="headerlink" title="traceroute抓包"></a>traceroute抓包</h2><p>在宿主机10.206.216.95上执行<code>traceroute www.baidu.com</code>，通过<code>tcpdump</code>抓包，如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ifconfig ens192</span><br><span class="line">ens192: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 10.206.216.95  netmask 255.255.255.0  broadcast 10.206.216.255</span><br><span class="line">route</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">default         gateway         0.0.0.0         UG    100    0        0 ens192</span><br><span class="line">10.206.216.0    0.0.0.0         255.255.255.0   U     100    0        0 ens192</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 1</span></span><br><span class="line">$ tcpdump -i ens192 icmp and host 10.206.216.95 -w traceroute.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 2</span></span><br><span class="line">$ traceroute  www.baidu.com</span><br><span class="line">traceroute to www.baidu.com (36.155.132.55), 30 hops max, 60 byte packets</span><br><span class="line"> 1  gateway (10.206.216.254)  0.239 ms  0.152 ms  0.147 ms</span><br><span class="line"> 2  10.206.2.254 (10.206.2.254)  0.265 ms  0.274 ms  0.241 ms</span><br><span class="line"> 3  192.168.200.1 (192.168.200.1)  0.545 ms  0.506 ms  0.825 ms</span><br><span class="line"> 4  36.152.113.193 (36.152.113.193)  2.837 ms  3.182 ms  3.552 ms</span><br><span class="line"> 5  221.178.162.185 (221.178.162.185)  2.632 ms * *</span><br><span class="line"> 6  * * 183.207.54.161 (183.207.54.161)  3.116 ms</span><br><span class="line"> 7  183.207.67.106 (183.207.67.106)  3.576 ms 183.207.22.130 (183.207.22.130)  3.195 ms 183.207.66.102 (183.207.66.102)  3.638 ms</span><br><span class="line"> 8  * 36.155.156.46 (36.155.156.46)  3.884 ms 36.155.156.54 (36.155.156.54)  4.690 ms</span><br><span class="line"> 9  36.155.157.174 (36.155.157.174)  4.197 ms 36.155.157.170 (36.155.157.170)  4.344 ms  3.964 ms</span><br><span class="line">10  * * *</span><br><span class="line">11  * * *</span><br><span class="line">12  * * *</span><br><span class="line">13  * * *</span><br><span class="line">14  * * *</span><br><span class="line">15  * * *</span><br><span class="line">16  * * *</span><br><span class="line">17  * * *</span><br><span class="line">18  * * *</span><br><span class="line">19  * * *</span><br><span class="line">20  * * *</span><br><span class="line">21  * * *</span><br><span class="line">22  * * *</span><br><span class="line">23  * * *</span><br><span class="line">24  * * *</span><br><span class="line">25  * * *</span><br><span class="line">26  * * *</span><br><span class="line">27  * * *</span><br><span class="line">28  * * *</span><br><span class="line">29  * * *</span><br><span class="line">30  * * *</span><br></pre></td></tr></table></figure>
-<p>wireshark分析结果：<br><img data-src="/2023/05/15/2023-05-15-traceroute-intro-and-use/image1.png"></p>
-]]></content>
-      <categories>
-        <category>Network</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>Traceroute</tag>
-        <tag>Network</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>pip基础用法示例</title>
     <url>/2023/05/25/2023-05-25-pip-basic-usage/</url>
     <content><![CDATA[<h2 id="配置国内源"><a href="#配置国内源" class="headerlink" title="配置国内源"></a>配置国内源</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[global]</span><br><span class="line">index-url = https://pypi.tuna.tsinghua.edu.cn/simple</span><br><span class="line">[install]</span><br><span class="line">trusted-host = https://pypi.tuna.tsinghua.edu.cn</span><br></pre></td></tr></table></figure>
@@ -4600,6 +4568,38 @@
       </categories>
       <tags>
         <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Traceroute简介和抓包</title>
+    <url>/2023/05/15/2023-05-15-traceroute-intro-and-use/</url>
+    <content><![CDATA[<h2 id="traceroute原理"><a href="#traceroute原理" class="headerlink" title="traceroute原理"></a>traceroute原理</h2><p>Traceroute 是一种网络诊断工具，用于确定数据包从一个源到达目的地所经过的路径。它通过发送一系列的数据包，并观察每个数据包经过的路由器（或称为跃点）来实现这一目的。</p>
+<span id="more"></span>
+
+<p><strong>工作原理：</strong></p>
+<ul>
+<li>Traceroute 发送一系列的 UDP 数据包，每个数据包都具有不同的 TTL（Time to Live）值。TTL 值表示数据包在网络中可经过的最大跃点数。</li>
+<li>当第一个数据包离开源设备时，它的 TTL 值被设置为 1。当该数据包到达网络中的第一个路由器时，路由器会将 TTL 值减 1，并转发该数据包。如果 TTL 值减为 0，路由器将丢弃该数据包并向源设备发送 ICMP 时间超时报文。</li>
+<li>源设备收到 ICMP 时间超时报文后，就知道了到达第一个路由器的路径。然后，源设备增加 TTL 值并发送第二个数据包，以便确定下一个路由器。</li>
+<li>这个过程不断重复，每次 TTL 值增加，直到数据包到达目的地。目的设备将收到数据包并向源设备发送 ICMP 端口不可达报文，从而终止 Traceroute 进程。</li>
+<li>Traceroute 将记录每个数据包的路径，包括每个跃点的 IP 地址和响应时间。最终将呈现给用户一张路由跟踪表，显示了数据包从源到目的地经过的所有路由器。</li>
+</ul>
+<p>总的来说，Traceroute 通过探测数据包的路径和响应时间，帮助网络管理员诊断网络连接问题，定位潜在的瓶颈或故障点。</p>
+<h2 id="traceroute用法"><a href="#traceroute用法" class="headerlink" title="traceroute用法"></a>traceroute用法</h2><p>Linux系统下，traceroute用法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">traceroute hostname</span><br></pre></td></tr></table></figure>
+<p>Windows系统使用tracert命令:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tracert hostname</span><br></pre></td></tr></table></figure>
+<h2 id="traceroute抓包"><a href="#traceroute抓包" class="headerlink" title="traceroute抓包"></a>traceroute抓包</h2><p>在宿主机10.206.216.95上执行<code>traceroute www.baidu.com</code>，通过<code>tcpdump</code>抓包，如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ifconfig ens192</span><br><span class="line">ens192: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 10.206.216.95  netmask 255.255.255.0  broadcast 10.206.216.255</span><br><span class="line">route</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">default         gateway         0.0.0.0         UG    100    0        0 ens192</span><br><span class="line">10.206.216.0    0.0.0.0         255.255.255.0   U     100    0        0 ens192</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 1</span></span><br><span class="line">$ tcpdump -i ens192 icmp and host 10.206.216.95 -w traceroute.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 2</span></span><br><span class="line">$ traceroute  www.baidu.com</span><br><span class="line">traceroute to www.baidu.com (36.155.132.55), 30 hops max, 60 byte packets</span><br><span class="line"> 1  gateway (10.206.216.254)  0.239 ms  0.152 ms  0.147 ms</span><br><span class="line"> 2  10.206.2.254 (10.206.2.254)  0.265 ms  0.274 ms  0.241 ms</span><br><span class="line"> 3  192.168.200.1 (192.168.200.1)  0.545 ms  0.506 ms  0.825 ms</span><br><span class="line"> 4  36.152.113.193 (36.152.113.193)  2.837 ms  3.182 ms  3.552 ms</span><br><span class="line"> 5  221.178.162.185 (221.178.162.185)  2.632 ms * *</span><br><span class="line"> 6  * * 183.207.54.161 (183.207.54.161)  3.116 ms</span><br><span class="line"> 7  183.207.67.106 (183.207.67.106)  3.576 ms 183.207.22.130 (183.207.22.130)  3.195 ms 183.207.66.102 (183.207.66.102)  3.638 ms</span><br><span class="line"> 8  * 36.155.156.46 (36.155.156.46)  3.884 ms 36.155.156.54 (36.155.156.54)  4.690 ms</span><br><span class="line"> 9  36.155.157.174 (36.155.157.174)  4.197 ms 36.155.157.170 (36.155.157.170)  4.344 ms  3.964 ms</span><br><span class="line">10  * * *</span><br><span class="line">11  * * *</span><br><span class="line">12  * * *</span><br><span class="line">13  * * *</span><br><span class="line">14  * * *</span><br><span class="line">15  * * *</span><br><span class="line">16  * * *</span><br><span class="line">17  * * *</span><br><span class="line">18  * * *</span><br><span class="line">19  * * *</span><br><span class="line">20  * * *</span><br><span class="line">21  * * *</span><br><span class="line">22  * * *</span><br><span class="line">23  * * *</span><br><span class="line">24  * * *</span><br><span class="line">25  * * *</span><br><span class="line">26  * * *</span><br><span class="line">27  * * *</span><br><span class="line">28  * * *</span><br><span class="line">29  * * *</span><br><span class="line">30  * * *</span><br></pre></td></tr></table></figure>
+<p>wireshark分析结果：<br><img data-src="/2023/05/15/2023-05-15-traceroute-intro-and-use/image1.png"></p>
+]]></content>
+      <categories>
+        <category>Network</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>Traceroute</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -5104,25 +5104,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
-    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
-    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
     <url>/2023/08/22/2023-08-22-extrace-seq-in-python/</url>
     <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
@@ -5144,10 +5125,44 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Python 查找最大或最小的N个元素</title>
     <url>/2023/08/22/2023-08-22-find-n-elements-with-python/</url>
     <content><![CDATA[<p>除了直接排序，还可以利用<code>heaq</code>模块的<code>nlargest()</code>和<code>nsmallest()</code>方法，例如：</p>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>nums = [<span class="number">3</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">1</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>smallest = heapq.nsmallest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(smallest)</span><br><span class="line">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>largest = heapq.nlargest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(largest)</span><br><span class="line">[<span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>]</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python保留最后N个元素</title>
+    <url>/2023/08/29/2023-08-29-keep-final-n-elements-by-python/</url>
+    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5401,21 +5416,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h3 id="x20-给关键代码加锁-——-使用threading库中的Lock对象"><a href="#x20-给关键代码加锁-——-使用threading库中的Lock对象" class="headerlink" title="&#x20;给关键代码加锁 —— 使用threading库中的Lock对象"></a>&#x20;给关键代码加锁 —— 使用threading库中的Lock对象</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">lock = threading.Lock()</span><br><span class="line"><span class="keyword">with</span> lock:</span><br><span class="line">	XXX</span><br></pre></td></tr></table></figure>
 
 <h2 id="第十三章-脚本编程与系统管理"><a href="#第十三章-脚本编程与系统管理" class="headerlink" title="第十三章 脚本编程与系统管理"></a>第十三章 脚本编程与系统管理</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">解析命令行选项</span><br><span class="line">argparse</span><br><span class="line">执行外部命令，获取输出</span><br><span class="line">subprocess.check\_output</span><br><span class="line">复制或启动文件</span><br><span class="line">shutil模块</span><br><span class="line">读取ini配置文件</span><br><span class="line">configparser</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Python保留最后N个元素</title>
-    <url>/2023/08/29/2023-08-29-keep-final-n-elements-by-python/</url>
-    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5978,22 +5978,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>质疑标普，理解标普，加入标普</title>
-    <url>/2024/06/16/2024-06-16-join-sp500/</url>
-    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
-<span id="more"></span>
-<p><img data-src="/2024/06/16/2024-06-16-join-sp500/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
-<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/06/16/2024-06-16-join-sp500/image2.png"><br><img data-src="/2024/06/16/2024-06-16-join-sp500/image3.png"></p>
-<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>继续捡钱，每天几百块！</title>
     <url>/2024/06/27/2024-06-27-keep-picking-up-money-a-few-hundred-rmb-a-day/</url>
     <content><![CDATA[<p><font color='red'><strong>每日操作计划：</strong></font></p>
@@ -6023,6 +6007,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 ]]></content>
       <categories>
         <category>套利往事</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>质疑标普，理解标普，加入标普</title>
+    <url>/2024/06/16/2024-06-16-join-sp500/</url>
+    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
+<span id="more"></span>
+<p><img data-src="/2024/06/16/2024-06-16-join-sp500/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
+<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/06/16/2024-06-16-join-sp500/image2.png"><br><img data-src="/2024/06/16/2024-06-16-join-sp500/image3.png"></p>
+<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -6192,27 +6192,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</title>
-    <url>/2024/07/12/2024-07-12-nic-con-show-wired-connection-one-after-upgrade-from-centos7-to-rocky9/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/07/12/2024-07-12-nic-con-show-wired-connection-one-after-upgrade-from-centos7-to-rocky9/image1.png"><br>查看<code>/etc/NetworkManager/system-connections/</code>，发现找不到网卡配置文件。</p>
-<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>centos7使用的网卡配置文件是ifcfg-files(<code>/etc/sysconfig/network-scripts/ifcfg-XXX</code>)，而RHEL9使用的是keyfiles(<code>/etc/NetworkManager/system-connections/XXX.nmconnection</code>)。<br>升级到Rocky 9后，需要把eth0网卡重新配置一下。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>使用nmcli，先删除’Wired connection 1’这个连接，再为eth0网卡生成新的连接，方法如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 删除 Wired connection 1 连接</span><br><span class="line">nmcli dev disconnect eth0</span><br><span class="line">nmcli con del c04f10b8-8831-3d68-9b79-2ac22907357c # nmcli con show 查找`Wired connection 1`连接的uuid，根据uuid删除连接</span><br><span class="line">ip -4 route flush dev eth0</span><br><span class="line"></span><br><span class="line"># 重新生成eth0连接 (这里设置static IP 10.206.216.91，网关10.206.216.254, dns 8.8.8.8)</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes  type ethernet ifname eth0 ipv4.method manual ip4 &quot;10.206.216.91/24&quot; gw4 &quot;10.206.216.254&quot;  ipv4.dns &quot;8.8.8.8&quot;</span><br><span class="line">nmcli c up eth0</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles">https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标普印度基金关门，继续套利美元债LOF</title>
     <url>/2024/07/14/2024-07-14-india-fund-close-and-arbitrage-usd-bond-lof/</url>
     <content><![CDATA[<p>7月8号印度基金(164824)宣布暂停申购，7月11号标普信息科技(161128)也宣布关门。</p>
@@ -6236,6 +6215,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</title>
+    <url>/2024/07/12/2024-07-12-nic-con-show-wired-connection-one-after-upgrade-from-centos7-to-rocky9/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/07/12/2024-07-12-nic-con-show-wired-connection-one-after-upgrade-from-centos7-to-rocky9/image1.png"><br>查看<code>/etc/NetworkManager/system-connections/</code>，发现找不到网卡配置文件。</p>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>centos7使用的网卡配置文件是ifcfg-files(<code>/etc/sysconfig/network-scripts/ifcfg-XXX</code>)，而RHEL9使用的是keyfiles(<code>/etc/NetworkManager/system-connections/XXX.nmconnection</code>)。<br>升级到Rocky 9后，需要把eth0网卡重新配置一下。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>使用nmcli，先删除’Wired connection 1’这个连接，再为eth0网卡生成新的连接，方法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 删除 Wired connection 1 连接</span><br><span class="line">nmcli dev disconnect eth0</span><br><span class="line">nmcli con del c04f10b8-8831-3d68-9b79-2ac22907357c # nmcli con show 查找`Wired connection 1`连接的uuid，根据uuid删除连接</span><br><span class="line">ip -4 route flush dev eth0</span><br><span class="line"></span><br><span class="line"># 重新生成eth0连接 (这里设置static IP 10.206.216.91，网关10.206.216.254, dns 8.8.8.8)</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes  type ethernet ifname eth0 ipv4.method manual ip4 &quot;10.206.216.91/24&quot; gw4 &quot;10.206.216.254&quot;  ipv4.dns &quot;8.8.8.8&quot;</span><br><span class="line">nmcli c up eth0</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles">https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -6730,6 +6730,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>iptables单个multiport规则最多只能指定15个端口问题的解决方法</title>
+    <url>/2024/09/12/2024-09-12-iptables-multiport-limit-15-ports/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我想通过iptables允许以下这20个端口通过：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">iptables -A INPUT -p tcp -i eth0 -m multiport --dports 22,80,443,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46 -j ACCEPT</span><br></pre></td></tr></table></figure>
+<p>执行后报错，<code>iptables: too many ports specified</code></p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>查看<a href="https://linux.die.net/man/8/iptables">iptables官方文档</a>, 发现iptables单条multiports规则最多只支持15个端口。 原文如下： </p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">multiport</span><br><span class="line"></span><br><span class="line">This module matches a set of source or destination ports. Up to 15 ports can be specified. A port range (port:port) counts as two ports. It can only be used in conjunction with -p tcp or -p udp.</span><br></pre></td></tr></table></figure>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>每15个端口新增一条multiport的rule即可, 代码参考:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">all_ports=<span class="string">&quot;22,80,443,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46&quot;</span></span><br><span class="line">ports_array=($(<span class="built_in">echo</span> <span class="variable">$all_ports</span> | <span class="built_in">tr</span> <span class="string">&#x27;,&#x27;</span> <span class="string">&#x27; &#x27;</span>))</span><br><span class="line">ports=<span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="variable">$&#123;#ports_array[@]&#125;</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">    ports+=<span class="string">&quot;<span class="variable">$&#123;ports_array[$i]&#125;</span>,&quot;</span></span><br><span class="line">    <span class="comment"># One iptables multiports rule supports at most 15 ports</span></span><br><span class="line">    <span class="keyword">if</span> (( (i + <span class="number">1</span>) % <span class="number">15</span> == <span class="number">0</span> || i == <span class="variable">$&#123;#ports_array[@]&#125;</span> - <span class="number">1</span> )); <span class="keyword">then</span></span><br><span class="line">        ports=<span class="variable">$&#123;ports%,&#125;</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;ports: <span class="variable">$&#123;ports&#125;</span>&quot;</span></span><br><span class="line">        <span class="built_in">sudo</span> iptables -I INPUT -p tcp -m multiport --dports <span class="variable">$&#123;ports&#125;</span> -j ACCEPT</span><br><span class="line">        <span class="built_in">sudo</span> iptables -I INPUT -p tcp -m multiport --sports <span class="variable">$&#123;ports&#125;</span> -j ACCEPT</span><br><span class="line">        ports=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://linux.die.net/man/8/iptableshttps://linux.die.net/man/8/iptables">https://linux.die.net/man/8/iptables</a></p>
+]]></content>
+      <categories>
+        <category>iptables</category>
+      </categories>
+      <tags>
+        <tag>iptables</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>[MicroK8s] Unable to connect to the server: x509: certificate has expired or is not yet valid 问题定位案例</title>
     <url>/2024/09/05/2024-09-05-k8s-cert-is-not-yet-valid/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户有一台基于Hyper-V创建的RHEL9虚拟机, 安装了MicroK8s, 启动正常。<br>虚拟机重启后, kubectl报错: <code>Unable to connect to the server: x509: certificate has expired or is not yet valid</code></p>
@@ -6770,27 +6791,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>iptables单个multiport规则最多只能指定15个端口问题的解决方法</title>
-    <url>/2024/09/12/2024-09-12-iptables-multiport-limit-15-ports/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我想通过iptables允许以下这20个端口通过：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">iptables -A INPUT -p tcp -i eth0 -m multiport --dports 22,80,443,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46 -j ACCEPT</span><br></pre></td></tr></table></figure>
-<p>执行后报错，<code>iptables: too many ports specified</code></p>
-<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>查看<a href="https://linux.die.net/man/8/iptables">iptables官方文档</a>, 发现iptables单条multiports规则最多只支持15个端口。 原文如下： </p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">multiport</span><br><span class="line"></span><br><span class="line">This module matches a set of source or destination ports. Up to 15 ports can be specified. A port range (port:port) counts as two ports. It can only be used in conjunction with -p tcp or -p udp.</span><br></pre></td></tr></table></figure>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>每15个端口新增一条multiport的rule即可, 代码参考:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">all_ports=<span class="string">&quot;22,80,443,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46&quot;</span></span><br><span class="line">ports_array=($(<span class="built_in">echo</span> <span class="variable">$all_ports</span> | <span class="built_in">tr</span> <span class="string">&#x27;,&#x27;</span> <span class="string">&#x27; &#x27;</span>))</span><br><span class="line">ports=<span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="variable">$&#123;#ports_array[@]&#125;</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">    ports+=<span class="string">&quot;<span class="variable">$&#123;ports_array[$i]&#125;</span>,&quot;</span></span><br><span class="line">    <span class="comment"># One iptables multiports rule supports at most 15 ports</span></span><br><span class="line">    <span class="keyword">if</span> (( (i + <span class="number">1</span>) % <span class="number">15</span> == <span class="number">0</span> || i == <span class="variable">$&#123;#ports_array[@]&#125;</span> - <span class="number">1</span> )); <span class="keyword">then</span></span><br><span class="line">        ports=<span class="variable">$&#123;ports%,&#125;</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;ports: <span class="variable">$&#123;ports&#125;</span>&quot;</span></span><br><span class="line">        <span class="built_in">sudo</span> iptables -I INPUT -p tcp -m multiport --dports <span class="variable">$&#123;ports&#125;</span> -j ACCEPT</span><br><span class="line">        <span class="built_in">sudo</span> iptables -I INPUT -p tcp -m multiport --sports <span class="variable">$&#123;ports&#125;</span> -j ACCEPT</span><br><span class="line">        ports=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://linux.die.net/man/8/iptableshttps://linux.die.net/man/8/iptables">https://linux.die.net/man/8/iptables</a></p>
-]]></content>
-      <categories>
-        <category>iptables</category>
-      </categories>
-      <tags>
-        <tag>iptables</tag>
       </tags>
   </entry>
   <entry>
@@ -6867,6 +6867,30 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
+    <url>/2024/09/16/2024-09-16-mysqlclient-connot-install-via-pip/</url>
+    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
+<h2 id="安装mysqlclient报错"><a href="#安装mysqlclient报错" class="headerlink" title="安装mysqlclient报错"></a>安装mysqlclient报错</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+<p>报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm -i mysql84-community-release-el9-1.noarch.rpm</span><br><span class="line">yum install -y python3-devel mysql-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+<p><code>pip list</code> 命令查看已安装的mysqlclient信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip list  | grep mysqlclient</span><br><span class="line">mysqlclient         2.2.4</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
       </tags>
   </entry>
 </search>
