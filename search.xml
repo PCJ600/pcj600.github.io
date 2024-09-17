@@ -1260,37 +1260,6 @@
       </tags>
   </entry>
   <entry>
-    <title>sem_open打开信号量失败案例分析</title>
-    <url>/2020/11/14/2020-11-14-sem-open-failure-case/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
-<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
-<p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
-<span id="more"></span>
-
-<h4 id="为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？"><a href="#为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？" class="headerlink" title="为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？"></a>为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
-<ul>
-<li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
-<li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
-</ul>
-<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
-<p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
-
-<p>写法参考如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>设计跳表, C语言实现</title>
     <url>/2020/12/05/2020-12-05-design-skiplist-by-c/</url>
     <content><![CDATA[<h3 id="跳跃表简介"><a href="#跳跃表简介" class="headerlink" title="跳跃表简介"></a>跳跃表简介</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。其性能和红黑树相当，且跳跃表实现更为简单。</p>
@@ -1379,6 +1348,37 @@
       <tags>
         <tag>C</tag>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>sem_open打开信号量失败案例分析</title>
+    <url>/2020/11/14/2020-11-14-sem-open-failure-case/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
+<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
+<p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
+<span id="more"></span>
+
+<h4 id="为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？"><a href="#为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？" class="headerlink" title="为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？"></a>为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
+<ul>
+<li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
+<li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
+</ul>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
+<p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
+
+<p>写法参考如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -1576,66 +1576,6 @@
       </categories>
       <tags>
         <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>leetcode几道链表题解决思路</title>
-    <url>/2021/02/06/2021-02-06-leetcode-linkedlist-problems/</url>
-    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>LeetCode链表题汇总，记录解题思路，C&#x2F;C++语言实现。</p>
-<h3 id="LeetCode链表题"><a href="#LeetCode链表题" class="headerlink" title="LeetCode链表题"></a>LeetCode链表题</h3><ul>
-<li><p>判断链表是否有环 ：<a href="https://leetcode-cn.com/problems/linked-list-cycle/">https://leetcode-cn.com/problems/linked-list-cycle/</a></p>
-</li>
-<li><p>输出环形链表的入环点：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">https://leetcode-cn.com/problems/linked-list-cycle-ii/</a></p>
-</li>
-<li><p>输出链表中倒数第k个节点：<a href="https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/">https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/</a></p>
-</li>
-<li><p>反转链表：<a href="https://leetcode-cn.com/problems/reverse-linked-list/">https://leetcode-cn.com/problems/reverse-linked-list/</a></p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h3><h4 id="判断链表是否有环"><a href="#判断链表是否有环" class="headerlink" title="判断链表是否有环"></a>判断链表是否有环</h4><p>思路：快慢指针法。 慢指针每前进一步，快指针就前进两步。如果快慢指针能相遇，证明有环，反之无环。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * struct ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode *next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) : val(x), next(NULL) &#123;&#125;</span></span><br><span class="line"><span class="comment"> * &#125;;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">hasCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast = head;</span><br><span class="line">    ListNode *slow = head;</span><br><span class="line">    <span class="keyword">while</span> (fast != <span class="literal">NULL</span> &amp;&amp; fast-&gt;next != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123; <span class="comment">// 如果快慢指针能相遇，说明有环。</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="输出环形链表的入环点"><a href="#输出环形链表的入环点" class="headerlink" title="输出环形链表的入环点"></a>输出环形链表的入环点</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历一次链表，将遍历到的节点存储到哈希表，如果节点已经在哈希表中，说明有环，输出入环点。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度O(N),  空间复杂度O(N)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    std::unordered_map&lt;ListNode *, <span class="type">int</span>&gt; t; <span class="comment">// 用哈希表将遍历过节点保存下来</span></span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="keyword">if</span> (t.<span class="built_in">find</span>(head) != t.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">return</span> head;</span><br><span class="line">        &#125;</span><br><span class="line">        t[head] = <span class="number">1</span>;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 快慢指针法。创建fast, slow两个指针指向链表头，令fast前进速度为slow的两倍。当快慢指针相遇时，再创建一个指针p指向链表头, 让p和slow等速前进，p和slow必定会相遇，且相遇点即为入环点。</p>
-<p>数学证明参考：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/solution/huan-xing-lian-biao-ii-by-leetcode-solution/">LeetCode官方题解</a></p>
-<p><strong>复杂度分析：</strong> 时间复杂度O(N), 空间复杂度O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast, *slow;</span><br><span class="line">    fast = slow = head;</span><br><span class="line">    <span class="keyword">while</span>(fast) &#123;</span><br><span class="line">        <span class="keyword">if</span> (fast-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// fast前进速度为slow两倍</span></span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="comment">// 快慢指针相遇时，用一个指针p指向链表头，让p和slow同时前进，p和slow相遇点即为入环点，</span></span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123;</span><br><span class="line">            ListNode *p = head;</span><br><span class="line">            <span class="keyword">while</span> (p != slow) &#123;</span><br><span class="line">                p = p-&gt;next;</span><br><span class="line">                slow = slow-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> p;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="输出链表中倒数第k个节点"><a href="#输出链表中倒数第k个节点" class="headerlink" title="输出链表中倒数第k个节点"></a>输出链表中倒数第k个节点</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历两次单链表，第一次遍历求出链表长度记为len, 第二次遍历找到第len - k个节点并输出即可。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">	ListNode *cur = head;</span><br><span class="line">	<span class="keyword">while</span>(cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		++len;</span><br><span class="line">		cur = cur-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; len - k; ++i) &#123;</span><br><span class="line">		head = head-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 双指针法，设指针p, q，初始时将p指向链表头节点，q指向第k+1个节点，然后让p, q指针等速前进，当q为NULL时， p即为所求。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">    ListNode *front = head;</span><br><span class="line">    ListNode *behind = head;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123;</span><br><span class="line">    	front = front-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">while</span>(front != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        front = front-&gt;next;</span><br><span class="line">        behind = behind-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> behind;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="反转链表"><a href="#反转链表" class="headerlink" title="反转链表"></a>反转链表</h4><p>以下给出两种思路：</p>
-<p><strong>方法一：</strong> 遍历原链表，依次对每个节点用头插法创建新链表并返回。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(N)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *l = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="comment">// 依次对每个节点用头插法创建新链表</span></span><br><span class="line">        ListNode *s = <span class="keyword">new</span> <span class="built_in">ListNode</span>(head-&gt;val, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span> (l == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            s-&gt;next = l;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>方法二：</strong> 迭代法，遍历单链表，依次改变每个节点的next指向即可。注意next指向改变后，就无法访问下一个节点了，所以要在改next指针之前，用一个临时指针保存next指向的节点。</p>
-<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(1)</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *pre = <span class="literal">NULL</span>;</span><br><span class="line">    ListNode *cur = head;</span><br><span class="line">    <span class="keyword">for</span>( ; cur != <span class="literal">NULL</span> ; ) &#123;</span><br><span class="line">        ListNode *tmpNext = cur-&gt;next; <span class="comment">// 用临时指针暂存next指向的节点</span></span><br><span class="line">        cur-&gt;next = pre;</span><br><span class="line">        pre = cur;</span><br><span class="line">        cur = tmpNext;	<span class="comment">// 当前节点next值改变后，从临时指针恢复下一个需遍历的节点</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> pre;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>LeetCode</category>
-      </categories>
-      <tags>
-        <tag>LeetCode</tag>
       </tags>
   </entry>
   <entry>
@@ -1895,6 +1835,66 @@
       </categories>
       <tags>
         <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>leetcode几道链表题解决思路</title>
+    <url>/2021/02/06/2021-02-06-leetcode-linkedlist-problems/</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>LeetCode链表题汇总，记录解题思路，C&#x2F;C++语言实现。</p>
+<h3 id="LeetCode链表题"><a href="#LeetCode链表题" class="headerlink" title="LeetCode链表题"></a>LeetCode链表题</h3><ul>
+<li><p>判断链表是否有环 ：<a href="https://leetcode-cn.com/problems/linked-list-cycle/">https://leetcode-cn.com/problems/linked-list-cycle/</a></p>
+</li>
+<li><p>输出环形链表的入环点：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/">https://leetcode-cn.com/problems/linked-list-cycle-ii/</a></p>
+</li>
+<li><p>输出链表中倒数第k个节点：<a href="https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/">https://leetcode-cn.com/problems/lian-biao-zhong-dao-shu-di-kge-jie-dian-lcof/</a></p>
+</li>
+<li><p>反转链表：<a href="https://leetcode-cn.com/problems/reverse-linked-list/">https://leetcode-cn.com/problems/reverse-linked-list/</a></p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h3><h4 id="判断链表是否有环"><a href="#判断链表是否有环" class="headerlink" title="判断链表是否有环"></a>判断链表是否有环</h4><p>思路：快慢指针法。 慢指针每前进一步，快指针就前进两步。如果快慢指针能相遇，证明有环，反之无环。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Definition for singly-linked list.</span></span><br><span class="line"><span class="comment"> * struct ListNode &#123;</span></span><br><span class="line"><span class="comment"> *     int val;</span></span><br><span class="line"><span class="comment"> *     ListNode *next;</span></span><br><span class="line"><span class="comment"> *     ListNode(int x) : val(x), next(NULL) &#123;&#125;</span></span><br><span class="line"><span class="comment"> * &#125;;</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">hasCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast = head;</span><br><span class="line">    ListNode *slow = head;</span><br><span class="line">    <span class="keyword">while</span> (fast != <span class="literal">NULL</span> &amp;&amp; fast-&gt;next != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123; <span class="comment">// 如果快慢指针能相遇，说明有环。</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="输出环形链表的入环点"><a href="#输出环形链表的入环点" class="headerlink" title="输出环形链表的入环点"></a>输出环形链表的入环点</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历一次链表，将遍历到的节点存储到哈希表，如果节点已经在哈希表中，说明有环，输出入环点。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度O(N),  空间复杂度O(N)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    std::unordered_map&lt;ListNode *, <span class="type">int</span>&gt; t; <span class="comment">// 用哈希表将遍历过节点保存下来</span></span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="keyword">if</span> (t.<span class="built_in">find</span>(head) != t.<span class="built_in">end</span>()) &#123;</span><br><span class="line">            <span class="keyword">return</span> head;</span><br><span class="line">        &#125;</span><br><span class="line">        t[head] = <span class="number">1</span>;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 快慢指针法。创建fast, slow两个指针指向链表头，令fast前进速度为slow的两倍。当快慢指针相遇时，再创建一个指针p指向链表头, 让p和slow等速前进，p和slow必定会相遇，且相遇点即为入环点。</p>
+<p>数学证明参考：<a href="https://leetcode-cn.com/problems/linked-list-cycle-ii/solution/huan-xing-lian-biao-ii-by-leetcode-solution/">LeetCode官方题解</a></p>
+<p><strong>复杂度分析：</strong> 时间复杂度O(N), 空间复杂度O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">    ListNode *fast, *slow;</span><br><span class="line">    fast = slow = head;</span><br><span class="line">    <span class="keyword">while</span>(fast) &#123;</span><br><span class="line">        <span class="keyword">if</span> (fast-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// fast前进速度为slow两倍</span></span><br><span class="line">        fast = fast-&gt;next-&gt;next;</span><br><span class="line">        slow = slow-&gt;next;</span><br><span class="line">        <span class="comment">// 快慢指针相遇时，用一个指针p指向链表头，让p和slow同时前进，p和slow相遇点即为入环点，</span></span><br><span class="line">        <span class="keyword">if</span> (fast == slow) &#123;</span><br><span class="line">            ListNode *p = head;</span><br><span class="line">            <span class="keyword">while</span> (p != slow) &#123;</span><br><span class="line">                p = p-&gt;next;</span><br><span class="line">                slow = slow-&gt;next;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> p;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="输出链表中倒数第k个节点"><a href="#输出链表中倒数第k个节点" class="headerlink" title="输出链表中倒数第k个节点"></a>输出链表中倒数第k个节点</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历两次单链表，第一次遍历求出链表长度记为len, 第二次遍历找到第len - k个节点并输出即可。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">	<span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">	ListNode *cur = head;</span><br><span class="line">	<span class="keyword">while</span>(cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		++len;</span><br><span class="line">		cur = cur-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; len - k; ++i) &#123;</span><br><span class="line">		head = head-&gt;next;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 双指针法，设指针p, q，初始时将p指向链表头节点，q指向第k+1个节点，然后让p, q指针等速前进，当q为NULL时， p即为所求。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度 O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">getKthFromEnd</span><span class="params">(ListNode* head, <span class="type">int</span> k)</span> </span>&#123;</span><br><span class="line">    ListNode *front = head;</span><br><span class="line">    ListNode *behind = head;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; k; ++i) &#123;</span><br><span class="line">    	front = front-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">while</span>(front != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        front = front-&gt;next;</span><br><span class="line">        behind = behind-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> behind;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="反转链表"><a href="#反转链表" class="headerlink" title="反转链表"></a>反转链表</h4><p>以下给出两种思路：</p>
+<p><strong>方法一：</strong> 遍历原链表，依次对每个节点用头插法创建新链表并返回。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(N)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *l = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">while</span>(head) &#123;</span><br><span class="line">        <span class="comment">// 依次对每个节点用头插法创建新链表</span></span><br><span class="line">        ListNode *s = <span class="keyword">new</span> <span class="built_in">ListNode</span>(head-&gt;val, <span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">if</span> (l == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            s-&gt;next = l;</span><br><span class="line">            l = s;</span><br><span class="line">        &#125;</span><br><span class="line">        head = head-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> l;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>方法二：</strong> 迭代法，遍历单链表，依次改变每个节点的next指向即可。注意next指向改变后，就无法访问下一个节点了，所以要在改next指针之前，用一个临时指针保存next指向的节点。</p>
+<p><strong>复杂度分析：</strong> 时间复杂度 O(N), 空间复杂度O(1)</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function">ListNode* <span class="title">reverseList</span><span class="params">(ListNode* head)</span> </span>&#123;</span><br><span class="line">    ListNode *pre = <span class="literal">NULL</span>;</span><br><span class="line">    ListNode *cur = head;</span><br><span class="line">    <span class="keyword">for</span>( ; cur != <span class="literal">NULL</span> ; ) &#123;</span><br><span class="line">        ListNode *tmpNext = cur-&gt;next; <span class="comment">// 用临时指针暂存next指向的节点</span></span><br><span class="line">        cur-&gt;next = pre;</span><br><span class="line">        pre = cur;</span><br><span class="line">        cur = tmpNext;	<span class="comment">// 当前节点next值改变后，从临时指针恢复下一个需遍历的节点</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> pre;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>LeetCode</category>
+      </categories>
+      <tags>
+        <tag>LeetCode</tag>
       </tags>
   </entry>
   <entry>
@@ -4289,6 +4289,41 @@
       </tags>
   </entry>
   <entry>
+    <title>使用systemd启动stunnel，并设置自动重启的方法</title>
+    <url>/2023/04/26/2023-04-26-use-systemd-to-start-stunnel/</url>
+    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p>运行环境: Centos7</p>
+<ol>
+<li><p>安装stunnel </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install stunnel</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编写systemd配置文件，放到<code>/usr/lib/systemd/system</code></p>
+</li>
+</ol>
+<span id="more"></span>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Stunnel Proxy Server</span><br><span class="line">After=network.target</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line">Type=forking</span><br><span class="line">User=root</span><br><span class="line">ExecStart=/usr/bin/stunnel /etc/stunnel/stunnel.conf</span><br><span class="line">Restart=always</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br></pre></td></tr></table></figure>
+
+<p>参数解释：</p>
+<ul>
+<li>Restart&#x3D;always 只要不是通过<code>systemctl stop</code>来停止服务，任何情况下都必须要重启服务，默认值为no</li>
+</ul>
+<ol start="3">
+<li>启动stunnel<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start stunnel</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="手动启动和停止stunnel的方法"><a href="#手动启动和停止stunnel的方法" class="headerlink" title="手动启动和停止stunnel的方法"></a>手动启动和停止stunnel的方法</h2><p>启动stunnel</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">stunnel /etc/stunnel/stunnel.conf</span><br></pre></td></tr></table></figure>
+<p>停止stunnel</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">kill</span> `<span class="built_in">cat</span> /var/run/stunnel.pid`</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-starting_stopping_restarting_stunnel">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;6&#x2F;html&#x2F;security_guide&#x2F;sect-starting_stopping_restarting_stunnel</a></p>
+]]></content>
+      <categories>
+        <category>systemd</category>
+      </categories>
+      <tags>
+        <tag>systemd</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何在Centos7上安装Microk8s</title>
     <url>/2023/03/31/2023-03-31-how-to-install-microk8s-on-centos7/</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
@@ -4337,41 +4372,6 @@
       </categories>
       <tags>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用systemd启动stunnel，并设置自动重启的方法</title>
-    <url>/2023/04/26/2023-04-26-use-systemd-to-start-stunnel/</url>
-    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p>运行环境: Centos7</p>
-<ol>
-<li><p>安装stunnel </p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install stunnel</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>编写systemd配置文件，放到<code>/usr/lib/systemd/system</code></p>
-</li>
-</ol>
-<span id="more"></span>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Stunnel Proxy Server</span><br><span class="line">After=network.target</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line">Type=forking</span><br><span class="line">User=root</span><br><span class="line">ExecStart=/usr/bin/stunnel /etc/stunnel/stunnel.conf</span><br><span class="line">Restart=always</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br></pre></td></tr></table></figure>
-
-<p>参数解释：</p>
-<ul>
-<li>Restart&#x3D;always 只要不是通过<code>systemctl stop</code>来停止服务，任何情况下都必须要重启服务，默认值为no</li>
-</ul>
-<ol start="3">
-<li>启动stunnel<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start stunnel</span><br></pre></td></tr></table></figure></li>
-</ol>
-<h2 id="手动启动和停止stunnel的方法"><a href="#手动启动和停止stunnel的方法" class="headerlink" title="手动启动和停止stunnel的方法"></a>手动启动和停止stunnel的方法</h2><p>启动stunnel</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">stunnel /etc/stunnel/stunnel.conf</span><br></pre></td></tr></table></figure>
-<p>停止stunnel</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">kill</span> `<span class="built_in">cat</span> /var/run/stunnel.pid`</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/security_guide/sect-starting_stopping_restarting_stunnel">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;6&#x2F;html&#x2F;security_guide&#x2F;sect-starting_stopping_restarting_stunnel</a></p>
-]]></content>
-      <categories>
-        <category>systemd</category>
-      </categories>
-      <tags>
-        <tag>systemd</tag>
       </tags>
   </entry>
   <entry>
@@ -4536,6 +4536,38 @@
       </tags>
   </entry>
   <entry>
+    <title>Traceroute简介和抓包</title>
+    <url>/2023/05/15/2023-05-15-traceroute-intro-and-use/</url>
+    <content><![CDATA[<h2 id="traceroute原理"><a href="#traceroute原理" class="headerlink" title="traceroute原理"></a>traceroute原理</h2><p>Traceroute 是一种网络诊断工具，用于确定数据包从一个源到达目的地所经过的路径。它通过发送一系列的数据包，并观察每个数据包经过的路由器（或称为跃点）来实现这一目的。</p>
+<span id="more"></span>
+
+<p><strong>工作原理：</strong></p>
+<ul>
+<li>Traceroute 发送一系列的 UDP 数据包，每个数据包都具有不同的 TTL（Time to Live）值。TTL 值表示数据包在网络中可经过的最大跃点数。</li>
+<li>当第一个数据包离开源设备时，它的 TTL 值被设置为 1。当该数据包到达网络中的第一个路由器时，路由器会将 TTL 值减 1，并转发该数据包。如果 TTL 值减为 0，路由器将丢弃该数据包并向源设备发送 ICMP 时间超时报文。</li>
+<li>源设备收到 ICMP 时间超时报文后，就知道了到达第一个路由器的路径。然后，源设备增加 TTL 值并发送第二个数据包，以便确定下一个路由器。</li>
+<li>这个过程不断重复，每次 TTL 值增加，直到数据包到达目的地。目的设备将收到数据包并向源设备发送 ICMP 端口不可达报文，从而终止 Traceroute 进程。</li>
+<li>Traceroute 将记录每个数据包的路径，包括每个跃点的 IP 地址和响应时间。最终将呈现给用户一张路由跟踪表，显示了数据包从源到目的地经过的所有路由器。</li>
+</ul>
+<p>总的来说，Traceroute 通过探测数据包的路径和响应时间，帮助网络管理员诊断网络连接问题，定位潜在的瓶颈或故障点。</p>
+<h2 id="traceroute用法"><a href="#traceroute用法" class="headerlink" title="traceroute用法"></a>traceroute用法</h2><p>Linux系统下，traceroute用法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">traceroute hostname</span><br></pre></td></tr></table></figure>
+<p>Windows系统使用tracert命令:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tracert hostname</span><br></pre></td></tr></table></figure>
+<h2 id="traceroute抓包"><a href="#traceroute抓包" class="headerlink" title="traceroute抓包"></a>traceroute抓包</h2><p>在宿主机10.206.216.95上执行<code>traceroute www.baidu.com</code>，通过<code>tcpdump</code>抓包，如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ifconfig ens192</span><br><span class="line">ens192: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 10.206.216.95  netmask 255.255.255.0  broadcast 10.206.216.255</span><br><span class="line">route</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">default         gateway         0.0.0.0         UG    100    0        0 ens192</span><br><span class="line">10.206.216.0    0.0.0.0         255.255.255.0   U     100    0        0 ens192</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 1</span></span><br><span class="line">$ tcpdump -i ens192 icmp and host 10.206.216.95 -w traceroute.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 2</span></span><br><span class="line">$ traceroute  www.baidu.com</span><br><span class="line">traceroute to www.baidu.com (36.155.132.55), 30 hops max, 60 byte packets</span><br><span class="line"> 1  gateway (10.206.216.254)  0.239 ms  0.152 ms  0.147 ms</span><br><span class="line"> 2  10.206.2.254 (10.206.2.254)  0.265 ms  0.274 ms  0.241 ms</span><br><span class="line"> 3  192.168.200.1 (192.168.200.1)  0.545 ms  0.506 ms  0.825 ms</span><br><span class="line"> 4  36.152.113.193 (36.152.113.193)  2.837 ms  3.182 ms  3.552 ms</span><br><span class="line"> 5  221.178.162.185 (221.178.162.185)  2.632 ms * *</span><br><span class="line"> 6  * * 183.207.54.161 (183.207.54.161)  3.116 ms</span><br><span class="line"> 7  183.207.67.106 (183.207.67.106)  3.576 ms 183.207.22.130 (183.207.22.130)  3.195 ms 183.207.66.102 (183.207.66.102)  3.638 ms</span><br><span class="line"> 8  * 36.155.156.46 (36.155.156.46)  3.884 ms 36.155.156.54 (36.155.156.54)  4.690 ms</span><br><span class="line"> 9  36.155.157.174 (36.155.157.174)  4.197 ms 36.155.157.170 (36.155.157.170)  4.344 ms  3.964 ms</span><br><span class="line">10  * * *</span><br><span class="line">11  * * *</span><br><span class="line">12  * * *</span><br><span class="line">13  * * *</span><br><span class="line">14  * * *</span><br><span class="line">15  * * *</span><br><span class="line">16  * * *</span><br><span class="line">17  * * *</span><br><span class="line">18  * * *</span><br><span class="line">19  * * *</span><br><span class="line">20  * * *</span><br><span class="line">21  * * *</span><br><span class="line">22  * * *</span><br><span class="line">23  * * *</span><br><span class="line">24  * * *</span><br><span class="line">25  * * *</span><br><span class="line">26  * * *</span><br><span class="line">27  * * *</span><br><span class="line">28  * * *</span><br><span class="line">29  * * *</span><br><span class="line">30  * * *</span><br></pre></td></tr></table></figure>
+<p>wireshark分析结果：<br><img data-src="/2023/05/15/2023-05-15-traceroute-intro-and-use/image1.png"></p>
+]]></content>
+      <categories>
+        <category>Network</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>Traceroute</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>pip基础用法示例</title>
     <url>/2023/05/25/2023-05-25-pip-basic-usage/</url>
     <content><![CDATA[<h2 id="配置国内源"><a href="#配置国内源" class="headerlink" title="配置国内源"></a>配置国内源</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[global]</span><br><span class="line">index-url = https://pypi.tuna.tsinghua.edu.cn/simple</span><br><span class="line">[install]</span><br><span class="line">trusted-host = https://pypi.tuna.tsinghua.edu.cn</span><br></pre></td></tr></table></figure>
@@ -4568,38 +4600,6 @@
       </categories>
       <tags>
         <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Traceroute简介和抓包</title>
-    <url>/2023/05/15/2023-05-15-traceroute-intro-and-use/</url>
-    <content><![CDATA[<h2 id="traceroute原理"><a href="#traceroute原理" class="headerlink" title="traceroute原理"></a>traceroute原理</h2><p>Traceroute 是一种网络诊断工具，用于确定数据包从一个源到达目的地所经过的路径。它通过发送一系列的数据包，并观察每个数据包经过的路由器（或称为跃点）来实现这一目的。</p>
-<span id="more"></span>
-
-<p><strong>工作原理：</strong></p>
-<ul>
-<li>Traceroute 发送一系列的 UDP 数据包，每个数据包都具有不同的 TTL（Time to Live）值。TTL 值表示数据包在网络中可经过的最大跃点数。</li>
-<li>当第一个数据包离开源设备时，它的 TTL 值被设置为 1。当该数据包到达网络中的第一个路由器时，路由器会将 TTL 值减 1，并转发该数据包。如果 TTL 值减为 0，路由器将丢弃该数据包并向源设备发送 ICMP 时间超时报文。</li>
-<li>源设备收到 ICMP 时间超时报文后，就知道了到达第一个路由器的路径。然后，源设备增加 TTL 值并发送第二个数据包，以便确定下一个路由器。</li>
-<li>这个过程不断重复，每次 TTL 值增加，直到数据包到达目的地。目的设备将收到数据包并向源设备发送 ICMP 端口不可达报文，从而终止 Traceroute 进程。</li>
-<li>Traceroute 将记录每个数据包的路径，包括每个跃点的 IP 地址和响应时间。最终将呈现给用户一张路由跟踪表，显示了数据包从源到目的地经过的所有路由器。</li>
-</ul>
-<p>总的来说，Traceroute 通过探测数据包的路径和响应时间，帮助网络管理员诊断网络连接问题，定位潜在的瓶颈或故障点。</p>
-<h2 id="traceroute用法"><a href="#traceroute用法" class="headerlink" title="traceroute用法"></a>traceroute用法</h2><p>Linux系统下，traceroute用法：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">traceroute hostname</span><br></pre></td></tr></table></figure>
-<p>Windows系统使用tracert命令:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tracert hostname</span><br></pre></td></tr></table></figure>
-<h2 id="traceroute抓包"><a href="#traceroute抓包" class="headerlink" title="traceroute抓包"></a>traceroute抓包</h2><p>在宿主机10.206.216.95上执行<code>traceroute www.baidu.com</code>，通过<code>tcpdump</code>抓包，如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ifconfig ens192</span><br><span class="line">ens192: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 10.206.216.95  netmask 255.255.255.0  broadcast 10.206.216.255</span><br><span class="line">route</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">default         gateway         0.0.0.0         UG    100    0        0 ens192</span><br><span class="line">10.206.216.0    0.0.0.0         255.255.255.0   U     100    0        0 ens192</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 1</span></span><br><span class="line">$ tcpdump -i ens192 icmp and host 10.206.216.95 -w traceroute.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 2</span></span><br><span class="line">$ traceroute  www.baidu.com</span><br><span class="line">traceroute to www.baidu.com (36.155.132.55), 30 hops max, 60 byte packets</span><br><span class="line"> 1  gateway (10.206.216.254)  0.239 ms  0.152 ms  0.147 ms</span><br><span class="line"> 2  10.206.2.254 (10.206.2.254)  0.265 ms  0.274 ms  0.241 ms</span><br><span class="line"> 3  192.168.200.1 (192.168.200.1)  0.545 ms  0.506 ms  0.825 ms</span><br><span class="line"> 4  36.152.113.193 (36.152.113.193)  2.837 ms  3.182 ms  3.552 ms</span><br><span class="line"> 5  221.178.162.185 (221.178.162.185)  2.632 ms * *</span><br><span class="line"> 6  * * 183.207.54.161 (183.207.54.161)  3.116 ms</span><br><span class="line"> 7  183.207.67.106 (183.207.67.106)  3.576 ms 183.207.22.130 (183.207.22.130)  3.195 ms 183.207.66.102 (183.207.66.102)  3.638 ms</span><br><span class="line"> 8  * 36.155.156.46 (36.155.156.46)  3.884 ms 36.155.156.54 (36.155.156.54)  4.690 ms</span><br><span class="line"> 9  36.155.157.174 (36.155.157.174)  4.197 ms 36.155.157.170 (36.155.157.170)  4.344 ms  3.964 ms</span><br><span class="line">10  * * *</span><br><span class="line">11  * * *</span><br><span class="line">12  * * *</span><br><span class="line">13  * * *</span><br><span class="line">14  * * *</span><br><span class="line">15  * * *</span><br><span class="line">16  * * *</span><br><span class="line">17  * * *</span><br><span class="line">18  * * *</span><br><span class="line">19  * * *</span><br><span class="line">20  * * *</span><br><span class="line">21  * * *</span><br><span class="line">22  * * *</span><br><span class="line">23  * * *</span><br><span class="line">24  * * *</span><br><span class="line">25  * * *</span><br><span class="line">26  * * *</span><br><span class="line">27  * * *</span><br><span class="line">28  * * *</span><br><span class="line">29  * * *</span><br><span class="line">30  * * *</span><br></pre></td></tr></table></figure>
-<p>wireshark分析结果：<br><img data-src="/2023/05/15/2023-05-15-traceroute-intro-and-use/image1.png"></p>
-]]></content>
-      <categories>
-        <category>Network</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>Traceroute</tag>
-        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -5104,6 +5104,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
     <url>/2023/08/22/2023-08-22-extrace-seq-in-python/</url>
     <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
@@ -5116,25 +5135,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>]</span><br><span class="line">first, *middle, last = grades</span><br><span class="line"><span class="built_in">print</span>(middle)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br></pre></td></tr></table></figure>
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p01_unpack_sequence_into_separate_variables.html">Python Cookbook 第一章</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
-    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
-    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5978,6 +5978,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>质疑标普，理解标普，加入标普</title>
+    <url>/2024/06/16/2024-06-16-join-sp500/</url>
+    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
+<span id="more"></span>
+<p><img data-src="/2024/06/16/2024-06-16-join-sp500/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
+<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/06/16/2024-06-16-join-sp500/image2.png"><br><img data-src="/2024/06/16/2024-06-16-join-sp500/image3.png"></p>
+<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>继续捡钱，每天几百块！</title>
     <url>/2024/06/27/2024-06-27-keep-picking-up-money-a-few-hundred-rmb-a-day/</url>
     <content><![CDATA[<p><font color='red'><strong>每日操作计划：</strong></font></p>
@@ -6007,22 +6023,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 ]]></content>
       <categories>
         <category>套利往事</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>质疑标普，理解标普，加入标普</title>
-    <url>/2024/06/16/2024-06-16-join-sp500/</url>
-    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
-<span id="more"></span>
-<p><img data-src="/2024/06/16/2024-06-16-join-sp500/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
-<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/06/16/2024-06-16-join-sp500/image2.png"><br><img data-src="/2024/06/16/2024-06-16-join-sp500/image3.png"></p>
-<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -6155,21 +6155,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Win11右键默认显示更多选项的方法</title>
-    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
-<span id="more"></span>
-<p><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
-<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
-]]></content>
-      <categories>
-        <category>Win</category>
-      </categories>
-      <tags>
-        <tag>Win</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何修复Rocky Linux 9 OpenSSH CVE-2024-6387漏洞</title>
     <url>/2024/07/10/2024-07-10-how-to-fix-openssh-cve-2024-6387-in-rockylinux9/</url>
     <content><![CDATA[<p>关于漏洞的详细说明，参考Rocky官方文档：<a href="https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression">https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression</a></p>
@@ -6189,6 +6174,42 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Win11右键默认显示更多选项的方法</title>
+    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
+<span id="more"></span>
+<p><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
+<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
+]]></content>
+      <categories>
+        <category>Win</category>
+      </categories>
+      <tags>
+        <tag>Win</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</title>
+    <url>/2024/07/12/2024-07-12-nic-con-show-wired-connection-one-after-upgrade-from-centos7-to-rocky9/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/07/12/2024-07-12-nic-con-show-wired-connection-one-after-upgrade-from-centos7-to-rocky9/image1.png"><br>查看<code>/etc/NetworkManager/system-connections/</code>，发现找不到网卡配置文件。</p>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>centos7使用的网卡配置文件是ifcfg-files(<code>/etc/sysconfig/network-scripts/ifcfg-XXX</code>)，而RHEL9使用的是keyfiles(<code>/etc/NetworkManager/system-connections/XXX.nmconnection</code>)。<br>升级到Rocky 9后，需要把eth0网卡重新配置一下。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>使用nmcli，先删除’Wired connection 1’这个连接，再为eth0网卡生成新的连接，方法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 删除 Wired connection 1 连接</span><br><span class="line">nmcli dev disconnect eth0</span><br><span class="line">nmcli con del c04f10b8-8831-3d68-9b79-2ac22907357c # nmcli con show 查找`Wired connection 1`连接的uuid，根据uuid删除连接</span><br><span class="line">ip -4 route flush dev eth0</span><br><span class="line"></span><br><span class="line"># 重新生成eth0连接 (这里设置static IP 10.206.216.91，网关10.206.216.254, dns 8.8.8.8)</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes  type ethernet ifname eth0 ipv4.method manual ip4 &quot;10.206.216.91/24&quot; gw4 &quot;10.206.216.254&quot;  ipv4.dns &quot;8.8.8.8&quot;</span><br><span class="line">nmcli c up eth0</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles">https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -6215,27 +6236,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</title>
-    <url>/2024/07/12/2024-07-12-nic-con-show-wired-connection-one-after-upgrade-from-centos7-to-rocky9/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/07/12/2024-07-12-nic-con-show-wired-connection-one-after-upgrade-from-centos7-to-rocky9/image1.png"><br>查看<code>/etc/NetworkManager/system-connections/</code>，发现找不到网卡配置文件。</p>
-<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>centos7使用的网卡配置文件是ifcfg-files(<code>/etc/sysconfig/network-scripts/ifcfg-XXX</code>)，而RHEL9使用的是keyfiles(<code>/etc/NetworkManager/system-connections/XXX.nmconnection</code>)。<br>升级到Rocky 9后，需要把eth0网卡重新配置一下。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>使用nmcli，先删除’Wired connection 1’这个连接，再为eth0网卡生成新的连接，方法如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 删除 Wired connection 1 连接</span><br><span class="line">nmcli dev disconnect eth0</span><br><span class="line">nmcli con del c04f10b8-8831-3d68-9b79-2ac22907357c # nmcli con show 查找`Wired connection 1`连接的uuid，根据uuid删除连接</span><br><span class="line">ip -4 route flush dev eth0</span><br><span class="line"></span><br><span class="line"># 重新生成eth0连接 (这里设置static IP 10.206.216.91，网关10.206.216.254, dns 8.8.8.8)</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes  type ethernet ifname eth0 ipv4.method manual ip4 &quot;10.206.216.91/24&quot; gw4 &quot;10.206.216.254&quot;  ipv4.dns &quot;8.8.8.8&quot;</span><br><span class="line">nmcli c up eth0</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles">https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -6837,10 +6837,88 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>提交表单后报错: CSRF verification failed, Forbidden(403)<br>解决方法: 在form表单里加<code>&#123;% csrf_token %&#125;</code></p>
 <figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>User Login<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">form</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span> <span class="attr">action</span>=<span class="string">&quot;/login/&quot;</span>&gt;</span></span><br><span class="line">	&#123;% csrf_token %&#125;</span><br><span class="line">       <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span>, <span class="attr">name</span>=<span class="string">&quot;user&quot;</span>, <span class="attr">placeholder</span>=<span class="string">&quot;Username&quot;</span>/&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;password&quot;</span>, <span class="attr">name</span>=<span class="string">&quot;password&quot;</span>, <span class="attr">placeholder</span>=<span class="string">&quot;Password&quot;</span>/&gt;</span></span><br><span class="line">       <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;submit&quot;</span> <span class="attr">value</span>=<span class="string">&quot;Submit&quot;</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
+<h2 id="Django连接MySQL数据库"><a href="#Django连接MySQL数据库" class="headerlink" title="Django连接MySQL数据库"></a>Django连接MySQL数据库</h2><p>框架：业务代码 -&gt; ORM -&gt; (pymysql,MySQLdb,mysqlclient) -&gt; Database</p>
+<h3 id="安装MySQL"><a href="#安装MySQL" class="headerlink" title="安装MySQL"></a>安装MySQL</h3><p>参考: <a href="https://pcj600.github.io/2024/09/16/2024-09-16-how-to-install-mysql-on-rhel9/">https://pcj600.github.io/2024/09/16/2024-09-16-how-to-install-mysql-on-rhel9/</a></p>
+<h3 id="安装mysqlclient"><a href="#安装mysqlclient" class="headerlink" title="安装mysqlclient"></a>安装mysqlclient</h3><p>参考: <a href="https://pcj600.github.io/2024/09/16/2024-09-16-mysqlclient-connot-install-via-pip/">https://pcj600.github.io/2024/09/16/2024-09-16-mysqlclient-connot-install-via-pip/</a></p>
+<h3 id="ORM"><a href="#ORM" class="headerlink" title="ORM"></a>ORM</h3><ul>
+<li>支持创建、修改、删除表(不用你写SQL语句), 但无法创建数据库</li>
+<li>操作表中的数据(不用你写SQL语句)</li>
+</ul>
+<h3 id="创建数据库"><a href="#创建数据库" class="headerlink" title="创建数据库"></a>创建数据库</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u root -p </span><br><span class="line">create database gx_day15 DEFAULT CHARSET utf8 COLLATE utf8_general_ci;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>DEFAULT CHARSET utf8: 指定了数据库的默认字符集。</li>
+<li>COLLATE utf8_general_ci: 表示使用 utf8 字符集的不区分大小写的校对规则(ci 表示 case-insensitive)s</li>
+</ul>
+<h3 id="连接数据库"><a href="#连接数据库" class="headerlink" title="连接数据库"></a>连接数据库</h3><p><a href="https://docs.djangoproject.com/en/5.1/ref/databases/#mysql-notes">https://docs.djangoproject.com/en/5.1/ref/databases/#mysql-notes</a></p>
+<p>编辑demo1&#x2F;settings.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line">DATABASES = &#123;</span><br><span class="line">	<span class="string">&#x27;default&#x27;</span> = &#123;</span><br><span class="line">		<span class="string">&#x27;ENGINE&#x27;</span>: <span class="string">&#x27;django.db.backends.mysql&#x27;</span>,</span><br><span class="line">		<span class="string">&#x27;NAME&#x27;</span>: <span class="string">&#x27;gx_day15&#x27;</span>,</span><br><span class="line">		<span class="string">&#x27;USER&#x27;</span>: <span class="string">&#x27;root&#x27;</span>,</span><br><span class="line">		<span class="string">&#x27;PASSWORD&#x27;</span>: <span class="string">&#x27;XXX&#x27;</span>,</span><br><span class="line">		<span class="string">&#x27;HOST&#x27;</span>: <span class="string">&#x27;localhost&#x27;</span>,</span><br><span class="line">		<span class="string">&#x27;PORT&#x27;</span>: <span class="number">3306</span>,</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="创建、修改表"><a href="#创建、修改表" class="headerlink" title="创建、修改表"></a>创建、修改表</h3><p>创建表不需要写SQL语句，只需在app01&#x2F;models.py里定义一个类</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">UserInfo</span>(models.Model):</span><br><span class="line">	name = models.CharField(max_length=<span class="number">32</span>)</span><br><span class="line">	password = models.CharField(max_length=<span class="number">64</span>)</span><br><span class="line">	age = models.IntergerField(default=<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+<p>相当于创建了一个表，表名: app01_userinfo</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> app01_userinfo(</span><br><span class="line">	id <span class="type">bigint</span> auto_increment <span class="keyword">primary</span> key,</span><br><span class="line">	name <span class="type">varchar</span>[<span class="number">32</span>],</span><br><span class="line">	password <span class="type">varchar</span>[<span class="number">64</span>],</span><br><span class="line">	age <span class="type">int</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>执行命令，让Django真正创建表。<br>先确认APP已经注册：demo1&#x2F;settings.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line">INSTALLED_APPS = [</span><br><span class="line">    <span class="string">&#x27;app01.apps.App01Config&#x27;</span>,</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>在项目根目录执行:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">python3 manage.py makemigrations</span><br><span class="line">python3 manage.py migrate</span><br></pre></td></tr></table></figure>
 
+<p>查看表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u root -p </span><br><span class="line">mysql&gt; use gx_day15;</span><br><span class="line">mysql&gt; desc app01_userinfo;</span><br><span class="line">+----------+-------------+------+-----+---------+----------------+</span><br><span class="line">| Field    | Type        | Null | Key | Default | Extra          |</span><br><span class="line">+----------+-------------+------+-----+---------+----------------+</span><br><span class="line">| id       | bigint      | NO   | PRI | NULL    | auto_increment |</span><br><span class="line">| name     | varchar(32) | NO   |     | NULL    |                |</span><br><span class="line">| password | varchar(64) | NO   |     | NULL    |                |</span><br><span class="line">| age      | int         | NO   |     | NULL    |                |</span><br><span class="line">+----------+-------------+------+-----+---------+----------------+</span><br><span class="line">4 rows in set (0.01 sec)</span><br></pre></td></tr></table></figure>
 
+<p>表中新增列时，由于已存在列中可能已有数据，所以新增列必须要指定新增列对应的数据:</p>
+<ul>
+<li>手动输入一个值</li>
+<li>设置默认值</li>
+</ul>
+<p>删除表: 在models.py里删掉对应的类，再执行</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line">python3 manage.py makemigrations</span><br><span class="line">python3 manage.py migrate</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<h3 id="创建表中的数据"><a href="#创建表中的数据" class="headerlink" title="创建表中的数据"></a>创建表中的数据</h3><p>app01&#x2F;models.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Department</span>(models.Model):</span><br><span class="line">    title = models.CharField(max_length=<span class="number">16</span>)</span><br></pre></td></tr></table></figure>
+<p>app01&#x2F;views.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> app01.models <span class="keyword">import</span> Department,UserInfo</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">orm</span>(<span class="params">request</span>):</span><br><span class="line">    Department.objects.create(title=<span class="string">&#x27;sales&#x27;</span>)</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&#x27;ORM OK&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="删除表中数据"><a href="#删除表中数据" class="headerlink" title="删除表中数据"></a>删除表中数据</h3><p>app01&#x2F;views.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> app01.models <span class="keyword">import</span> Department,UserInfo</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">orm</span>(<span class="params">request</span>):</span><br><span class="line">    Department.objects.<span class="built_in">filter</span>(title=<span class="string">&#x27;sales&#x27;</span>).delete() <span class="comment"># 删掉所有title=sales的数据</span></span><br><span class="line">	Department.objects.<span class="built_in">all</span>().delete() <span class="comment"># 所有数据都删掉</span></span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&#x27;ORM OK&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<h3 id="更新表中数据"><a href="#更新表中数据" class="headerlink" title="更新表中数据"></a>更新表中数据</h3><figure class="highlight py"><table><tr><td class="code"><pre><span class="line">data_list = UserInfo.objects.<span class="built_in">all</span>()</span><br><span class="line"><span class="keyword">for</span> obj <span class="keyword">in</span> data_list:</span><br><span class="line">	<span class="built_in">print</span>(obj.<span class="built_in">id</span>, obj.name, obj.password)</span><br><span class="line">	</span><br><span class="line">	<span class="comment"># data_list = UserInfo.objects.filter(id=1)</span></span><br><span class="line">	o = UserInfo.objects.<span class="built_in">filter</span>(<span class="built_in">id</span>=<span class="number">1</span>).first()</span><br><span class="line">	<span class="built_in">print</span>(o.<span class="built_in">id</span>, o.name, o.password)</span><br><span class="line">	</span><br><span class="line">	<span class="comment"># 更新所有行的数据</span></span><br><span class="line">	UserInfo.objects.<span class="built_in">all</span>().update(password=<span class="string">&#x27;123456&#x27;</span>)</span><br><span class="line"></span><br><span class="line">	UserInfo.objects.<span class="built_in">filter</span>(name=<span class="string">&#x27;peter&#x27;</span>).update(password=<span class="string">&#x27;123456&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>objects.all()返回queryset类型，每个元素是一个对象</li>
+<li>UserInfo.objects.filter(id&#x3D;1).first() 返回符合筛选条件的第一条数据</li>
+</ul>
+<h2 id="数据库操作的案例-——-用户管理"><a href="#数据库操作的案例-——-用户管理" class="headerlink" title="数据库操作的案例 —— 用户管理"></a>数据库操作的案例 —— 用户管理</h2><h3 id="显示用户"><a href="#显示用户" class="headerlink" title="显示用户"></a>显示用户</h3><p>app01&#x2F;models.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.db <span class="keyword">import</span> models</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">UserInfo</span>(models.Model):</span><br><span class="line">    name = models.CharField(max_length=<span class="number">32</span>)</span><br><span class="line">    password = models.CharField(max_length=<span class="number">64</span>)</span><br><span class="line">    age = models.IntegerField(default=<span class="number">18</span>)</span><br></pre></td></tr></table></figure>
+<p>查看数据库</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">desc</span> app01_userinfo;</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+-------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> Field    <span class="operator">|</span> Type        <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Key <span class="operator">|</span> <span class="keyword">Default</span> <span class="operator">|</span> Extra          <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+-------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> id       <span class="operator">|</span> <span class="type">bigint</span>      <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span> PRI <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span> auto_increment <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> name     <span class="operator">|</span> <span class="type">varchar</span>(<span class="number">32</span>) <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span>     <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> password <span class="operator">|</span> <span class="type">varchar</span>(<span class="number">64</span>) <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span>     <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> age      <span class="operator">|</span> <span class="type">int</span>         <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span>     <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+-------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="number">4</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> app01_userinfo;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+-------+----------+-----+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> name  <span class="operator">|</span> password <span class="operator">|</span> age <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-------+----------+-----+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> peter <span class="operator">|</span> <span class="number">123</span>      <span class="operator">|</span>  <span class="number">18</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">2</span> <span class="operator">|</span> jack  <span class="operator">|</span> <span class="number">123</span>      <span class="operator">|</span>  <span class="number">18</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-------+----------+-----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
+<p>显示用户列表<br>demo1&#x2F;urls.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> app01 <span class="keyword">import</span> views</span><br><span class="line">urlpatterns = [</span><br><span class="line">    path(<span class="string">&#x27;user/info/&#x27;</span>, views.user_info),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>app01&#x2F;views.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">user_info</span>(<span class="params">request</span>):</span><br><span class="line">    user_list = UserInfo.objects.<span class="built_in">all</span>()</span><br><span class="line">    <span class="keyword">return</span> render(request, <span class="string">&quot;user_info.html&quot;</span>, &#123;<span class="string">&quot;user_list&quot;</span>: user_list&#125;)</span><br></pre></td></tr></table></figure>
+<p>app01&#x2F;templates&#x2F;user_info.html</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span><span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">title</span>&gt;</span>Title<span class="tag">&lt;/<span class="name">title</span>&gt;</span><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">table</span> <span class="attr">border</span>=<span class="string">&quot;1&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">thead</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">tr</span>&gt;</span><span class="tag">&lt;<span class="name">th</span>&gt;</span>ID<span class="tag">&lt;/<span class="name">th</span>&gt;</span><span class="tag">&lt;<span class="name">th</span>&gt;</span>Name<span class="tag">&lt;/<span class="name">th</span>&gt;</span><span class="tag">&lt;<span class="name">th</span>&gt;</span>Password<span class="tag">&lt;/<span class="name">th</span>&gt;</span><span class="tag">&lt;<span class="name">th</span>&gt;</span>Age<span class="tag">&lt;/<span class="name">th</span>&gt;</span><span class="tag">&lt;/<span class="name">tr</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">thead</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">tbody</span>&gt;</span></span><br><span class="line">        &#123;% for user in user_list %&#125;</span><br><span class="line">            <span class="tag">&lt;<span class="name">tr</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; user.id &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; user.name &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; user.password &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; user.age &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">tr</span>&gt;</span></span><br><span class="line">        &#123;% endfor %&#125;</span><br><span class="line">        <span class="tag">&lt;/<span class="name">tbody</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">table</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="添加用户"><a href="#添加用户" class="headerlink" title="添加用户"></a>添加用户</h3><p>用户在页面的表单上输入用户信息, 再通过POST请求提交<br>demo1&#x2F;urls.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line">urlpatterns = [</span><br><span class="line">	<span class="comment"># ...</span></span><br><span class="line">    path(<span class="string">&#x27;info/add/&#x27;</span>, views.user_add),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>app01&#x2F;views.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> app01.models <span class="keyword">import</span> Department,UserInfo</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">user_add</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">if</span> request.method == <span class="string">&quot;GET&quot;</span>:</span><br><span class="line">        <span class="keyword">return</span> render(request, <span class="string">&quot;user_add.html&quot;</span>)</span><br><span class="line"></span><br><span class="line">    username = request.POST.get(<span class="string">&quot;user&quot;</span>)</span><br><span class="line">    password = request.POST.get(<span class="string">&quot;password&quot;</span>)</span><br><span class="line">    age = request.POST.get(<span class="string">&quot;age&quot;</span>)</span><br><span class="line">    UserInfo.objects.create(name=username, password=password, age=age)</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;ADD USER &#123;&#125; pwd: &#123;&#125; age: &#123;&#125; Done&quot;</span>.<span class="built_in">format</span>(username, password, age))</span><br></pre></td></tr></table></figure>
+
+<p>app01&#x2F;templates&#x2F;user_add.html</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;% load static %&#125;</span><br><span class="line">&lt;!DOCTYPE html&gt;</span><br><span class="line">&lt;html lang=&quot;en&quot;&gt;</span><br><span class="line">&lt;head&gt;&lt;meta charset=&quot;UTF-8&quot;&gt;&lt;title&gt;User Add&lt;/title&gt;&lt;/head&gt;</span><br><span class="line">&lt;body&gt;</span><br><span class="line">    &lt;form method=&quot;post&quot;&gt; &lt;!-- action可以省略 --&gt;</span><br><span class="line">        &#123;% csrf_token %&#125;</span><br><span class="line">        &lt;input type=&quot;text&quot; name=&quot;user&quot;, placeholder=&quot;username&quot; /&gt;</span><br><span class="line">        &lt;input type=&quot;text&quot; name=&quot;password&quot;, placeholder=&quot;password&quot; /&gt;</span><br><span class="line">        &lt;input type=&quot;text&quot; name=&quot;age&quot;, placeholder=&quot;age&quot; /&gt;</span><br><span class="line">        &lt;input type=&quot;submit&quot; value=&quot;submit&quot; /&gt;</span><br><span class="line">    &lt;/form&gt;</span><br><span class="line">&lt;/body&gt;</span><br><span class="line">&lt;/html&gt;</span><br></pre></td></tr></table></figure>
+<p>注：如果POST提交地址和当前页面地址一样，可以省略action&#x3D;”&#x2F;user&#x2F;add&#x2F;“</p>
+<p>添加成功后自动跳转到用户页面<br>app01&#x2F;views.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">user_add</span>(<span class="params">request</span>):</span><br><span class="line">	<span class="comment"># ...</span></span><br><span class="line">    <span class="keyword">return</span> redirect(<span class="string">&quot;/user/info&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>在用户页面中支持新增用户的功能</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&lt;a href=&quot;/user/add&quot;&gt;Add User&lt;/a&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="删除用户"><a href="#删除用户" class="headerlink" title="删除用户"></a>删除用户</h3><p>demo1&#x2F;urls.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> app01 <span class="keyword">import</span> views</span><br><span class="line">urlpatterns = [</span><br><span class="line">    path(<span class="string">&#x27;user/delete/&#x27;</span>, views.user_delete),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>app01&#x2F;views.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">user_delete</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">if</span> request.method == <span class="string">&quot;GET&quot;</span>:</span><br><span class="line">        <span class="keyword">return</span> render(request, <span class="string">&quot;user_delete.html&quot;</span>)</span><br><span class="line">    <span class="comment"># POST</span></span><br><span class="line">    username = request.POST.get(<span class="string">&quot;user&quot;</span>)</span><br><span class="line">    UserInfo.objects.<span class="built_in">filter</span>(name=username).delete()</span><br><span class="line">    <span class="keyword">return</span> redirect(<span class="string">&quot;/user/info&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>app01&#x2F;templates&#x2F;user_delete.html</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line">&#123;% load static %&#125;</span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span><span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">title</span>&gt;</span>User Delete<span class="tag">&lt;/<span class="name">title</span>&gt;</span><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">form</span> <span class="attr">method</span>=<span class="string">&quot;post&quot;</span>&gt;</span></span><br><span class="line">        &#123;% csrf_token %&#125;</span><br><span class="line">        <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;text&quot;</span> <span class="attr">name</span>=<span class="string">&quot;user&quot;</span>, <span class="attr">placeholder</span>=<span class="string">&quot;username&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;submit&quot;</span> <span class="attr">value</span>=<span class="string">&quot;submit&quot;</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>Django</category>
       </categories>
