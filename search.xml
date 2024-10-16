@@ -919,6 +919,24 @@
       </tags>
   </entry>
   <entry>
+    <title>解决Office无法找到应用程序许可证</title>
+    <url>/2020/08/15/2020-08-15-office-cannot-find-license/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>打开<code>office</code>软件失败，提示无法找到应用程序的许可证。</p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p><code>Software Protection</code>服务启动失败，可以通过<code>services.msc</code>查看该服务的启动状态</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改注册表，将如下文本复制到文件，文件名改为<code>software prtection服务.reg</code>, 双击该文件即可。</p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Windows Registry Editor Version 5.00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc]</span><br><span class="line">&quot;StartProtected&quot;=dword:00000001</span><br><span class="line">&quot;DisplayName&quot;=&quot;@%SystemRoot%\\system32\\sppsvc.exe,-101&quot;</span><br><span class="line">&quot;ErrorControl&quot;=dword:00000001</span><br><span class="line">&quot;ImagePath&quot;=hex(2):25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\</span><br><span class="line">  74,00,25,00,5c,00,73,00,79,00,73,00,74,00,65,00,6d,00,33,00,32,00,5c,00,73,\</span><br><span class="line">  00,70,00,70,00,73,00,76,00,63,00,2e,00,65,00,78,00,65,00,00,00</span><br><span class="line">&quot;Start&quot;=dword:00000002</span><br><span class="line">&quot;Type&quot;=dword:00000010</span><br><span class="line">&quot;Description&quot;=&quot;@%SystemRoot%\\system32\\sppsvc.exe,-100&quot;</span><br><span class="line">&quot;DependOnService&quot;=hex(7):52,00,70,00,63,00,53,00,73,00,00,00,00,00</span><br><span class="line">&quot;ObjectName&quot;=&quot;NT AUTHORITY\\NetworkService&quot;</span><br><span class="line">&quot;ServiceSidType&quot;=dword:00000001</span><br><span class="line">&quot;RequiredPrivileges&quot;=hex(7):53,00,65,00,41,00,75,00,64,00,69,00,74,00,50,00,72,\</span><br><span class="line">  00,69,00,76,00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,43,00,68,00,\</span><br><span class="line">  61,00,6e,00,67,00,65,00,4e,00,6f,00,74,00,69,00,66,00,79,00,50,00,72,00,69,\</span><br><span class="line">  00,76,00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,43,00,72,00,65,00,\</span><br><span class="line">  61,00,74,00,65,00,47,00,6c,00,6f,00,62,00,61,00,6c,00,50,00,72,00,69,00,76,\</span><br><span class="line">  00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,49,00,6d,00,70,00,65,00,\</span><br><span class="line">  72,00,73,00,6f,00,6e,00,61,00,74,00,65,00,50,00,72,00,69,00,76,00,69,00,6c,\</span><br><span class="line">  00,65,00,67,00,65,00,00,00,00,00</span><br><span class="line">&quot;DelayedAutoStart&quot;=dword:00000001</span><br><span class="line">&quot;FailureActions&quot;=hex:80,51,01,00,00,00,00,00,00,00,00,00,03,00,00,00,14,00,00,\</span><br><span class="line">  00,01,00,00,00,c0,d4,01,00,01,00,00,00,e0,93,04,00,00,00,00,00,00,00,00,00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\Security]</span><br><span class="line">&quot;Security&quot;=hex:01,00,14,80,a0,00,00,00,ac,00,00,00,14,00,00,00,30,00,00,00,02,\</span><br><span class="line">  00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,\</span><br><span class="line">  00,00,02,00,70,00,05,00,00,00,00,00,14,00,ff,01,02,00,01,01,00,00,00,00,00,\</span><br><span class="line">  05,12,00,00,00,00,00,18,00,fd,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,\</span><br><span class="line">  20,02,00,00,00,00,14,00,9d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,\</span><br><span class="line">  00,14,00,9d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,14,00,\</span><br><span class="line">  00,00,01,01,00,00,00,00,00,05,0b,00,00,00,01,01,00,00,00,00,00,05,12,00,00,\</span><br><span class="line">  00,01,01,00,00,00,00,00,05,12,00,00,00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\TriggerInfo]</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\TriggerInfo\0]</span><br><span class="line">&quot;Type&quot;=dword:00000014</span><br><span class="line">&quot;Action&quot;=dword:00000001</span><br><span class="line">&quot;GUID&quot;=hex:da,8a,52,f5,5f,be,14,4f,8a,ef,a9,5d,e7,28,11,61</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/jenyzhang/article/details/51867485">https://blog.csdn.net/jenyzhang/article/details/51867485</a></p>
+]]></content>
+      <categories>
+        <category>Win</category>
+      </categories>
+      <tags>
+        <tag>Win</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>CSAPP 缓存实验</title>
     <url>/2020/08/16/2020-08-16-csapp-cachelab/</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>编写一个通用高速缓存模拟器，并优化小型矩阵转置核心函数，以最小化对模拟高速缓存的不命中次数。</p>
@@ -984,24 +1002,6 @@
       </categories>
       <tags>
         <tag>CSAPP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>解决Office无法找到应用程序许可证</title>
-    <url>/2020/08/15/2020-08-15-office-cannot-find-license/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>打开<code>office</code>软件失败，提示无法找到应用程序的许可证。</p>
-<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p><code>Software Protection</code>服务启动失败，可以通过<code>services.msc</code>查看该服务的启动状态</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改注册表，将如下文本复制到文件，文件名改为<code>software prtection服务.reg</code>, 双击该文件即可。</p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Windows Registry Editor Version 5.00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc]</span><br><span class="line">&quot;StartProtected&quot;=dword:00000001</span><br><span class="line">&quot;DisplayName&quot;=&quot;@%SystemRoot%\\system32\\sppsvc.exe,-101&quot;</span><br><span class="line">&quot;ErrorControl&quot;=dword:00000001</span><br><span class="line">&quot;ImagePath&quot;=hex(2):25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\</span><br><span class="line">  74,00,25,00,5c,00,73,00,79,00,73,00,74,00,65,00,6d,00,33,00,32,00,5c,00,73,\</span><br><span class="line">  00,70,00,70,00,73,00,76,00,63,00,2e,00,65,00,78,00,65,00,00,00</span><br><span class="line">&quot;Start&quot;=dword:00000002</span><br><span class="line">&quot;Type&quot;=dword:00000010</span><br><span class="line">&quot;Description&quot;=&quot;@%SystemRoot%\\system32\\sppsvc.exe,-100&quot;</span><br><span class="line">&quot;DependOnService&quot;=hex(7):52,00,70,00,63,00,53,00,73,00,00,00,00,00</span><br><span class="line">&quot;ObjectName&quot;=&quot;NT AUTHORITY\\NetworkService&quot;</span><br><span class="line">&quot;ServiceSidType&quot;=dword:00000001</span><br><span class="line">&quot;RequiredPrivileges&quot;=hex(7):53,00,65,00,41,00,75,00,64,00,69,00,74,00,50,00,72,\</span><br><span class="line">  00,69,00,76,00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,43,00,68,00,\</span><br><span class="line">  61,00,6e,00,67,00,65,00,4e,00,6f,00,74,00,69,00,66,00,79,00,50,00,72,00,69,\</span><br><span class="line">  00,76,00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,43,00,72,00,65,00,\</span><br><span class="line">  61,00,74,00,65,00,47,00,6c,00,6f,00,62,00,61,00,6c,00,50,00,72,00,69,00,76,\</span><br><span class="line">  00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,49,00,6d,00,70,00,65,00,\</span><br><span class="line">  72,00,73,00,6f,00,6e,00,61,00,74,00,65,00,50,00,72,00,69,00,76,00,69,00,6c,\</span><br><span class="line">  00,65,00,67,00,65,00,00,00,00,00</span><br><span class="line">&quot;DelayedAutoStart&quot;=dword:00000001</span><br><span class="line">&quot;FailureActions&quot;=hex:80,51,01,00,00,00,00,00,00,00,00,00,03,00,00,00,14,00,00,\</span><br><span class="line">  00,01,00,00,00,c0,d4,01,00,01,00,00,00,e0,93,04,00,00,00,00,00,00,00,00,00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\Security]</span><br><span class="line">&quot;Security&quot;=hex:01,00,14,80,a0,00,00,00,ac,00,00,00,14,00,00,00,30,00,00,00,02,\</span><br><span class="line">  00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,\</span><br><span class="line">  00,00,02,00,70,00,05,00,00,00,00,00,14,00,ff,01,02,00,01,01,00,00,00,00,00,\</span><br><span class="line">  05,12,00,00,00,00,00,18,00,fd,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,\</span><br><span class="line">  20,02,00,00,00,00,14,00,9d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,\</span><br><span class="line">  00,14,00,9d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,14,00,\</span><br><span class="line">  00,00,01,01,00,00,00,00,00,05,0b,00,00,00,01,01,00,00,00,00,00,05,12,00,00,\</span><br><span class="line">  00,01,01,00,00,00,00,00,05,12,00,00,00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\TriggerInfo]</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\TriggerInfo\0]</span><br><span class="line">&quot;Type&quot;=dword:00000014</span><br><span class="line">&quot;Action&quot;=dword:00000001</span><br><span class="line">&quot;GUID&quot;=hex:da,8a,52,f5,5f,be,14,4f,8a,ef,a9,5d,e7,28,11,61</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/jenyzhang/article/details/51867485">https://blog.csdn.net/jenyzhang/article/details/51867485</a></p>
-]]></content>
-      <categories>
-        <category>Win</category>
-      </categories>
-      <tags>
-        <tag>Win</tag>
       </tags>
   </entry>
   <entry>
@@ -4100,27 +4100,6 @@
       </tags>
   </entry>
   <entry>
-    <title>tar打包时去掉目录前缀的方法</title>
-    <url>/2022/06/04/2022-06-04-use-tar-to-remove-dir-prefix/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
-<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
-
-<p>利用-C参数，方法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
-
-<p>tar用法参考手册：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>tar</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>k8s删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/11/16/2022-11-06-k8s-delete-ns-failed-case/</url>
     <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>强制删除deployment和pod后，问题解决：</p>
@@ -4147,23 +4126,24 @@
       </tags>
   </entry>
   <entry>
-    <title>Centos7中修改hostname的方法</title>
-    <url>/2023/02/13/2023-02-13-change-hostname-in-centos7/</url>
-    <content><![CDATA[<h2 id="hostname临时修改主机名"><a href="#hostname临时修改主机名" class="headerlink" title="hostname临时修改主机名"></a>hostname临时修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostname XXX</span><br></pre></td></tr></table></figure>
-<h2 id="hostnamectl永久修改主机名"><a href="#hostnamectl永久修改主机名" class="headerlink" title="hostnamectl永久修改主机名"></a>hostnamectl永久修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostnamectl XXX</span><br></pre></td></tr></table></figure>
-<p>修改的内容实际是文件<code>/etc/hostname</code></p>
-<h2 id="三种主机名的区别"><a href="#三种主机名的区别" class="headerlink" title="三种主机名的区别"></a>三种主机名的区别</h2><span id="more"></span>
+    <title>tar打包时去掉目录前缀的方法</title>
+    <url>/2022/06/04/2022-06-04-use-tar-to-remove-dir-prefix/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
+<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
 
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">man hostnamectl</span><br><span class="line">This tool distinguishes three different hostnames: </span><br><span class="line">the high-level <span class="string">&quot;pretty&quot;</span> hostname <span class="built_in">which</span> might include all kinds of special characters (e.g. <span class="string">&quot;Lennart&#x27;s Laptop&quot;</span>), </span><br><span class="line">the static hostname <span class="built_in">which</span> is used to initialize the kernel hostname at boot (e.g. <span class="string">&quot;lennarts-laptop&quot;</span>), </span><br><span class="line">and the transient hostname <span class="built_in">which</span> is a default received from network configuration. If a static hostname is <span class="built_in">set</span>, and is valid (something other than localhost), <span class="keyword">then</span> the transient hostname is not used.</span><br></pre></td></tr></table></figure>
-<h2 id="Centos7中，hostnamectl-–static命令读取的实际是-etc-hostname文件的内容"><a href="#Centos7中，hostnamectl-–static命令读取的实际是-etc-hostname文件的内容" class="headerlink" title="Centos7中，hostnamectl –static命令读取的实际是&#x2F;etc&#x2F;hostname文件的内容"></a>Centos7中，hostnamectl –static命令读取的实际是&#x2F;etc&#x2F;hostname文件的内容</h2><p><code>hostnamectl</code>源码参考：<a href="https://github.com/systemd/systemd">https://github.com/systemd/systemd</a><br><code>hostnamectl --static</code>函数调用梳理如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">DEFINE_MAIN_FUNCTION(run);</span><br><span class="line">hostnamectl_main func table</span><br><span class="line">get_or_set_hostname</span><br><span class="line">get_hostname_based_on_flag</span><br><span class="line"><span class="title function_">get_one_name</span><span class="params">(bus, <span class="string">&quot;StaticHostname&quot;</span>, <span class="literal">NULL</span>)</span>;</span><br><span class="line">sd_bus_get_property</span><br><span class="line">sd_bus_call_method</span><br><span class="line"><span class="title function_">sd_bus_call_methodv</span><span class="params">()</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">const</span> BusObjectImplementation manager_object = &#123;</span><br><span class="line">        <span class="string">&quot;/org/freedesktop/hostname1&quot;</span>,</span><br><span class="line">        <span class="string">&quot;org.freedesktop.hostname1&quot;</span>,</span><br><span class="line">        .vtables = BUS_VTABLES(hostname_vtable),</span><br><span class="line">&#125;;</span><br><span class="line">hostname_vtable</span><br><span class="line"><span class="title function_">SD_BUS_PROPERTY</span><span class="params">(<span class="string">&quot;StaticHostname&quot;</span>, <span class="string">&quot;s&quot;</span>, property_get_static_hostname, <span class="number">0</span>, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE)</span></span><br><span class="line">property_get_static_hostname </span><br><span class="line">context_read_etc_hostname</span><br><span class="line">read_etc_hostname</span><br><span class="line"><span class="type">int</span> <span class="title function_">read_etc_hostname</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *path, <span class="type">char</span> **ret)</span> &#123;</span><br><span class="line">        _cleanup_fclose_ FILE *f = <span class="literal">NULL</span>;</span><br><span class="line">        assert(ret);</span><br><span class="line">        <span class="keyword">if</span> (!path)</span><br><span class="line">                path = <span class="string">&quot;/etc/hostname&quot;</span>;</span><br><span class="line">        f = fopen(path, <span class="string">&quot;re&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (!f)</span><br><span class="line">                <span class="keyword">return</span> -errno;</span><br><span class="line">        <span class="keyword">return</span> read_etc_hostname_stream(f, ret);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看出，最终调用<code>read_etc_hostname</code>读取<code>/etc/hostname</code>的内容</p>
+<p>利用-C参数，方法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
+
+<p>tar用法参考手册：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Linux</category>
       </categories>
       <tags>
         <tag>Linux</tag>
+        <tag>tar</tag>
       </tags>
   </entry>
   <entry>
@@ -4183,6 +4163,26 @@
       <tags>
         <tag>Linux</tag>
         <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Centos7中修改hostname的方法</title>
+    <url>/2023/02/13/2023-02-13-change-hostname-in-centos7/</url>
+    <content><![CDATA[<h2 id="hostname临时修改主机名"><a href="#hostname临时修改主机名" class="headerlink" title="hostname临时修改主机名"></a>hostname临时修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostname XXX</span><br></pre></td></tr></table></figure>
+<h2 id="hostnamectl永久修改主机名"><a href="#hostnamectl永久修改主机名" class="headerlink" title="hostnamectl永久修改主机名"></a>hostnamectl永久修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostnamectl XXX</span><br></pre></td></tr></table></figure>
+<p>修改的内容实际是文件<code>/etc/hostname</code></p>
+<h2 id="三种主机名的区别"><a href="#三种主机名的区别" class="headerlink" title="三种主机名的区别"></a>三种主机名的区别</h2><span id="more"></span>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">man hostnamectl</span><br><span class="line">This tool distinguishes three different hostnames: </span><br><span class="line">the high-level <span class="string">&quot;pretty&quot;</span> hostname <span class="built_in">which</span> might include all kinds of special characters (e.g. <span class="string">&quot;Lennart&#x27;s Laptop&quot;</span>), </span><br><span class="line">the static hostname <span class="built_in">which</span> is used to initialize the kernel hostname at boot (e.g. <span class="string">&quot;lennarts-laptop&quot;</span>), </span><br><span class="line">and the transient hostname <span class="built_in">which</span> is a default received from network configuration. If a static hostname is <span class="built_in">set</span>, and is valid (something other than localhost), <span class="keyword">then</span> the transient hostname is not used.</span><br></pre></td></tr></table></figure>
+<h2 id="Centos7中，hostnamectl-–static命令读取的实际是-etc-hostname文件的内容"><a href="#Centos7中，hostnamectl-–static命令读取的实际是-etc-hostname文件的内容" class="headerlink" title="Centos7中，hostnamectl –static命令读取的实际是&#x2F;etc&#x2F;hostname文件的内容"></a>Centos7中，hostnamectl –static命令读取的实际是&#x2F;etc&#x2F;hostname文件的内容</h2><p><code>hostnamectl</code>源码参考：<a href="https://github.com/systemd/systemd">https://github.com/systemd/systemd</a><br><code>hostnamectl --static</code>函数调用梳理如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">DEFINE_MAIN_FUNCTION(run);</span><br><span class="line">hostnamectl_main func table</span><br><span class="line">get_or_set_hostname</span><br><span class="line">get_hostname_based_on_flag</span><br><span class="line"><span class="title function_">get_one_name</span><span class="params">(bus, <span class="string">&quot;StaticHostname&quot;</span>, <span class="literal">NULL</span>)</span>;</span><br><span class="line">sd_bus_get_property</span><br><span class="line">sd_bus_call_method</span><br><span class="line"><span class="title function_">sd_bus_call_methodv</span><span class="params">()</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">const</span> BusObjectImplementation manager_object = &#123;</span><br><span class="line">        <span class="string">&quot;/org/freedesktop/hostname1&quot;</span>,</span><br><span class="line">        <span class="string">&quot;org.freedesktop.hostname1&quot;</span>,</span><br><span class="line">        .vtables = BUS_VTABLES(hostname_vtable),</span><br><span class="line">&#125;;</span><br><span class="line">hostname_vtable</span><br><span class="line"><span class="title function_">SD_BUS_PROPERTY</span><span class="params">(<span class="string">&quot;StaticHostname&quot;</span>, <span class="string">&quot;s&quot;</span>, property_get_static_hostname, <span class="number">0</span>, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE)</span></span><br><span class="line">property_get_static_hostname </span><br><span class="line">context_read_etc_hostname</span><br><span class="line">read_etc_hostname</span><br><span class="line"><span class="type">int</span> <span class="title function_">read_etc_hostname</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *path, <span class="type">char</span> **ret)</span> &#123;</span><br><span class="line">        _cleanup_fclose_ FILE *f = <span class="literal">NULL</span>;</span><br><span class="line">        assert(ret);</span><br><span class="line">        <span class="keyword">if</span> (!path)</span><br><span class="line">                path = <span class="string">&quot;/etc/hostname&quot;</span>;</span><br><span class="line">        f = fopen(path, <span class="string">&quot;re&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (!f)</span><br><span class="line">                <span class="keyword">return</span> -errno;</span><br><span class="line">        <span class="keyword">return</span> read_etc_hostname_stream(f, ret);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出，最终调用<code>read_etc_hostname</code>读取<code>/etc/hostname</code>的内容</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -4340,6 +4340,24 @@
       </tags>
   </entry>
   <entry>
+    <title>crontab执行失败返回127的原因和解决方法</title>
+    <url>/2023/05/08/2023-05-08-cronjob-return-127-case/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>crontab</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用systemd启动stunnel，并设置自动重启的方法</title>
     <url>/2023/04/26/2023-04-26-use-systemd-to-start-stunnel/</url>
     <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p>运行环境: Centos7</p>
@@ -4372,24 +4390,6 @@
       </categories>
       <tags>
         <tag>systemd</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>crontab执行失败返回127的原因和解决方法</title>
-    <url>/2023/05/08/2023-05-08-cronjob-return-127-case/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>crontab</tag>
       </tags>
   </entry>
   <entry>
@@ -4836,6 +4836,25 @@
       </tags>
   </entry>
   <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Effective Python 笔记</title>
     <url>/2023/08/12/2023-08-12-effective-python-note/</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>不错的Python进阶书。写这个笔记的目的是，把书中提到的编写高质量Python的59个方法的要点记录下来，便于今后的工作中查阅</p>
@@ -5104,25 +5123,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
-    <url>/2023/08/15/2023-08-15-what-is-lambda-function-in-python/</url>
-    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
     <url>/2023/08/22/2023-08-22-extrace-seq-in-python/</url>
     <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
@@ -5144,10 +5144,12 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python 查找最大或最小的N个元素</title>
-    <url>/2023/08/22/2023-08-22-find-n-elements-with-python/</url>
-    <content><![CDATA[<p>除了直接排序，还可以利用<code>heaq</code>模块的<code>nlargest()</code>和<code>nsmallest()</code>方法，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>nums = [<span class="number">3</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">1</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>smallest = heapq.nsmallest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(smallest)</span><br><span class="line">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>largest = heapq.nlargest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(largest)</span><br><span class="line">[<span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>]</span><br></pre></td></tr></table></figure>
+    <title>Python保留最后N个元素</title>
+    <url>/2023/08/29/2023-08-29-keep-final-n-elements-by-python/</url>
+    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5157,12 +5159,10 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python保留最后N个元素</title>
-    <url>/2023/08/29/2023-08-29-keep-final-n-elements-by-python/</url>
-    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
+    <title>Python 查找最大或最小的N个元素</title>
+    <url>/2023/08/22/2023-08-22-find-n-elements-with-python/</url>
+    <content><![CDATA[<p>除了直接排序，还可以利用<code>heaq</code>模块的<code>nlargest()</code>和<code>nsmallest()</code>方法，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>nums = [<span class="number">3</span>, <span class="number">5</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">1</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>smallest = heapq.nsmallest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(smallest)</span><br><span class="line">[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>largest = heapq.nlargest(<span class="number">3</span>, nums)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(largest)</span><br><span class="line">[<span class="number">5</span>, <span class="number">4</span>, <span class="number">3</span>]</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5651,21 +5651,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>kubectl执行失败后等待一段时间重试(Shell实现)</title>
-    <url>/2024/03/28/2024-03-28-kubectl-add-retry/</url>
-    <content><![CDATA[<p>使用Shell脚本实现功能： <code>kubectl</code>执行失败后，等待30秒后再重试，一共重试3次，代码如下：</p>
-<span id="more"></span>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">KUBECTL_BIN=/var/lib/snapd/snap/bin/kubectl</span><br><span class="line"></span><br><span class="line">ERR_MSG_K8S_NOTRUNNING=<span class="string">&quot;microk8s is not running&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_TIMEOUT=<span class="string">&quot;connection timed out&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_REFUSED=<span class="string">&quot;refused - did you specify the right host or port&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">debuglog</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> log_content=<span class="variable">$&#123;@:1&#125;</span></span><br><span class="line">    <span class="built_in">local</span> <span class="built_in">caller</span>=$(<span class="built_in">basename</span> <span class="string">&quot;<span class="variable">$0</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;`date +&quot;</span>%Y-%m-%d %H:%M:%S<span class="string">&quot;` [<span class="variable">$caller</span>] INFO <span class="variable">$log_content</span>&quot;</span> 2&gt;&amp;1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectlX</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> retry=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">shift</span></span><br><span class="line">    <span class="built_in">local</span> args=<span class="variable">$@</span></span><br><span class="line">    <span class="built_in">local</span> ret=0</span><br><span class="line">    <span class="built_in">local</span> cmdstr=<span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">local</span> tmpfile=$(<span class="built_in">mktemp</span>)</span><br><span class="line">    <span class="keyword">for</span> ((i=<span class="number">0</span>;i&lt;<span class="variable">$retry</span>;i++)); <span class="keyword">do</span></span><br><span class="line">        <span class="variable">$&#123;KUBECTL_BIN&#125;</span> <span class="variable">$@</span> 2&gt;<span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span></span><br><span class="line">        ret=$?</span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$ret</span> -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL <span class="variable">$cmdstr</span> ret: 0&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">local</span> errinfo=$(&lt; <span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">local</span> need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">if</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_K8S_NOTRUNNING</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_TIMEOUT</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_REFUSED</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ <span class="variable">$ret</span> -eq 143 ]; <span class="keyword">then</span> <span class="comment"># 143 means SIGTERM, just retry</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$need_retry</span> != <span class="string">&quot;yes&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) (retry:<span class="variable">$i</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">        <span class="built_in">sleep</span> 30</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">rm</span> -- <span class="variable">$&#123;tmpfile&#125;</span></span><br><span class="line">    <span class="built_in">return</span> <span class="variable">$ret</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectl</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> args=(3 <span class="string">&quot;<span class="variable">$@</span>&quot;</span>)</span><br><span class="line">    api_kubectlX <span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">return</span> $?</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用方法：</span></span><br><span class="line">api_kubectl get ns</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>k8s</category>
-      </categories>
-      <tags>
-        <tag>k8s</tag>
-        <tag>Shell</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Microk8s dqlite启动失败, raft_start(): io: load closed segment XXX: entries count in preamble is zero</title>
     <url>/2024/03/28/2024-03-28-microk8s-dqlite-run-fail/</url>
     <content><![CDATA[<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><p>后台查看Microk8s相关进程：</p>
@@ -5700,6 +5685,21 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kubectl执行失败后等待一段时间重试(Shell实现)</title>
+    <url>/2024/03/28/2024-03-28-kubectl-add-retry/</url>
+    <content><![CDATA[<p>使用Shell脚本实现功能： <code>kubectl</code>执行失败后，等待30秒后再重试，一共重试3次，代码如下：</p>
+<span id="more"></span>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">KUBECTL_BIN=/var/lib/snapd/snap/bin/kubectl</span><br><span class="line"></span><br><span class="line">ERR_MSG_K8S_NOTRUNNING=<span class="string">&quot;microk8s is not running&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_TIMEOUT=<span class="string">&quot;connection timed out&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_REFUSED=<span class="string">&quot;refused - did you specify the right host or port&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">debuglog</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> log_content=<span class="variable">$&#123;@:1&#125;</span></span><br><span class="line">    <span class="built_in">local</span> <span class="built_in">caller</span>=$(<span class="built_in">basename</span> <span class="string">&quot;<span class="variable">$0</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;`date +&quot;</span>%Y-%m-%d %H:%M:%S<span class="string">&quot;` [<span class="variable">$caller</span>] INFO <span class="variable">$log_content</span>&quot;</span> 2&gt;&amp;1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectlX</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> retry=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">shift</span></span><br><span class="line">    <span class="built_in">local</span> args=<span class="variable">$@</span></span><br><span class="line">    <span class="built_in">local</span> ret=0</span><br><span class="line">    <span class="built_in">local</span> cmdstr=<span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">local</span> tmpfile=$(<span class="built_in">mktemp</span>)</span><br><span class="line">    <span class="keyword">for</span> ((i=<span class="number">0</span>;i&lt;<span class="variable">$retry</span>;i++)); <span class="keyword">do</span></span><br><span class="line">        <span class="variable">$&#123;KUBECTL_BIN&#125;</span> <span class="variable">$@</span> 2&gt;<span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span></span><br><span class="line">        ret=$?</span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$ret</span> -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL <span class="variable">$cmdstr</span> ret: 0&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">local</span> errinfo=$(&lt; <span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">local</span> need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">if</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_K8S_NOTRUNNING</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_TIMEOUT</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_REFUSED</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ <span class="variable">$ret</span> -eq 143 ]; <span class="keyword">then</span> <span class="comment"># 143 means SIGTERM, just retry</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$need_retry</span> != <span class="string">&quot;yes&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) (retry:<span class="variable">$i</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">        <span class="built_in">sleep</span> 30</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">rm</span> -- <span class="variable">$&#123;tmpfile&#125;</span></span><br><span class="line">    <span class="built_in">return</span> <span class="variable">$ret</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectl</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> args=(3 <span class="string">&quot;<span class="variable">$@</span>&quot;</span>)</span><br><span class="line">    api_kubectlX <span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">return</span> $?</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用方法：</span></span><br><span class="line">api_kubectl get ns</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+        <tag>Shell</tag>
       </tags>
   </entry>
   <entry>
@@ -6794,27 +6794,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>在Rocky Linux9.4上安装MySQL</title>
-    <url>/2024/09/16/2024-09-16-how-to-install-mysql-on-rhel9/</url>
-    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
-
-<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
-<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
-<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
-<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
-<p>再输入你之前设置的root用户密码即可。</p>
-<span id="more"></span>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Django基础</title>
     <url>/2024/09/15/2024-09-15-django-basic/</url>
     <content><![CDATA[<h2 id="Django快速上手"><a href="#Django快速上手" class="headerlink" title="Django快速上手"></a>Django快速上手</h2><p>参考: <a href="https://pcj600.github.io/2024/08/23/2024-08-23-how-to-install-django-on-rhel9/">Django快速上手</a></p>
@@ -7147,6 +7126,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>在Rocky Linux9.4上安装MySQL</title>
+    <url>/2024/09/16/2024-09-16-how-to-install-mysql-on-rhel9/</url>
+    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
+
+<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
+<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
+<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
+<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
+<p>再输入你之前设置的root用户密码即可。</p>
+<span id="more"></span>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
     <url>/2024/09/16/2024-09-16-mysqlclient-connot-install-via-pip/</url>
     <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
@@ -7280,14 +7280,14 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>表的每一列称为字段（Column），同一个表的每一行记录都拥有相同的若干字段。</li>
 <li>字段定义了数据类型（整型、浮点型、字符串、日期等），以及是否允许为NULL</li>
 </ul>
+<span id="more"></span>
+
 <h2 id="什么是SQL"><a href="#什么是SQL" class="headerlink" title="什么是SQL"></a>什么是SQL</h2><p>SQL(Structured Query Language)是结构化查询语言，用来访问和操作数据库系统。定义了几种操作数据库的能力：</p>
 <ul>
 <li>DDL：Data Definition Language 允许用户定义数据，也就是创建表、删除表、修改表结构这些操作。</li>
 <li>DML：Data Manipulation Language 为用户提供添加、删除、更新数据的能力</li>
 <li>DQL：Data Query Language 允许用户查询数据，这也是最频繁的数据库日常操作。</li>
 </ul>
-<span id="more"></span>
-
 <h2 id="DDL-数据库操作"><a href="#DDL-数据库操作" class="headerlink" title="DDL-数据库操作"></a>DDL-数据库操作</h2><h3 id="查询所有数据库"><a href="#查询所有数据库" class="headerlink" title="查询所有数据库"></a>查询所有数据库</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show databases;</span><br></pre></td></tr></table></figure>
 <h3 id="查询当前数据库"><a href="#查询当前数据库" class="headerlink" title="查询当前数据库"></a>查询当前数据库</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show database();</span><br></pre></td></tr></table></figure>
 <h3 id="创建表"><a href="#创建表" class="headerlink" title="创建表"></a>创建表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create database [if not exists] 数据库名 [default charset 字符集] [COLLATE 排序规则];</span><br></pre></td></tr></table></figure>
@@ -7507,10 +7507,10 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>插入数据大小应该在字段的指定范围内</li>
 </ul>
 <p>例：插入2条员工数据</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into employee values(1,&#x27;001&#x27;,&#x27;peter&#x27;,&#x27;M&#x27;,18,&#x27;123456789987654321&#x27;, &#x27;2024-10-14&#x27;);</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">insert into employee values(1,&#x27;001&#x27;,&#x27;peter&#x27;,&#x27;M&#x27;,18,&#x27;123456789987654321&#x27;, &#x27;2024-10-14&#x27;),(2,&#x27;002&#x27;,&#x27;jack&#x27;,&#x27;M&#x27;,18,&#x27;123456789987654321&#x27;, &#x27;2024-10-14&#x27;);</span><br></pre></td></tr></table></figure>
 
 <h2 id="DML-修改数据"><a href="#DML-修改数据" class="headerlink" title="DML-修改数据"></a>DML-修改数据</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">update 表名 set 字段1=值1, 字段2=值2 [where 条件];</span><br></pre></td></tr></table></figure>
-<p>例: 将id为1数据的name修改为’lance’，性别修改为F</p>
+<p>例: 将id为1数据的name修改为lance，性别修改为F</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">update employee set name=&#x27;lance&#x27;, gender=&#x27;F&#x27; where id=1;</span><br></pre></td></tr></table></figure>
 <p>例: 所有员工入职日期修改为2005-01-01</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">update employee entrydate = &#x27;2005-01-01&#x27;;</span><br></pre></td></tr></table></figure>
@@ -7522,7 +7522,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">delete from employee;</span><br></pre></td></tr></table></figure>
 
 <h2 id="DQL-查询"><a href="#DQL-查询" class="headerlink" title="DQL-查询"></a>DQL-查询</h2><p>语法</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select</span><br><span class="line">	字段</span><br><span class="line">from </span><br><span class="line">	表名</span><br><span class="line">where </span><br><span class="line">	条件</span><br><span class="line">group by</span><br><span class="line">	分组字段</span><br><span class="line">having</span><br><span class="line">	分组后条件</span><br><span class="line">order by</span><br><span class="line">	排序字段</span><br><span class="line">limit</span><br><span class="line">	分页参数</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span></span><br><span class="line">	字段</span><br><span class="line"><span class="keyword">from</span> </span><br><span class="line">	表名</span><br><span class="line"><span class="keyword">where</span> </span><br><span class="line">	条件</span><br><span class="line"><span class="keyword">group</span> <span class="keyword">by</span></span><br><span class="line">	分组字段</span><br><span class="line"><span class="keyword">having</span></span><br><span class="line">	分组后条件</span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span></span><br><span class="line">	排序字段</span><br><span class="line">limit</span><br><span class="line">	分页参数</span><br></pre></td></tr></table></figure>
 
 <h3 id="查询多个字段"><a href="#查询多个字段" class="headerlink" title="查询多个字段"></a>查询多个字段</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 字段1,字段2 from 表名;</span><br><span class="line">select * from 表名;</span><br><span class="line">select 字段1 [AS 别名1], 字段2 [AS 别名2] from 表名;</span><br></pre></td></tr></table></figure>
 <p>其中AS可以省略</p>
@@ -7609,8 +7609,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 
 <h2 id="SQL-DCL-用户管理-权限控制"><a href="#SQL-DCL-用户管理-权限控制" class="headerlink" title="SQL-DCL-用户管理&#x2F;权限控制"></a>SQL-DCL-用户管理&#x2F;权限控制</h2><!-- TODO -->
 
-<h2 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h2><h3 id="字符串函数"><a href="#字符串函数" class="headerlink" title="字符串函数"></a>字符串函数</h3><p>常用</p>
-<table>
+<h2 id="常用函数"><a href="#常用函数" class="headerlink" title="常用函数"></a>常用函数</h2><h3 id="字符串函数"><a href="#字符串函数" class="headerlink" title="字符串函数"></a>字符串函数</h3><table>
 <thead>
 <tr>
 <th>函数</th>
@@ -7787,7 +7786,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <td>FOREIGN KEY</td>
 </tr>
 </tbody></table>
-<p>例：创建表</p>
+<p>例：按下表中的约束要求创建表</p>
 <table>
 <thead>
 <tr>
@@ -7834,7 +7833,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <td>无</td>
 </tr>
 </tbody></table>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table user(</span><br><span class="line">	id int primary key auto_increment,</span><br><span class="line">	name varchar(10) not null unique, </span><br><span class="line">	age int check(age &gt; 0 &amp;&amp; age &lt; 120),</span><br><span class="line">	status char(1) default &#x27;1&#x27;,</span><br><span class="line">	gender char(1)</span><br><span class="line">)Engine=InnoDB;</span><br><span class="line"></span><br><span class="line">-- 插入数据违反约束，插入失败</span><br><span class="line">insert into user(name,age,status,gender) values(&#x27;tom1&#x27;,19,&#x27;1&#x27;,&#x27;M&#x27;),(&#x27;tom2&#x27;,20,&#x27;0&#x27;,&#x27;F&#x27;);</span><br><span class="line">mysql&gt; insert into user(name,age,status,gender) values(&#x27;tom1&#x27;,19,&#x27;1&#x27;,&#x27;M&#x27;);</span><br><span class="line">ERROR 1062 (23000): Duplicate entry &#x27;tom1&#x27; for key &#x27;user.name&#x27;</span><br><span class="line">mysql&gt; insert into user(name,age,status,gender) values(&#x27;tom3&#x27;,190,&#x27;1&#x27;,&#x27;M&#x27;);</span><br><span class="line">ERROR 3819 (HY000): Check constraint &#x27;user_chk_1&#x27; is violated.</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> <span class="keyword">user</span>(</span><br><span class="line">	id <span class="type">int</span> <span class="keyword">primary</span> key auto_increment,</span><br><span class="line">	name <span class="type">varchar</span>(<span class="number">10</span>) <span class="keyword">not</span> <span class="keyword">null</span> <span class="keyword">unique</span>, </span><br><span class="line">	age <span class="type">int</span> <span class="keyword">check</span>(age <span class="operator">&gt;</span> <span class="number">0</span> <span class="operator">&amp;&amp;</span> age <span class="operator">&lt;</span> <span class="number">120</span>),</span><br><span class="line">	status <span class="type">char</span>(<span class="number">1</span>) <span class="keyword">default</span> <span class="string">&#x27;1&#x27;</span>,</span><br><span class="line">	gender <span class="type">char</span>(<span class="number">1</span>)</span><br><span class="line">)Engine<span class="operator">=</span>InnoDB;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 插入数据违反约束，插入失败</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(name,age,status,gender) <span class="keyword">values</span>(<span class="string">&#x27;tom1&#x27;</span>,<span class="number">19</span>,<span class="string">&#x27;1&#x27;</span>,<span class="string">&#x27;M&#x27;</span>),(<span class="string">&#x27;tom2&#x27;</span>,<span class="number">20</span>,<span class="string">&#x27;0&#x27;</span>,<span class="string">&#x27;F&#x27;</span>);</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(name,age,status,gender) <span class="keyword">values</span>(<span class="string">&#x27;tom1&#x27;</span>,<span class="number">19</span>,<span class="string">&#x27;1&#x27;</span>,<span class="string">&#x27;M&#x27;</span>);</span><br><span class="line">ERROR <span class="number">1062</span> (<span class="number">23000</span>): Duplicate entry <span class="string">&#x27;tom1&#x27;</span> <span class="keyword">for</span> key <span class="string">&#x27;user.name&#x27;</span></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(name,age,status,gender) <span class="keyword">values</span>(<span class="string">&#x27;tom3&#x27;</span>,<span class="number">190</span>,<span class="string">&#x27;1&#x27;</span>,<span class="string">&#x27;M&#x27;</span>);</span><br><span class="line">ERROR <span class="number">3819</span> (HY000): <span class="keyword">Check</span> <span class="keyword">constraint</span> <span class="string">&#x27;user_chk_1&#x27;</span> <span class="keyword">is</span> violated.</span><br></pre></td></tr></table></figure>
 
 <h3 id="主键约束"><a href="#主键约束" class="headerlink" title="主键约束"></a>主键约束</h3><ul>
 <li>关系表中的任意两条记录不能重复，通过某个字段能唯一区分出不同的记录，这个字段被称为主键</li>
@@ -7988,7 +7987,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>例: 查询与peter,david的职位和薪资相同的员工信息</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp where (job,salary) in (select job, salary from emp where name = &#x27;peter&#x27; or name = &#x27;david&#x27;);</span><br></pre></td></tr></table></figure>
 
-<h2 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h2><p>事务是一组操作集合，不可分割的工作单位。<br>事务把所有操作作为一个整体向系统提交或撤销操作，这些操作要么同时成功，要么同时失败。</p>
+<h2 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h2><p>事务是一组操作集合，不可分割的工作单位。事务把所有操作作为一个整体向系统提交或撤销操作，这些操作要么同时成功，要么同时失败。</p>
 <h3 id="事务四大特性"><a href="#事务四大特性" class="headerlink" title="事务四大特性"></a>事务四大特性</h3><ul>
 <li>Atomicity 原子性 所有SQL作为一个整体，要么全执行，要么全不执行</li>
 <li>Consistency 一致性 事务完成后, 所有数据状态是一致的，即A账户减去100元，B账户必定加100元</li>
@@ -8046,7 +8045,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set [session|global] transcation isolation level [read uncommitted | read committed | repeatable read | serializable ];</span><br></pre></td></tr></table></figure>
 
 <h4 id="Read-Uncommitted"><a href="#Read-Uncommitted" class="headerlink" title="Read Uncommitted"></a>Read Uncommitted</h4><p>Read Uncommitted级别下，一个事务会读到另一个事务未提交的数据，如果另一个事务回滚，当前事务读到的就是脏数据，即脏读(Dirty Read)</p>
-<p>例: 创建一张学生表, 插入一条学生记录</p>
+<p>示例: 创建一张学生表, 插入一条学生记录</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">create table students (<span class="built_in">id</span> bigint not null auto_increment, name varchar(36) not null, primary key(<span class="built_in">id</span>)) engine=InnoDB default charset=utf8;</span><br><span class="line">insert into students(name) values(<span class="string">&#x27;Alice&#x27;</span>);</span><br><span class="line">mysql&gt; <span class="keyword">select</span> * from students;</span><br><span class="line">+----+-------+</span><br><span class="line">| <span class="built_in">id</span> | name  |</span><br><span class="line">+----+-------+</span><br><span class="line">|  1 | Alice |</span><br><span class="line">+----+-------+</span><br><span class="line">1 row <span class="keyword">in</span> <span class="built_in">set</span> (0.00 sec)</span><br></pre></td></tr></table></figure>
 <p>分别开两个MySQL连接，按顺序执行事务A和事务B</p>
 <table>
@@ -8099,8 +8098,129 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>事务A执行完第三步后，更新了id&#x3D;1的记录，但未提交，事务B在第4步读到了Bob这一条未提交的数据</li>
 <li>事务A在第五步进行了回滚，事务B再次读取id&#x3D;1的记录为Alice, 和上一次的数据不一致，这就是脏读</li>
 </ul>
-<h4 id="Read-Committed"><a href="#Read-Committed" class="headerlink" title="Read Committed"></a>Read Committed</h4><p><a href="https://liaoxuefeng.com/books/sql/transaction/index.html">https://liaoxuefeng.com/books/sql/transaction/index.html</a></p>
-<h4 id="Repeatable-Read"><a href="#Repeatable-Read" class="headerlink" title="Repeatable Read"></a>Repeatable Read</h4><h4 id="Serializable"><a href="#Serializable" class="headerlink" title="Serializable"></a>Serializable</h4>]]></content>
+<h4 id="Read-Committed"><a href="#Read-Committed" class="headerlink" title="Read Committed"></a>Read Committed</h4><p>Read Committed隔离级别下，一个事务不会读到另一个事务还没有提交的数据，但可能会遇到不可重复读（Non Repeatable Read）的问题。<br>不可重复读是指，一个事务内，多次读同一数据，在这个事务没有结束前，如果另一个事务恰好修改了这个数据，那么第一个事务中两次读的数据就可能不一致。</p>
+<p>示例: 创建一张学生表数据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select * from students;</span><br><span class="line">+----+-------+</span><br><span class="line">| id | name  |</span><br><span class="line">+----+-------+</span><br><span class="line">|  1 | Alice |</span><br><span class="line">+----+-------+</span><br><span class="line">1 row in set (0.00 sec) </span><br></pre></td></tr></table></figure>
+<p>分别开两个MySQL连接，按顺序执行事务A和事务B</p>
+<table>
+<thead>
+<tr>
+<th>时刻</th>
+<th>事务A</th>
+<th>事务B</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>SET TRANSACTION ISOLATION LEVEL READ COMMITTED;</td>
+<td>SET TRANSACTION ISOLATION LEVEL READ COMMITTED;</td>
+</tr>
+<tr>
+<td>2</td>
+<td>BEGIN;</td>
+<td>BEGIN;</td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td>SELECT * FROM students WHERE id &#x3D; 1; – Alice</td>
+</tr>
+<tr>
+<td>4</td>
+<td>UPDATE students SET name &#x3D; ‘Bob’ WHERE id &#x3D; 1;</td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>COMMIT;</td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td></td>
+<td>SELECT * FROM students WHERE id &#x3D; 1; – Bob</td>
+</tr>
+<tr>
+<td>7</td>
+<td></td>
+<td>COMMIT;</td>
+</tr>
+</tbody></table>
+<p><img data-src="/2024/10/03/2024-10-03-mysql-tutorial/read-committed.png"></p>
+<p>说明：</p>
+<ul>
+<li>第3步，事务B一开始查询结果为Alice，随后第4步事务A更新了这条记录并提交, 事务B在第6步再次查询时结果变成了Bob。</li>
+<li>所以，read committed隔离级别下，事务不可重复读同一条记录，因为两次读到结果可能不一致。</li>
+</ul>
+<h4 id="Repeatable-Read"><a href="#Repeatable-Read" class="headerlink" title="Repeatable Read"></a>Repeatable Read</h4><p>Repeatable Read隔离级别下，不会出现脏读，不可重复读，但可能遇到幻读(Phantom read)问题。<br>幻读是指，一个事务中，第一次查询某条记录发现不存在，但是当视图更新这条不存在记录时，竟然能成功，并且再次读取同一条记录时，它就神奇地出现了。</p>
+<p>示例: 创建一张学生表数据</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select * from students;</span><br><span class="line">+----+-------+</span><br><span class="line">| id | name  |</span><br><span class="line">+----+-------+</span><br><span class="line">|  1 | Alice |</span><br><span class="line">+----+-------+</span><br><span class="line">1 row in set (0.00 sec) </span><br></pre></td></tr></table></figure>
+
+<p>分别开两个MySQL连接，按顺序执行事务A和事务B</p>
+<table>
+<thead>
+<tr>
+<th>时刻</th>
+<th>事务A</th>
+<th>事务B</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;</td>
+<td>SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;</td>
+</tr>
+<tr>
+<td>2</td>
+<td>BEGIN;</td>
+<td>BEGIN;</td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td>SELECT * FROM students WHERE id &#x3D; 99; – empty</td>
+</tr>
+<tr>
+<td>4</td>
+<td>INSERT INTO students (id, name) VALUES (99, ‘Bob’);</td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>COMMIT;</td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td>SELECT * FROM students WHERE id &#x3D; 99; – empty</td>
+<td></td>
+</tr>
+<tr>
+<td>7</td>
+<td></td>
+<td>UPDATE students SET name &#x3D; ‘Alice’ WHERE id &#x3D; 99; – 1 row affected</td>
+</tr>
+<tr>
+<td>8</td>
+<td></td>
+<td>SELECT * FROM students WHERE id &#x3D; 99; – Alice</td>
+</tr>
+<tr>
+<td>9</td>
+<td></td>
+<td>COMMIT;</td>
+</tr>
+</tbody></table>
+<p><img data-src="/2024/10/03/2024-10-03-mysql-tutorial/repeatable-read.png"></p>
+<p>说明：</p>
+<ul>
+<li>事务B在第3步第一次读取id&#x3D;99记录时，读到是空，随后事务A在第4步插入一条id&#x3D;99记录，事务B在第6步再次读取发现仍然为空</li>
+<li>但是，事务B在第7步试图更新这条不存在记录时，居然可以更新成功，并且事务B在第8步再次读取id&#x3D;99记录时，记录出现了。</li>
+</ul>
+<p>总结：幻读就是没有读到的记录，以为不存在，但其实可以更新成功，并且更新成功后再次读取，又出现了。</p>
+<h4 id="Serializable"><a href="#Serializable" class="headerlink" title="Serializable"></a>Serializable</h4><p>最严格的隔离级别</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://liaoxuefeng.com/books/sql/">https://liaoxuefeng.com/books/sql/</a><br><a href="https://www.bilibili.com/video/BV1Kr4y1i7ru/">https://www.bilibili.com/video/BV1Kr4y1i7ru/</a></p>
+]]></content>
       <categories>
         <category>MySQL</category>
       </categories>
