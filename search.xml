@@ -24,41 +24,6 @@
       </tags>
   </entry>
   <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/03/22/2020-03-22-buffered-mode-of-standard-IO-lib/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -110,6 +75,80 @@
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>隐式函数声明[-Wimplicit-function-declaration]</title>
+    <url>/2020/04/11/2020-04-11-what-is-implicit-function-declaration/</url>
+    <content><![CDATA[<h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
+<span id="more"></span>
+
+<h2 id="忽略隐式函数声明警告的危害"><a href="#忽略隐式函数声明警告的危害" class="headerlink" title="忽略隐式函数声明警告的危害"></a>忽略隐式函数声明警告的危害</h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img data-src="/2020/04/11/2020-04-11-what-is-implicit-function-declaration/image1.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ldd -r libadd.so</span><br><span class="line">undefined symbol: ad (./libadd.so)</span><br></pre></td></tr></table></figure>
+
+<p>此时写一个main程序，调用libadd.so中的sum方法求三数之和</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译main程序出错，错误原因在于<strong>编写add.c时将符号add错写成了ad，由于忽视隐式函数声明警告，导致该错误没有在编译add.c的时候及时发现。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -L. -ladd</span><br><span class="line">./libadd.so: undefined reference to `ad&#x27;</span><br><span class="line">collect2: error: ld returned 1 exit status</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对于用dlopen动态加载该so库的程序，如指定RTLD_NOW，dlopen立即失败；如指定RTLD_LAZY延迟绑定，则dlopen成功，但dlsym加载引用了未定义符号的函数(如sum函数)会出错，示例main程序如下：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;dlfcn.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">void</span> *handle = dlopen(<span class="string">&quot;./libadd.so&quot;</span>, RTLD_LAZY);</span><br><span class="line">	<span class="keyword">if</span>(handle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, dlerror());</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="type">int</span> (*add)(<span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line">	<span class="type">int</span> (*sum)(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line"></span><br><span class="line">	add = dlsym(handle, <span class="string">&quot;add&quot;</span>);	<span class="comment">// add方法正常执行</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 = %d\n&quot;</span>, add(<span class="number">1</span>, <span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">	sum = dlsym(handle, <span class="string">&quot;sum&quot;</span>);	<span class="comment">// 出错，报未定义符号ad</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 + 3 = %d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -ldl</span><br><span class="line">$ ./a.out</span><br><span class="line">1 + 2 = 3</span><br><span class="line">./a.out: symbol lookup error: ./libadd.so: undefined symbol: ad</span><br></pre></td></tr></table></figure>
+<p>虽然编译成功，libadd.so可以加载，add函数可以执行，但执行sum函数时报未定义符号错。如及时处理隐式函数声明警告，可以在编译add.c的时候就发现该问题。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>函数先声明再使用，包含必要的头文件。</p>
+</li>
+<li><p>重视编译器的隐式函数声明警告, 可开启-Werror选项检查, 不要简单使用-Wno忽略该编译告警。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>C</category>
+      </categories>
+      <tags>
+        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -181,45 +220,6 @@
       </categories>
       <tags>
         <tag>Git</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>隐式函数声明[-Wimplicit-function-declaration]</title>
-    <url>/2020/04/11/2020-04-11-what-is-implicit-function-declaration/</url>
-    <content><![CDATA[<h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
-<span id="more"></span>
-
-<h2 id="忽略隐式函数声明警告的危害"><a href="#忽略隐式函数声明警告的危害" class="headerlink" title="忽略隐式函数声明警告的危害"></a>忽略隐式函数声明警告的危害</h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img data-src="/2020/04/11/2020-04-11-what-is-implicit-function-declaration/image1.png"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ldd -r libadd.so</span><br><span class="line">undefined symbol: ad (./libadd.so)</span><br></pre></td></tr></table></figure>
-
-<p>此时写一个main程序，调用libadd.so中的sum方法求三数之和</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译main程序出错，错误原因在于<strong>编写add.c时将符号add错写成了ad，由于忽视隐式函数声明警告，导致该错误没有在编译add.c的时候及时发现。</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -L. -ladd</span><br><span class="line">./libadd.so: undefined reference to `ad&#x27;</span><br><span class="line">collect2: error: ld returned 1 exit status</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>对于用dlopen动态加载该so库的程序，如指定RTLD_NOW，dlopen立即失败；如指定RTLD_LAZY延迟绑定，则dlopen成功，但dlsym加载引用了未定义符号的函数(如sum函数)会出错，示例main程序如下：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;dlfcn.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">void</span> *handle = dlopen(<span class="string">&quot;./libadd.so&quot;</span>, RTLD_LAZY);</span><br><span class="line">	<span class="keyword">if</span>(handle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, dlerror());</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="type">int</span> (*add)(<span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line">	<span class="type">int</span> (*sum)(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line"></span><br><span class="line">	add = dlsym(handle, <span class="string">&quot;add&quot;</span>);	<span class="comment">// add方法正常执行</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 = %d\n&quot;</span>, add(<span class="number">1</span>, <span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">	sum = dlsym(handle, <span class="string">&quot;sum&quot;</span>);	<span class="comment">// 出错，报未定义符号ad</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 + 3 = %d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -ldl</span><br><span class="line">$ ./a.out</span><br><span class="line">1 + 2 = 3</span><br><span class="line">./a.out: symbol lookup error: ./libadd.so: undefined symbol: ad</span><br></pre></td></tr></table></figure>
-<p>虽然编译成功，libadd.so可以加载，add函数可以执行，但执行sum函数时报未定义符号错。如及时处理隐式函数声明警告，可以在编译add.c的时候就发现该问题。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li><p>函数先声明再使用，包含必要的头文件。</p>
-</li>
-<li><p>重视编译器的隐式函数声明警告, 可开启-Werror选项检查, 不要简单使用-Wno忽略该编译告警。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>C</category>
-      </categories>
-      <tags>
-        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -308,32 +308,6 @@
       </tags>
   </entry>
   <entry>
-    <title>GDB加载so库符号失败的解决方法</title>
-    <url>/2020/06/21/2020-06-21-how-to-solve-gdb-load-so-failure/</url>
-    <content><![CDATA[<h2 id="问题现象"><a href="#问题现象" class="headerlink" title="问题现象"></a>问题现象</h2><p>gdb调试core文件或进程时，出现加载so库符号失败，错误信息如下</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">warning: Could not load shared library symbols for ../libadd.so</span><br><span class="line">Do you need &quot;set solib-search-path&quot; or &quot;set sysroot&quot;?</span><br></pre></td></tr></table></figure>
-<p>执行<strong>info sharedlibrary</strong>，查看Syms Read字段为No,  表示对应so库符号加载失败。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">pwd</span> /home/gdb</span></span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  No          ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  No          ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">0  0x00007fba2c57266b <span class="keyword">in</span> ?? ()</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">1  0x00007ffc6f703ff0 <span class="keyword">in</span> ?? ()</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>设置gdb的<strong>solib-search-path</strong>选项， 指定加载失败的so的搜索路径即可。</p>
-<p>solib-search-path可以指定多个路径。在linux上，路径之间用冒号分隔，命令如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-search-path /var:/home</span><br><span class="line">Reading symbols from ../libadd.so...done.</span><br><span class="line">Loaded symbols for ../libadd.so</span><br><span class="line">Reading symbols from ../../var/libsub.so...done.</span><br><span class="line">Loaded symbols for ../../var/libsub.so</span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  Yes         ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  Yes         ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line">#0  0x00007fba2c57266b in add (a=1, b=2) at add.c:5</span><br><span class="line">#1  0x0000000000400600 in ?? ()</span><br></pre></td></tr></table></figure>
-
-<p>或者设置gdb的<strong>solib-absolute-prefix</strong>选项，指定被搜索so文件路径的前缀， 与solib-search-path区别在于solib-absolute-prefix只能有一个，使用如下gdb指令：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-absolute-prefix /</span><br><span class="line">(gdb) set sysroot /					# sysroot是solib-absolute-prefix的别名</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://visualgdb.com/gdbreference/commands/set_solib-search-path">https://visualgdb.com/gdbreference/commands/set_solib-search-path</a></p>
-]]></content>
-      <categories>
-        <category>GDB</category>
-      </categories>
-      <tags>
-        <tag>GDB</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何安装和启动Redis</title>
     <url>/2020/06/01/2020-06-01-how-to-install-and-run-redis/</url>
     <content><![CDATA[<h2 id="一、源码安装redis"><a href="#一、源码安装redis" class="headerlink" title="一、源码安装redis"></a>一、源码安装redis</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">0.官网下载最新redis源码包</span></span><br><span class="line">wget http://download.redis.io/releases/redis-5.0.5.tar.gz</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">1.将redis.tar.gz拷贝到/usr/local目录并解压</span></span><br><span class="line">mkdir -p /usr/local/ &amp;&amp; cd /usr/local</span><br><span class="line">cp /path/to/redis-5.0.5.tar.gz .</span><br><span class="line">tar -zxvf redis-5.0.5.tar.gz</span><br><span class="line">mv redis-5.0.5 redis &amp;&amp; cd redis</span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">2.编译、测试、安装</span></span><br><span class="line">make -j4 						# 编译</span><br><span class="line">make test						# 测试，显示All tests passed without errors</span><br><span class="line">make install					# 安装</span><br></pre></td></tr></table></figure>
@@ -388,6 +362,32 @@
       </categories>
       <tags>
         <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>GDB加载so库符号失败的解决方法</title>
+    <url>/2020/06/21/2020-06-21-how-to-solve-gdb-load-so-failure/</url>
+    <content><![CDATA[<h2 id="问题现象"><a href="#问题现象" class="headerlink" title="问题现象"></a>问题现象</h2><p>gdb调试core文件或进程时，出现加载so库符号失败，错误信息如下</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">warning: Could not load shared library symbols for ../libadd.so</span><br><span class="line">Do you need &quot;set solib-search-path&quot; or &quot;set sysroot&quot;?</span><br></pre></td></tr></table></figure>
+<p>执行<strong>info sharedlibrary</strong>，查看Syms Read字段为No,  表示对应so库符号加载失败。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">pwd</span> /home/gdb</span></span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  No          ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  No          ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">0  0x00007fba2c57266b <span class="keyword">in</span> ?? ()</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">1  0x00007ffc6f703ff0 <span class="keyword">in</span> ?? ()</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>设置gdb的<strong>solib-search-path</strong>选项， 指定加载失败的so的搜索路径即可。</p>
+<p>solib-search-path可以指定多个路径。在linux上，路径之间用冒号分隔，命令如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-search-path /var:/home</span><br><span class="line">Reading symbols from ../libadd.so...done.</span><br><span class="line">Loaded symbols for ../libadd.so</span><br><span class="line">Reading symbols from ../../var/libsub.so...done.</span><br><span class="line">Loaded symbols for ../../var/libsub.so</span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  Yes         ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  Yes         ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line">#0  0x00007fba2c57266b in add (a=1, b=2) at add.c:5</span><br><span class="line">#1  0x0000000000400600 in ?? ()</span><br></pre></td></tr></table></figure>
+
+<p>或者设置gdb的<strong>solib-absolute-prefix</strong>选项，指定被搜索so文件路径的前缀， 与solib-search-path区别在于solib-absolute-prefix只能有一个，使用如下gdb指令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-absolute-prefix /</span><br><span class="line">(gdb) set sysroot /					# sysroot是solib-absolute-prefix的别名</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://visualgdb.com/gdbreference/commands/set_solib-search-path">https://visualgdb.com/gdbreference/commands/set_solib-search-path</a></p>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
       </tags>
   </entry>
   <entry>
@@ -919,24 +919,6 @@
       </tags>
   </entry>
   <entry>
-    <title>解决Office无法找到应用程序许可证</title>
-    <url>/2020/08/15/2020-08-15-office-cannot-find-license/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>打开<code>office</code>软件失败，提示无法找到应用程序的许可证。</p>
-<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p><code>Software Protection</code>服务启动失败，可以通过<code>services.msc</code>查看该服务的启动状态</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改注册表，将如下文本复制到文件，文件名改为<code>software prtection服务.reg</code>, 双击该文件即可。</p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Windows Registry Editor Version 5.00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc]</span><br><span class="line">&quot;StartProtected&quot;=dword:00000001</span><br><span class="line">&quot;DisplayName&quot;=&quot;@%SystemRoot%\\system32\\sppsvc.exe,-101&quot;</span><br><span class="line">&quot;ErrorControl&quot;=dword:00000001</span><br><span class="line">&quot;ImagePath&quot;=hex(2):25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\</span><br><span class="line">  74,00,25,00,5c,00,73,00,79,00,73,00,74,00,65,00,6d,00,33,00,32,00,5c,00,73,\</span><br><span class="line">  00,70,00,70,00,73,00,76,00,63,00,2e,00,65,00,78,00,65,00,00,00</span><br><span class="line">&quot;Start&quot;=dword:00000002</span><br><span class="line">&quot;Type&quot;=dword:00000010</span><br><span class="line">&quot;Description&quot;=&quot;@%SystemRoot%\\system32\\sppsvc.exe,-100&quot;</span><br><span class="line">&quot;DependOnService&quot;=hex(7):52,00,70,00,63,00,53,00,73,00,00,00,00,00</span><br><span class="line">&quot;ObjectName&quot;=&quot;NT AUTHORITY\\NetworkService&quot;</span><br><span class="line">&quot;ServiceSidType&quot;=dword:00000001</span><br><span class="line">&quot;RequiredPrivileges&quot;=hex(7):53,00,65,00,41,00,75,00,64,00,69,00,74,00,50,00,72,\</span><br><span class="line">  00,69,00,76,00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,43,00,68,00,\</span><br><span class="line">  61,00,6e,00,67,00,65,00,4e,00,6f,00,74,00,69,00,66,00,79,00,50,00,72,00,69,\</span><br><span class="line">  00,76,00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,43,00,72,00,65,00,\</span><br><span class="line">  61,00,74,00,65,00,47,00,6c,00,6f,00,62,00,61,00,6c,00,50,00,72,00,69,00,76,\</span><br><span class="line">  00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,49,00,6d,00,70,00,65,00,\</span><br><span class="line">  72,00,73,00,6f,00,6e,00,61,00,74,00,65,00,50,00,72,00,69,00,76,00,69,00,6c,\</span><br><span class="line">  00,65,00,67,00,65,00,00,00,00,00</span><br><span class="line">&quot;DelayedAutoStart&quot;=dword:00000001</span><br><span class="line">&quot;FailureActions&quot;=hex:80,51,01,00,00,00,00,00,00,00,00,00,03,00,00,00,14,00,00,\</span><br><span class="line">  00,01,00,00,00,c0,d4,01,00,01,00,00,00,e0,93,04,00,00,00,00,00,00,00,00,00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\Security]</span><br><span class="line">&quot;Security&quot;=hex:01,00,14,80,a0,00,00,00,ac,00,00,00,14,00,00,00,30,00,00,00,02,\</span><br><span class="line">  00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,\</span><br><span class="line">  00,00,02,00,70,00,05,00,00,00,00,00,14,00,ff,01,02,00,01,01,00,00,00,00,00,\</span><br><span class="line">  05,12,00,00,00,00,00,18,00,fd,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,\</span><br><span class="line">  20,02,00,00,00,00,14,00,9d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,\</span><br><span class="line">  00,14,00,9d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,14,00,\</span><br><span class="line">  00,00,01,01,00,00,00,00,00,05,0b,00,00,00,01,01,00,00,00,00,00,05,12,00,00,\</span><br><span class="line">  00,01,01,00,00,00,00,00,05,12,00,00,00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\TriggerInfo]</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\TriggerInfo\0]</span><br><span class="line">&quot;Type&quot;=dword:00000014</span><br><span class="line">&quot;Action&quot;=dword:00000001</span><br><span class="line">&quot;GUID&quot;=hex:da,8a,52,f5,5f,be,14,4f,8a,ef,a9,5d,e7,28,11,61</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/jenyzhang/article/details/51867485">https://blog.csdn.net/jenyzhang/article/details/51867485</a></p>
-]]></content>
-      <categories>
-        <category>Win</category>
-      </categories>
-      <tags>
-        <tag>Win</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>CSAPP 缓存实验</title>
     <url>/2020/08/16/2020-08-16-csapp-cachelab/</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>编写一个通用高速缓存模拟器，并优化小型矩阵转置核心函数，以最小化对模拟高速缓存的不命中次数。</p>
@@ -1002,6 +984,24 @@
       </categories>
       <tags>
         <tag>CSAPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>解决Office无法找到应用程序许可证</title>
+    <url>/2020/08/15/2020-08-15-office-cannot-find-license/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>打开<code>office</code>软件失败，提示无法找到应用程序的许可证。</p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p><code>Software Protection</code>服务启动失败，可以通过<code>services.msc</code>查看该服务的启动状态</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>修改注册表，将如下文本复制到文件，文件名改为<code>software prtection服务.reg</code>, 双击该文件即可。</p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Windows Registry Editor Version 5.00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc]</span><br><span class="line">&quot;StartProtected&quot;=dword:00000001</span><br><span class="line">&quot;DisplayName&quot;=&quot;@%SystemRoot%\\system32\\sppsvc.exe,-101&quot;</span><br><span class="line">&quot;ErrorControl&quot;=dword:00000001</span><br><span class="line">&quot;ImagePath&quot;=hex(2):25,00,53,00,79,00,73,00,74,00,65,00,6d,00,52,00,6f,00,6f,00,\</span><br><span class="line">  74,00,25,00,5c,00,73,00,79,00,73,00,74,00,65,00,6d,00,33,00,32,00,5c,00,73,\</span><br><span class="line">  00,70,00,70,00,73,00,76,00,63,00,2e,00,65,00,78,00,65,00,00,00</span><br><span class="line">&quot;Start&quot;=dword:00000002</span><br><span class="line">&quot;Type&quot;=dword:00000010</span><br><span class="line">&quot;Description&quot;=&quot;@%SystemRoot%\\system32\\sppsvc.exe,-100&quot;</span><br><span class="line">&quot;DependOnService&quot;=hex(7):52,00,70,00,63,00,53,00,73,00,00,00,00,00</span><br><span class="line">&quot;ObjectName&quot;=&quot;NT AUTHORITY\\NetworkService&quot;</span><br><span class="line">&quot;ServiceSidType&quot;=dword:00000001</span><br><span class="line">&quot;RequiredPrivileges&quot;=hex(7):53,00,65,00,41,00,75,00,64,00,69,00,74,00,50,00,72,\</span><br><span class="line">  00,69,00,76,00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,43,00,68,00,\</span><br><span class="line">  61,00,6e,00,67,00,65,00,4e,00,6f,00,74,00,69,00,66,00,79,00,50,00,72,00,69,\</span><br><span class="line">  00,76,00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,43,00,72,00,65,00,\</span><br><span class="line">  61,00,74,00,65,00,47,00,6c,00,6f,00,62,00,61,00,6c,00,50,00,72,00,69,00,76,\</span><br><span class="line">  00,69,00,6c,00,65,00,67,00,65,00,00,00,53,00,65,00,49,00,6d,00,70,00,65,00,\</span><br><span class="line">  72,00,73,00,6f,00,6e,00,61,00,74,00,65,00,50,00,72,00,69,00,76,00,69,00,6c,\</span><br><span class="line">  00,65,00,67,00,65,00,00,00,00,00</span><br><span class="line">&quot;DelayedAutoStart&quot;=dword:00000001</span><br><span class="line">&quot;FailureActions&quot;=hex:80,51,01,00,00,00,00,00,00,00,00,00,03,00,00,00,14,00,00,\</span><br><span class="line">  00,01,00,00,00,c0,d4,01,00,01,00,00,00,e0,93,04,00,00,00,00,00,00,00,00,00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\Security]</span><br><span class="line">&quot;Security&quot;=hex:01,00,14,80,a0,00,00,00,ac,00,00,00,14,00,00,00,30,00,00,00,02,\</span><br><span class="line">  00,1c,00,01,00,00,00,02,80,14,00,ff,01,0f,00,01,01,00,00,00,00,00,01,00,00,\</span><br><span class="line">  00,00,02,00,70,00,05,00,00,00,00,00,14,00,ff,01,02,00,01,01,00,00,00,00,00,\</span><br><span class="line">  05,12,00,00,00,00,00,18,00,fd,01,0f,00,01,02,00,00,00,00,00,05,20,00,00,00,\</span><br><span class="line">  20,02,00,00,00,00,14,00,9d,01,02,00,01,01,00,00,00,00,00,05,04,00,00,00,00,\</span><br><span class="line">  00,14,00,9d,01,02,00,01,01,00,00,00,00,00,05,06,00,00,00,00,00,14,00,14,00,\</span><br><span class="line">  00,00,01,01,00,00,00,00,00,05,0b,00,00,00,01,01,00,00,00,00,00,05,12,00,00,\</span><br><span class="line">  00,01,01,00,00,00,00,00,05,12,00,00,00</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\TriggerInfo]</span><br><span class="line">[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\sppsvc\TriggerInfo\0]</span><br><span class="line">&quot;Type&quot;=dword:00000014</span><br><span class="line">&quot;Action&quot;=dword:00000001</span><br><span class="line">&quot;GUID&quot;=hex:da,8a,52,f5,5f,be,14,4f,8a,ef,a9,5d,e7,28,11,61</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/jenyzhang/article/details/51867485">https://blog.csdn.net/jenyzhang/article/details/51867485</a></p>
+]]></content>
+      <categories>
+        <category>Win</category>
+      </categories>
+      <tags>
+        <tag>Win</tag>
       </tags>
   </entry>
   <entry>
@@ -1291,75 +1291,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Redis学习笔记(五)——整数集合</title>
-    <url>/2020/12/06/2020-12-06-redis-note-05-intset/</url>
-    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
-<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
-<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3><span id="more"></span>
-
-<h4 id="1-1-数据结构设计"><a href="#1-1-数据结构设计" class="headerlink" title="1.1 数据结构设计"></a>1.1 数据结构设计</h4><p>以Redis6.0源码为例，整数集合由<code>intset.c/intset</code>结构定义，数据结构设计如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> encoding;			<span class="comment">// 编码方式</span></span><br><span class="line">    <span class="type">uint32_t</span> length;			<span class="comment">// 集合中的元素个数</span></span><br><span class="line">    <span class="type">int8_t</span> contents[];			<span class="comment">// 用于保存集合中的元素</span></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>length属性表示整数集合中元素的个数。</li>
-<li>集合中所有元素以<strong>有序、无重复</strong>的方式保存在contents数组。</li>
-<li><strong>虽然contents是int8_t类型，但它本身不保存int8_t类型的元素</strong>。实际上，contents数组保存的元素类型由encoding属性决定，encoding属性有以下3种取值：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// intset.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
-
-<p>举例，如encoding取值为<code>INTSET_ENC_INT32</code>，表示contents数组保存的每个元素都是int32_t类型的整数。</p>
-<p>下图表示一个包含3个类型为uint16_t的元素的整数集合：<br><img data-src="/2020/12/06/2020-12-06-redis-note-05-intset/image1.png"></p>
-<p>当创建空的整数集合时，为了节约内存，默认的encoding取值为<code>INTSET_ENC_INT16</code>(参考<code>intset.c/intsetNew</code>的实现)</p>
-<h4 id="1-2-升级操作"><a href="#1-2-升级操作" class="headerlink" title="1.2 升级操作"></a>1.2 升级操作</h4><p>考虑插入新元素a到整数集合S的场景：如果新元素所占字节大小大于整数集合中现有的任意一个元素所占字节大小(即<code>sizeof(a) &gt; S.encoding</code>），就需要先对整数集合执行<strong>升级</strong>操作后，再执行插入操作。</p>
-<p>升级操作的要点如下：</p>
-<ul>
-<li>根据新元素类型，计算扩展后的整数集合需要分配的空间大小，并调用realloc分配空间。</li>
-<li>将原整数集合中所有元素类型转换为和新元素相同，并将所有转化后的元素有序地放到正确的位置上。</li>
-<li>将新元素添加到整数集合。<strong>升级后新元素放置的位置要么在最开头，要么在最结尾</strong>，其原因在于：<strong>能引发升级的新元素，它的值要么小于先前整数集合中的所有元素，要么大于所有元素。</strong></li>
-</ul>
-<p>升级操作的源码实现参考<code>intset.c/intsetUpgradeAndAdd</code>, 如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> intset *<span class="title function_">intsetUpgradeAndAdd</span><span class="params">(intset *is, <span class="type">int64_t</span> value)</span> &#123;</span><br><span class="line">    <span class="type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);</span><br><span class="line">    <span class="type">uint8_t</span> newenc = _intsetValueEncoding(value);</span><br><span class="line">    <span class="type">int</span> length = intrev32ifbe(is-&gt;length);</span><br><span class="line">    <span class="type">int</span> prepend = value &lt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* First set new encoding and resize */</span></span><br><span class="line">    is-&gt;encoding = intrev32ifbe(newenc);</span><br><span class="line">    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span></span><br><span class="line"><span class="comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span></span><br><span class="line"><span class="comment">     * space at either the beginning or the end of the intset. */</span></span><br><span class="line">    <span class="keyword">while</span>(length--)</span><br><span class="line">        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the value at the beginning or the end. */</span></span><br><span class="line">    <span class="keyword">if</span> (prepend)</span><br><span class="line">        _intsetSet(is,<span class="number">0</span>,value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        _intsetSet(is,intrev32ifbe(is-&gt;length),value);</span><br><span class="line">    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> is;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>另外，Redis中的整数集合不支持降级操作。</p>
-<h3 id="2-整数集合的API"><a href="#2-整数集合的API" class="headerlink" title="2. 整数集合的API"></a>2. 整数集合的API</h3><table>
-<thead>
-<tr>
-<th align="left">API</th>
-<th align="left">功能</th>
-<th align="left">复杂度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">intset *intsetNew(void);</td>
-<td align="left">创建空的整数集合</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">intset *intsetAdd(intset *is, int64_t value, uint8_t *success);</td>
-<td align="left">插入新元素到整数集合</td>
-<td align="left">O(N)</td>
-</tr>
-<tr>
-<td align="left">intset *intsetRemove(intset *is, int64_t value, int *success);</td>
-<td align="left">删除整数集合中的指定元素</td>
-<td align="left">O(N)</td>
-</tr>
-<tr>
-<td align="left">uint8_t intsetFind(intset *is, int64_t value);</td>
-<td align="left">查询元素是否在整数集合中。用二分查找法实现</td>
-<td align="left">O(logN)</td>
-</tr>
-</tbody></table>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》 —— 第6章 整数集合</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>设计跳表, C语言实现</title>
     <url>/2020/12/05/2020-12-05-design-skiplist-by-c/</url>
     <content><![CDATA[<h3 id="跳跃表简介"><a href="#跳跃表简介" class="headerlink" title="跳跃表简介"></a>跳跃表简介</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。其性能和红黑树相当，且跳跃表实现更为简单。</p>
@@ -1448,6 +1379,75 @@
       <tags>
         <tag>C</tag>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis学习笔记(五)——整数集合</title>
+    <url>/2020/12/06/2020-12-06-redis-note-05-intset/</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
+<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
+<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3><span id="more"></span>
+
+<h4 id="1-1-数据结构设计"><a href="#1-1-数据结构设计" class="headerlink" title="1.1 数据结构设计"></a>1.1 数据结构设计</h4><p>以Redis6.0源码为例，整数集合由<code>intset.c/intset</code>结构定义，数据结构设计如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> encoding;			<span class="comment">// 编码方式</span></span><br><span class="line">    <span class="type">uint32_t</span> length;			<span class="comment">// 集合中的元素个数</span></span><br><span class="line">    <span class="type">int8_t</span> contents[];			<span class="comment">// 用于保存集合中的元素</span></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>length属性表示整数集合中元素的个数。</li>
+<li>集合中所有元素以<strong>有序、无重复</strong>的方式保存在contents数组。</li>
+<li><strong>虽然contents是int8_t类型，但它本身不保存int8_t类型的元素</strong>。实际上，contents数组保存的元素类型由encoding属性决定，encoding属性有以下3种取值：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// intset.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
+
+<p>举例，如encoding取值为<code>INTSET_ENC_INT32</code>，表示contents数组保存的每个元素都是int32_t类型的整数。</p>
+<p>下图表示一个包含3个类型为uint16_t的元素的整数集合：<br><img data-src="/2020/12/06/2020-12-06-redis-note-05-intset/image1.png"></p>
+<p>当创建空的整数集合时，为了节约内存，默认的encoding取值为<code>INTSET_ENC_INT16</code>(参考<code>intset.c/intsetNew</code>的实现)</p>
+<h4 id="1-2-升级操作"><a href="#1-2-升级操作" class="headerlink" title="1.2 升级操作"></a>1.2 升级操作</h4><p>考虑插入新元素a到整数集合S的场景：如果新元素所占字节大小大于整数集合中现有的任意一个元素所占字节大小(即<code>sizeof(a) &gt; S.encoding</code>），就需要先对整数集合执行<strong>升级</strong>操作后，再执行插入操作。</p>
+<p>升级操作的要点如下：</p>
+<ul>
+<li>根据新元素类型，计算扩展后的整数集合需要分配的空间大小，并调用realloc分配空间。</li>
+<li>将原整数集合中所有元素类型转换为和新元素相同，并将所有转化后的元素有序地放到正确的位置上。</li>
+<li>将新元素添加到整数集合。<strong>升级后新元素放置的位置要么在最开头，要么在最结尾</strong>，其原因在于：<strong>能引发升级的新元素，它的值要么小于先前整数集合中的所有元素，要么大于所有元素。</strong></li>
+</ul>
+<p>升级操作的源码实现参考<code>intset.c/intsetUpgradeAndAdd</code>, 如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> intset *<span class="title function_">intsetUpgradeAndAdd</span><span class="params">(intset *is, <span class="type">int64_t</span> value)</span> &#123;</span><br><span class="line">    <span class="type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);</span><br><span class="line">    <span class="type">uint8_t</span> newenc = _intsetValueEncoding(value);</span><br><span class="line">    <span class="type">int</span> length = intrev32ifbe(is-&gt;length);</span><br><span class="line">    <span class="type">int</span> prepend = value &lt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* First set new encoding and resize */</span></span><br><span class="line">    is-&gt;encoding = intrev32ifbe(newenc);</span><br><span class="line">    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span></span><br><span class="line"><span class="comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span></span><br><span class="line"><span class="comment">     * space at either the beginning or the end of the intset. */</span></span><br><span class="line">    <span class="keyword">while</span>(length--)</span><br><span class="line">        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the value at the beginning or the end. */</span></span><br><span class="line">    <span class="keyword">if</span> (prepend)</span><br><span class="line">        _intsetSet(is,<span class="number">0</span>,value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        _intsetSet(is,intrev32ifbe(is-&gt;length),value);</span><br><span class="line">    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> is;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>另外，Redis中的整数集合不支持降级操作。</p>
+<h3 id="2-整数集合的API"><a href="#2-整数集合的API" class="headerlink" title="2. 整数集合的API"></a>2. 整数集合的API</h3><table>
+<thead>
+<tr>
+<th align="left">API</th>
+<th align="left">功能</th>
+<th align="left">复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">intset *intsetNew(void);</td>
+<td align="left">创建空的整数集合</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">intset *intsetAdd(intset *is, int64_t value, uint8_t *success);</td>
+<td align="left">插入新元素到整数集合</td>
+<td align="left">O(N)</td>
+</tr>
+<tr>
+<td align="left">intset *intsetRemove(intset *is, int64_t value, int *success);</td>
+<td align="left">删除整数集合中的指定元素</td>
+<td align="left">O(N)</td>
+</tr>
+<tr>
+<td align="left">uint8_t intsetFind(intset *is, int64_t value);</td>
+<td align="left">查询元素是否在整数集合中。用二分查找法实现</td>
+<td align="left">O(logN)</td>
+</tr>
+</tbody></table>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》 —— 第6章 整数集合</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -3704,147 +3704,6 @@
       </tags>
   </entry>
   <entry>
-    <title>2022 Trend Micro 社招面经</title>
-    <url>/2022/03/20/2022-03-20-trendmicro-job-interview/</url>
-    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
-<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
-<li>2022-02-25 官网投递简历，职位：Linux开发</li>
-</ul>
-<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
-
-<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
-<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
-<ul>
-<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
-</li>
-<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
-</li>
-</ul>
-<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
-<p>线上面试，用的微软Teams，二对一，80min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>问项目（30min）</p>
-<ul>
-<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
-<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
-<li>举一个项目中你遇到的难题，如何解决的</li>
-<li>你的项目中为什么用Redis，不用MySQL</li>
-<li>……</li>
-</ul>
-</li>
-<li><p>1道编程题 （15min）</p>
-<ul>
-<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
-</ul>
-</li>
-<li><p>技术问题（25min）</p>
-<ul>
-<li>给每个中国人分一个IP地址，够分吗</li>
-<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
-<li>后台服务变慢，谈谈你的定位思路</li>
-<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
-<li>Redis过期键的实现原理，过期时间怎么存储的</li>
-<li>Redis缓存逐出策略</li>
-<li>全中国人的数据能放到一张MySQL表里吗</li>
-<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
-<li>Linux下如何定时备份一个文件</li>
-</ul>
-</li>
-<li><p>其它问题（10min）</p>
-<ul>
-<li>同事对你的评价</li>
-<li>你的缺点是什么</li>
-<li>同事觉得你有什么阴暗面</li>
-<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
-</ul>
-</li>
-</ul>
-<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
-<p>现场面试，二对一，50min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>简单问项目（10min）</p>
-</li>
-<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
-</li>
-<li><p>你在项目组里还负责了哪些项目和工作</p>
-</li>
-<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
-</li>
-<li><p>你平时用到的开发工具和编程语言</p>
-</li>
-<li><p>说下你的团队成员组成</p>
-</li>
-<li><p>说说你最近在看的书</p>
-</li>
-<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
-<ul>
-<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
-</ul>
-</li>
-<li><p>项目中遇到别人不配合你的工作怎么办</p>
-</li>
-<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
-</li>
-<li><p>评价你同事的水平</p>
-</li>
-<li><p>有没有感觉有技术能力比较弱的同事</p>
-</li>
-<li><p>你还有什么问题（问团队成员组成）</p>
-</li>
-</ul>
-<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
-<p>现场面试，一对一，30min</p>
-<ul>
-<li><p>自我介绍</p>
-</li>
-<li><p>为什么选择我们公司，选择这个职位</p>
-</li>
-<li><p>你为什么离职</p>
-</li>
-<li><p>你当初考虑XX公司的原因是什么</p>
-</li>
-<li><p>你有考虑过内部转岗吗</p>
-</li>
-<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
-</li>
-<li><p>你同事对你的评价</p>
-</li>
-<li><p>说说你的优点</p>
-</li>
-<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
-</li>
-</ul>
-<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
-<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
-<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
-<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
-<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
-<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
-<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
-<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
-<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
-<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
-<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
-<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
-<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
-<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
-<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
-<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/01/29/2022-01-29-redis-pubsub-study/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -4100,6 +3959,147 @@
       </tags>
   </entry>
   <entry>
+    <title>2022 Trend Micro 社招面经</title>
+    <url>/2022/03/20/2022-03-20-trendmicro-job-interview/</url>
+    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
+<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
+<li>2022-02-25 官网投递简历，职位：Linux开发</li>
+</ul>
+<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
+
+<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
+<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
+<ul>
+<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
+</li>
+<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
+</li>
+</ul>
+<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
+<p>线上面试，用的微软Teams，二对一，80min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>问项目（30min）</p>
+<ul>
+<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
+<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
+<li>举一个项目中你遇到的难题，如何解决的</li>
+<li>你的项目中为什么用Redis，不用MySQL</li>
+<li>……</li>
+</ul>
+</li>
+<li><p>1道编程题 （15min）</p>
+<ul>
+<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
+</ul>
+</li>
+<li><p>技术问题（25min）</p>
+<ul>
+<li>给每个中国人分一个IP地址，够分吗</li>
+<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
+<li>后台服务变慢，谈谈你的定位思路</li>
+<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
+<li>Redis过期键的实现原理，过期时间怎么存储的</li>
+<li>Redis缓存逐出策略</li>
+<li>全中国人的数据能放到一张MySQL表里吗</li>
+<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
+<li>Linux下如何定时备份一个文件</li>
+</ul>
+</li>
+<li><p>其它问题（10min）</p>
+<ul>
+<li>同事对你的评价</li>
+<li>你的缺点是什么</li>
+<li>同事觉得你有什么阴暗面</li>
+<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
+</ul>
+</li>
+</ul>
+<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
+<p>现场面试，二对一，50min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>简单问项目（10min）</p>
+</li>
+<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
+</li>
+<li><p>你在项目组里还负责了哪些项目和工作</p>
+</li>
+<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
+</li>
+<li><p>你平时用到的开发工具和编程语言</p>
+</li>
+<li><p>说下你的团队成员组成</p>
+</li>
+<li><p>说说你最近在看的书</p>
+</li>
+<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
+<ul>
+<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
+</ul>
+</li>
+<li><p>项目中遇到别人不配合你的工作怎么办</p>
+</li>
+<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
+</li>
+<li><p>评价你同事的水平</p>
+</li>
+<li><p>有没有感觉有技术能力比较弱的同事</p>
+</li>
+<li><p>你还有什么问题（问团队成员组成）</p>
+</li>
+</ul>
+<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
+<p>现场面试，一对一，30min</p>
+<ul>
+<li><p>自我介绍</p>
+</li>
+<li><p>为什么选择我们公司，选择这个职位</p>
+</li>
+<li><p>你为什么离职</p>
+</li>
+<li><p>你当初考虑XX公司的原因是什么</p>
+</li>
+<li><p>你有考虑过内部转岗吗</p>
+</li>
+<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
+</li>
+<li><p>你同事对你的评价</p>
+</li>
+<li><p>说说你的优点</p>
+</li>
+<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
+</li>
+</ul>
+<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
+<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
+<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
+<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
+<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
+<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
+<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
+<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
+<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
+<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
+<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
+<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
+<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
+<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
+<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
+<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>tar打包时去掉目录前缀的方法</title>
     <url>/2022/06/04/2022-06-04-use-tar-to-remove-dir-prefix/</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
@@ -4147,25 +4147,6 @@
       </tags>
   </entry>
   <entry>
-    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
-    <url>/2023/02/01/2023-02-01-rpm-build-use-python3/</url>
-    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Centos7中修改hostname的方法</title>
     <url>/2023/02/13/2023-02-13-change-hostname-in-centos7/</url>
     <content><![CDATA[<h2 id="hostname临时修改主机名"><a href="#hostname临时修改主机名" class="headerlink" title="hostname临时修改主机名"></a>hostname临时修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostname XXX</span><br></pre></td></tr></table></figure>
@@ -4183,6 +4164,25 @@
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
+    <url>/2023/02/01/2023-02-01-rpm-build-use-python3/</url>
+    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -4375,6 +4375,24 @@
       </tags>
   </entry>
   <entry>
+    <title>crontab执行失败返回127的原因和解决方法</title>
+    <url>/2023/05/08/2023-05-08-cronjob-return-127-case/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>crontab</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>pip3只下载不安装以及离线安装的方法</title>
     <url>/2023/05/08/2023-05-08-how-to-download-only-with-pip3/</url>
     <content><![CDATA[<h3 id="只下载不安装"><a href="#只下载不安装" class="headerlink" title="只下载不安装"></a>只下载不安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
@@ -4392,24 +4410,6 @@
       </categories>
       <tags>
         <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>crontab执行失败返回127的原因和解决方法</title>
-    <url>/2023/05/08/2023-05-08-cronjob-return-127-case/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>crontab</tag>
       </tags>
   </entry>
   <entry>
@@ -5588,6 +5588,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Linux双网卡环境概率出现DNS解析错误</title>
+    <url>/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
+<span id="more"></span>
+<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img data-src="/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
+<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
+<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>判断两个IP地址是否在同一网段(Shell实现)</title>
     <url>/2024/03/28/2024-03-28-check-two-ip-in-same-network/</url>
     <content><![CDATA[<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：提取 CIDR 的网络地址和子网掩码</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_network</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_subnet</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $2&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：将 IP 地址转换为二进制格式</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">ip_to_binary</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> ip=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">local</span> binary=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="built_in">local</span> IFS=<span class="string">&#x27;.&#x27;</span></span><br><span class="line">    <span class="built_in">local</span> octets=(<span class="variable">$ip</span>)</span><br><span class="line">    <span class="keyword">for</span> octet <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$&#123;octets[@]&#125;</span>&quot;</span>; <span class="keyword">do</span></span><br><span class="line">        <span class="built_in">local</span> bin_octet=<span class="string">&quot;&quot;</span></span><br><span class="line">        <span class="built_in">local</span> num=<span class="variable">$octet</span></span><br><span class="line">        <span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="number">8</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">            bin_octet=$((num % <span class="number">2</span>))<span class="variable">$bin_octet</span></span><br><span class="line">            num=$((num / <span class="number">2</span>))</span><br><span class="line">        <span class="keyword">done</span></span><br><span class="line">        binary+=<span class="variable">$bin_octet</span></span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$binary</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -5810,27 +5831,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux双网卡环境概率出现DNS解析错误</title>
-    <url>/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
-<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
-<span id="more"></span>
-<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img data-src="/2024/03/27/2024-03-27-dns-resolve-fail-on-dual-nic-vm/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
-<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
-<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>Network</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
     <url>/2024/04/21/2024-04-21-gold-lof-open-and-my-tractor-is-starting-to-smoke/</url>
     <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
@@ -5847,27 +5847,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>iptables规则转换为nftables的方法</title>
-    <url>/2024/05/21/2024-05-21-convert-iptables-to-nftables/</url>
-    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
-<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
-</ul>
-]]></content>
-      <categories>
-        <category>iptables</category>
-      </categories>
-      <tags>
-        <tag>iptables</tag>
       </tags>
   </entry>
   <entry>
@@ -5897,6 +5876,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>iptables规则转换为nftables的方法</title>
+    <url>/2024/05/21/2024-05-21-convert-iptables-to-nftables/</url>
+    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
+<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>iptables</category>
+      </categories>
+      <tags>
+        <tag>iptables</tag>
       </tags>
   </entry>
   <entry>
@@ -6815,61 +6815,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
-    <url>/2024/09/16/2024-09-16-mysqlclient-connot-install-via-pip/</url>
-    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
-<h2 id="安装mysqlclient报错"><a href="#安装mysqlclient报错" class="headerlink" title="安装mysqlclient报错"></a>安装mysqlclient报错</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
-<p>报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm -i mysql84-community-release-el9-1.noarch.rpm</span><br><span class="line">yum install -y python3-devel mysql-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
-<p><code>pip list</code> 命令查看已安装的mysqlclient信息</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip list  | grep mysqlclient</span><br><span class="line">mysqlclient         2.2.4</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
-]]></content>
-      <categories>
-        <category>Django</category>
-      </categories>
-      <tags>
-        <tag>Django</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Rocky Linux 9中添加或删除某个网卡的静态路由</title>
-    <url>/2024/09/19/2024-09-19-how-to-configure-static-route-in-rhel9/</url>
-    <content><![CDATA[<h2 id="使用ip命令配置临时路由"><a href="#使用ip命令配置临时路由" class="headerlink" title="使用ip命令配置临时路由"></a>使用ip命令配置临时路由</h2><p>添加静态路由</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ip route add &lt;目的网络&gt; via &lt;下一跳IP&gt; dev &lt;网卡接口名称&gt;</span><br></pre></td></tr></table></figure>
-<p>例: 给eth0网卡添加一个到达 192.168.2.0&#x2F;24 网络，下一跳为 192.168.1.254 的路由</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ip route add 192.168.2.0/24 via 192.168.1.254 dev eth0</span><br></pre></td></tr></table></figure>
-<p>删除静态路由</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ip route del &lt;目的网络&gt; via &lt;下一跳IP&gt; dev &lt;网卡接口名称&gt;</span><br></pre></td></tr></table></figure>
-<p>例: 删除上述的静态路由</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ip route del 192.168.2.0/24 via 192.168.1.254 dev eth0</span><br></pre></td></tr></table></figure>
-
-<h2 id="使用nmcli配置永久路由"><a href="#使用nmcli配置永久路由" class="headerlink" title="使用nmcli配置永久路由"></a>使用nmcli配置永久路由</h2><p>添加静态路由<br>例: 给eth0网卡添加一个到达 192.168.2.0&#x2F;24 网络，下一跳为 192.168.1.254 的路由</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 +ipv4.routes &quot;192.168.2.0/24 192.168.1.254&quot;</span><br></pre></td></tr></table></figure>
-<p>如果需要添加多个路由，可以用逗号分隔的方式添加：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 +ipv4.routes &quot;192.168.2.0/24 192.168.1.254,192.168.3.0/24 192.168.1.254&quot;</span><br></pre></td></tr></table></figure>
-<p>删除静态路由</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 -ipv4.routes &quot;192.168.2.0/24 192.168.1.254&quot;</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/configuring-static-routes_configuring-and-managing-networking#proc_configuring-a-static-route-by-using-nmtui_configuring-static-routes">Red Hat Documentation —— Chapter 24. Configuring a static route</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>Network</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Django基础</title>
     <url>/2024/09/15/2024-09-15-django-basic/</url>
     <content><![CDATA[<h2 id="Django快速上手"><a href="#Django快速上手" class="headerlink" title="Django快速上手"></a>Django快速上手</h2><p>参考: <a href="https://pcj600.github.io/2024/08/23/2024-08-23-how-to-install-django-on-rhel9/">Django快速上手</a></p>
@@ -7202,6 +7147,61 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
+    <url>/2024/09/16/2024-09-16-mysqlclient-connot-install-via-pip/</url>
+    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
+<h2 id="安装mysqlclient报错"><a href="#安装mysqlclient报错" class="headerlink" title="安装mysqlclient报错"></a>安装mysqlclient报错</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+<p>报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm -i mysql84-community-release-el9-1.noarch.rpm</span><br><span class="line">yum install -y python3-devel mysql-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+<p><code>pip list</code> 命令查看已安装的mysqlclient信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip list  | grep mysqlclient</span><br><span class="line">mysqlclient         2.2.4</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Rocky Linux 9中添加或删除某个网卡的静态路由</title>
+    <url>/2024/09/19/2024-09-19-how-to-configure-static-route-in-rhel9/</url>
+    <content><![CDATA[<h2 id="使用ip命令配置临时路由"><a href="#使用ip命令配置临时路由" class="headerlink" title="使用ip命令配置临时路由"></a>使用ip命令配置临时路由</h2><p>添加静态路由</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ip route add &lt;目的网络&gt; via &lt;下一跳IP&gt; dev &lt;网卡接口名称&gt;</span><br></pre></td></tr></table></figure>
+<p>例: 给eth0网卡添加一个到达 192.168.2.0&#x2F;24 网络，下一跳为 192.168.1.254 的路由</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ip route add 192.168.2.0/24 via 192.168.1.254 dev eth0</span><br></pre></td></tr></table></figure>
+<p>删除静态路由</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ip route del &lt;目的网络&gt; via &lt;下一跳IP&gt; dev &lt;网卡接口名称&gt;</span><br></pre></td></tr></table></figure>
+<p>例: 删除上述的静态路由</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ip route del 192.168.2.0/24 via 192.168.1.254 dev eth0</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用nmcli配置永久路由"><a href="#使用nmcli配置永久路由" class="headerlink" title="使用nmcli配置永久路由"></a>使用nmcli配置永久路由</h2><p>添加静态路由<br>例: 给eth0网卡添加一个到达 192.168.2.0&#x2F;24 网络，下一跳为 192.168.1.254 的路由</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 +ipv4.routes &quot;192.168.2.0/24 192.168.1.254&quot;</span><br></pre></td></tr></table></figure>
+<p>如果需要添加多个路由，可以用逗号分隔的方式添加：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 +ipv4.routes &quot;192.168.2.0/24 192.168.1.254,192.168.3.0/24 192.168.1.254&quot;</span><br></pre></td></tr></table></figure>
+<p>删除静态路由</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 -ipv4.routes &quot;192.168.2.0/24 192.168.1.254&quot;</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/configuring-static-routes_configuring-and-managing-networking#proc_configuring-a-static-route-by-using-nmtui_configuring-static-routes">Red Hat Documentation —— Chapter 24. Configuring a static route</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用nmcli配置某个网卡的static IP,Gateway,DNS的方法</title>
     <url>/2024/09/25/2024-09-25-configure-nic-by-nmcli/</url>
     <content><![CDATA[<p>先查看当前网卡</p>
@@ -7267,36 +7267,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux中定时删除10天前的日志文件</title>
-    <url>/2024/10/09/2024-10-09-how-to-delete-logfiles-ten-days-ago/</url>
-    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>只查看要删除的文件有哪些，不真正删除文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
-<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<p>再配置crontab</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
-<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL基础</title>
     <url>/2024/10/03/2024-10-03-mysql-tutorial/</url>
     <content><![CDATA[<h2 id="数据库相关概念"><a href="#数据库相关概念" class="headerlink" title="数据库相关概念"></a>数据库相关概念</h2><ul>
@@ -7316,6 +7286,8 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>DML：Data Manipulation Language 为用户提供添加、删除、更新数据的能力</li>
 <li>DQL：Data Query Language 允许用户查询数据，这也是最频繁的数据库日常操作。</li>
 </ul>
+<span id="more"></span>
+
 <h2 id="DDL-数据库操作"><a href="#DDL-数据库操作" class="headerlink" title="DDL-数据库操作"></a>DDL-数据库操作</h2><h3 id="查询所有数据库"><a href="#查询所有数据库" class="headerlink" title="查询所有数据库"></a>查询所有数据库</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show databases;</span><br></pre></td></tr></table></figure>
 <h3 id="查询当前数据库"><a href="#查询当前数据库" class="headerlink" title="查询当前数据库"></a>查询当前数据库</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show database();</span><br></pre></td></tr></table></figure>
 <h3 id="创建表"><a href="#创建表" class="headerlink" title="创建表"></a>创建表</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create database [if not exists] 数据库名 [default charset 字符集] [COLLATE 排序规则];</span><br></pre></td></tr></table></figure>
@@ -7501,6 +7473,11 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <td>YYYY-MM-DD HH:MM:SS</td>
 </tr>
 </tbody></table>
+<h3 id="处理NULL"><a href="#处理NULL" class="headerlink" title="处理NULL"></a>处理NULL</h3><p>使用IS NULL和IS NOT NULL，不要用&#x3D;</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; SELECT 1 IS NULL, 1 IS NOT NULL;</span><br><span class="line">+-----------+---------------+</span><br><span class="line">| 1 IS NULL | 1 IS NOT NULL |</span><br><span class="line">+-----------+---------------+</span><br><span class="line">|         0 |             1 |</span><br><span class="line">+-----------+---------------+</span><br></pre></td></tr></table></figure>
+<p>和NULL做算术比较的结果仍然是NULL</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; SELECT 1 = NULL, 1 &lt;&gt; NULL, 1 &lt; NULL, 1 &gt; NULL;</span><br><span class="line">+----------+-----------+----------+----------+</span><br><span class="line">| 1 = NULL | 1 &lt;&gt; NULL | 1 &lt; NULL | 1 &gt; NULL |</span><br><span class="line">+----------+-----------+----------+----------+</span><br><span class="line">|     NULL |      NULL |     NULL |     NULL |</span><br><span class="line">+----------+-----------+----------+----------+</span><br><span class="line">mysql&gt; SELECT 0 IS NULL, 0 IS NOT NULL, &#x27;&#x27; IS NULL, &#x27;&#x27; IS NOT NULL;</span><br><span class="line">+-----------+---------------+------------+----------------+</span><br><span class="line">| 0 IS NULL | 0 IS NOT NULL | &#x27;&#x27; IS NULL | &#x27;&#x27; IS NOT NULL |</span><br><span class="line">+-----------+---------------+------------+----------------+</span><br><span class="line">|         0 |             1 |          0 |              1 |</span><br><span class="line">+-----------+---------------+------------+----------------+</span><br></pre></td></tr></table></figure>
+<p>In MySQL, 0 or NULL means false and anything else means true. The default truth value from a boolean operation is 1.</p>
 <h2 id="DDL-表操作-修改"><a href="#DDL-表操作-修改" class="headerlink" title="DDL-表操作-修改"></a>DDL-表操作-修改</h2><h3 id="添加字段"><a href="#添加字段" class="headerlink" title="添加字段"></a>添加字段</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table 表名 add 字段名 类型(长度) [COMMENT 注释] [约束];</span><br></pre></td></tr></table></figure>
 <p>例: 给emp表添加字段nickname</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">alter table emp add nickname varchar(20);</span><br></pre></td></tr></table></figure>
@@ -7859,6 +7836,15 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 </tbody></table>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table user(</span><br><span class="line">	id int primary key auto_increment,</span><br><span class="line">	name varchar(10) not null unique, </span><br><span class="line">	age int check(age &gt; 0 &amp;&amp; age &lt; 120),</span><br><span class="line">	status char(1) default &#x27;1&#x27;,</span><br><span class="line">	gender char(1)</span><br><span class="line">)Engine=InnoDB;</span><br><span class="line"></span><br><span class="line">-- 插入数据违反约束，插入失败</span><br><span class="line">insert into user(name,age,status,gender) values(&#x27;tom1&#x27;,19,&#x27;1&#x27;,&#x27;M&#x27;),(&#x27;tom2&#x27;,20,&#x27;0&#x27;,&#x27;F&#x27;);</span><br><span class="line">mysql&gt; insert into user(name,age,status,gender) values(&#x27;tom1&#x27;,19,&#x27;1&#x27;,&#x27;M&#x27;);</span><br><span class="line">ERROR 1062 (23000): Duplicate entry &#x27;tom1&#x27; for key &#x27;user.name&#x27;</span><br><span class="line">mysql&gt; insert into user(name,age,status,gender) values(&#x27;tom3&#x27;,190,&#x27;1&#x27;,&#x27;M&#x27;);</span><br><span class="line">ERROR 3819 (HY000): Check constraint &#x27;user_chk_1&#x27; is violated.</span><br></pre></td></tr></table></figure>
 
+<h3 id="主键约束"><a href="#主键约束" class="headerlink" title="主键约束"></a>主键约束</h3><ul>
+<li>关系表中的任意两条记录不能重复，通过某个字段能唯一区分出不同的记录，这个字段被称为主键</li>
+<li>主键一般是采用完全业务无关的字段，这个字段通常为id，常见的id类型：<ul>
+<li>自增整数类型：INT（约21亿）, BIGINT(约922亿亿)</li>
+<li>全局唯一GUID类型：也称UUID，使用一种全局唯一的字符串作为主键，类似8f55d96b-8acc-4636-8cb8-76bf8abc2f57。</li>
+</ul>
+</li>
+<li>关系数据库允许多个字段标识唯一记录，这种主键称为联合主键（很少用）</li>
+</ul>
 <h3 id="外键约束"><a href="#外键约束" class="headerlink" title="外键约束"></a>外键约束</h3><p>外键用来让两张表数据之间建立连接，从而保证数据一致性和完整性</p>
 <p>举例：创建两张表：部门表，员工表<br><img data-src="/2024/10/03/2024-10-03-mysql-tutorial/image_fk1.png"></p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table dept(id int auto_increment primary key, name varchar(50) not null);</span><br><span class="line">insert into dept(id, name) values(1, &#x27;研发&#x27;), (2, &#x27;市场&#x27;), (3, &#x27;财务&#x27;), (4,&#x27;销售&#x27;), (5, &#x27;总经办&#x27;);</span><br><span class="line">create table emp(id int auto_increment primary key, name varchar(50) not null,age int, job varchar(20), salary int, entrydate date, managerid int,dept_id int);</span><br><span class="line">insert into emp(id,name,age,job,salary,entrydate,managerid,dept_id)  values(1, &#x27;金庸&#x27;, 66,&#x27;总裁&#x27;,20000,&#x27;2000-01-01&#x27;, 1 ,5);</span><br></pre></td></tr></table></figure>
@@ -7911,191 +7897,115 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 </ul>
 <h3 id="笛卡尔积"><a href="#笛卡尔积" class="headerlink" title="笛卡尔积"></a>笛卡尔积</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp, dept;</span><br><span class="line">select * from emp cross join dept;</span><br></pre></td></tr></table></figure>
 <p>解释：emp表有3条记录, dept有5条记录，该查询返回5*3&#x3D;15条记录</p>
-<h3 id="内连接"><a href="#内连接" class="headerlink" title="内连接"></a>内连接</h3><p>隐式内连接</p>
+<h3 id="内连接"><a href="#内连接" class="headerlink" title="内连接"></a>内连接</h3><p><strong>隐式内连接</strong></p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 字段列表 from 表1,表2 where 条件;</span><br></pre></td></tr></table></figure>
-<p>显式内连接</p>
+<p><strong>显式内连接</strong></p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 字段列表 from 表1 [inner] join 表2 on 连接条件;</span><br></pre></td></tr></table></figure>
-<p>例：查询emp.dept两张表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select emp.name,dept.name from emp, dept where emp.dept_id = dept.dept_id;</span><br><span class="line">select emp.name,dept.name from emp e inner join dept d on e.dept_id = d.dept_id;</span><br></pre></td></tr></table></figure>
+<p>例：查询emp, dept两张表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select emp.name,dept.name from emp, dept where emp.dept_id = dept.id;</span><br><span class="line">select emp.name,dept.name from emp e inner join dept d on e.dept_id = d.id;</span><br></pre></td></tr></table></figure>
+<h3 id="外连接"><a href="#外连接" class="headerlink" title="外连接"></a>外连接</h3><p><strong>左外连接</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 字段列表 from 表1 left [outer] join 表2 on 条件 ...;</span><br></pre></td></tr></table></figure>
+<p>相当于查询左表所有数据，再包含左表和右表交集部分的数据</p>
+<p><strong>右外连接</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 字段列表 from 表1 right [outer] join 表2 on 条件 ...;</span><br></pre></td></tr></table></figure>
+<p>相当于查询右表所有数据，再包含左表和右表交集部分的数据</p>
+<p>例：查询emp表所有数据，以及对应的部门信息(左外连接)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp e left join dept d on emp.dept_id = d.id;</span><br></pre></td></tr></table></figure>
+<p>例：查询dept表所有数据，加上对应员工信息(右外连接)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp e right join dept d on e.dept_id = d.id;</span><br></pre></td></tr></table></figure>
 
-<!-- TODO -->
-<p><a href="https://www.bilibili.com/video/BV1Kr4y1i7ru?p=39&spm_id_from=pageDriver&vd_source=d8559c2d87607be86810cd806158bb86">https://www.bilibili.com/video/BV1Kr4y1i7ru?p=39&amp;spm_id_from=pageDriver&amp;vd_source=d8559c2d87607be86810cd806158bb86</a></p>
-<h2 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h2><p>一组操作集合，不可分割工作单位，事务把所有操作作为一个整体向系统提交或撤销操作，这些操作要么同时成功，要么同时失败。</p>
-<p>示例</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table account(</span><br><span class="line">	id int auto_increment primary key,</span><br><span class="line">	name varchar(10),</span><br><span class="line">	money int</span><br><span class="line">);</span><br><span class="line">insert into account(name,money) values(&#x27;张三&#x27;,2000),(&#x27;李四&#x27;,2000);</span><br><span class="line">update account set money = 2000 where name = &#x27;张三&#x27; or name = &#x27;李四&#x27;;</span><br></pre></td></tr></table></figure>
+<h3 id="自连接"><a href="#自连接" class="headerlink" title="自连接"></a>自连接</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 字段列表 from 表A 别名A join 表A 别名B on 条件...;</span><br></pre></td></tr></table></figure>
+<p>自连接查询，可以是内连接查询，也可以是外连接查询。</p>
+<p>例: 查询每个员工及其领导的名字</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select e1.name, e2.name from emp e1 inner join emp e2 on e1.managerid = e2.id; </span><br></pre></td></tr></table></figure>
+<p>例: 查询所有员工及其领导的名字，如果员工没有领导，也需要查询出来</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select e1.name, e2.name from emp e1 left join emp e2 on e1.managerid = e2.id;</span><br></pre></td></tr></table></figure>
 
-<h3 id="手动提交事务"><a href="#手动提交事务" class="headerlink" title="手动提交事务"></a>手动提交事务</h3><p>方法1：设置autocommit</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set @@autocommit = 0;</span><br><span class="line">update account set money = money - 1000 where name = &#x27;张三&#x27;;</span><br><span class="line">update account set money = money + 1000 where name = &#x27;李四&#x27;;</span><br><span class="line">-- 提交事务</span><br><span class="line">commit;</span><br><span class="line">-- 回滚事务 rollback;</span><br></pre></td></tr></table></figure>
-<p>方法2：手动开启事务</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">start transaction; </span><br><span class="line">update account set money = money - 1000 where name = &#x27;张三&#x27;;</span><br><span class="line">update account set money = money + 1000 where name = &#x27;李四&#x27;;</span><br><span class="line">-- 提交事务</span><br><span class="line">commit;</span><br><span class="line">-- 回滚事务 rollback;</span><br></pre></td></tr></table></figure>
+<h3 id="联合查询"><a href="#联合查询" class="headerlink" title="联合查询"></a>联合查询</h3><p>对于联合查询，就是把多次查询的结果合并起来，形成一个新的查询结果集。语法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select 字段列表 from 表A</span><br><span class="line">union [all]</span><br><span class="line">select 字段列表 from 表B;</span><br></pre></td></tr></table></figure>
 
-<h3 id="事务四大特性"><a href="#事务四大特性" class="headerlink" title="事务四大特性"></a>事务四大特性</h3><p>ACID</p>
-<h3 id="并发事务问题"><a href="#并发事务问题" class="headerlink" title="并发事务问题"></a>并发事务问题</h3><table>
+<p>例：查询工资低于5000的员工，和年龄大于50岁的员工</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp where salary &lt; 5000</span><br><span class="line">union all</span><br><span class="line">select * from emp where age &gt; 50;</span><br></pre></td></tr></table></figure>
+
+<p>注：</p>
+<ul>
+<li>对于联合查询的多张表列数必须保持一致，字段类型也需要保持一致</li>
+<li>union all会将全部数据合并，union对合并结果去重</li>
+</ul>
+<h3 id="子查询"><a href="#子查询" class="headerlink" title="子查询"></a>子查询</h3><p>SQL语句中嵌套select语句，成为嵌套查询，又称子查询</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from t1 where column1 = (select column1 from t2);</span><br></pre></td></tr></table></figure>
+<p>根据子查询结果不同，分为:</p>
+<ul>
+<li>标量子查询(查询结果为单个值)</li>
+<li>列子查询(查询结果为一列)</li>
+<li>行子查询(查询结果为一行)</li>
+<li>表子查询(查询结果为多行多列)</li>
+</ul>
+<h4 id="标量子查询"><a href="#标量子查询" class="headerlink" title="标量子查询"></a>标量子查询</h4><p>例: 根据部门ID，查询员工信息(标量子查询)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp where id = (select id from dept where name=&#x27;销售部&#x27;);</span><br></pre></td></tr></table></figure>
+<p>例: 查询入职时间在peter之后的所有员工(标量子查询)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp where entrydate &gt; (select entrydate from emp where name = &#x27;peter&#x27;);</span><br></pre></td></tr></table></figure>
+<h4 id="列子查询"><a href="#列子查询" class="headerlink" title="列子查询"></a>列子查询</h4><p>子查询返回的结果是一列(可以是多行), 这种子查询称为列子查询)<br>常用操作符: IN, NOT IN, ANY, SOME, ALL</p>
+<table>
 <thead>
 <tr>
-<th>问题</th>
+<th>操作符</th>
 <th>描述</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>脏读</td>
-<td>一个事务读到另一个事务没提交的数据</td>
+<td>IN</td>
+<td>在指定范围内，多选一</td>
 </tr>
 <tr>
-<td>不可重复读</td>
-<td>一个事务先后读取同一条记录，但两次读取数据不同</td>
+<td>NOT IN</td>
+<td>不在指定范围内</td>
 </tr>
 <tr>
-<td>幻读</td>
-<td>一个事务按条件查询数据时，没有对应数据行，但插入数据时，又发现这行数据已存在</td>
+<td>ANY</td>
+<td>满足任意一个即可</td>
+</tr>
+<tr>
+<td>SOME</td>
+<td>与ANY等价</td>
+</tr>
+<tr>
+<td>ALL</td>
+<td>子查询返回列表的所有值都必须满足</td>
 </tr>
 </tbody></table>
-<p>事务隔离级别<br>read uncommitted, read committed, repeatable read, serializable</p>
-<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 存储引擎 —&gt; 存储层</p>
-<p>InnoDB<br>支持事务，行级锁，外键<br>xxx.ibd 路径: &#x2F;var&#x2F;lib&#x2F;mysql&#x2F;*.ibd xxx表示表名, InnoDB每张表对应一个表空间文件，存储表结构、数据、索引<br>ibd2sdi account.ibd<br>逻辑存储结构: TableSpace(表空间), Segment(段), Extent(区), Page(页), Row(行)</p>
-<h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><p><a href="https://www.cs.usfca.edu/~galles/visualization/BTree.html">https://www.cs.usfca.edu/~galles/visualization/BTree.html</a><br><a href="https://blog.csdn.net/u011240877/article/details/80490663">https://blog.csdn.net/u011240877/article/details/80490663</a></p>
-<h3 id="为什么用B-tree"><a href="#为什么用B-tree" class="headerlink" title="为什么用B+tree"></a>为什么用B+tree</h3><ul>
-<li>相对于二叉树，层级更少，效率更高</li>
-<li>B-tree, 非叶子节点也保存数据，导致树高度增加，效率降低</li>
-<li>相对Hash索引，支持范围匹配和排序</li>
-</ul>
-<h3 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h3><p>创建索引</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create [unique|fulltext] index index_name on table_name (index_col_name,...);</span><br></pre></td></tr></table></figure>
-<p>查看索引</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show index from table_name;</span><br></pre></td></tr></table></figure>
-<p>删除索引</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">drop index index_name on table_name;</span><br></pre></td></tr></table></figure>
+<p>例: 查询市场部或销售部的员工信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp where dept_id in (select id from dept where name = &#x27;销售部&#x27; or name = &#x27;市场部&#x27;); </span><br></pre></td></tr></table></figure>
 
-<p>例：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from tb_user;</span><br><span class="line">|id | name | email | profession | age | gender | status | createtime |</span><br><span class="line">create table tb_user(</span><br><span class="line">	id bigint auto_increment primary key,</span><br><span class="line">	name varchar(10),</span><br><span class="line">	email varchar(36),</span><br><span class="line">	profession varchar(36),</span><br><span class="line">	age tinyint unsigned,</span><br><span class="line">	gender char(1),</span><br><span class="line">	status int,</span><br><span class="line">	createtime datetime</span><br><span class="line">)engine=InnoDB;</span><br></pre></td></tr></table></figure>
+<p>例: 查询比财务部所有人工资都高的员工信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp where salary &gt; all (select salary from emp where dept_id = (select * from dept where name = &#x27;财务部&#x27;));</span><br></pre></td></tr></table></figure>
 
-<p>name设置索引<br>phone非空创建唯一索引<br>profession,age,status设置联合索引<br>email建立索引</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create index idx_user_name on tb_user(name);</span><br><span class="line">create unique index idx_user_phone on tb_user(phone);</span><br><span class="line">create index idx_user_pro_age_sta on tb_user(profession,age,status);</span><br><span class="line">create index idx_user_email on tb_user(email);</span><br></pre></td></tr></table></figure>
+<h4 id="行子查询"><a href="#行子查询" class="headerlink" title="行子查询"></a>行子查询</h4><p>子查询返回结果为一行多列，这种查询称为行子查询</p>
+<p>例: 查询与tony的薪资和直属领导都相同的员工信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp where (salary, managerid) = (select salary, managerid from emp where name = &#x27;Tony&#x27;); </span><br></pre></td></tr></table></figure>
 
-<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3><p>SQL执行效率<br>show [session|global] status;查看数据库insert,update,delete,select频次</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show global status like &#x27;com_______&#x27;;</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Variable_name | Value |</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Com_binlog    | 0     |</span><br><span class="line">| Com_commit    | 1     |</span><br><span class="line">| Com_delete    | 2     |</span><br><span class="line">| Com_import    | 0     |</span><br><span class="line">| Com_insert    | 30    |</span><br><span class="line">| Com_repair    | 0     |</span><br><span class="line">| Com_revoke    | 0     |</span><br><span class="line">| Com_select    | 231   |</span><br><span class="line">| Com_signal    | 0     |</span><br><span class="line">| Com_update    | 9     |</span><br><span class="line">| Com_xa_end    | 0     |</span><br><span class="line">+---------------+-------+</span><br></pre></td></tr></table></figure>
+<h4 id="表子查询"><a href="#表子查询" class="headerlink" title="表子查询"></a>表子查询</h4><p>子查询返回结果为多行多列，这种查询称为表子查询</p>
+<p>例: 查询与peter,david的职位和薪资相同的员工信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from emp where (job,salary) in (select job, salary from emp where name = &#x27;peter&#x27; or name = &#x27;david&#x27;);</span><br></pre></td></tr></table></figure>
 
-<p>慢查询日志<br>记录所有执行时间超过指定参数long_query_time(默认:10秒)的SQL语句日志<br>默认没开</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;slow_query%&#x27;;</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| Variable_name       | Value                             |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| slow_query_log      | OFF                               |</span><br><span class="line">| slow_query_log_file | /var/lib/mysql/localhost-slow.log |</span><br><span class="line">+---------------------+-----------------------------------+</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h2 id="主键-Primary-Key"><a href="#主键-Primary-Key" class="headerlink" title="主键(Primary Key)"></a>主键(Primary Key)</h2><ul>
-<li>关系表中的任意两条记录不能重复，通过某个字段能唯一区分出不同的记录，这个字段被称为主键</li>
-<li>主键一般是采用完全业务无关的字段，这个字段通常为id，常见的id类型：<ul>
-<li>自增整数类型：INT（约21亿）, BIGINT(约922亿亿)</li>
-<li>全局唯一GUID类型：也称UUID，使用一种全局唯一的字符串作为主键，类似8f55d96b-8acc-4636-8cb8-76bf8abc2f57。</li>
-</ul>
-</li>
-<li>关系数据库允许多个字段标识唯一记录，这种主键称为联合主键（很少用）</li>
-</ul>
-<h3 id="索引-1"><a href="#索引-1" class="headerlink" title="索引"></a>索引</h3><h4 id="为什么需要索引"><a href="#为什么需要索引" class="headerlink" title="为什么需要索引"></a>为什么需要索引</h4><p>关系数据库中可能存在上万甚至上亿条记录，想要获得非常快的查询速度，就需要使用索引。</p>
-<h4 id="什么是索引"><a href="#什么是索引" class="headerlink" title="什么是索引"></a>什么是索引</h4><p>索引是关系数据库中对某一列或多个列的值进行预排序的数据结构。<br>通过索引，数据库系统不必扫描整个表，而是直接定位到符合条件的记录，这样就大大加快了查询速度。</p>
-<h4 id="查看索引"><a href="#查看索引" class="headerlink" title="查看索引"></a>查看索引</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> student;</span><br></pre></td></tr></table></figure>
-
-<h4 id="添加索引"><a href="#添加索引" class="headerlink" title="添加索引"></a>添加索引</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> student (id <span class="type">bigint</span> <span class="keyword">primary</span> key <span class="keyword">not</span> <span class="keyword">null</span> auto_increment, class_id <span class="type">int</span>, name <span class="type">varchar</span>(<span class="number">32</span>), gender <span class="type">int</span>, score <span class="type">int</span>);</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> student <span class="keyword">add</span> index idx_score (score);</span><br></pre></td></tr></table></figure>
-<ul>
-<li>索引的效率取决于索引列的值是否散列，即该列的值如果越互不相同，那么索引效率越高。</li>
-<li>可以对一张表创建多个索引。索引的优点是提高了查询效率，缺点是在插入、更新和删除记录时，需要同时修改索引</li>
-<li>对于主键，关系数据库会自动对其创建主键索引。使用主键索引的效率是最高的，因为主键会保证绝对唯一。</li>
-</ul>
-<h4 id="唯一索引"><a href="#唯一索引" class="headerlink" title="唯一索引"></a>唯一索引</h4><p>添加唯一索引</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> student <span class="keyword">ADD</span> <span class="keyword">UNIQUE</span> INDEX uni_name (name);</span><br></pre></td></tr></table></figure>
-<p>只对某一列添加一个唯一约束而不创建唯一索引：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> student <span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> uni_name <span class="keyword">UNIQUE</span> (name);</span><br></pre></td></tr></table></figure>
-<p>删除索引</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> mytable <span class="keyword">drop</span> index uni_name;</span><br></pre></td></tr></table></figure>
-
-<h3 id="处理NULL"><a href="#处理NULL" class="headerlink" title="处理NULL"></a>处理NULL</h3><p>使用IS NULL和IS NOT NULL，不要用&#x3D;</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; SELECT 1 IS NULL, 1 IS NOT NULL;</span><br><span class="line">+-----------+---------------+</span><br><span class="line">| 1 IS NULL | 1 IS NOT NULL |</span><br><span class="line">+-----------+---------------+</span><br><span class="line">|         0 |             1 |</span><br><span class="line">+-----------+---------------+</span><br></pre></td></tr></table></figure>
-<p>和NULL做算术比较的结果仍然是NULL</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; SELECT 1 = NULL, 1 &lt;&gt; NULL, 1 &lt; NULL, 1 &gt; NULL;</span><br><span class="line">+----------+-----------+----------+----------+</span><br><span class="line">| 1 = NULL | 1 &lt;&gt; NULL | 1 &lt; NULL | 1 &gt; NULL |</span><br><span class="line">+----------+-----------+----------+----------+</span><br><span class="line">|     NULL |      NULL |     NULL |     NULL |</span><br><span class="line">+----------+-----------+----------+----------+</span><br><span class="line">mysql&gt; SELECT 0 IS NULL, 0 IS NOT NULL, &#x27;&#x27; IS NULL, &#x27;&#x27; IS NOT NULL;</span><br><span class="line">+-----------+---------------+------------+----------------+</span><br><span class="line">| 0 IS NULL | 0 IS NOT NULL | &#x27;&#x27; IS NULL | &#x27;&#x27; IS NOT NULL |</span><br><span class="line">+-----------+---------------+------------+----------------+</span><br><span class="line">|         0 |             1 |          0 |              1 |</span><br><span class="line">+-----------+---------------+------------+----------------+</span><br></pre></td></tr></table></figure>
-<p>In MySQL, 0 or NULL means false and anything else means true. The default truth value from a boolean operation is 1.</p>
-<h3 id="连接查询"><a href="#连接查询" class="headerlink" title="连接查询"></a>连接查询</h3><h3 id="模式匹配"><a href="#模式匹配" class="headerlink" title="模式匹配"></a>模式匹配</h3><h4 id="LIKE和NOT-LIKE"><a href="#LIKE和NOT-LIKE" class="headerlink" title="LIKE和NOT LIKE"></a>LIKE和NOT LIKE</h4><p>use _ to match any single character and % to match an arbitrary number of characters (including zero characters).</p>
-<p>查找b开头的names</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> pet <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;b%&#x27;</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">--------+--------+---------+------+------------+------------+</span></span><br><span class="line"><span class="operator">|</span> name   <span class="operator">|</span> owner  <span class="operator">|</span> species <span class="operator">|</span> sex  <span class="operator">|</span> birth      <span class="operator">|</span> death      <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------+--------+---------+------+------------+------------+</span></span><br><span class="line"><span class="operator">|</span> Buffy  <span class="operator">|</span> Harold <span class="operator">|</span> dog     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">1989</span><span class="number">-05</span><span class="number">-13</span> <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Bowser <span class="operator">|</span> Diane  <span class="operator">|</span> dog     <span class="operator">|</span> m    <span class="operator">|</span> <span class="number">1989</span><span class="number">-08</span><span class="number">-31</span> <span class="operator">|</span> <span class="number">1995</span><span class="number">-07</span><span class="number">-29</span> <span class="operator">|</span></span><br></pre></td></tr></table></figure>
-
-<p>查找fy结尾的names</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> pet <span class="keyword">WHERE</span> name <span class="keyword">LIKE</span> <span class="string">&#x27;%fy&#x27;</span>;</span><br><span class="line"><span class="operator">+</span><span class="comment">--------+--------+---------+------+------------+-------+</span></span><br><span class="line"><span class="operator">|</span> name   <span class="operator">|</span> owner  <span class="operator">|</span> species <span class="operator">|</span> sex  <span class="operator">|</span> birth      <span class="operator">|</span> death <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------+--------+---------+------+------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Fluffy <span class="operator">|</span> Harold <span class="operator">|</span> cat     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">1993</span><span class="number">-02</span><span class="number">-04</span> <span class="operator">|</span> <span class="keyword">NULL</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Buffy  <span class="operator">|</span> Harold <span class="operator">|</span> dog     <span class="operator">|</span> f    <span class="operator">|</span> <span class="number">1989</span><span class="number">-05</span><span class="number">-13</span> <span class="operator">|</span> <span class="keyword">NULL</span>  <span class="operator">|</span></span><br></pre></td></tr></table></figure>
-
-<p>查找包含w的names</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; SELECT * FROM pet WHERE name LIKE &#x27;%w%&#x27;;</span><br><span class="line">+----------+-------+---------+------+------------+------------+</span><br><span class="line">| name     | owner | species | sex  | birth      | death      |</span><br><span class="line">+----------+-------+---------+------+------------+------------+</span><br><span class="line">| Claws    | Gwen  | cat     | m    | 1994-03-17 | NULL       |</span><br><span class="line">| Bowser   | Diane | dog     | m    | 1989-08-31 | 1995-07-29 |</span><br><span class="line">| Whistler | Gwen  | bird    | NULL | 1997-12-09 | NULL       |</span><br><span class="line">+----------+-------+---------+------+------------+------------+</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="修改数据"><a href="#修改数据" class="headerlink" title="修改数据"></a>修改数据</h2><p>关系数据库的基本操作是增删改查，即CRUD：Create、Retrieve、Update、Delete。</p>
-<h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><p>例: 向students表插入一条学生记录</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">INSERT INTO students (class_id, name, gender, score) VALUES (2, &#x27;大牛&#x27;, &#x27;M&#x27;, 80);</span><br></pre></td></tr></table></figure>
-<p>也可以一次性插入多条记录, 用逗号隔开</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">INSERT INTO students (class_id, name, gender, score) VALUES (2, &#x27;二牛&#x27;, &#x27;M&#x27;, 80), (2, &#x27;三牛&#x27;, &#x27;M&#x27;, 80);</span><br></pre></td></tr></table></figure>
-
-<h3 id="更新数据"><a href="#更新数据" class="headerlink" title="更新数据"></a>更新数据</h3><p>使用update语句更新数据库表中记录。例：把Id&#x3D;1的学生姓名改成学霸, 分数改成100分</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">update</span> students <span class="keyword">set</span> name<span class="operator">=</span>&quot;学霸&quot;, score<span class="operator">=</span><span class="number">100</span> <span class="keyword">where</span> id<span class="operator">=</span><span class="number">1</span>;</span><br></pre></td></tr></table></figure>
-<p>update语句可以一次更新多条数据。例：把id&#x3D;1,2,3的学生分数改成80</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">update</span> students <span class="keyword">set</span> score<span class="operator">=</span><span class="number">80</span> <span class="keyword">where</span> id<span class="operator">&gt;=</span><span class="number">1</span> <span class="keyword">and</span> id<span class="operator">&lt;=</span><span class="number">3</span>;</span><br></pre></td></tr></table></figure>
-<p>update语句更新字段时可以使用表达式。例：把所有低于90分的分数加10分：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">update</span> students <span class="keyword">set</span> score<span class="operator">=</span>score<span class="number">-10</span> <span class="keyword">where</span> score <span class="operator">&lt;=</span> <span class="number">90</span>;</span><br></pre></td></tr></table></figure>
-<p>update语句可以没有where条件，此时会更新表中所有记录。例：所有学生分数减5分</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">update</span> students <span class="keyword">set</span> score<span class="operator">=</span>score<span class="number">-5</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="删除数据"><a href="#删除数据" class="headerlink" title="删除数据"></a>删除数据</h3><p>使用delete语句删除数据库表中记录，delete的基本语法:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> <span class="operator">&lt;</span>表名<span class="operator">&gt;</span> <span class="keyword">where</span> ...;</span><br></pre></td></tr></table></figure>
-<p>例：删除表中id&#x3D;1的记录</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> students <span class="keyword">where</span> id<span class="operator">=</span><span class="number">1</span>;</span><br></pre></td></tr></table></figure>
-<p>如果where条件没有匹配到记录，delete语句也不会报错，不会有记录被删除</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql&gt; delete from students <span class="built_in">where</span> <span class="built_in">id</span>=99999;                                 │</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br></pre></td></tr></table></figure>
-
-<p>使用不带where的delete语句，可以删除整张表数据</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql&gt; delete from students;                                                │</span><br><span class="line">Query OK, 12 rows affected (0.00 sec)</span><br></pre></td></tr></table></figure>
-<p>注: delete仅删除表数据, drop连表数据和表结构一起删除</p>
-<h2 id="管理MySQL"><a href="#管理MySQL" class="headerlink" title="管理MySQL"></a>管理MySQL</h2><h3 id="列出当前数据库的所有表"><a href="#列出当前数据库的所有表" class="headerlink" title="列出当前数据库的所有表"></a>列出当前数据库的所有表</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">show</span> tables;</span><br></pre></td></tr></table></figure>
-<h3 id="查看一个表结构"><a href="#查看一个表结构" class="headerlink" title="查看一个表结构"></a>查看一个表结构</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">desc</span> students;</span><br></pre></td></tr></table></figure>
-<h3 id="查看创建表的SQL语句"><a href="#查看创建表的SQL语句" class="headerlink" title="查看创建表的SQL语句"></a>查看创建表的SQL语句</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> <span class="keyword">create</span> <span class="keyword">table</span> classes;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">Table</span>   <span class="operator">|</span> <span class="keyword">Create</span> <span class="keyword">Table</span>                                                                                                                                                                  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> classes <span class="operator">|</span> <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `classes` (</span><br><span class="line">  `id` <span class="type">bigint</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  `name` <span class="type">varchar</span>(<span class="number">100</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> KEY (`id`)</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB AUTO_INCREMENT<span class="operator">=</span><span class="number">5</span> <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>utf8mb3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
-<h3 id="删除表-表结构-表数据"><a href="#删除表-表结构-表数据" class="headerlink" title="删除表(表结构+表数据)"></a>删除表(表结构+表数据)</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">drop</span> tables students;</span><br></pre></td></tr></table></figure>
-<h3 id="给表新增一列"><a href="#给表新增一列" class="headerlink" title="给表新增一列"></a>给表新增一列</h3><p>例：给students表新增一列birth，使用<code>alter table</code>语句</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> students <span class="keyword">add</span> <span class="keyword">column</span> birth <span class="type">varchar</span>(<span class="number">10</span>) <span class="keyword">not</span> <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
-<h3 id="修改表中的某一列"><a href="#修改表中的某一列" class="headerlink" title="修改表中的某一列"></a>修改表中的某一列</h3><p>例: 修改birth列，把名称改为birthday, 类型改为varchar(20)</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> students change <span class="keyword">column</span> birth birthday <span class="type">varchar</span>(<span class="number">20</span>) <span class="keyword">not</span> <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
-<h3 id="删除列"><a href="#删除列" class="headerlink" title="删除列"></a>删除列</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> students <span class="keyword">drop</span> <span class="keyword">column</span> birthday;</span><br></pre></td></tr></table></figure>
-
-<h3 id="快照"><a href="#快照" class="headerlink" title="快照"></a>快照</h3><p>复制一张表数据刀新表，可以使用<code>create table</code>和<code>select</code>:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> students_copy <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> students;</span><br></pre></td></tr></table></figure>
-
-<h2 id="事务-1"><a href="#事务-1" class="headerlink" title="事务"></a>事务</h2><p>执行SQL语句时，某些业务场景会要求一系列操作必须全部执行，不能只执行一部分，比如说转账操作:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">-</span> <span class="number">100</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">+</span> <span class="number">100</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
-<p>这两条语句必须全部执行，如果因为某些原因，第一条执行成功，第二条失败，就必须全部撤销。</p>
-<h3 id="事务的ACID特性"><a href="#事务的ACID特性" class="headerlink" title="事务的ACID特性"></a>事务的ACID特性</h3><ul>
+<h2 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h2><p>事务是一组操作集合，不可分割的工作单位。<br>事务把所有操作作为一个整体向系统提交或撤销操作，这些操作要么同时成功，要么同时失败。</p>
+<h3 id="事务四大特性"><a href="#事务四大特性" class="headerlink" title="事务四大特性"></a>事务四大特性</h3><ul>
 <li>Atomicity 原子性 所有SQL作为一个整体，要么全执行，要么全不执行</li>
 <li>Consistency 一致性 事务完成后, 所有数据状态是一致的，即A账户减去100元，B账户必定加100元</li>
 <li>Isolation 隔离性 如果多个事务并发执行，每个事务做出修改必须与其他事务隔离</li>
 <li>Durability 持久性 事务完成后, 对数据库修改被持久化存储</li>
 </ul>
-<h3 id="手动执行事务"><a href="#手动执行事务" class="headerlink" title="手动执行事务"></a>手动执行事务</h3><p>使用begin开启事务，使用commit提交事务</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">-</span> <span class="number">100</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">+</span> <span class="number">100</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line"><span class="keyword">commit</span>;</span><br></pre></td></tr></table></figure>
+<p>示例</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table account(</span><br><span class="line">	id int auto_increment primary key,</span><br><span class="line">	name varchar(10),</span><br><span class="line">	money int</span><br><span class="line">);</span><br><span class="line">insert into account(name,money) values(&#x27;张三&#x27;,2000),(&#x27;李四&#x27;,2000);</span><br><span class="line">update account set money = 2000 where name = &#x27;张三&#x27; or name = &#x27;李四&#x27;;</span><br></pre></td></tr></table></figure>
+<h3 id="手动提交事务"><a href="#手动提交事务" class="headerlink" title="手动提交事务"></a>手动提交事务</h3><p>方法1：设置autocommit</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">set</span> @<span class="variable">@autocommit</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"><span class="keyword">update</span> account <span class="keyword">set</span> money <span class="operator">=</span> money <span class="operator">-</span> <span class="number">1000</span> <span class="keyword">where</span> name <span class="operator">=</span> <span class="string">&#x27;张三&#x27;</span>;</span><br><span class="line"><span class="keyword">update</span> account <span class="keyword">set</span> money <span class="operator">=</span> money <span class="operator">+</span> <span class="number">1000</span> <span class="keyword">where</span> name <span class="operator">=</span> <span class="string">&#x27;李四&#x27;</span>;</span><br><span class="line"><span class="comment">-- 提交事务</span></span><br><span class="line"><span class="keyword">commit</span>;</span><br><span class="line"><span class="comment">-- 回滚事务 rollback;</span></span><br></pre></td></tr></table></figure>
+<p>方法2：手动开启事务</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">start</span> transaction; </span><br><span class="line"><span class="keyword">update</span> account <span class="keyword">set</span> money <span class="operator">=</span> money <span class="operator">-</span> <span class="number">1000</span> <span class="keyword">where</span> name <span class="operator">=</span> <span class="string">&#x27;张三&#x27;</span>;</span><br><span class="line"><span class="keyword">update</span> account <span class="keyword">set</span> money <span class="operator">=</span> money <span class="operator">+</span> <span class="number">1000</span> <span class="keyword">where</span> name <span class="operator">=</span> <span class="string">&#x27;李四&#x27;</span>;</span><br><span class="line"><span class="comment">-- 提交事务</span></span><br><span class="line"><span class="keyword">commit</span>;</span><br><span class="line"><span class="comment">-- 回滚事务 rollback;</span></span><br></pre></td></tr></table></figure>
 
 <h3 id="手动回滚事务"><a href="#手动回滚事务" class="headerlink" title="手动回滚事务"></a>手动回滚事务</h3><p>使用rollback回滚事务</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">begin</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">-</span> <span class="number">100</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">UPDATE</span> accounts <span class="keyword">SET</span> balance <span class="operator">=</span> balance <span class="operator">+</span> <span class="number">100</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">2</span>;</span><br><span class="line"><span class="keyword">rollback</span>;</span><br></pre></td></tr></table></figure>
 
-<h3 id="隔离级别"><a href="#隔离级别" class="headerlink" title="隔离级别"></a>隔离级别</h3><p>两个并发执行事务，操作同一条表记录时，可能会存在数据不一致问题，包括脏读,不可重复读,幻读。<br>SQL标准定义了4种隔离级别</p>
+<h3 id="隔离级别"><a href="#隔离级别" class="headerlink" title="隔离级别"></a>隔离级别</h3><p>两个并发执行事务，操作同一条表记录时，可能会存在数据不一致问题，包括脏读,不可重复读,幻读。<br>SQL标准定义了4种隔离级别,如下:</p>
 <table>
 <thead>
 <tr>
@@ -8130,8 +8040,13 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <td>Y</td>
 </tr>
 </tbody></table>
+<p>查看事务隔离级别</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select @@transaction_isolation;</span><br><span class="line">+-------------------------+</span><br><span class="line">| @@transaction_isolation |</span><br><span class="line">+-------------------------+</span><br><span class="line">| REPEATABLE-READ         |</span><br><span class="line">+-------------------------+</span><br></pre></td></tr></table></figure>
+<p>设置事务隔离级别</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set [session|global] transcation isolation level [read uncommitted | read committed | repeatable read | serializable ];</span><br></pre></td></tr></table></figure>
+
 <h4 id="Read-Uncommitted"><a href="#Read-Uncommitted" class="headerlink" title="Read Uncommitted"></a>Read Uncommitted</h4><p>Read Uncommitted级别下，一个事务会读到另一个事务未提交的数据，如果另一个事务回滚，当前事务读到的就是脏数据，即脏读(Dirty Read)</p>
-<p>举例: 创建一张学生表, 插入一条学生记录</p>
+<p>例: 创建一张学生表, 插入一条学生记录</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">create table students (<span class="built_in">id</span> bigint not null auto_increment, name varchar(36) not null, primary key(<span class="built_in">id</span>)) engine=InnoDB default charset=utf8;</span><br><span class="line">insert into students(name) values(<span class="string">&#x27;Alice&#x27;</span>);</span><br><span class="line">mysql&gt; <span class="keyword">select</span> * from students;</span><br><span class="line">+----+-------+</span><br><span class="line">| <span class="built_in">id</span> | name  |</span><br><span class="line">+----+-------+</span><br><span class="line">|  1 | Alice |</span><br><span class="line">+----+-------+</span><br><span class="line">1 row <span class="keyword">in</span> <span class="built_in">set</span> (0.00 sec)</span><br></pre></td></tr></table></figure>
 <p>分别开两个MySQL连接，按顺序执行事务A和事务B</p>
 <table>
@@ -8184,7 +8099,97 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>事务A执行完第三步后，更新了id&#x3D;1的记录，但未提交，事务B在第4步读到了Bob这一条未提交的数据</li>
 <li>事务A在第五步进行了回滚，事务B再次读取id&#x3D;1的记录为Alice, 和上一次的数据不一致，这就是脏读</li>
 </ul>
-<h4 id="Read-Committed"><a href="#Read-Committed" class="headerlink" title="Read Committed"></a>Read Committed</h4><h4 id="Repeatable-Read"><a href="#Repeatable-Read" class="headerlink" title="Repeatable Read"></a>Repeatable Read</h4><h4 id="Serializable"><a href="#Serializable" class="headerlink" title="Serializable"></a>Serializable</h4><h2 id="查看MySQL版本"><a href="#查看MySQL版本" class="headerlink" title="查看MySQL版本"></a>查看MySQL版本</h2><p><a href="https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36">https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36</a></p>
+<h4 id="Read-Committed"><a href="#Read-Committed" class="headerlink" title="Read Committed"></a>Read Committed</h4><p><a href="https://liaoxuefeng.com/books/sql/transaction/index.html">https://liaoxuefeng.com/books/sql/transaction/index.html</a></p>
+<h4 id="Repeatable-Read"><a href="#Repeatable-Read" class="headerlink" title="Repeatable Read"></a>Repeatable Read</h4><h4 id="Serializable"><a href="#Serializable" class="headerlink" title="Serializable"></a>Serializable</h4>]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux中定时删除10天前的日志文件</title>
+    <url>/2024/10/09/2024-10-09-how-to-delete-logfiles-ten-days-ago/</url>
+    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>只查看要删除的文件有哪些，不真正删除文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
+<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>再配置crontab</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
+<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL进阶</title>
+    <url>/2024/10/16/2024-10-16-mysql-advance/</url>
+    <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 存储引擎 —&gt; 存储层</p>
+<p>InnoDB<br>支持事务，行级锁，外键<br>xxx.ibd 路径: &#x2F;var&#x2F;lib&#x2F;mysql&#x2F;*.ibd xxx表示表名, InnoDB每张表对应一个表空间文件，存储表结构、数据、索引<br>ibd2sdi account.ibd<br>逻辑存储结构: TableSpace(表空间), Segment(段), Extent(区), Page(页), Row(行)</p>
+<span id="more"></span>
+
+<h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><p><a href="https://www.cs.usfca.edu/~galles/visualization/BTree.html">https://www.cs.usfca.edu/~galles/visualization/BTree.html</a><br><a href="https://blog.csdn.net/u011240877/article/details/80490663">https://blog.csdn.net/u011240877/article/details/80490663</a></p>
+<h3 id="为什么用B-tree"><a href="#为什么用B-tree" class="headerlink" title="为什么用B+tree"></a>为什么用B+tree</h3><ul>
+<li>相对于二叉树，层级更少，效率更高</li>
+<li>B-tree, 非叶子节点也保存数据，导致树高度增加，效率降低</li>
+<li>相对Hash索引，支持范围匹配和排序</li>
+</ul>
+<h3 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h3><p>创建索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create [unique|fulltext] index index_name on table_name (index_col_name,...);</span><br></pre></td></tr></table></figure>
+<p>查看索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show index from table_name;</span><br></pre></td></tr></table></figure>
+<p>删除索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">drop index index_name on table_name;</span><br></pre></td></tr></table></figure>
+
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from tb_user;</span><br><span class="line">|id | name | email | profession | age | gender | status | createtime |</span><br><span class="line">create table tb_user(</span><br><span class="line">	id bigint auto_increment primary key,</span><br><span class="line">	name varchar(10),</span><br><span class="line">	email varchar(36),</span><br><span class="line">	profession varchar(36),</span><br><span class="line">	age tinyint unsigned,</span><br><span class="line">	gender char(1),</span><br><span class="line">	status int,</span><br><span class="line">	createtime datetime</span><br><span class="line">)engine=InnoDB;</span><br></pre></td></tr></table></figure>
+
+<p>name设置索引<br>phone非空创建唯一索引<br>profession,age,status设置联合索引<br>email建立索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create index idx_user_name on tb_user(name);</span><br><span class="line">create unique index idx_user_phone on tb_user(phone);</span><br><span class="line">create index idx_user_pro_age_sta on tb_user(profession,age,status);</span><br><span class="line">create index idx_user_email on tb_user(email);</span><br></pre></td></tr></table></figure>
+
+<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3><p>SQL执行效率<br>show [session|global] status;查看数据库insert,update,delete,select频次</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show global status like &#x27;com_______&#x27;;</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Variable_name | Value |</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Com_binlog    | 0     |</span><br><span class="line">| Com_commit    | 1     |</span><br><span class="line">| Com_delete    | 2     |</span><br><span class="line">| Com_import    | 0     |</span><br><span class="line">| Com_insert    | 30    |</span><br><span class="line">| Com_repair    | 0     |</span><br><span class="line">| Com_revoke    | 0     |</span><br><span class="line">| Com_select    | 231   |</span><br><span class="line">| Com_signal    | 0     |</span><br><span class="line">| Com_update    | 9     |</span><br><span class="line">| Com_xa_end    | 0     |</span><br><span class="line">+---------------+-------+</span><br></pre></td></tr></table></figure>
+
+<p>慢查询日志<br>记录所有执行时间超过指定参数long_query_time(默认:10秒)的SQL语句日志<br>默认没开</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;slow_query%&#x27;;</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| Variable_name       | Value                             |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| slow_query_log      | OFF                               |</span><br><span class="line">| slow_query_log_file | /var/lib/mysql/localhost-slow.log |</span><br><span class="line">+---------------------+-----------------------------------+</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="索引-1"><a href="#索引-1" class="headerlink" title="索引"></a>索引</h3><h4 id="为什么需要索引"><a href="#为什么需要索引" class="headerlink" title="为什么需要索引"></a>为什么需要索引</h4><p>关系数据库中可能存在上万甚至上亿条记录，想要获得非常快的查询速度，就需要使用索引。</p>
+<h4 id="什么是索引"><a href="#什么是索引" class="headerlink" title="什么是索引"></a>什么是索引</h4><p>索引是关系数据库中对某一列或多个列的值进行预排序的数据结构。<br>通过索引，数据库系统不必扫描整个表，而是直接定位到符合条件的记录，这样就大大加快了查询速度。</p>
+<h4 id="查看索引"><a href="#查看索引" class="headerlink" title="查看索引"></a>查看索引</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> student;</span><br></pre></td></tr></table></figure>
+
+<h4 id="添加索引"><a href="#添加索引" class="headerlink" title="添加索引"></a>添加索引</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> student (id <span class="type">bigint</span> <span class="keyword">primary</span> key <span class="keyword">not</span> <span class="keyword">null</span> auto_increment, class_id <span class="type">int</span>, name <span class="type">varchar</span>(<span class="number">32</span>), gender <span class="type">int</span>, score <span class="type">int</span>);</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> student <span class="keyword">add</span> index idx_score (score);</span><br></pre></td></tr></table></figure>
+<ul>
+<li>索引的效率取决于索引列的值是否散列，即该列的值如果越互不相同，那么索引效率越高。</li>
+<li>可以对一张表创建多个索引。索引的优点是提高了查询效率，缺点是在插入、更新和删除记录时，需要同时修改索引</li>
+<li>对于主键，关系数据库会自动对其创建主键索引。使用主键索引的效率是最高的，因为主键会保证绝对唯一。</li>
+</ul>
+<h4 id="唯一索引"><a href="#唯一索引" class="headerlink" title="唯一索引"></a>唯一索引</h4><p>添加唯一索引</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> student <span class="keyword">ADD</span> <span class="keyword">UNIQUE</span> INDEX uni_name (name);</span><br></pre></td></tr></table></figure>
+<p>只对某一列添加一个唯一约束而不创建唯一索引：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> student <span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> uni_name <span class="keyword">UNIQUE</span> (name);</span><br></pre></td></tr></table></figure>
+<p>删除索引</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> mytable <span class="keyword">drop</span> index uni_name;</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看MySQL版本"><a href="#查看MySQL版本" class="headerlink" title="查看MySQL版本"></a>查看MySQL版本</h2><p><a href="https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36">https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36</a></p>
 <h2 id="进程模型"><a href="#进程模型" class="headerlink" title="进程模型"></a>进程模型</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl cat mysqld | grep ExecStart=</span><br><span class="line">ExecStart=/usr/libexec/mysqld --basedir=/usr</span><br></pre></td></tr></table></figure>
 <p>单进程多线程模型</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ps axf | grep mysqld</span><br><span class="line">  16273 ?        Ssl    0:33 /usr/libexec/mysqld --basedir=/usr</span><br><span class="line">ps -T 16273</span><br><span class="line">    PID    SPID TTY      STAT   TIME COMMAND</span><br><span class="line">  16273   16273 ?        Ssl    0:00 /usr/libexec/mysqld --basedir=/usr</span><br><span class="line">  16273   16276 ?        Ssl    0:00 /usr/libexec/mysqld --basedir=/usr</span><br><span class="line">  16273   16277 ?        Ssl    0:00 /usr/libexec/mysqld --basedir=/usr</span><br><span class="line">	....</span><br></pre></td></tr></table></figure>
@@ -8196,7 +8201,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>复制线程，处理主从复制相关操作；</li>
 <li>后台线程，执行定期任务如日志清理、缓存刷新等。</li>
 </ul>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://liaoxuefeng.com/books/sql/transaction/index.html">https://liaoxuefeng.com/books/sql/transaction/index.html</a><br><a href="https://dev.mysql.com/doc/refman/8.0/en/">https://dev.mysql.com/doc/refman/8.0/en/</a></p>
 ]]></content>
       <categories>
         <category>MySQL</category>
