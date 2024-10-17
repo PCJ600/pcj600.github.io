@@ -131,7 +131,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">135</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">136</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -190,6 +190,98 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/10/17/2024-10-17-how-to-reset-mysql8-password/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/10/17/2024-10-17-how-to-reset-mysql8-password/" class="post-title-link" itemprop="url">MySQL8.0以上版本如何重置密码</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-10-17 20:24:36" itemprop="dateCreated datePublished" datetime="2024-10-17T20:24:36+08:00">2024-10-17</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>780</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/10/17/2024-10-17-how-to-reset-mysql8-password/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -415,7 +507,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3k</span>
+              <span>3.7k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -434,8 +526,61 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 存储引擎 —&gt; 存储层</p>
-<p>InnoDB<br>支持事务，行级锁，外键<br>xxx.ibd 路径: &#x2F;var&#x2F;lib&#x2F;mysql&#x2F;*.ibd xxx表示表名, InnoDB每张表对应一个表空间文件，存储表结构、数据、索引<br>ibd2sdi account.ibd<br>逻辑存储结构: TableSpace(表空间), Segment(段), Extent(区), Page(页), Row(行)</p>
+          <h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
+<h2 id="存储引擎简介"><a href="#存储引擎简介" class="headerlink" title="存储引擎简介"></a>存储引擎简介</h2><p>存储引擎指存储数据，建立索引，更新&#x2F;查询数据等技术的实现方式。存储引擎是基于表的，不是基于库的。</p>
+<h3 id="查某个表的存储引擎"><a href="#查某个表的存储引擎" class="headerlink" title="查某个表的存储引擎"></a>查某个表的存储引擎</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show create table 表名;</span><br></pre></td></tr></table></figure>
+<h3 id="查数据库支持的存储引擎"><a href="#查数据库支持的存储引擎" class="headerlink" title="查数据库支持的存储引擎"></a>查数据库支持的存储引擎</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show engines;</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建表时指定引擎"><a href="#创建表时指定引擎" class="headerlink" title="创建表时指定引擎"></a>创建表时指定引擎</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">create table a(</span><br><span class="line">)engine = MyISAM;</span><br><span class="line"></span><br><span class="line">create table b(</span><br><span class="line">)engine = InnoDB;</span><br></pre></td></tr></table></figure>
+
+<h2 id="存储引擎特点"><a href="#存储引擎特点" class="headerlink" title="存储引擎特点"></a>存储引擎特点</h2><h3 id="InnoDB"><a href="#InnoDB" class="headerlink" title="InnoDB"></a>InnoDB</h3><ul>
+<li>支持事务，行级锁，外键</li>
+<li>每张表对应一个表空间文件XXX.ibd，路径:<code>/var/lib/mysql/*.ibd</code></li>
+<li>逻辑存储结构: TableSpace(表空间), Segment(段), Extent(区), Page(页), Row(行)</li>
+</ul>
+<h3 id="MyISAM"><a href="#MyISAM" class="headerlink" title="MyISAM"></a>MyISAM</h3><p>MySQL早期的默认存储引擎</p>
+<ul>
+<li>不支持事务，不支持外键</li>
+<li>支持表锁，不支持行锁</li>
+<li>XX.sdi 存储表结构信息, XX.MYD 存储数据 XX.MYI存储索引</li>
+</ul>
+<h3 id="Memory"><a href="#Memory" class="headerlink" title="Memory"></a>Memory</h3><p>表数据存储在内存中，只能将这些表作为临时表或缓存使用</p>
+<ul>
+<li>内存存放</li>
+<li>hash索引(默认)</li>
+<li>XX.sdi 存储表结构</li>
+</ul>
+<h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><p>索引(index)是帮助MySQL高效查询数据的数据结构。<br>优缺点：提高查询效率，但索引本身占用空间，且降低更新表(INSERT,UPDATE,DELETE)的速度。</p>
+<h3 id="索引结构"><a href="#索引结构" class="headerlink" title="索引结构"></a>索引结构</h3><table>
+<thead>
+<tr>
+<th>索引结构</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>B+Tree索引</td>
+<td>最常见索引, 大部分引擎都支持B+树索引</td>
+</tr>
+<tr>
+<td>Hash索引</td>
+<td>底层用哈希表实现，只有精确匹配索引列的查询才有效，不支持范围查询和排序</td>
+</tr>
+<tr>
+<td>R-tree(空间索引)</td>
+<td>MyISAM的一个特殊索引类型，主要用于地理空间数据类型，通常使用较少</td>
+</tr>
+<tr>
+<td>Full-text(全文索引)</td>
+<td>一种通过建立倒排索引，快速匹配文档的方式，类似与Lucene,Solr,ES</td>
+</tr>
+</tbody></table>
+<h3 id="为什么InnoDB选择B-树，不用二叉树，B树"><a href="#为什么InnoDB选择B-树，不用二叉树，B树" class="headerlink" title="为什么InnoDB选择B+树，不用二叉树，B树"></a>为什么InnoDB选择B+树，不用二叉树，B树</h3><ul>
+<li>二叉树：顺序插入时，退化成链表，查询性能低；层级较深，查询速度慢。</li>
+<li>B-Tree: 叶子节点和非叶子节点都保存数据，查询不稳定；相比B+树IO消耗大</li>
+<li>B+Tree: 只有叶子节点存储数据，一个节点可以存储更多的key，使得树更矮，减少IO操作次数；所有叶子节点构成一个有序链表<br>MySQL在原B+Tree基础上，增加一个指向相邻叶子节点的链表指针，提高区间访问性能。</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&vd_source=d8559c2d87607be86810cd806158bb86&p=72">https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&amp;vd_source=d8559c2d87607be86810cd806158bb86&amp;p=72</a></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/10/16/2024-10-16-mysql-advance/#more" rel="contents">
@@ -648,98 +793,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/10/03/2024-10-03-discount-arbitrage-on-511990/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/10/03/2024-10-03-discount-arbitrage-on-511990/" class="post-title-link" itemprop="url">华宝添益(511990)折价套利记录</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-10-03 10:37:43" itemprop="dateCreated datePublished" datetime="2024-10-03T10:37:43+08:00">2024-10-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%A5%97%E5%88%A9%E5%BE%80%E4%BA%8B/" itemprop="url" rel="index"><span itemprop="name">套利往事</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>602</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><ul>
-<li>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。</li>
-<li><font color='blue'>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。</font></li>
-<li>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/10/03/2024-10-03-discount-arbitrage-on-511990/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -811,7 +864,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">135</span>
+          <span class="site-state-item-count">136</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -867,12 +920,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">407k</span>
+    <span title="站点总字数">408k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">6:10</span>
+    <span title="站点阅读时长">6:11</span>
 </div>
 
 <!--
