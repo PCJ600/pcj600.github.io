@@ -507,14 +507,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>27k</span>
+              <span>33k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>25 分钟</span>
+              <span>30 分钟</span>
             </span>
 
         </div>
@@ -768,8 +768,68 @@
 <li>聚集索引</li>
 <li>辅助索引 叶子节点存主键ID (聚集索引叶子节点已经存储行数据，没必要每个辅助索引也存一份行数据，只存主键ID节省空间)</li>
 </ul>
-<!-- https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&vd_source=d8559c2d87607be86810cd806158bb86&p=85 -->
+<h3 id="前缀索引"><a href="#前缀索引" class="headerlink" title="前缀索引"></a>前缀索引</h3><p>当字段类型为字符串(varchar,text)时，可以只将字符串的一部分前缀，建立索引，这样可以大大节约索引空间，从而提高索引效率</p>
+<p>语法:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index idx_XXX <span class="keyword">on</span> table_name(<span class="keyword">column</span>(n));</span><br></pre></td></tr></table></figure>
+<p>前缀长度<br>可以根据索引选择性决定，选择性指不重复索引值&#x2F;数据表记录总数，选择性越高说明查询效率越好<br>唯一索引选择性为1，是最好的索引选择性</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select count(distinct substring(email, 1, 5)/count(*) from tb_user;</span><br></pre></td></tr></table></figure>
+<p>例: 给email建立前缀索引，取长度为5</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create index idx_email_5 on tb_user(email(5));</span><br></pre></td></tr></table></figure>
 
+<h3 id="单列索引与联合索引"><a href="#单列索引与联合索引" class="headerlink" title="单列索引与联合索引"></a>单列索引与联合索引</h3><p>联合索引指一个索引包含了多个列。<br>业务场景中，如果存在多个查询条件，建议建立联合索引，而非单列索引。</p>
+<h2 id="SQL优化"><a href="#SQL优化" class="headerlink" title="SQL优化"></a>SQL优化</h2><h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><ul>
+<li><p>批量插入，不要一条一条插入</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert into test values(1),(2),(3);</span><br></pre></td></tr></table></figure></li>
+<li><p>手动提交事务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">start transaction;</span><br><span class="line">insert into tb_test values(1),(2),(3);</span><br><span class="line">insert into tb_test values(4),(5),(6);</span><br><span class="line">insert into tb_test values(7),(8),(9);</span><br><span class="line">commit;</span><br></pre></td></tr></table></figure></li>
+<li><p>主键顺序插入</p>
+</li>
+<li><p>大批量插入数据，使用load指令加载本地文件到数据库</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysql <span class="comment">--local-infile -u root -p</span></span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> local_infile <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">load data <span class="keyword">local</span> infile <span class="string">&#x27;*.log&#x27;</span> <span class="keyword">into</span> <span class="keyword">table</span> `tb_user` fields terminated <span class="keyword">by</span> <span class="string">&#x27;,&#x27;</span> terminated <span class="keyword">by</span> <span class="string">&#x27;\n&#x27;</span>;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="主键优化"><a href="#主键优化" class="headerlink" title="主键优化"></a>主键优化</h3><ul>
+<li><p>页分裂<br><img data-src="/2024/10/16/2024-10-16-mysql-advance/primary-key-opt.png"></p>
+</li>
+<li><p>页合并<br>删除一行记录时，实际上记录没有被物理删除，只是被标记为删除，当页中删除记录达到阈值(MERGE_THERSHOLD)，InnoDB会试图合并两个页以节省空间</p>
+</li>
+<li><p>主键设计原则<br>满足业务需求情况下，尽量降低主键长度<br>插入数据时，尽量选择顺序插入，选择使用AUTO_INCREMENT自增主键<br>尽量不使用UUID或其他自然主键(比如身份证号)</p>
+</li>
+</ul>
+<h3 id="order-by优化"><a href="#order-by优化" class="headerlink" title="order by优化"></a>order by优化</h3><p>using filesort: 在排序缓冲区sort buffer中完成排序操作，未通过索引直接返回排序结果<br>using index: 通过有序索引顺序扫描直接返回的，这种无需额外排序，效率较高</p>
+<p>例: 没有建立索引，排序查询走Using filesort.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select id, age, phone from tb_user order by age;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+----------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra          |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |   100.00 | Using filesort |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+----------------+</span><br></pre></td></tr></table></figure>
+<p>例：建立索引，排序查询走Using index</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create index idx_user_age_phone on tb_user(age,phone);</span><br><span class="line">mysql&gt; explain select id, age, phone from tb_user order by age,phone;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key                | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | NULL          | idx_user_age_phone | 47      | NULL | 271498 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-------------+</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select id, age, phone from tb_user order by age desc ,phone desc;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+----------------------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key                | key_len | ref  | rows   | filtered | Extra                            |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+----------------------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | NULL          | idx_user_age_phone | 47      | NULL | 271498 |   100.00 | Backward index scan; Using index |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+----------------------------------+</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select id, age, phone from tb_user order by age asc ,phone desc;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key                | key_len | ref  | rows   | filtered | Extra                       |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | NULL          | idx_user_age_phone | 47      | NULL | 271498 |   100.00 | Using index; Using filesort |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-----------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>注:</p>
+<ul>
+<li>使用排序字段建立合适索引，多字段排序时也遵循最左前缀法则</li>
+<li>尽量使用覆盖索引</li>
+<li>多字段排序，一个升序一个降序，需指定联合索引创建的规则(ASC&#x2F;DESC)</li>
+<li>如果不可避免出现filesort，大数量排序时可适当增加排序缓冲区大小sort_buffer_size(默认256k)<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;sort_buffer_size&#x27;;</span><br><span class="line">+------------------+--------+</span><br><span class="line">| Variable_name    | Value  |</span><br><span class="line">+------------------+--------+</span><br><span class="line">| sort_buffer_size | 262144 |</span><br><span class="line">+------------------+--------+</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="group-by优化"><a href="#group-by优化" class="headerlink" title="group by优化"></a>group by优化</h3><p>先删除所有索引，测试group by查询结果为Using temporary(效率很低)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select profession,count(*) from tb_user group by profession;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-----------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra           |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-----------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |   100.00 | Using temporary |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-----------------+</span><br></pre></td></tr></table></figure>
+<p>创建索引后，测试group by查询结果为Using index</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create index idx_pro_age_sta on tb_user(profession,age,status);</span><br><span class="line">mysql&gt; explain select profession,count(*) from tb_user group by profession;</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys   | key             | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | idx_pro_age_sta | idx_pro_age_sta | 154     | NULL | 271498 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="limit优化"><a href="#limit优化" class="headerlink" title="limit优化"></a>limit优化</h3><p>分页的记录越靠后，查询耗时越大。<br>优化思路：一般分页查询时，通过创建覆盖索引+子查询形式优化。</p>
+<p>例：<br>···<br>select * from tb_sku order by id limit 9000000,10;<br>select s.* from tb_sku s, (select id from tb_sku order by id limit 900000,10) a where s.id &#x3D; a.id;<br>···</p>
+<h3 id="count优化"><a href="#count优化" class="headerlink" title="count优化"></a>count优化</h3><p>表数据量大时, count(*)执行耗时较多</p>
+<ul>
+<li>count(主键)<br>遍历整张表，把每一行主键id取出来返回给服务层。服务层直接按行累加(无需判断null)。</li>
+<li>count(字段)<br>如果没有not null约束，需要把每一行字段值取出来返回给服务层，服务层需判断是否为null，不为null才累加。</li>
+<li>count(1)<br>遍历整张表，但不取值。服务层对于返回的每一行，放一个数字’1’进去，直接按行进行累加。</li>
+<li>count(*)<br>不会把全部字段取出来，而是专门做了优化，不取值，服务层直接按行累加。</li>
+</ul>
+<p>总结: 效率最高count(<em>), 尽量使用count(</em>)</p>
+<h3 id="update优化"><a href="#update优化" class="headerlink" title="update优化"></a>update优化</h3><p>更新数据时，一定要根据索引更新，否则会出现锁表的现象。</p>
+<p>例: 没有对name建立索引的条件下，以下update语句会锁住整张表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update student set no = &#x27;123&#x27; where name = &#x27;haha&#x27;;</span><br></pre></td></tr></table></figure>
+
+<!-- https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.videopod.episodes&vd_source=d8559c2d87607be86810cd806158bb86&p=96 -->
+
+<p>TO BE CONTINUED !!!</p>
 <h2 id="查看MySQL版本"><a href="#查看MySQL版本" class="headerlink" title="查看MySQL版本"></a>查看MySQL版本</h2><p><a target="_blank" rel="noopener" href="https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36">https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36</a></p>
 <h2 id="进程模型"><a href="#进程模型" class="headerlink" title="进程模型"></a>进程模型</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl cat mysqld | grep ExecStart=</span><br><span class="line">ExecStart=/usr/libexec/mysqld --basedir=/usr</span><br></pre></td></tr></table></figure>
 <p>单进程多线程模型</p>
@@ -1114,12 +1174,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">431k</span>
+    <span title="站点总字数">438k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">6:32</span>
+    <span title="站点阅读时长">6:38</span>
 </div>
 
 <!--
