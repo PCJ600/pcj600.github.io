@@ -814,7 +814,9 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create index idx_pro_age_sta on tb_user(profession,age,status);</span><br><span class="line">mysql&gt; explain select profession,count(*) from tb_user group by profession;</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys   | key             | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | idx_pro_age_sta | idx_pro_age_sta | 154     | NULL | 271498 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
 
 <h3 id="limit优化"><a href="#limit优化" class="headerlink" title="limit优化"></a>limit优化</h3><p>分页的记录越靠后，查询耗时越大。<br>优化思路：一般分页查询时，通过创建覆盖索引+子查询形式优化。</p>
-<p>例：<br>···<br>select * from tb_sku order by id limit 9000000,10;<br>select s.* from tb_sku s, (select id from tb_sku order by id limit 900000,10) a where s.id &#x3D; a.id;<br>···</p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select * from tb_sku order by id limit 9000000,10;</span><br><span class="line">select s.* from tb_sku s, (select id from tb_sku order by id limit 900000,10) a where s.id = a.id;</span><br></pre></td></tr></table></figure>
+
 <h3 id="count优化"><a href="#count优化" class="headerlink" title="count优化"></a>count优化</h3><p>表数据量大时, count(*)执行耗时较多</p>
 <ul>
 <li>count(主键)<br>遍历整张表，把每一行主键id取出来返回给服务层。服务层直接按行累加(无需判断null)。</li>
@@ -822,7 +824,7 @@
 <li>count(1)<br>遍历整张表，但不取值。服务层对于返回的每一行，放一个数字’1’进去，直接按行进行累加。</li>
 <li>count(*)<br>不会把全部字段取出来，而是专门做了优化，不取值，服务层直接按行累加。</li>
 </ul>
-<p>总结: 效率最高count(<em>), 尽量使用count(</em>)</p>
+<p>总结: count(*)效率最高</p>
 <h3 id="update优化"><a href="#update优化" class="headerlink" title="update优化"></a>update优化</h3><p>更新数据时，一定要根据索引更新，否则会出现锁表的现象。</p>
 <p>例: 没有对name建立索引的条件下，以下update语句会锁住整张表</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update student set no = &#x27;123&#x27; where name = &#x27;haha&#x27;;</span><br></pre></td></tr></table></figure>
