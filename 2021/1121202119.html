@@ -274,7 +274,7 @@
 
       
         <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？</strong></p>
-<p>在Stackoverflow上发现类似的讨论：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly">https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly</a></p>
+<p>在Stackoverflow上发现类似的讨论：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly">https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly</a></p>
 <span id="more"></span>
 
 <p>问题复现：（环境： <code>Linux debian 4.19.0-10-amd64</code>)</p>
@@ -306,9 +306,9 @@
 
 <p> <code>0x913fbd4c</code> &#x3D; <code>1001 0001 0011 1111 1011 1101 0100 1100</code> b， 可以看出这条ADD指令的编码和指令集手册规定的编码格式是一致的。（各字段对应的关系参考上图）</p>
 <h3 id="AND-immediate"><a href="#AND-immediate" class="headerlink" title="AND(immediate)"></a>AND(immediate)</h3><p>AND指令的编码格式和伪码参考手册 <code>C6.2.12 AND(immediate)</code>，或下图：<br><img data-src="/2021/1121202119/image3.png"><br><img data-src="/2021/1121202119/image4.png"></p>
-<p>AND指令的伪码不是很直观，详细解释参考老外的这篇<a target="_blank" rel="noopener" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">文章</a>，非常清楚（参考<code>Logical Immediates</code>小节）</p>
+<p>AND指令的伪码不是很直观，详细解释参考老外的这篇<a target="_blank" rel="noopener external nofollow noreferrer" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">文章</a>，非常清楚（参考<code>Logical Immediates</code>小节）</p>
 <p><strong>这里给出直观的结论：</strong></p>
-<p>AND指令支持的立即数个数为5334个，结果参考：<a target="_blank" rel="noopener" href="https://gist.github.com/dinfuehr/51a01ac58c0b23e4de9aac313ed6a06a">full output</a></p>
+<p>AND指令支持的立即数个数为5334个，结果参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://gist.github.com/dinfuehr/51a01ac58c0b23e4de9aac313ed6a06a">full output</a></p>
 <p>对于AND指令支持的立即数a，必定能通过如下方式得到：</p>
 <ul>
 <li><p>首先，一定能找到一个长度为n的二进制模式串s（n要求必须是2 , 4,  8, 16, 32, 64 中的一个）。</p>
@@ -420,10 +420,10 @@
 </li>
 </ul>
 <p>综上， AND指令支持的立即数总数为 2 * 1 + 4 * 3 + 8 * 7 + …… + 64 * 63 &#x3D; 5334。</p>
-<p>可以手撕代码，打印出这5334个符合条件的立即数，参考：<a target="_blank" rel="noopener" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/</a></p>
+<p>可以手撕代码，打印出这5334个符合条件的立即数，参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/</a></p>
 <p>回到问题， 0xfef的二进制串为1111 1110 1111，你会发现 <font color ='red'><strong>N, imms, immr不管取什么值，都无法得到1111 1110 1111这个串，所以AND指令的编译会报错</strong></font>。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener" href="https://developer.arm.com/documentation/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">《ARM Architecture Reference Manual, for ARMv8-A architecture profile》</a></p>
-<p>【2】  <a target="_blank" rel="noopener" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">ENCODING OF IMMEDIATE VALUES ON AARCH64</a></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://developer.arm.com/documentation/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">《ARM Architecture Reference Manual, for ARMv8-A architecture profile》</a></p>
+<p>【2】  <a target="_blank" rel="noopener external nofollow noreferrer" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">ENCODING OF IMMEDIATE VALUES ON AARCH64</a></p>
 
     </div>
 
@@ -626,7 +626,7 @@
 </div>
 
 <!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 -->
 

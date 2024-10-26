@@ -280,12 +280,12 @@
 <p>除了查看被订阅模式的数量，我还需要<font color = 'red'><strong>获取每个订阅模式字符串的内容</strong></font>，怎么做 ?</p>
 <h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>google没搜到现成的命令，决定自己修改<code>redis-server</code>源码，打印模式链表的内容，用时3~5分钟，需要了解：</p>
 <ul>
-<li><p>Redis源码编译方法，参考<a target="_blank" rel="noopener" href="https://github.com/redis/redis">官网</a>或本人的<a target="_blank" rel="noopener" href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
+<li><p>Redis源码编译方法，参考<a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/redis/redis">官网</a>或本人的<a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
 </li>
 <li><p>Redis服务器将所有模式的订阅信息保存在服务器状态的<code>pubsub_patterns</code>链表中。</p>
 </li>
 </ul>
-<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
+<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pubsub.c</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">myPubsubPatternsPrint</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">list</span> *l = server.pubsub_patterns;</span><br><span class="line">    listNode *cur = l-&gt;head;</span><br><span class="line">    serverLog(LL_NOTICE, <span class="string">&quot;[DEBUG] ALL PUBSUB PATTERNS: &quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        pubsubPattern *pp = (pubsubPattern *)(cur-&gt;value);</span><br><span class="line">        robj *obj = pp-&gt;pattern;</span><br><span class="line">        <span class="type">char</span> *pattern = (<span class="type">char</span> *)obj-&gt;ptr;</span><br><span class="line">        serverLog(LL_NOTICE, <span class="string">&quot;%s&quot;</span>, pattern);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>2、重新编译并安装redis-server，后台gdb call一下自定义的打印函数<code>myPubsubPatternsPrint</code>得到模式链表的内容，如下图所示：<br><img data-src="/2021/1121201745/image2.png"></p>
@@ -491,7 +491,7 @@
 </div>
 
 <!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 -->
 

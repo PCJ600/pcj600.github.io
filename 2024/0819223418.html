@@ -270,7 +270,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我有一个On-Premises Appliance使用了<a target="_blank" rel="noopener" href="https://clish.sourceforge.net/">CLISH</a>(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。</p>
+        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我有一个On-Premises Appliance使用了<a target="_blank" rel="noopener external nofollow noreferrer" href="https://clish.sourceforge.net/">CLISH</a>(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。</p>
 <h2 id="解决思路"><a href="#解决思路" class="headerlink" title="解决思路"></a>解决思路</h2><p>Google没查到类似案例，毕竟这年头互联网公司谁还用这种命令行呢，只好把CLISH源代码下一份，捋下流程看看解决方法,  先给出我的root-view.xml配置：</p>
 <span id="more"></span>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">COMMAND</span> <span class="attr">name</span>=<span class="string">&quot;logout&quot;</span> <span class="attr">help</span>=<span class="string">&quot;Logout of the current CLI session&quot;</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">ACTION</span> <span class="attr">builtin</span>=<span class="string">&quot;clish_close&quot;</span>&gt;</span>	<span class="comment">&lt;!-- 内置的clish_close方法，用于退出clish --&gt;</span></span><br><span class="line">	/usr/share/clish/scripts/basecmd.sh release #自定义的脚本，用于记录auditlog</span><br><span class="line">       <span class="tag">&lt;/<span class="name">ACTION</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">COMMAND</span>&gt;</span></span><br></pre></td></tr></table></figure>
@@ -493,7 +493,7 @@
 </div>
 
 <!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 -->
 

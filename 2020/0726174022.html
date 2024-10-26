@@ -276,7 +276,7 @@
 <span id="more"></span>
 
 <h3 id="实验环境"><a href="#实验环境" class="headerlink" title="实验环境"></a>实验环境</h3><p>Centos7 x86_64</p>
-<h3 id="获取二进制炸弹"><a href="#获取二进制炸弹" class="headerlink" title="获取二进制炸弹"></a>获取二进制炸弹</h3><p>首先从CSAPP官网获取二进制炸弹<code>bomb.tar</code>:  <a target="_blank" rel="noopener" href="http://csapp.cs.cmu.edu/3e/labs.html">http://csapp.cs.cmu.edu/3e/labs.html</a></p>
+<h3 id="获取二进制炸弹"><a href="#获取二进制炸弹" class="headerlink" title="获取二进制炸弹"></a>获取二进制炸弹</h3><p>首先从CSAPP官网获取二进制炸弹<code>bomb.tar</code>:  <a target="_blank" rel="noopener external nofollow noreferrer" href="http://csapp.cs.cmu.edu/3e/labs.html">http://csapp.cs.cmu.edu/3e/labs.html</a></p>
 <p>在linux下执行<code>tar xvf bomb.tar</code>，得到二进制炸弹的文件，文件列表如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">|-- bomb		# 二进制炸弹，x86-64位</span><br><span class="line">|-- bomb.c		# 主程序，逻辑是接受用户输入的6个字符串，并判断每个字符串是否正确。如果正确，调用phase_defused进入下一关，否则调用explode_bomb引爆炸弹</span><br></pre></td></tr></table></figure>
 
@@ -398,7 +398,7 @@
 <p>先查看<code>0x4024b0</code>， 只需查看前16个字符</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(gdb) x/16c 0x4024b0</span><br><span class="line">0x4024b0 &lt;array.3449&gt;  : 109 &#x27;m&#x27; 97 &#x27;a&#x27;  100 &#x27;d&#x27; 117 &#x27;u&#x27; 105 &#x27;i&#x27; 101 &#x27;e&#x27; 114 &#x27;r&#x27; 115 &#x27;s&#x27;</span><br><span class="line">0x4024b8 &lt;array.3449+8&gt;: 110 &#x27;n&#x27; 102 &#x27;f&#x27; 111 &#x27;o&#x27; 116 &#x27;t&#x27; 118 &#x27;v&#x27; 98 &#x27;b&#x27;  121 &#x27;y&#x27; 108 &#x27;l&#x27;</span><br></pre></td></tr></table></figure>
 
-<p>发现<code>flyers</code>中的每个字符都可以找到。根据偏移确定输入的每个字符的ASCII码最低一个字节依次为<code>0x9, 0xF, 0xE, 0x5, 0x6, 0x7</code>, 答案不唯一。对照ASCII码表 <a target="_blank" rel="noopener" href="http://ascii.911cha.com/%EF%BC%8C">http://ascii.911cha.com/，</a> 我们找到一组解：<code>IONUVW</code></p>
+<p>发现<code>flyers</code>中的每个字符都可以找到。根据偏移确定输入的每个字符的ASCII码最低一个字节依次为<code>0x9, 0xF, 0xE, 0x5, 0x6, 0x7</code>, 答案不唯一。对照ASCII码表 <a target="_blank" rel="noopener external nofollow noreferrer" href="http://ascii.911cha.com/%EF%BC%8C">http://ascii.911cha.com/，</a> 我们找到一组解：<code>IONUVW</code></p>
 <table>
 <thead>
 <tr>
@@ -712,7 +712,7 @@
 </div>
 
 <!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 -->
 

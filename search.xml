@@ -4121,6 +4121,25 @@
       </tags>
   </entry>
   <entry>
+    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
+    <url>/2023/0201210135.html</url>
+    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>k8s删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/1116205828.html</url>
     <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>强制删除deployment和pod后，问题解决：</p>
@@ -4144,25 +4163,6 @@
       </categories>
       <tags>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
-    <url>/2023/0201210135.html</url>
-    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -5609,6 +5609,23 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>判断两个IP地址是否在同一网段(Shell实现)</title>
+    <url>/2024/0328195011.html</url>
+    <content><![CDATA[<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：提取 CIDR 的网络地址和子网掩码</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_network</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_subnet</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $2&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：将 IP 地址转换为二进制格式</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">ip_to_binary</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> ip=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">local</span> binary=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="built_in">local</span> IFS=<span class="string">&#x27;.&#x27;</span></span><br><span class="line">    <span class="built_in">local</span> octets=(<span class="variable">$ip</span>)</span><br><span class="line">    <span class="keyword">for</span> octet <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$&#123;octets[@]&#125;</span>&quot;</span>; <span class="keyword">do</span></span><br><span class="line">        <span class="built_in">local</span> bin_octet=<span class="string">&quot;&quot;</span></span><br><span class="line">        <span class="built_in">local</span> num=<span class="variable">$octet</span></span><br><span class="line">        <span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="number">8</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">            bin_octet=$((num % <span class="number">2</span>))<span class="variable">$bin_octet</span></span><br><span class="line">            num=$((num / <span class="number">2</span>))</span><br><span class="line">        <span class="keyword">done</span></span><br><span class="line">        binary+=<span class="variable">$bin_octet</span></span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$binary</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 函数：比较两个 IP 地址是否在同一网段</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">same_network</span></span>() &#123;</span><br><span class="line">    network1=$(extract_network <span class="variable">$1</span>)</span><br><span class="line">    subnet1=$(extract_subnet <span class="variable">$1</span>)</span><br><span class="line">    network2=$(extract_network <span class="variable">$2</span>)</span><br><span class="line">    subnet2=$(extract_subnet <span class="variable">$2</span>)</span><br><span class="line"></span><br><span class="line">    binary1=$(ip_to_binary <span class="variable">$network1</span>)</span><br><span class="line">    binary2=$(ip_to_binary <span class="variable">$network2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 截取相同长度的二进制子串</span></span><br><span class="line">    binary1=$(<span class="built_in">echo</span> <span class="variable">$binary1</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet1</span>)</span><br><span class="line">    binary2=$(<span class="built_in">echo</span> <span class="variable">$binary2</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$binary1</span>&quot;</span> == <span class="string">&quot;<span class="variable">$binary2</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 不在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>CIDR1&#x3D;”10.206.216.21&#x2F;24”<br>CIDR2&#x3D;”10.206.217.10&#x2F;24”<br>same_network $CIDR1 $CIDR2</p>
+]]></content>
+      <categories>
+        <category>Shell</category>
+      </categories>
+      <tags>
+        <tag>Shell</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Centos7.9上安装Docker</title>
     <url>/2024/0328201216.html</url>
     <content><![CDATA[<p>移除旧版本Docker</p>
@@ -5631,23 +5648,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>判断两个IP地址是否在同一网段(Shell实现)</title>
-    <url>/2024/0328195011.html</url>
-    <content><![CDATA[<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：提取 CIDR 的网络地址和子网掩码</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_network</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_subnet</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $2&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：将 IP 地址转换为二进制格式</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">ip_to_binary</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> ip=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">local</span> binary=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="built_in">local</span> IFS=<span class="string">&#x27;.&#x27;</span></span><br><span class="line">    <span class="built_in">local</span> octets=(<span class="variable">$ip</span>)</span><br><span class="line">    <span class="keyword">for</span> octet <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$&#123;octets[@]&#125;</span>&quot;</span>; <span class="keyword">do</span></span><br><span class="line">        <span class="built_in">local</span> bin_octet=<span class="string">&quot;&quot;</span></span><br><span class="line">        <span class="built_in">local</span> num=<span class="variable">$octet</span></span><br><span class="line">        <span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="number">8</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">            bin_octet=$((num % <span class="number">2</span>))<span class="variable">$bin_octet</span></span><br><span class="line">            num=$((num / <span class="number">2</span>))</span><br><span class="line">        <span class="keyword">done</span></span><br><span class="line">        binary+=<span class="variable">$bin_octet</span></span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$binary</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 函数：比较两个 IP 地址是否在同一网段</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">same_network</span></span>() &#123;</span><br><span class="line">    network1=$(extract_network <span class="variable">$1</span>)</span><br><span class="line">    subnet1=$(extract_subnet <span class="variable">$1</span>)</span><br><span class="line">    network2=$(extract_network <span class="variable">$2</span>)</span><br><span class="line">    subnet2=$(extract_subnet <span class="variable">$2</span>)</span><br><span class="line"></span><br><span class="line">    binary1=$(ip_to_binary <span class="variable">$network1</span>)</span><br><span class="line">    binary2=$(ip_to_binary <span class="variable">$network2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 截取相同长度的二进制子串</span></span><br><span class="line">    binary1=$(<span class="built_in">echo</span> <span class="variable">$binary1</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet1</span>)</span><br><span class="line">    binary2=$(<span class="built_in">echo</span> <span class="variable">$binary2</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$binary1</span>&quot;</span> == <span class="string">&quot;<span class="variable">$binary2</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 不在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>CIDR1&#x3D;”10.206.216.21&#x2F;24”<br>CIDR2&#x3D;”10.206.217.10&#x2F;24”<br>same_network $CIDR1 $CIDR2</p>
-]]></content>
-      <categories>
-        <category>Shell</category>
-      </categories>
-      <tags>
-        <tag>Shell</tag>
       </tags>
   </entry>
   <entry>
@@ -8234,6 +8234,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>在Rocky Linux上安装Docker</title>
+    <url>/2024/1017195632.html</url>
+    <content><![CDATA[<h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -8654,27 +8675,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>在Rocky Linux上安装Docker</title>
-    <url>/2024/1017195632.html</url>
-    <content><![CDATA[<h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
-
-<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL8.0以上版本如何重置密码</title>
     <url>/2024/1017202436.html</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
@@ -8799,8 +8799,14 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h3 id="添加网站地图"><a href="#添加网站地图" class="headerlink" title="添加网站地图"></a>添加网站地图</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-generator-seo-friendly-sitemap --save</span><br></pre></td></tr></table></figure>
 <p>Hexo配置文件中添加</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sitemap:</span><br><span class="line">    path: sitemap.xml</span><br><span class="line">    tag: false</span><br><span class="line">    category: false</span><br></pre></td></tr></table></figure>
-<p>tag:false, category:false: 网站地图排除标签和分类页面<br>将sitemap.xml, post-sitemap.xml, page-sitemap.xml 提交后Google Search Console</p>
-<h3 id="添加robots-txt"><a href="#添加robots-txt" class="headerlink" title="添加robots.txt"></a>添加robots.txt</h3><p><code>robots.txt</code>是存放在网站根目录下的一个纯文本文件，可以指定搜索引擎蜘蛛只抓取指定内容，或禁止抓取网站部分内容，可以指定sitemap地址<br><a href="https://www.w3cschool.cn/tools/index?name=createrobots">robots.txt在线生成工具</a><br>在source目录下新建robots.txt</p>
+<ul>
+<li>tag:false, category:false: 网站地图排除标签和分类页面</li>
+<li>将sitemap.xml, post-sitemap.xml, page-sitemap.xml 提交后Google Search Console</li>
+</ul>
+<h3 id="添加robots-txt"><a href="#添加robots-txt" class="headerlink" title="添加robots.txt"></a>添加robots.txt</h3><ul>
+<li><code>robots.txt</code>是存放在网站根目录下的一个纯文本文件，可以指定搜索引擎蜘蛛只抓取指定内容，或禁止抓取网站部分内容，可以指定sitemap地址 <a href="https://www.w3cschool.cn/tools/index?name=createrobots">robots.txt在线生成工具</a></li>
+<li>在source目录下新建robots.txt</li>
+</ul>
 <h3 id="nofollow标签"><a href="#nofollow标签" class="headerlink" title="nofollow标签"></a>nofollow标签</h3><h3 id="给博客文章生成短链"><a href="#给博客文章生成短链" class="headerlink" title="给博客文章生成短链"></a>给博客文章生成短链</h3><p>编辑站点的<code>_config.yml</code>(非主题<code>_config.yml</code>)</p>
 <figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">permalink:</span> <span class="string">:layout/:year:month:day:hour:minute:second.html</span></span><br><span class="line"><span class="attr">permalink_defaults:</span></span><br><span class="line"><span class="attr">pretty_urls:</span></span><br><span class="line">  <span class="attr">trailing_index:</span> <span class="literal">true</span> <span class="comment"># Set to false to remove trailing &#x27;index.html&#x27; from permalinks</span></span><br><span class="line">  <span class="attr">trailing_html:</span> <span class="literal">true</span> <span class="comment"># Set to false to remove trailing &#x27;.html&#x27; from permalinks</span></span><br></pre></td></tr></table></figure>
 <p>注:</p>

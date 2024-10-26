@@ -274,7 +274,7 @@
 
 <h2 id="标准I-O与unbuffered-I-O"><a href="#标准I-O与unbuffered-I-O" class="headerlink" title="标准I&#x2F;O与unbuffered I&#x2F;O"></a>标准I&#x2F;O与unbuffered I&#x2F;O</h2><p>linux对I&#x2F;O文件操作分为不带缓存I&#x2F;O(unbuffered I&#x2F;O)和带缓存I&#x2F;O(即标准I&#x2F;O)</p>
 <p>《APUE》中对术语unbuffered的定义: “The term <em>unbuffered</em> means that each read or write invokes a system call in the kernel”</p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_33366098/article/details/77923722">这篇文章</a>讲了unbuffered I&#x2F;O和标准I&#x2F;O的区别，以下引用其中的描述：</p>
+<p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/qq_33366098/article/details/77923722">这篇文章</a>讲了unbuffered I&#x2F;O和标准I&#x2F;O的区别，以下引用其中的描述：</p>
 <p>不带缓存I&#x2F;O，是指每次read, write都会进入内核，执行一次系统调用，不带缓存不是指直接对磁盘进行读写。比如read,write函数，它们属于系统调用，在用户态没有缓存，但是在内核是有缓存器的。如内核缓存未满，写入的数据还是在内核缓存，并没有真正写入硬盘。需要等待缓存写满或者内核需要重用该缓存以存放其他磁盘块数据时，才进行实际硬盘读写，这种方式被称为延迟写(delayed write)</p>
 <p>带缓存I&#x2F;O也叫标准I&#x2F;O。标准I&#x2F;O会在用户态建立一个缓存区，以尽可能减少read和write调用的次数，提高效率。</p>
 <p>unbuffered I&#x2F;O操作数据流向：数据-&gt;内核缓存区-&gt;磁盘</p>
@@ -309,7 +309,7 @@
 <p><strong>如果标准输出连到终端设备，默认是行缓冲的</strong>。”before fork”只输出一次，原因是调用第一个printf后，标准输出缓冲区由换行符冲洗，“before fork”被立即打印。</p>
 <p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
 <p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a target="_blank" rel="noopener" href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
 
     </div>
 
@@ -511,7 +511,7 @@
 </div>
 
 <!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 -->
 

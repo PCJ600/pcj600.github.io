@@ -294,7 +294,7 @@
 <p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
 
-<p>协议内容的解析参考<a target="_blank" rel="noopener" href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
+<p>协议内容的解析参考<a target="_blank" rel="noopener external nofollow noreferrer" href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
 <ul>
 <li>*3 表示数组长度为3， 数组元素依次为 [“set” “hello” “world”]</li>
 <li>$3 表示字符串 “set” 的长度</li>
@@ -302,8 +302,8 @@
 <li>第二个 $5 表示字符串 “world” 的长度。</li>
 </ul>
 <p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img data-src="/2021/1106201429/image4.png"></p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener" href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
-<p>【2】<a target="_blank" rel="noopener" href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
+<p>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
 
     </div>
 
@@ -506,7 +506,7 @@
 </div>
 
 <!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 -->
 

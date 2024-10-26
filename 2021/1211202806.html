@@ -278,8 +278,8 @@
 <span id="more"></span>
 
 <p><strong>源码版本：</strong></p>
-<p><a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/3.0.0">Redis 3.0.0</a></p>
-<p><a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+<p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/redis/redis/releases/tag/3.0.0">Redis 3.0.0</a></p>
+<p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
 <h2 id="思考问题"><a href="#思考问题" class="headerlink" title="思考问题"></a>思考问题<span id="jump0"></span></h2><ul>
 <li><a href="#jump1">SDS的数据结构，字符串如何表示的</a><ul>
 <li><a href="#jump2">SDS结构体各成员的作用</a></li>
@@ -313,7 +313,7 @@
 <h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><h3 id="SDS的数据结构，字符串是如何表示的"><a href="#SDS的数据结构，字符串是如何表示的" class="headerlink" title="SDS的数据结构，字符串是如何表示的 "></a>SDS的数据结构，字符串是如何表示的 <span id="jump1"></span></h3><p>REDIS 3.0中，SDS的数据结构：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">	<span class="type">int</span> len;		<span class="comment">// 字符串长度，即对C风格字符串调用strlen的结果</span></span><br><span class="line">	<span class="type">int</span> <span class="built_in">free</span>;		<span class="comment">// buf数组中的未使用字节数</span></span><br><span class="line">	<span class="type">char</span> buf[];		<span class="comment">// &#x27;\0&#x27;结尾</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<p>注意sizeof(struct sdshdr)的结果等于8，不是9；这里的buf为柔性数组成员。至于为什么用柔性数组成员可以参考这篇文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/davygeek/p/5748852.html">https://www.cnblogs.com/davygeek/p/5748852.html</a></p>
+<p>注意sizeof(struct sdshdr)的结果等于8，不是9；这里的buf为柔性数组成员。至于为什么用柔性数组成员可以参考这篇文章：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/davygeek/p/5748852.html">https://www.cnblogs.com/davygeek/p/5748852.html</a></p>
 <h4 id="SDS结构体各成员的作用"><a href="#SDS结构体各成员的作用" class="headerlink" title="SDS结构体各成员的作用"></a>SDS结构体各成员的作用<span id="jump2"></span></h4><ul>
 <li>len: 表示buf数组中已使用的字节数(<strong>不包括’\0’</strong>)，即字符串长度。好处是获取字符串长度时间为O(1)</li>
 <li>free: 表示buf数组中未使用的字节数。</li>
@@ -591,7 +591,7 @@
 <li>依次类推 ……</li>
 </ul>
 <p><strong>思考问题：</strong><code>set key hello</code>， 键key和值hello都是用sdshdr5表示的吗？</p>
-<p>详细分析过程参考文章：<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000017450295">https://segmentfault.com/a/1190000017450295</a></p>
+<p>详细分析过程参考文章：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://segmentfault.com/a/1190000017450295">https://segmentfault.com/a/1190000017450295</a></p>
 <p>以下仅给出结论和验证结果：</p>
 <p><strong>结论：</strong></p>
 <ul>
@@ -609,7 +609,7 @@
 
 <p><strong>思考问题</strong>：对于短字符串，为什么键底层类型为sdshdr5，值底层类型设置却成sdshdr8？</p>
 <p>个人分析：实际应用场景中，通常键的更新次数远小于值的更新次数。所以对键采用最小的内存存储，以节省空间；对值用更大的内存存储，减少内存重分配的次数，提高性能。</p>
-<h4 id="REDIS字符串命令"><a href="#REDIS字符串命令" class="headerlink" title="REDIS字符串命令"></a>REDIS字符串命令<span id="jump18"></span></h4><p>REDIS 字符串命令参考官方网站：<a target="_blank" rel="noopener" href="https://redis.io/commands#string">https://redis.io/commands#string</a></p>
+<h4 id="REDIS字符串命令"><a href="#REDIS字符串命令" class="headerlink" title="REDIS字符串命令"></a>REDIS字符串命令<span id="jump18"></span></h4><p>REDIS 字符串命令参考官方网站：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://redis.io/commands#string">https://redis.io/commands#string</a></p>
 <p>以下仅给出几个最常用的命令:</p>
 <ul>
 <li>set key value</li>
@@ -617,9 +617,9 @@
 <li>append key value</li>
 </ul>
 <h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》第2章 简单动态字符串，第8章 对象</p>
-<p>【2】<a target="_blank" rel="noopener" href="https://blog.huangz.me/diary/2014/how-to-read-redis-source-code.html">如何阅读Redis源码</a></p>
-<p>【3】<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000017450295">【Redis源码分析】一个对SDSHDR5是否使用的疑问</a></p>
-<p>【4】<a target="_blank" rel="noopener" href="https://www.cnblogs.com/davygeek/p/5748852.html">柔性数组</a></p>
+<p>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.huangz.me/diary/2014/how-to-read-redis-source-code.html">如何阅读Redis源码</a></p>
+<p>【3】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://segmentfault.com/a/1190000017450295">【Redis源码分析】一个对SDSHDR5是否使用的疑问</a></p>
+<p>【4】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/davygeek/p/5748852.html">柔性数组</a></p>
 
     </div>
 
@@ -821,7 +821,7 @@
 </div>
 
 <!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 -->
 

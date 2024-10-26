@@ -274,7 +274,7 @@
 <span id="more"></span>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">7457 ?        Ssl  752:10 /snap/microk8s/3699/bin/k8s-dqlite --storage-dir=/var/snap/microk8s/3699/var/kubernetes/backend/ --listen=unix:///var/snap/microk8s/3699/var/kubernetes/backend/kine.sock:12379</span><br><span class="line">7489 ?        Ssl  1777:58 /snap/microk8s/3699/kubelite --scheduler-args-file=/var/snap/microk8s/3699/args/kube-scheduler --controller-manager-args-file=/var/snap/microk8s/3699/args/kube-controller-manager --proxy-args-file=/var/snap/microk8s/3699/args/kube-proxy --kubelet-args-file=/var/snap/microk8s/3699/args/kubelet --apiserver-args-file=/var/snap/microk8s/3699/args/kube-apiserver</span><br></pre></td></tr></table></figure>
 <p>通过<code>journactl</code>查看错误日志:<br>fatal msg&#x3D;”Failed to start server: start node: raft_start(): io: <strong>load closed segment 0000000014232389-0000000014232597</strong>: entries batch 394 starting at byte 8384000: entries count in preamble is zero\n”<br>Feb 03 08:18:08 GIFOCTMSG02 systemd[1]: snap.microk8s.daemon-k8s-dqlite.service: Main process exited, code&#x3D;exited, status&#x3D;1&#x2F;FAILURE</p>
-<p>根据关键字查Google找到解决方案：<a target="_blank" rel="noopener" href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
+<p>根据关键字查Google找到解决方案：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
 <h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>根据错误日志中”segment <strong>0000000014232389-0000000014232597</strong>“的信息，找到出错的文件<code>/var/snap/microk8s/current/var/kubernetes/backend/0000000014232389-0000000014232597</code>，删除此文件后重启microk8s，发现问题解决。文件出错原因可能是因为机器被异常下电，导致文件损坏</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">microk8s stop</span><br><span class="line">rm /var/snap/microk8s/current/var/kubernetes/backend/0000000014232389-0000000014232597</span><br><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
 <p><code>/var/snap/microk8s/3699/var/kubernetes/backend</code>的文件如下：</p>
@@ -292,7 +292,7 @@
 <li>打开文件（如：open-28055）：<br>这些文件可能是当前正在使用的打开文件。它们通常在 dqlite 服务正在运行时存在。</li>
 <li>失败域文件（failure-domain）：<br>可能包含关于节点失败域的信息，用于高可用性和容错。</li>
 </ul>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931">https://discuss.linuxcontainers.org/t/error-failed-to-start-dqlite-server-raft-start/6931</a></p>
 
     </div>
 
@@ -495,7 +495,7 @@
 </div>
 
 <!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
   </div>
 -->
 
