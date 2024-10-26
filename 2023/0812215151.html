@@ -1,29 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/images/logo.svg" color="#222">
-  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
-  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
-
-<link rel="stylesheet" href="/css/main.css">
-
-
-<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
-  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
-  <script src="/lib/pace/pace.min.js"></script>
-
-<script id="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
-  </script>
-
+  <meta charset="utf-8">
+  
+  
+  <title>Effective Python 笔记 | PC&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="前言不错的Python进阶书。写这个笔记的目的是，把书中提到的编写高质量Python的59个方法的要点记录下来，便于今后的工作中查阅 第1章：用Pythonic方式来思考">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Effective Python 笔记">
@@ -36,236 +18,89 @@
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="Python">
 <meta name="twitter:card" content="summary">
-
-<link rel="canonical" href="https://pcj600.github.io/2023/0812215151.html">
-
-
-<script id="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
-
-  <title>Effective Python 笔记 | PC's Blog</title>
   
+    <link rel="alternate" href="/atom.xml" title="PC's Blog" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
 
-
-
-
-
-
-  <noscript>
-  <style>
-  .use-motion .brand,
-  .use-motion .menu-item,
-  .sidebar-inner,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
-  </style>
-</noscript>
-
-</head>
-
-<body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container use-motion">
-    <div class="headband"></div>
-
-    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-container">
-  <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
-    </div>
-  </div>
-
-  <div class="site-meta">
-
-    <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
-      <h1 class="site-title">PC's Blog</h1>
-      <span class="logo-line-after"><i></i></span>
-    </a>
-      <p class="site-subtitle" itemprop="description">Life is short, Play more!</p>
-  </div>
-
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger">
-        <i class="fa fa-search fa-fw fa-lg"></i>
-    </div>
-  </div>
-</div>
-
-
-
-
-<nav class="site-nav">
-  <ul id="menu" class="main-menu menu">
-        <li class="menu-item menu-item-home">
-
-    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
-
-  </li>
-        <li class="menu-item menu-item-categories">
-
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">32</span></a>
-
-  </li>
-        <li class="menu-item menu-item-tags">
-
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">41</span></a>
-
-  </li>
-        <li class="menu-item menu-item-archives">
-
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">139</span></a>
-
-  </li>
-        <li class="menu-item menu-item-sitemap">
-
-    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
-
-  </li>
-      <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
-        </a>
-      </li>
-  </ul>
-</nav>
-
-
-
-  <div class="search-pop-overlay">
-    <div class="popup search-popup">
-        <div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocapitalize="off"
-           placeholder="搜索..." spellcheck="false"
-           type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div id="search-result">
-  <div id="no-result">
-    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
-  </div>
-</div>
-
-    </div>
-  </div>
-
-</div>
-    </header>
-
+  
     
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">PC&#39;s Blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Life is short, Play more!</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://pcj600.github.io"></form>
+      </div>
+    </div>
   </div>
-  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+</header>
 
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
+      <div class="outer">
+        <section id="main"><article id="next-2023-08-12-effective-python-note" class="h-entry article article-type-next" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2023/0812215151.html" class="article-date">
+  <time class="dt-published" datetime="2023-08-12T13:51:51.000Z" itemprop="datePublished">2023-08-12</time>
+</a>
     
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Python/">Python</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
+    <h1 class="p-name article-title" itemprop="headline name">
+      Effective Python 笔记
+    </h1>
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2023/0812215151.html">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Effective Python 笔记
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2023-08-12 21:51:51" itemprop="dateCreated datePublished" datetime="2023-08-12T21:51:51+08:00">2023-08-12</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Python/" itemprop="url" rel="index"><span itemprop="name">Python</span></a>
-                </span>
-            </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span><br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>13k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>12 分钟</span>
-            </span>
-
-        </div>
       </header>
-
     
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
+    <div class="e-content article-entry" itemprop="articleBody">
       
         <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>不错的Python进阶书。写这个笔记的目的是，把书中提到的编写高质量Python的59个方法的要点记录下来，便于今后的工作中查阅</p>
 <h1 id="第1章：用Pythonic方式来思考"><a href="#第1章：用Pythonic方式来思考" class="headerlink" title="第1章：用Pythonic方式来思考"></a>第1章：用Pythonic方式来思考</h1><span id="more"></span>
@@ -525,271 +360,157 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h2 id="53-用虚拟环境隔离项目，并重建其依赖关系"><a href="#53-用虚拟环境隔离项目，并重建其依赖关系" class="headerlink" title="53. 用虚拟环境隔离项目，并重建其依赖关系"></a>53. 用虚拟环境隔离项目，并重建其依赖关系</h2><h1 id="x20-第8章-部署"><a href="#x20-第8章-部署" class="headerlink" title="&#x20;第8章 部署"></a>&#x20;第8章 部署</h1><h2 id="54-考虑用模块级别代码配置不同部署环境-x20"><a href="#54-考虑用模块级别代码配置不同部署环境-x20" class="headerlink" title="54. 考虑用模块级别代码配置不同部署环境&#x20;"></a>54. 考虑用模块级别代码配置不同部署环境&#x20;</h2><h2 id="55-通过repr字符串输出调试信息"><a href="#55-通过repr字符串输出调试信息" class="headerlink" title="55. 通过repr字符串输出调试信息"></a>55. 通过repr字符串输出调试信息</h2><p>简单的print不能打印出值的类型信息，可以用repr获取类型信息</p>
 <h2 id="56-用unittest测试全部代码"><a href="#56-用unittest测试全部代码" class="headerlink" title="56. 用unittest测试全部代码"></a>56. 用unittest测试全部代码</h2><h2 id="57-用pdb实现交互调试"><a href="#57-用pdb实现交互调试" class="headerlink" title="57. 用pdb实现交互调试"></a>57. 用pdb实现交互调试</h2><p><a target="_blank" rel="noopener" href="https://docs.python.org/zh-cn/3/library/pdb.html">https://docs.python.org/zh-cn/3/library/pdb.html</a></p>
 <h2 id="58-先分析性能，然后再优化"><a href="#58-先分析性能，然后再优化" class="headerlink" title="58. 先分析性能，然后再优化"></a>58. 先分析性能，然后再优化</h2><h2 id="59-用tracemalloc掌握内存使用和泄漏情况"><a href="#59-用tracemalloc掌握内存使用和泄漏情况" class="headerlink" title="59. 用tracemalloc掌握内存使用和泄漏情况"></a>59. 用tracemalloc掌握内存使用和泄漏情况</h2>
-    </div>
-
-    
-    
-    
-        <div class="reward-container">
-  <div></div>
-  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
-    打赏
-  </button>
-  <div id="qr" style="display: none;">
       
-      <div style="display: inline-block;">
-        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
-        <p>微信支付</p>
-      </div>
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://pcj600.github.io/2023/0812215151.html" data-id="cm2puzlxn006s4cvw46r0hly3" data-title="Effective Python 笔记" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
-      <div style="display: inline-block;">
-        <img src="/images/alipay.jpg" alt="PC 支付宝">
-        <p>支付宝</p>
-      </div>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Python/" rel="tag">Python</a></li></ul>
 
-  </div>
-</div>
-
-        
-
-<div>
-<ul class="post-copyright">
-  <li class="post-copyright-author">
-    <strong>本文作者： </strong>PC
-  </li>
-  <li class="post-copyright-link">
-    <strong>本文链接：</strong>
-    <a href="https://pcj600.github.io/2023/0812215151.html" title="Effective Python 笔记">https://pcj600.github.io/2023/0812215151.html</a>
-  </li>
-  <li class="post-copyright-license">
-    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
-  </li>
-</ul>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
-          </div>
-
-        
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2023/0719214818.html" rel="prev" title="流畅的Python 笔记">
-      <i class="fa fa-chevron-left"></i> 流畅的Python 笔记
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2023/0815215310.html" rel="next" title="Python的Lamdba函数是什么，应用场景是什么?">
-      Python的Lamdba函数是什么，应用场景是什么? <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
-  
-  <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
-  </div>
-
-  <aside class="sidebar">
-    <div class="sidebar-inner">
-
-      <ul class="sidebar-nav motion-element">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          站点概览
-        </li>
-      </ul>
-
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC1%E7%AB%A0%EF%BC%9A%E7%94%A8Pythonic%E6%96%B9%E5%BC%8F%E6%9D%A5%E6%80%9D%E8%80%83"><span class="nav-text">第1章：用Pythonic方式来思考</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#x20-1-%E7%94%A8Pythonic%E6%96%B9%E5%BC%8F%E6%9D%A5%E6%80%9D%E8%80%83"><span class="nav-text"> 1. 用Pythonic方式来思考</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#x20-2-%E9%81%B5%E5%BE%AAPEP8%E9%A3%8E%E6%A0%BC"><span class="nav-text"> 2. 遵循PEP8风格</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E4%BA%86%E8%A7%A3bytes-str-unicode%E5%8C%BA%E5%88%AB"><span class="nav-text">3. 了解bytes, str, unicode区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E7%94%A8%E8%BE%85%E5%8A%A9%E5%87%BD%E6%95%B0%E5%8F%96%E4%BB%A3%E5%A4%8D%E6%9D%82%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-text">4. 用辅助函数取代复杂表达式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E4%BA%86%E8%A7%A3%E5%88%87%E5%89%B2%E5%BA%8F%E5%88%97%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-text">5. 了解切割序列的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%8D%95%E6%AC%A1%E5%88%87%E7%89%87%E6%93%8D%E4%BD%9C%E5%86%85%EF%BC%8C%E4%B8%8D%E8%A6%81%E5%90%8C%E6%97%B6%E6%8C%87%E5%AE%9Astart-end-stride"><span class="nav-text">6. 单次切片操作内，不要同时指定start, end, stride</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#x20-7-%E7%94%A8%E5%88%97%E8%A1%A8%E6%8E%A8%E5%AF%BC%E5%8F%96%E4%BB%A3map-filter"><span class="nav-text"> 7. 用列表推导取代map, filter</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-%E4%B8%8D%E8%A6%81%E4%BD%BF%E7%94%A8%E5%90%AB%E6%9C%89%E4%B8%A4%E4%B8%AA%E4%BB%A5%E4%B8%8A%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%88%97%E8%A1%A8%E6%8E%A8%E5%AF%BC"><span class="nav-text">8. 不要使用含有两个以上表达式的列表推导</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-%E7%94%A8%E7%94%9F%E6%88%90%E5%99%A8%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%94%B9%E5%86%99%E6%95%B0%E6%8D%AE%E9%87%8F%E8%BE%83%E5%A4%A7%E7%9A%84%E5%88%97%E8%A1%A8%E6%8E%A8%E5%AF%BC"><span class="nav-text">9. 用生成器表达式改写数据量较大的列表推导</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-%E5%B0%BD%E9%87%8F%E7%94%A8enumerate%E5%8F%96%E4%BB%A3range"><span class="nav-text">10. 尽量用enumerate取代range</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#11-%E7%94%A8zip%E5%87%BD%E6%95%B0%E5%90%8C%E6%97%B6%E9%81%8D%E5%8E%86%E4%B8%A4%E4%B8%AA%E8%BF%AD%E4%BB%A3%E5%99%A8"><span class="nav-text">11. 用zip函数同时遍历两个迭代器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#12-%E4%B8%8D%E8%A6%81%E5%9C%A8for%E5%92%8Cwhile%E5%BE%AA%E7%8E%AF%E5%90%8E%E5%86%99else%E5%9D%97"><span class="nav-text">12. 不要在for和while循环后写else块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#13-%E5%90%88%E7%90%86%E5%88%A9%E7%94%A8try-except-else-finally%E7%BB%93%E6%9E%84%E4%B8%AD%E6%AF%8F%E4%B8%AA%E4%BB%A3%E7%A0%81%E5%9D%97"><span class="nav-text">13. 合理利用try&#x2F;except&#x2F;else&#x2F;finally结构中每个代码块</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC2%E7%AB%A0-%E5%87%BD%E6%95%B0"><span class="nav-text">第2章 函数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#14-%E5%B0%BD%E9%87%8F%E7%94%A8%E5%BC%82%E5%B8%B8%E6%9D%A5%E8%A1%A8%E7%A4%BA%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5%EF%BC%8C%E8%80%8C%E4%B8%8D%E8%BF%94%E5%9B%9ENones"><span class="nav-text">14. 尽量用异常来表示特殊情况，而不返回Nones</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#15-%E4%BA%86%E8%A7%A3%E5%A6%82%E4%BD%95%E5%9C%A8%E9%97%AD%E5%8C%85%E9%87%8C%E4%BD%BF%E7%94%A8%E5%A4%96%E5%9B%B4%E4%BD%9C%E7%94%A8%E5%9F%9F%E4%B8%AD%E7%9A%84%E5%8F%98%E9%87%8F"><span class="nav-text">15. 了解如何在闭包里使用外围作用域中的变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#16-%E7%94%A8%E7%94%9F%E6%88%90%E5%99%A8%E6%94%B9%E5%86%99%E7%9B%B4%E6%8E%A5%E8%BF%94%E5%9B%9E%E5%88%97%E8%A1%A8%E5%87%BD%E6%95%B0"><span class="nav-text">16. 用生成器改写直接返回列表函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#17-%E5%9C%A8%E5%8F%82%E6%95%B0%E4%B8%8A%E8%BF%AD%E4%BB%A3%E6%97%B6%EF%BC%8C%E5%A4%9A%E5%8A%A0%E5%B0%8F%E5%BF%83"><span class="nav-text">17. 在参数上迭代时，多加小心</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#18-%E7%94%A8%E6%95%B0%E9%87%8F%E5%8F%AF%E5%8F%98%E4%BD%8D%E7%BD%AE%E5%8F%82%E6%95%B0%E5%87%8F%E5%B0%91%E8%A7%86%E8%A7%89%E6%9D%82%E8%AE%AF-visual-noise"><span class="nav-text">18. 用数量可变位置参数减少视觉杂讯 (visual noise)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#19-%E7%94%A8%E5%85%B3%E9%94%AE%E5%AD%97%E5%8F%82%E6%95%B0%E8%A1%A8%E8%BE%BE%E5%8F%AF%E9%80%89%E7%9A%84%E8%A1%8C%E4%B8%BA"><span class="nav-text">19. 用关键字参数表达可选的行为</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#20-%E7%94%A8None%E5%92%8C%E6%96%87%E6%A1%A3%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%8F%8F%E8%BF%B0%E5%90%AB%E6%9C%89%E5%8A%A8%E6%80%81%E9%BB%98%E8%AE%A4%E5%80%BC%E7%9A%84%E5%8F%82%E6%95%B0"><span class="nav-text">20. 用None和文档字符串描述含有动态默认值的参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#21-%E7%94%A8%E5%8F%AA%E8%83%BD%E4%BB%A5%E5%85%B3%E9%94%AE%E5%AD%97%E5%BD%A2%E5%BC%8F%E6%8C%87%E5%AE%9A%E7%9A%84%E5%8F%82%E6%95%B0%E6%9D%A5%E7%A1%AE%E4%BF%9D%E4%BB%A3%E7%A0%81%E6%98%8E%E6%99%B0"><span class="nav-text">21. 用只能以关键字形式指定的参数来确保代码明晰</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC3%E7%AB%A0-%E7%B1%BB%E4%B8%8E%E7%BB%A7%E6%89%BF"><span class="nav-text">第3章 类与继承</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#22-%E5%B0%BD%E9%87%8F%E7%94%A8%E8%BE%85%E5%8A%A9%E7%B1%BB%E7%BB%B4%E6%8A%A4%E7%A8%8B%E5%BA%8F%E7%8A%B6%E6%80%81%EF%BC%8C%E8%80%8C%E4%B8%8D%E8%A6%81%E7%94%A8%E5%AD%97%E5%85%B8%E5%92%8C%E5%85%83%E7%BB%84"><span class="nav-text">22. 尽量用辅助类维护程序状态，而不要用字典和元组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#23-%E7%AE%80%E5%8D%95%E7%9A%84%E6%8E%A5%E5%8F%A3%E5%BA%94%E8%AF%A5%E6%8E%A5%E5%8F%97%E5%87%BD%E6%95%B0%EF%BC%8C%E8%80%8C%E4%B8%8D%E6%98%AF%E7%B1%BB%E7%9A%84%E5%AE%9E%E4%BE%8B"><span class="nav-text">23. 简单的接口应该接受函数，而不是类的实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#24-%E4%BB%A5-classmethod%E5%BD%A2%E5%BC%8F%E7%9A%84%E5%A4%9A%E6%80%81%E5%8E%BB%E9%80%9A%E7%94%A8%E5%9C%B0%E6%9E%84%E5%BB%BA%E5%AF%B9%E8%B1%A1"><span class="nav-text">24. 以@classmethod形式的多态去通用地构建对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#25-%E7%94%A8super%E5%88%9D%E5%A7%8B%E5%8C%96%E7%88%B6%E7%B1%BB"><span class="nav-text">25. 用super初始化父类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#26-%E5%8F%AA%E5%9C%A8%E4%BD%BF%E7%94%A8Mix-in%E7%BB%84%E4%BB%B6%E5%88%B6%E4%BD%9C%E5%B7%A5%E5%85%B7%E7%B1%BB%E6%97%B6%E8%BF%9B%E8%A1%8C%E5%A4%9A%E9%87%8D%E7%BB%A7%E6%89%BF"><span class="nav-text">26. 只在使用Mix-in组件制作工具类时进行多重继承</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#27-%E5%A4%9A%E7%94%A8public%E5%B1%9E%E6%80%A7%EF%BC%8C%E5%B0%91%E7%94%A8private%E5%B1%9E%E6%80%A7"><span class="nav-text">27. 多用public属性，少用private属性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#28-%E7%BB%A7%E6%89%BFcollections-abc%E4%BB%A5%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%AE%9A%E4%B9%89%E7%9A%84%E5%AE%B9%E5%99%A8%E7%B1%BB%E5%9E%8B"><span class="nav-text">28. 继承collections.abc以实现自定义的容器类型</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC4%E7%AB%A0-%E5%85%83%E7%B4%A0%E4%B8%8E%E5%B1%9E%E6%80%A7"><span class="nav-text">第4章 元素与属性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#29-%E7%94%A8%E7%BA%AF%E5%B1%9E%E6%80%A7%E5%8F%96%E4%BB%A3get%E5%92%8Cset%E6%96%B9%E6%B3%95"><span class="nav-text">29. 用纯属性取代get和set方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#30-%E8%80%83%E8%99%91%E7%94%A8-property%E4%BB%A3%E6%9B%BF%E5%B1%9E%E6%80%A7%E9%87%8D%E6%9E%84"><span class="nav-text">30. 考虑用@property代替属性重构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#31-%E7%94%A8%E6%8F%8F%E8%BF%B0%E7%AC%A6%E6%9D%A5%E6%94%B9%E5%86%99%E9%9C%80%E8%A6%81%E5%A4%8D%E7%94%A8%E7%9A%84-property%E6%96%B9%E6%B3%95"><span class="nav-text">31. 用描述符来改写需要复用的@property方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#32-%E7%94%A8getattr-getattribute-setattr%E5%AE%9E%E7%8E%B0%E6%8C%89%E9%9C%80%E7%94%9F%E6%88%90%E6%93%8D%E4%BD%9C-%E6%83%B0%E6%80%A7%E6%96%B9%E5%BC%8F%E5%8A%A0%E8%BD%BD%E5%B9%B6%E4%BF%9D%E5%AD%98%E5%AF%B9%E8%B1%A1%E5%B1%9E%E6%80%A7%EF%BC%89"><span class="nav-text">32. 用getattr, getattribute, setattr实现按需生成操作 (惰性方式加载并保存对象属性）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#33-%E7%94%A8%E5%85%83%E7%B1%BB%E9%AA%8C%E8%AF%81%E5%AD%90%E7%B1%BB"><span class="nav-text">33. 用元类验证子类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#34-%E7%94%A8%E5%85%83%E7%B1%BB%E6%B3%A8%E5%86%8C%E5%AD%90%E7%B1%BB"><span class="nav-text">34. 用元类注册子类</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC5%E7%AB%A0-%E5%B9%B6%E5%8F%91%E5%8F%8A%E5%B9%B6%E8%A1%8C"><span class="nav-text">第5章 并发及并行</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#36-%E7%94%A8subprocess%E6%A8%A1%E5%9D%97%E7%AE%A1%E7%90%86%E5%AD%90%E8%BF%9B%E7%A8%8B"><span class="nav-text">36. 用subprocess模块管理子进程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#37-%E5%8F%AF%E4%BB%A5%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%89%A7%E8%A1%8C%E9%98%BB%E5%A1%9E%E5%BC%8FIO%EF%BC%8C%E4%BD%86%E4%B8%8D%E8%A6%81%E7%94%A8%E5%AE%83%E5%81%9A%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97"><span class="nav-text">37. 可以用线程执行阻塞式IO，但不要用它做并行计算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#38-%E5%9C%A8%E7%BA%BF%E7%A8%8B%E4%B8%AD%E4%BD%BF%E7%94%A8Lock%E6%9D%A5%E9%98%B2%E6%AD%A2%E6%95%B0%E6%8D%AE%E7%AB%9E%E4%BA%89"><span class="nav-text">38. 在线程中使用Lock来防止数据竞争</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#39-%E7%94%A8Queue%E5%8D%8F%E8%B0%83%E5%90%84%E7%BA%BF%E7%A8%8B%E4%B9%8B%E9%97%B4%E7%9A%84%E5%B7%A5%E4%BD%9C"><span class="nav-text">39. 用Queue协调各线程之间的工作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#40-%E8%80%83%E8%99%91%E7%94%A8%E5%8D%8F%E7%A8%8B%E5%B9%B6%E5%8F%91%E5%9C%B0%E8%BF%90%E8%A1%8C%E5%A4%9A%E4%B8%AA%E5%87%BD%E6%95%B0"><span class="nav-text">40.考虑用协程并发地运行多个函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#x20-41-%E8%80%83%E8%99%91%E7%94%A8concurrent-futures%E5%AE%9E%E7%8E%B0%E5%B9%B3%E8%A1%8C%E8%AE%A1%E7%AE%97"><span class="nav-text"> 41. 考虑用concurrent.futures实现平行计算</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC6%E7%AB%A0-%E5%86%85%E7%BD%AE%E6%A8%A1%E5%9D%97"><span class="nav-text">第6章 内置模块</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#x20-42-%E7%94%A8functools-wraps%E5%AE%9A%E4%B9%89%E5%87%BD%E6%95%B0%E4%BF%AE%E9%A5%B0%E5%99%A8"><span class="nav-text"> 42. 用functools.wraps定义函数修饰器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#43-%E8%80%83%E8%99%91%E4%BB%A5contextlib%E5%92%8Cwith%E8%AF%AD%E5%8F%A5%E6%94%B9%E5%86%99%E5%8F%AF%E5%A4%8D%E7%94%A8%E7%9A%84try-finally%E4%BB%A3%E7%A0%81"><span class="nav-text">43. 考虑以contextlib和with语句改写可复用的try&#x2F;finally代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#44-%E7%94%A8copyreg%E5%AE%9E%E7%8E%B0%E5%8F%AF%E9%9D%A0pickle%E6%93%8D%E4%BD%9C"><span class="nav-text">44. 用copyreg实现可靠pickle操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#45-%E4%BD%BF%E7%94%A8datatime%E6%A8%A1%E5%9D%97%E5%A4%84%E7%90%86%E6%9C%AC%E5%9C%B0%E6%97%B6%E9%97%B4%E8%80%8C%E4%B8%8D%E6%98%AFtime"><span class="nav-text">45. 使用datatime模块处理本地时间而不是time</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#46-%E4%BD%BF%E7%94%A8%E5%86%85%E7%BD%AE%E7%AE%97%E6%B3%95%E5%92%8C%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-text">46. 使用内置算法和数据结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#47-%E9%87%8D%E8%A7%86%E7%B2%BE%E7%A1%AE%E5%BA%A6%E5%9C%BA%E5%90%88%EF%BC%8C%E5%BA%94%E8%AF%A5%E4%BD%BF%E7%94%A8decimal"><span class="nav-text">47.重视精确度场合，应该使用decimal</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#48-%E5%AD%A6%E4%BC%9A%E5%AE%89%E8%A3%85%E7%94%B1Python%E5%BC%80%E5%8F%91%E8%80%85%E7%A4%BE%E5%8C%BA%E6%9E%84%E5%BB%BA%E7%9A%84%E6%A8%A1%E5%9D%97-x20"><span class="nav-text">48. 学会安装由Python开发者社区构建的模块 </span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC7%E7%AB%A0-%E5%8D%8F%E4%BD%9C%E5%BC%80%E5%8F%91"><span class="nav-text">第7章 协作开发</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#49-%E4%B8%BA%E6%AF%8F%E4%B8%AA%E5%87%BD%E6%95%B0%E3%80%81%E7%B1%BB%E5%92%8C%E6%A8%A1%E5%9D%97%E7%BC%96%E5%86%99%E6%96%87%E6%A1%A3%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="nav-text">49. 为每个函数、类和模块编写文档字符串</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#50-%E7%94%A8%E5%8C%85%E5%AE%89%E6%8E%92%E6%A8%A1%E5%9D%97%EF%BC%8C%E5%B9%B6%E6%8F%90%E4%BE%9B%E7%A8%B3%E5%9B%BAAPI"><span class="nav-text">50. 用包安排模块，并提供稳固API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#51-%E4%B8%BA%E8%87%AA%E7%BC%96%E7%9A%84%E6%A8%A1%E5%9D%97%E5%AE%9A%E4%B9%89%E6%A0%B9%E5%BC%82%E5%B8%B8%EF%BC%8C%E4%BB%A5%E4%BE%BF%E5%B0%86%E8%B0%83%E7%94%A8%E8%80%85%E4%B8%8EAPI%E9%9A%94%E7%A6%BB"><span class="nav-text">51. 为自编的模块定义根异常，以便将调用者与API隔离</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#52-%E7%94%A8%E9%80%82%E5%BD%93%E6%96%B9%E5%BC%8F%E6%89%93%E7%A0%B4%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E5%85%B3%E7%B3%BB"><span class="nav-text">52. 用适当方式打破循环依赖关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#53-%E7%94%A8%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83%E9%9A%94%E7%A6%BB%E9%A1%B9%E7%9B%AE%EF%BC%8C%E5%B9%B6%E9%87%8D%E5%BB%BA%E5%85%B6%E4%BE%9D%E8%B5%96%E5%85%B3%E7%B3%BB"><span class="nav-text">53. 用虚拟环境隔离项目，并重建其依赖关系</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#x20-%E7%AC%AC8%E7%AB%A0-%E9%83%A8%E7%BD%B2"><span class="nav-text"> 第8章 部署</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#54-%E8%80%83%E8%99%91%E7%94%A8%E6%A8%A1%E5%9D%97%E7%BA%A7%E5%88%AB%E4%BB%A3%E7%A0%81%E9%85%8D%E7%BD%AE%E4%B8%8D%E5%90%8C%E9%83%A8%E7%BD%B2%E7%8E%AF%E5%A2%83-x20"><span class="nav-text">54. 考虑用模块级别代码配置不同部署环境 </span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#55-%E9%80%9A%E8%BF%87repr%E5%AD%97%E7%AC%A6%E4%B8%B2%E8%BE%93%E5%87%BA%E8%B0%83%E8%AF%95%E4%BF%A1%E6%81%AF"><span class="nav-text">55. 通过repr字符串输出调试信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#56-%E7%94%A8unittest%E6%B5%8B%E8%AF%95%E5%85%A8%E9%83%A8%E4%BB%A3%E7%A0%81"><span class="nav-text">56. 用unittest测试全部代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#57-%E7%94%A8pdb%E5%AE%9E%E7%8E%B0%E4%BA%A4%E4%BA%92%E8%B0%83%E8%AF%95"><span class="nav-text">57. 用pdb实现交互调试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#58-%E5%85%88%E5%88%86%E6%9E%90%E6%80%A7%E8%83%BD%EF%BC%8C%E7%84%B6%E5%90%8E%E5%86%8D%E4%BC%98%E5%8C%96"><span class="nav-text">58. 先分析性能，然后再优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#59-%E7%94%A8tracemalloc%E6%8E%8C%E6%8F%A1%E5%86%85%E5%AD%98%E4%BD%BF%E7%94%A8%E5%92%8C%E6%B3%84%E6%BC%8F%E6%83%85%E5%86%B5"><span class="nav-text">59. 用tracemalloc掌握内存使用和泄漏情况</span></a></li></ol></li></ol></div>
-      </div>
-      <!--/noindex-->
-
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="PC"
-      src="/images/avatar.jpg">
-  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
-  <div class="site-description" itemprop="description"></div>
-</div>
-<div class="site-state-wrap motion-element">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-          <a href="/archives/">
-        
-          <span class="site-state-item-count">139</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-            <a href="/categories/">
-          
-        <span class="site-state-item-count">32</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-            <a href="/tags/">
-          
-        <span class="site-state-item-count">41</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
-  </nav>
-</div>
-  <div class="links-of-author motion-element">
-      <span class="links-of-author-item">
-        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
-      </span>
-  </div>
-
-
-
-      </div>
-
-    </div>
-  </aside>
-  <div id="sidebar-dimmer"></div>
-
-
-      </div>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        
-
-        
-
-
-
-<div class="copyright">
-  
-  &copy; 
-  <span itemprop="copyrightYear">2024</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">PC</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-chart-area"></i>
-    </span>
-    <span title="站点总字数">445k</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-coffee"></i>
-    </span>
-    <span title="站点阅读时长">6:45</span>
-</div>
-
-<!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
-  </div>
--->
-
-        
-  <script async src="/js/busuanzi.js"></script>
-
-
-
-
-
-
-
-
-
-      </div>
     </footer>
   </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2023/0815215310.html" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          Python的Lamdba函数是什么，应用场景是什么?
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2023/0719214818.html" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">流畅的Python 笔记</div>
+    </a>
+  
+</nav>
 
   
-  <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
-  <script src="/lib/velocity/velocity.min.js"></script>
-  <script src="/lib/velocity/velocity.ui.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-<script src="/js/motion.js"></script>
+</article>
 
 
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-<script src="/js/bookmark.js"></script>
-
-
-
-
+</section>
+        
+          <aside id="sidebar">
   
-
-
-
-
-  
-<script src="/js/local-search.js"></script>
-
-
-
-
-
-
-
-
-
-
-
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Assembly/">Assembly</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/C/">C</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/CMake/">CMake</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/CSAPP/">CSAPP</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Django/">Django</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Docker/">Docker</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/GDB/">GDB</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Git/">Git</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Hexo/">Hexo</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/MySQL/">MySQL</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Network/">Network</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/RPM/">RPM</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Shell/">Shell</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Squid/">Squid</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/VMware/">VMware</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Win/">Win</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/ansible/">ansible</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/awk/">awk</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/curl/">curl</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/draft/">draft</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/investment/">investment</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/iptables/">iptables</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/k8s/">k8s</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/systemd/">systemd</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/troubleshooting/">troubleshooting</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/wget/">wget</a></li></ul>
+    </div>
+  </div>
 
 
   
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Assembly/" rel="tag">Assembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/C/" rel="tag">C</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/CLISH/" rel="tag">CLISH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/CMake/" rel="tag">CMake</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSAPP/" rel="tag">CSAPP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/" rel="tag">Django</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Docker/" rel="tag">Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GDB/" rel="tag">GDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GRUB/" rel="tag">GRUB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Git/" rel="tag">Git</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTML/" rel="tag">HTML</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LeetCode/" rel="tag">LeetCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Network/" rel="tag">Network</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/" rel="tag">Python</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPM/" rel="tag">RPM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Squid/" rel="tag">Squid</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Traceroute/" rel="tag">Traceroute</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/VMware/" rel="tag">VMware</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Win/" rel="tag">Win</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ansible/" rel="tag">ansible</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/awk/" rel="tag">awk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/chronyd/" rel="tag">chronyd</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/curl/" rel="tag">curl</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/frontend/" rel="tag">frontend</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/interview/" rel="tag">interview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/investment/" rel="tag">investment</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/iptables/" rel="tag">iptables</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/k8s/" rel="tag">k8s</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/other/" rel="tag">other</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/systemd/" rel="tag">systemd</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tar/" rel="tag">tar</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/troubleshooting/" rel="tag">troubleshooting</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/wget/" rel="tag">wget</a></li></ul>
+    </div>
+  </div>
+
 
   
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Assembly/" style="font-size: 11.11px;">Assembly</a> <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/CLISH/" style="font-size: 10px;">CLISH</a> <a href="/tags/CMake/" style="font-size: 10px;">CMake</a> <a href="/tags/CSAPP/" style="font-size: 13.33px;">CSAPP</a> <a href="/tags/Django/" style="font-size: 12.22px;">Django</a> <a href="/tags/Docker/" style="font-size: 14.44px;">Docker</a> <a href="/tags/GDB/" style="font-size: 13.33px;">GDB</a> <a href="/tags/GRUB/" style="font-size: 10px;">GRUB</a> <a href="/tags/Git/" style="font-size: 13.33px;">Git</a> <a href="/tags/HTML/" style="font-size: 10px;">HTML</a> <a href="/tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="/tags/LeetCode/" style="font-size: 13.33px;">LeetCode</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Network/" style="font-size: 13.33px;">Network</a> <a href="/tags/Python/" style="font-size: 16.67px;">Python</a> <a href="/tags/RPM/" style="font-size: 12.22px;">RPM</a> <a href="/tags/Redis/" style="font-size: 17.78px;">Redis</a> <a href="/tags/Shell/" style="font-size: 11.11px;">Shell</a> <a href="/tags/Squid/" style="font-size: 14.44px;">Squid</a> <a href="/tags/Traceroute/" style="font-size: 10px;">Traceroute</a> <a href="/tags/VMware/" style="font-size: 12.22px;">VMware</a> <a href="/tags/Win/" style="font-size: 12.22px;">Win</a> <a href="/tags/ansible/" style="font-size: 10px;">ansible</a> <a href="/tags/awk/" style="font-size: 10px;">awk</a> <a href="/tags/chronyd/" style="font-size: 10px;">chronyd</a> <a href="/tags/crontab/" style="font-size: 10px;">crontab</a> <a href="/tags/curl/" style="font-size: 10px;">curl</a> <a href="/tags/frontend/" style="font-size: 10px;">frontend</a> <a href="/tags/gcc/" style="font-size: 10px;">gcc</a> <a href="/tags/interview/" style="font-size: 10px;">interview</a> <a href="/tags/investment/" style="font-size: 17.78px;">investment</a> <a href="/tags/iptables/" style="font-size: 12.22px;">iptables</a> <a href="/tags/k8s/" style="font-size: 15.56px;">k8s</a> <a href="/tags/other/" style="font-size: 10px;">other</a> <a href="/tags/shell/" style="font-size: 10px;">shell</a> <a href="/tags/systemd/" style="font-size: 12.22px;">systemd</a> <a href="/tags/tar/" style="font-size: 10px;">tar</a> <a href="/tags/troubleshooting/" style="font-size: 18.89px;">troubleshooting</a> <a href="/tags/wget/" style="font-size: 10px;">wget</a>
+    </div>
+  </div>
 
-<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">十月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">九月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">八月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">七月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">六月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">五月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">四月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">三月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/02/">二月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">十二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">十一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">八月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/07/">七月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/06/">六月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/05/">五月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/04/">四月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/03/">三月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">六月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">三月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">十月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">八月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">六月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">三月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">十二月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">十一月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/06/">六月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">五月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">四月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">三月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2024/1026143114.html">Hexo搭建博客问题记录</a>
+          </li>
+        
+          <li>
+            <a href="/2024/1026131638.html">华宝添益(511990)折价套利记录</a>
+          </li>
+        
+          <li>
+            <a href="/2024/1026131259.html">chronyd配置了local的NTP server后, NTP报文出现public ip的问题</a>
+          </li>
+        
+          <li>
+            <a href="/2024/1017202436.html">MySQL8.0以上版本如何重置密码</a>
+          </li>
+        
+          <li>
+            <a href="/2024/1017195632.html">在Rocky Linux上安装Docker</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 PC<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
 </html>
-
-<script type="text/javascript" src="/js/clicklove.js"></script>

@@ -1,29 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/images/logo.svg" color="#222">
-  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
-  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
-
-<link rel="stylesheet" href="/css/main.css">
-
-
-<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
-  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
-  <script src="/lib/pace/pace.min.js"></script>
-
-<script id="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
-  </script>
-
+  <meta charset="utf-8">
+  
+  
+  <title>Redis发布与订阅源码分析 | PC&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="前言通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。 源码版本：Redis 6.0.10">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis发布与订阅源码分析">
@@ -42,236 +24,89 @@
 <meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://pcj600.github.io/2022/0129204852/image1.png">
-
-<link rel="canonical" href="https://pcj600.github.io/2022/0129204852.html">
-
-
-<script id="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome : false,
-    isPost : true,
-    lang   : 'zh-CN'
-  };
-</script>
-
-  <title>Redis发布与订阅源码分析 | PC's Blog</title>
   
+    <link rel="alternate" href="/atom.xml" title="PC's Blog" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
 
-
-
-
-
-
-  <noscript>
-  <style>
-  .use-motion .brand,
-  .use-motion .menu-item,
-  .sidebar-inner,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
-
-  .use-motion .site-title,
-  .use-motion .site-subtitle {
-    opacity: initial;
-    top: initial;
-  }
-
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
-  </style>
-</noscript>
-
-</head>
-
-<body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container use-motion">
-    <div class="headband"></div>
-
-    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-container">
-  <div class="site-nav-toggle">
-    <div class="toggle" aria-label="切换导航栏">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
-    </div>
-  </div>
-
-  <div class="site-meta">
-
-    <a href="/" class="brand" rel="start">
-      <span class="logo-line-before"><i></i></span>
-      <h1 class="site-title">PC's Blog</h1>
-      <span class="logo-line-after"><i></i></span>
-    </a>
-      <p class="site-subtitle" itemprop="description">Life is short, Play more!</p>
-  </div>
-
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger">
-        <i class="fa fa-search fa-fw fa-lg"></i>
-    </div>
-  </div>
-</div>
-
-
-
-
-<nav class="site-nav">
-  <ul id="menu" class="main-menu menu">
-        <li class="menu-item menu-item-home">
-
-    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
-
-  </li>
-        <li class="menu-item menu-item-categories">
-
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">32</span></a>
-
-  </li>
-        <li class="menu-item menu-item-tags">
-
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">41</span></a>
-
-  </li>
-        <li class="menu-item menu-item-archives">
-
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">139</span></a>
-
-  </li>
-        <li class="menu-item menu-item-sitemap">
-
-    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
-
-  </li>
-      <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
-        </a>
-      </li>
-  </ul>
-</nav>
-
-
-
-  <div class="search-pop-overlay">
-    <div class="popup search-popup">
-        <div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocapitalize="off"
-           placeholder="搜索..." spellcheck="false"
-           type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div id="search-result">
-  <div id="no-result">
-    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
-  </div>
-</div>
-
-    </div>
-  </div>
-
-</div>
-    </header>
-
+  
     
-  <div class="back-to-top">
-    <i class="fa fa-arrow-up"></i>
-    <span>0%</span>
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">PC&#39;s Blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Life is short, Play more!</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://pcj600.github.io"></form>
+      </div>
+    </div>
   </div>
-  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+</header>
 
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content post posts-expand">
-            
-
+      <div class="outer">
+        <section id="main"><article id="next-2022-01-29-redis-pubsub-study" class="h-entry article article-type-next" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/0129204852.html" class="article-date">
+  <time class="dt-published" datetime="2022-01-29T12:48:52.000Z" itemprop="datePublished">2022-01-29</time>
+</a>
     
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Redis/">Redis</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
+    <h1 class="p-name article-title" itemprop="headline name">
+      Redis发布与订阅源码分析
+    </h1>
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2022/0129204852.html">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Redis发布与订阅源码分析
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2022-01-29 20:48:52" itemprop="dateCreated datePublished" datetime="2022-01-29T20:48:52+08:00">2022-01-29</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
-                </span>
-            </span>
-
-          
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数：</span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span><br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>26k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>24 分钟</span>
-            </span>
-
-        </div>
       </header>
-
     
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
+    <div class="e-content article-entry" itemprop="articleBody">
       
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
 <p><strong>源码版本：</strong><a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
@@ -347,7 +182,7 @@
 <li>如果<code>pubsub_channel</code>字典不包含<code>channel</code>这个键，说明<font color = 'blue'>此时这个频道还没有任何订阅者</font>，此时服务端将首先在字典中创建一个叫<code>channel</code>的键，值初始成一个空链表，然后将这个客户端加入空链表。</li>
 <li>如果<code>pubsub_channel</code>字典包含<code>channel</code>这个键，说明<font color = 'blue'>此时这个频道已经有1个或多个订阅者</font>，此时服务端在字典中找到这个键对应的链表，再将这个客户端加入链表末尾。</li>
 </ul>
-<p>举例：有4个客户端(client1~client4)，其中client1, client2订阅<code>channel1</code>, client3, client4订阅<code>channel2</code>，此时，<code>pubsub_channels</code>字典可以是下图所示：<br><img data-src="/2022/0129204852/image1.png"></p>
+<p>举例：有4个客户端(client1~client4)，其中client1, client2订阅<code>channel1</code>, client3, client4订阅<code>channel2</code>，此时，<code>pubsub_channels</code>字典可以是下图所示：<br><img src="/2022/0129204852/image1.png"></p>
 <h5 id="GDB打印频道字典pubsub-channels的方法"><a href="#GDB打印频道字典pubsub-channels的方法" class="headerlink" title="GDB打印频道字典pubsub_channels的方法"></a><a href="#jumpx">GDB打印频道字典<code>pubsub_channels</code>的方法</a></h5><p>订阅频道的源码实现参考<code>pubsub.c/subscribeCommand</code></p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">subscribeCommand</span><span class="params">(client *c)</span> &#123;</span><br><span class="line">    <span class="type">int</span> j;</span><br><span class="line">    <span class="keyword">for</span> (j = <span class="number">1</span>; j &lt; c-&gt;argc; j++)</span><br><span class="line">        pubsubSubscribeChannel(c,c-&gt;argv[j]);</span><br><span class="line">    c-&gt;flags |= CLIENT_PUBSUB;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Subscribe a client to a channel. Returns 1 if the operation succeeded, or</span></span><br><span class="line"><span class="comment"> * 0 if the client was already subscribed to that channel. */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pubsubSubscribeChannel</span><span class="params">(client *c, robj *channel)</span> &#123;</span><br><span class="line">    dictEntry *de;</span><br><span class="line">    <span class="built_in">list</span> *clients = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">int</span> retval = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (dictAdd(c-&gt;pubsub_channels,channel,<span class="literal">NULL</span>) == DICT_OK) &#123;</span><br><span class="line">        retval = <span class="number">1</span>;</span><br><span class="line">        incrRefCount(channel);</span><br><span class="line">        <span class="comment">/* Add the client to the channel -&gt; list of clients hash table */</span></span><br><span class="line">        de = dictFind(server.pubsub_channels,channel);</span><br><span class="line">        <span class="keyword">if</span> (de == <span class="literal">NULL</span>) &#123; <span class="comment">// 说明channel还没有任何订阅者，需先在字典中新增channel键，再初始化1个链表，并将客户端加入链表</span></span><br><span class="line">            clients = listCreate();</span><br><span class="line">            dictAdd(server.pubsub_channels,channel,clients);</span><br><span class="line">            incrRefCount(channel);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123; <span class="comment">// 说明channel已有1个或多个订阅者，直接将这个客户端加入链表即可</span></span><br><span class="line">            clients = dictGetVal(de);</span><br><span class="line">        &#125;</span><br><span class="line">        listAddNodeTail(clients,c);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* Notify the client */</span></span><br><span class="line">    addReplyPubsubSubscribed(c,channel);</span><br><span class="line">    <span class="keyword">return</span> retval;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -363,7 +198,7 @@
 <li>如果<code>pubsub_channel</code>字典不包含<code>channel</code>这个键，说明没有客户端订阅这个频道，此时Redis服务器不对<code>pubsub_channels</code>字典做任何修改，只是简单向客户端发送回复。（回复内容包括三部分：”unsubscribe”, “channel”, 这个客户端订阅的频道个数和模式个数之和）</li>
 </ul>
 <p>举例：有4个客户端(client1~client4)，其中client1, client2订阅<code>channel1</code>, client3, client4订阅<code>channel2</code>。</p>
-<p>假设client2执行<code>unsubscribe channel1</code>，client3, client4分别执行<code>unsubscribe channel2</code>，那么退订前后的<code>pubsub_channels</code>字典变化如下所示：<br><img data-src="/2022/0129204852/image2.png"></p>
+<p>假设client2执行<code>unsubscribe channel1</code>，client3, client4分别执行<code>unsubscribe channel2</code>，那么退订前后的<code>pubsub_channels</code>字典变化如下所示：<br><img src="/2022/0129204852/image2.png"></p>
 <p>退订频道的源码实现参考<code>pubsub.c/unsubscribeCommand</code></p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">unsubscribeCommand</span><span class="params">(client *c)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (c-&gt;argc == <span class="number">1</span>) &#123;</span><br><span class="line">        pubsubUnsubscribeAllChannels(c,<span class="number">1</span>);				<span class="comment">// unsubscribe不加任何参数，表示解除所有频道的订阅</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">int</span> j;</span><br><span class="line">        <span class="keyword">for</span> (j = <span class="number">1</span>; j &lt; c-&gt;argc; j++)</span><br><span class="line">            pubsubUnsubscribeChannel(c,c-&gt;argv[j],<span class="number">1</span>);	<span class="comment">// 解除这个客户端与某个频道的订阅关系</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (clientSubscriptionsCount(c) == <span class="number">0</span>) c-&gt;flags &amp;= ~CLIENT_PUBSUB;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Unsubscribe a client from a channel. Returns 1 if the operation succeeded, or</span></span><br><span class="line"><span class="comment"> * 0 if the client was not subscribed to the specified channel. */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pubsubUnsubscribeChannel</span><span class="params">(client *c, robj *channel, <span class="type">int</span> notify)</span> &#123;</span><br><span class="line">    dictEntry *de;</span><br><span class="line">    <span class="built_in">list</span> *clients;</span><br><span class="line">    listNode *ln;</span><br><span class="line">    <span class="type">int</span> retval = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Remove the channel from the client -&gt; channels hash table */</span></span><br><span class="line">    incrRefCount(channel);</span><br><span class="line">    <span class="keyword">if</span> (dictDelete(c-&gt;pubsub_channels,channel) == DICT_OK) &#123;</span><br><span class="line">        retval = <span class="number">1</span>;</span><br><span class="line">        <span class="comment">/* Remove the client from the channel -&gt; clients list hash table */</span></span><br><span class="line">        de = dictFind(server.pubsub_channels,channel);</span><br><span class="line">        serverAssertWithInfo(c,<span class="literal">NULL</span>,de != <span class="literal">NULL</span>);</span><br><span class="line">        clients = dictGetVal(de);					<span class="comment">// 1、查询pubsub_channels字典，找到频道对应的客户端链表clients</span></span><br><span class="line">        ln = listSearchKey(clients,c);				<span class="comment">// 2、在链表clients中查找客户端c</span></span><br><span class="line">        serverAssertWithInfo(c,<span class="literal">NULL</span>,ln != <span class="literal">NULL</span>);</span><br><span class="line">        listDelNode(clients,ln);					<span class="comment">// 3、然后从链表中删除这个客户端c</span></span><br><span class="line">        <span class="keyword">if</span> (listLength(clients) == <span class="number">0</span>) &#123;				<span class="comment">// 4、如果频道只有1个订阅者，还需要从pubsub_channels字典中删除这个频道对应的键</span></span><br><span class="line">            dictDelete(server.pubsub_channels,channel);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* Notify the client */</span></span><br><span class="line">    <span class="keyword">if</span> (notify) addReplyPubsubUnsubscribed(c,channel);</span><br><span class="line">    decrRefCount(channel); <span class="comment">/* it is finally safe to release it */</span></span><br><span class="line">    <span class="keyword">return</span> retval;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -393,7 +228,7 @@
 <li>client3, client4订阅模式pat3*。</li>
 </ul>
 <p>此时<code>pubsub_patterns_dict</code>字典和<code>pubsub_patterns</code>链表如下图所示：</p>
-<p><img data-src="/2022/0129204852/image3.png"></p>
+<p><img src="/2022/0129204852/image3.png"></p>
 <h5 id="GDB打印模式字典和模式链表的方法"><a href="#GDB打印模式字典和模式链表的方法" class="headerlink" title="GDB打印模式字典和模式链表的方法"></a><a href="#jumpy">GDB打印模式字典和模式链表的方法</a></h5><p>订阅模式的源码参考<code>pubsub.c/pubsubSubscribePattern</code></p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Subscribe a client to a pattern. Returns 1 if the operation succeeded, or 0 if the client was already subscribed to that pattern. */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">pubsubSubscribePattern</span><span class="params">(client *c, robj *pattern)</span> &#123;</span><br><span class="line">    dictEntry *de;</span><br><span class="line">    <span class="built_in">list</span> *clients;</span><br><span class="line">    <span class="type">int</span> retval = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (listSearchKey(c-&gt;pubsub_patterns,pattern) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        retval = <span class="number">1</span>;</span><br><span class="line">        pubsubPattern *pat;</span><br><span class="line">        listAddNodeTail(c-&gt;pubsub_patterns,pattern);</span><br><span class="line">        incrRefCount(pattern);</span><br><span class="line">        pat = zmalloc(<span class="keyword">sizeof</span>(*pat));					<span class="comment">// 1、构造一个pubsubPattern结构</span></span><br><span class="line">        pat-&gt;pattern = getDecodedObject(pattern);		<span class="comment">// 2、pattern成员设置为被订阅的模式</span></span><br><span class="line">        pat-&gt;client = c;								<span class="comment">// 3、client成员设置为订阅这个模式的客户端</span></span><br><span class="line">        listAddNodeTail(server.pubsub_patterns,pat);	<span class="comment">// 4、添加这个pubsubPatern结构到pubsub_patterns链表尾</span></span><br><span class="line">        <span class="comment">/* Add the client to the pattern -&gt; list of clients hash table */</span></span><br><span class="line">        de = dictFind(server.pubsub_patterns_dict,pattern);</span><br><span class="line">        <span class="keyword">if</span> (de == <span class="literal">NULL</span>) &#123;	<span class="comment">// 如果没查到，说明这个模式还没有客户端订阅，此时先在字典中为这个模式创建一个键，键的值为空链表</span></span><br><span class="line">            clients = listCreate();</span><br><span class="line">            dictAdd(server.pubsub_patterns_dict,pattern,clients);</span><br><span class="line">            incrRefCount(pattern);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            clients = dictGetVal(de);</span><br><span class="line">        &#125;</span><br><span class="line">        listAddNodeTail(clients,c);	<span class="comment">// 将客户端c加入链表clients</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* Notify the client */</span></span><br><span class="line">    addReplyPubsubPatSubscribed(c,pattern);</span><br><span class="line">    <span class="keyword">return</span> retval;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -410,7 +245,7 @@
 <li>client2订阅了模式pat2*</li>
 <li>client3, client4订阅了模式pat3*。</li>
 </ul>
-<p>假设此时client2执行<code>unpsubscribe pat2*</code>，client4执行<code>unsubscribe pat3*</code>，那么模式退订前后的<code>pubsub_patterns</code>链表和<code>pubsub_patterns_dict</code>字典变化如下图所示：<br>[O<br><img data-src="/2022/0129204852/image4.png"></p>
+<p>假设此时client2执行<code>unpsubscribe pat2*</code>，client4执行<code>unsubscribe pat3*</code>，那么模式退订前后的<code>pubsub_patterns</code>链表和<code>pubsub_patterns_dict</code>字典变化如下图所示：<br>[O<br><img src="/2022/0129204852/image4.png"></p>
 <p>模式退订的源码参考<code>pubsub.c/punsubscribeCommand</code>：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">punsubscribeCommand</span><span class="params">(client *c)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (c-&gt;argc == <span class="number">1</span>) &#123;</span><br><span class="line">        pubsubUnsubscribeAllPatterns(c,<span class="number">1</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="type">int</span> j;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (j = <span class="number">1</span>; j &lt; c-&gt;argc; j++)</span><br><span class="line">            pubsubUnsubscribePattern(c,c-&gt;argv[j],<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (clientSubscriptionsCount(c) == <span class="number">0</span>) c-&gt;flags &amp;= ~CLIENT_PUBSUB;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">pubsubUnsubscribePattern</span><span class="params">(client *c, robj *pattern, <span class="type">int</span> notify)</span> &#123;</span><br><span class="line">    dictEntry *de;</span><br><span class="line">    <span class="built_in">list</span> *clients;</span><br><span class="line">    listNode *ln;</span><br><span class="line">    pubsubPattern pat;</span><br><span class="line">    <span class="type">int</span> retval = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    incrRefCount(pattern); <span class="comment">/* Protect the object. May be the same we remove */</span></span><br><span class="line">    <span class="keyword">if</span> ((ln = listSearchKey(c-&gt;pubsub_patterns,pattern)) != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        retval = <span class="number">1</span>;</span><br><span class="line">        listDelNode(c-&gt;pubsub_patterns,ln);</span><br><span class="line">        pat.client = c;</span><br><span class="line">        pat.pattern = pattern;</span><br><span class="line">        ln = listSearchKey(server.pubsub_patterns,&amp;pat);</span><br><span class="line">        listDelNode(server.pubsub_patterns,ln);			<span class="comment">// 在pubsub_patterns链表中查找这个客户端并删除。</span></span><br><span class="line">        <span class="comment">/* Remove the client from the pattern -&gt; clients list hash table */</span></span><br><span class="line">        de = dictFind(server.pubsub_patterns_dict,pattern);</span><br><span class="line">        serverAssertWithInfo(c,<span class="literal">NULL</span>,de != <span class="literal">NULL</span>);</span><br><span class="line">        clients = dictGetVal(de);</span><br><span class="line">        ln = listSearchKey(clients,c);	<span class="comment">// 查找pubsub_patterns_dict字典，找到客户端链表，在链表中删除这个客户端节点</span></span><br><span class="line">        serverAssertWithInfo(c,<span class="literal">NULL</span>,ln != <span class="literal">NULL</span>);</span><br><span class="line">        listDelNode(clients,ln);</span><br><span class="line">        <span class="keyword">if</span> (listLength(clients) == <span class="number">0</span>) &#123;	<span class="comment">// 如果删除节点后的链表长度为0，把键pattern也从字典中删除。</span></span><br><span class="line">            <span class="comment">/* Free the list and associated hash entry at all if this was</span></span><br><span class="line"><span class="comment">             * the latest client. */</span></span><br><span class="line">            dictDelete(server.pubsub_patterns_dict,pattern);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* Notify the client */</span></span><br><span class="line">    <span class="keyword">if</span> (notify) addReplyPubsubPatUnsubscribed(c,pattern);</span><br><span class="line">    decrRefCount(pattern);</span><br><span class="line">    <span class="keyword">return</span> retval;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -433,7 +268,7 @@
 </ul>
 <h4 id="为什么设计pubsub-patterns-dict字典，有什么好处？"><a href="#为什么设计pubsub-patterns-dict字典，有什么好处？" class="headerlink" title="为什么设计pubsub_patterns_dict字典，有什么好处？"></a>为什么设计pubsub_patterns_dict字典，有什么好处？<span id="jump7"></span></h4><p>假设有N个客户端, 每个客户端订阅了1个模式；如果只使用链表，判断所有模式是否与指定频道匹配的次数固定为N次，效率较低。</p>
 <p>由于实际场景中，<font color = 'blue'>存在同一个模式被多个客户端订阅的场景</font>，所以设计<code>pubsub_patterns_dict</code>字典的好处在于，将这个判断次数从N次降低为最多N次，提高效率。</p>
-<h3 id="一次完整的Redis订阅、发布流程分析"><a href="#一次完整的Redis订阅、发布流程分析" class="headerlink" title="一次完整的Redis订阅、发布流程分析"></a>一次完整的Redis订阅、发布流程分析<span id="jump10"></span></h3><p>假设有1个频道订阅者和1个消息发布者，一次完整的Redis订阅、发布流程如下图所示：<br><img data-src="/2022/0129204852/image5.png"></p>
+<h3 id="一次完整的Redis订阅、发布流程分析"><a href="#一次完整的Redis订阅、发布流程分析" class="headerlink" title="一次完整的Redis订阅、发布流程分析"></a>一次完整的Redis订阅、发布流程分析<span id="jump10"></span></h3><p>假设有1个频道订阅者和1个消息发布者，一次完整的Redis订阅、发布流程如下图所示：<br><img src="/2022/0129204852/image5.png"></p>
 <h4 id="为什么redis-cli中执行了subscribe命令后无法再执行unsubscribe命令？"><a href="#为什么redis-cli中执行了subscribe命令后无法再执行unsubscribe命令？" class="headerlink" title="为什么redis-cli中执行了subscribe命令后无法再执行unsubscribe命令？"></a>为什么redis-cli中执行了subscribe命令后无法再执行unsubscribe命令？<span id="jump11"></span></h4><p>观察流程图中的第5步，订阅者成功建立长连接后，会进入while死循环，每次循环调用函数<code>cliReadReply</code>读取一条频道的消息，所以无法再执行<code>unsubscribe</code>命令。redis-cli的调用栈参考如下：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">(gdb) bt</span><br><span class="line">#<span class="number">0</span>  <span class="number">0x00007ffff7e5d5b0</span> in __libc_recv (fd=<span class="number">3</span>, buf=<span class="number">0x7fffffffa200</span>, len=<span class="number">16384</span>, flags=flags@entry=<span class="number">0</span>) at ../sysdeps/unix/sysv/linux/recv.c:<span class="number">28</span></span><br><span class="line">#<span class="number">1</span>  <span class="number">0x000055555558ec0b</span> in <span class="title function_">recv</span> <span class="params">(__flags=<span class="number">0</span>, __n=&lt;optimized out&gt;, __buf=&lt;optimized out&gt;, __fd=&lt;optimized out&gt;)</span></span><br><span class="line">    at /usr/include/x86_64-linux-gnu/bits/socket2.h:44</span><br><span class="line">#2  <span class="title function_">redisNetRead</span> <span class="params">(c=<span class="number">0x555555841300</span>, buf=&lt;optimized out&gt;, bufcap=&lt;optimized out&gt;)</span> at net.c:61</span><br><span class="line">#3  0x0000555555587702 in <span class="title function_">redisBufferRead</span> <span class="params">(c=<span class="number">0x555555841300</span>)</span> at hiredis.c:881</span><br><span class="line">#4  0x0000555555587a92 in <span class="title function_">main</span> <span class="params">(c=<span class="number">0x555555841300</span>, reply=<span class="number">0x7fffffffe280</span>)</span> at hiredis.c:954</span><br><span class="line">#5  0x000055555557fadd in <span class="title function_">cliReadReply</span> <span class="params">(output_raw_strings=<span class="number">0</span>)</span> at redis-cli.c:1204</span><br><span class="line">#6  0x0000555555581e0d in <span class="title function_">cliSendCommand</span> <span class="params">(argc=<span class="number">2</span>, argv=<span class="number">0x7ffff780a000</span>, repeat=<span class="number">0</span>)</span> at redis-cli.c:1361</span><br><span class="line">#7  0x0000555555582006 in <span class="title function_">issueCommandRepeat</span> <span class="params">(argc=<span class="number">2</span>, argv=<span class="number">0x7ffff780a000</span>, repeat=<span class="number">1</span>)</span> at redis-cli.c:1858</span><br><span class="line">#8  0x000055555556dd8d in <span class="title function_">issueCommand</span> <span class="params">(argv=<span class="number">0x7ffff780a000</span>, argc=&lt;optimized out&gt;)</span> at redis-cli.c:2090</span><br><span class="line">#9  <span class="title function_">noninteractive</span> <span class="params">(argv=<span class="number">0x7ffff780a000</span>, argc=&lt;optimized out&gt;)</span> at redis-cli.c:2090</span><br><span class="line">#10 <span class="title function_">main</span> <span class="params">(argc=&lt;optimized out&gt;, argv=&lt;optimized out&gt;)</span> at redis-cli.c:8251</span><br></pre></td></tr></table></figure>
 
@@ -518,271 +353,157 @@
 <p>【4】<a target="_blank" rel="noopener" href="https://www.runoob.com/redis/redis-pub-sub.html">菜鸟教程 Redis 发布订阅</a></p>
 <p>【5】<a target="_blank" rel="noopener" href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
 
-    </div>
-
-    
-    
-    
-        <div class="reward-container">
-  <div></div>
-  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
-    打赏
-  </button>
-  <div id="qr" style="display: none;">
       
-      <div style="display: inline-block;">
-        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
-        <p>微信支付</p>
-      </div>
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://pcj600.github.io/2022/0129204852.html" data-id="cm2puzlx800484cvwhvvmbck5" data-title="Redis发布与订阅源码分析" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
-      <div style="display: inline-block;">
-        <img src="/images/alipay.jpg" alt="PC 支付宝">
-        <p>支付宝</p>
-      </div>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li></ul>
 
-  </div>
-</div>
-
-        
-
-<div>
-<ul class="post-copyright">
-  <li class="post-copyright-author">
-    <strong>本文作者： </strong>PC
-  </li>
-  <li class="post-copyright-link">
-    <strong>本文链接：</strong>
-    <a href="https://pcj600.github.io/2022/0129204852.html" title="Redis发布与订阅源码分析">https://pcj600.github.io/2022/0129204852.html</a>
-  </li>
-  <li class="post-copyright-license">
-    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
-  </li>
-</ul>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/Redis/" rel="tag"><i class="fa fa-tag"></i> Redis</a>
-          </div>
-
-        
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2021/1230204524.html" rel="prev" title="Redis学习笔记(四)——ziplist">
-      <i class="fa fa-chevron-left"></i> Redis学习笔记(四)——ziplist
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2022/0320205239.html" rel="next" title="2022 Trend Micro 社招面经">
-      2022 Trend Micro 社招面经 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-
-
-          </div>
-          
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let { activeClass } = CONFIG.comments;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
-  
-  <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
-  </div>
-
-  <aside class="sidebar">
-    <div class="sidebar-inner">
-
-      <ul class="sidebar-nav motion-element">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          站点概览
-        </li>
-      </ul>
-
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%9D%E8%80%83%E9%97%AE%E9%A2%98"><span class="nav-text">思考问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%E4%BB%8B%E7%BB%8D"><span class="nav-text">发布订阅基本概念介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A2%E9%98%85%E9%A2%91%E9%81%93-%E2%80%94%E2%80%94-SUBSCRIBE%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">订阅频道 —— SUBSCRIBE命令的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#GDB%E6%89%93%E5%8D%B0%E9%A2%91%E9%81%93%E5%AD%97%E5%85%B8pubsub-channels%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-text">GDB打印频道字典pubsub_channels的方法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%80%E8%AE%A2%E9%A2%91%E9%81%93-%E2%80%94%E2%80%94-USUBSCRIBE%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">退订频道 —— USUBSCRIBE命令的实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A2%E9%98%85%E6%A8%A1%E5%BC%8F-%E2%80%94%E2%80%94-PSUBSCRIBE%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">订阅模式 —— PSUBSCRIBE命令的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#GDB%E6%89%93%E5%8D%B0%E6%A8%A1%E5%BC%8F%E5%AD%97%E5%85%B8%E5%92%8C%E6%A8%A1%E5%BC%8F%E9%93%BE%E8%A1%A8%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-text">GDB打印模式字典和模式链表的方法</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%80%E8%AE%A2%E6%A8%A1%E5%BC%8F-%E2%80%94%E2%80%94-PUNSUBSCRIBE%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">退订模式 —— PUNSUBSCRIBE命令的实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%91%E9%80%81%E6%B6%88%E6%81%AF-%E2%80%94%E2%80%94-PUBLISH%E5%91%BD%E4%BB%A4%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">发送消息 —— PUBLISH命令的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AE%BE%E8%AE%A1pubsub-patterns-dict%E5%AD%97%E5%85%B8%EF%BC%8C%E6%9C%89%E4%BB%80%E4%B9%88%E5%A5%BD%E5%A4%84%EF%BC%9F"><span class="nav-text">为什么设计pubsub_patterns_dict字典，有什么好处？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E6%AC%A1%E5%AE%8C%E6%95%B4%E7%9A%84Redis%E8%AE%A2%E9%98%85%E3%80%81%E5%8F%91%E5%B8%83%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90"><span class="nav-text">一次完整的Redis订阅、发布流程分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88redis-cli%E4%B8%AD%E6%89%A7%E8%A1%8C%E4%BA%86subscribe%E5%91%BD%E4%BB%A4%E5%90%8E%E6%97%A0%E6%B3%95%E5%86%8D%E6%89%A7%E8%A1%8Cunsubscribe%E5%91%BD%E4%BB%A4%EF%BC%9F"><span class="nav-text">为什么redis-cli中执行了subscribe命令后无法再执行unsubscribe命令？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#TCP%E6%98%AF%E6%B2%A1%E6%9C%89%E6%B6%88%E6%81%AF%E8%BE%B9%E7%95%8C%E7%9A%84%EF%BC%8C%E8%AE%A2%E9%98%85%E8%80%85%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%AD%A3%E7%A1%AE%E8%A7%A3%E6%9E%90%E5%8F%91%E5%B8%83%E8%80%85%E7%9A%84%E6%B6%88%E6%81%AF"><span class="nav-text">TCP是没有消息边界的，订阅者是如何保证正确解析发布者的消息?</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%99%84%EF%BC%9A%E4%B8%80%E6%AC%A1%E8%AE%A2%E9%98%85%E4%B8%AD%E7%9A%84%E8%BF%9E%E6%8E%A5%E5%BB%BA%E7%AB%8B%EF%BC%8C%E8%AF%B7%E6%B1%82%E6%B6%88%E6%81%AF%E7%9A%84%E8%BF%87%E7%A8%8B%E6%8A%93%E5%8C%85%E7%BB%93%E6%9E%9C"><span class="nav-text">附：一次订阅中的连接建立，请求消息的过程抓包结果</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%A2%E9%98%85%E7%9A%84%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%96%AD%E7%BA%BF%EF%BC%8C%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%98%AF%E6%80%8E%E4%B9%88%E6%84%9F%E7%9F%A5%E7%9A%84%EF%BC%9F%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E8%BF%99%E4%B8%AA%E5%AE%A2%E6%88%B7%E7%AB%AF%E7%9A%84%E9%A2%91%E9%81%93%E3%80%81%E6%A8%A1%E5%BC%8F%E8%AE%A2%E9%98%85%E4%BF%A1%E6%81%AF%E4%B9%9F%E8%A2%AB%E5%90%8C%E6%AD%A5%E5%88%A0%E9%99%A4%EF%BC%9F"><span class="nav-text">订阅的客户端断线，服务端是怎么感知的？如何保证这个客户端的频道、模式订阅信息也被同步删除？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%AD%A3%E5%B8%B8%E5%85%B3%E9%97%AD%E5%9C%BA%E6%99%AF%EF%BC%8C%E6%AD%A3%E5%9C%A8%E8%AE%A2%E9%98%85%E7%9A%84%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%98%AF%E6%80%8E%E4%B9%88%E6%84%9F%E7%9F%A5%E5%88%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%A6%BB%E7%BA%BF%E7%9A%84%EF%BC%9F"><span class="nav-text">服务器正常关闭场景，正在订阅的客户端是怎么感知到服务器离线的？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B0%83%E8%AF%95%E6%96%B9%E6%B3%95%E5%8F%82%E8%80%83"><span class="nav-text">调试方法参考</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1%E3%80%81%E9%A2%91%E9%81%93%E8%AE%A2%E9%98%85%E5%9C%BA%E6%99%AF%EF%BC%8C%E7%94%A8GDB%E6%89%93%E5%8D%B0%E5%AD%97%E5%85%B8pubsub-channels-%E7%9A%84%E6%96%B9%E6%B3%95%E5%8F%82%E8%80%83%E5%A6%82%E4%B8%8B%EF%BC%9A"><span class="nav-text">1、频道订阅场景，用GDB打印字典pubsub_channels 的方法参考如下：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2%E3%80%81%E6%A8%A1%E5%BC%8F%E8%AE%A2%E9%98%85%E5%9C%BA%E6%99%AF%EF%BC%8C%E7%94%A8GDB%E6%89%93%E5%8D%B0%E6%A8%A1%E5%BC%8F%E9%93%BE%E8%A1%A8pubsub-patterns%E5%92%8C%E6%A8%A1%E5%BC%8F%E5%AD%97%E5%85%B8pubsub-patterns-dict%E7%9A%84%E6%96%B9%E6%B3%95%E5%8F%82%E8%80%83%E5%A6%82%E4%B8%8B%EF%BC%9A"><span class="nav-text">2、模式订阅场景，用GDB打印模式链表pubsub_patterns和模式字典pubsub_patterns_dict的方法参考如下： </span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3%E3%80%81%E9%80%9A%E8%BF%87tcpdump%E6%8A%93%E5%8C%85%EF%BC%8C%E5%88%86%E6%9E%90%E4%B8%80%E6%AC%A1%E8%AE%A2%E9%98%85%E4%B8%AD%E7%9A%84%E8%BF%9E%E6%8E%A5%E5%BB%BA%E7%AB%8B%E3%80%81%E8%AF%B7%E6%B1%82%E6%B6%88%E6%81%AF%E7%9A%84%E8%BF%87%E7%A8%8B"><span class="nav-text">3、通过tcpdump抓包，分析一次订阅中的连接建立、请求消息的过程 </span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
-      </div>
-      <!--/noindex-->
-
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="PC"
-      src="/images/avatar.jpg">
-  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
-  <div class="site-description" itemprop="description"></div>
-</div>
-<div class="site-state-wrap motion-element">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-          <a href="/archives/">
-        
-          <span class="site-state-item-count">139</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-            <a href="/categories/">
-          
-        <span class="site-state-item-count">32</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-            <a href="/tags/">
-          
-        <span class="site-state-item-count">41</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
-  </nav>
-</div>
-  <div class="links-of-author motion-element">
-      <span class="links-of-author-item">
-        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
-      </span>
-  </div>
-
-
-
-      </div>
-
-    </div>
-  </aside>
-  <div id="sidebar-dimmer"></div>
-
-
-      </div>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        
-
-        
-
-
-
-<div class="copyright">
-  
-  &copy; 
-  <span itemprop="copyrightYear">2024</span>
-  <span class="with-love">
-    <i class="fa fa-heart"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">PC</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-chart-area"></i>
-    </span>
-    <span title="站点总字数">445k</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-coffee"></i>
-    </span>
-    <span title="站点阅读时长">6:45</span>
-</div>
-
-<!--
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
-  </div>
--->
-
-        
-  <script async src="/js/busuanzi.js"></script>
-
-
-
-
-
-
-
-
-
-      </div>
     </footer>
   </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/0320205239.html" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          2022 Trend Micro 社招面经
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/1230204524.html" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">Redis学习笔记(四)——ziplist</div>
+    </a>
+  
+</nav>
 
   
-  <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
-  <script src="/lib/velocity/velocity.min.js"></script>
-  <script src="/lib/velocity/velocity.ui.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-<script src="/js/motion.js"></script>
+</article>
 
 
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-<script src="/js/bookmark.js"></script>
-
-
-
-
+</section>
+        
+          <aside id="sidebar">
   
-
-
-
-
-  
-<script src="/js/local-search.js"></script>
-
-
-
-
-
-
-
-
-
-
-
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Assembly/">Assembly</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/C/">C</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/CMake/">CMake</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/CSAPP/">CSAPP</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Django/">Django</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Docker/">Docker</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/GDB/">GDB</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Git/">Git</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Hexo/">Hexo</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/LeetCode/">LeetCode</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Linux/">Linux</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/MySQL/">MySQL</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Network/">Network</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Python/">Python</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/RPM/">RPM</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Redis/">Redis</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Shell/">Shell</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Squid/">Squid</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/VMware/">VMware</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/Win/">Win</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/ansible/">ansible</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/awk/">awk</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/curl/">curl</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/draft/">draft</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/interview/">interview</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/investment/">investment</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/iptables/">iptables</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/k8s/">k8s</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/other/">other</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/systemd/">systemd</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/troubleshooting/">troubleshooting</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/wget/">wget</a></li></ul>
+    </div>
+  </div>
 
 
   
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Assembly/" rel="tag">Assembly</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/C/" rel="tag">C</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/CLISH/" rel="tag">CLISH</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/CMake/" rel="tag">CMake</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/CSAPP/" rel="tag">CSAPP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Django/" rel="tag">Django</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Docker/" rel="tag">Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GDB/" rel="tag">GDB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/GRUB/" rel="tag">GRUB</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Git/" rel="tag">Git</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTML/" rel="tag">HTML</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LeetCode/" rel="tag">LeetCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Network/" rel="tag">Network</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Python/" rel="tag">Python</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/RPM/" rel="tag">RPM</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Squid/" rel="tag">Squid</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Traceroute/" rel="tag">Traceroute</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/VMware/" rel="tag">VMware</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Win/" rel="tag">Win</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/ansible/" rel="tag">ansible</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/awk/" rel="tag">awk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/chronyd/" rel="tag">chronyd</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/crontab/" rel="tag">crontab</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/curl/" rel="tag">curl</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/frontend/" rel="tag">frontend</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/gcc/" rel="tag">gcc</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/interview/" rel="tag">interview</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/investment/" rel="tag">investment</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/iptables/" rel="tag">iptables</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/k8s/" rel="tag">k8s</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/other/" rel="tag">other</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/shell/" rel="tag">shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/systemd/" rel="tag">systemd</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/tar/" rel="tag">tar</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/troubleshooting/" rel="tag">troubleshooting</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/wget/" rel="tag">wget</a></li></ul>
+    </div>
+  </div>
+
 
   
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Assembly/" style="font-size: 11.11px;">Assembly</a> <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/CLISH/" style="font-size: 10px;">CLISH</a> <a href="/tags/CMake/" style="font-size: 10px;">CMake</a> <a href="/tags/CSAPP/" style="font-size: 13.33px;">CSAPP</a> <a href="/tags/Django/" style="font-size: 12.22px;">Django</a> <a href="/tags/Docker/" style="font-size: 14.44px;">Docker</a> <a href="/tags/GDB/" style="font-size: 13.33px;">GDB</a> <a href="/tags/GRUB/" style="font-size: 10px;">GRUB</a> <a href="/tags/Git/" style="font-size: 13.33px;">Git</a> <a href="/tags/HTML/" style="font-size: 10px;">HTML</a> <a href="/tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="/tags/LeetCode/" style="font-size: 13.33px;">LeetCode</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Network/" style="font-size: 13.33px;">Network</a> <a href="/tags/Python/" style="font-size: 16.67px;">Python</a> <a href="/tags/RPM/" style="font-size: 12.22px;">RPM</a> <a href="/tags/Redis/" style="font-size: 17.78px;">Redis</a> <a href="/tags/Shell/" style="font-size: 11.11px;">Shell</a> <a href="/tags/Squid/" style="font-size: 14.44px;">Squid</a> <a href="/tags/Traceroute/" style="font-size: 10px;">Traceroute</a> <a href="/tags/VMware/" style="font-size: 12.22px;">VMware</a> <a href="/tags/Win/" style="font-size: 12.22px;">Win</a> <a href="/tags/ansible/" style="font-size: 10px;">ansible</a> <a href="/tags/awk/" style="font-size: 10px;">awk</a> <a href="/tags/chronyd/" style="font-size: 10px;">chronyd</a> <a href="/tags/crontab/" style="font-size: 10px;">crontab</a> <a href="/tags/curl/" style="font-size: 10px;">curl</a> <a href="/tags/frontend/" style="font-size: 10px;">frontend</a> <a href="/tags/gcc/" style="font-size: 10px;">gcc</a> <a href="/tags/interview/" style="font-size: 10px;">interview</a> <a href="/tags/investment/" style="font-size: 17.78px;">investment</a> <a href="/tags/iptables/" style="font-size: 12.22px;">iptables</a> <a href="/tags/k8s/" style="font-size: 15.56px;">k8s</a> <a href="/tags/other/" style="font-size: 10px;">other</a> <a href="/tags/shell/" style="font-size: 10px;">shell</a> <a href="/tags/systemd/" style="font-size: 12.22px;">systemd</a> <a href="/tags/tar/" style="font-size: 10px;">tar</a> <a href="/tags/troubleshooting/" style="font-size: 18.89px;">troubleshooting</a> <a href="/tags/wget/" style="font-size: 10px;">wget</a>
+    </div>
+  </div>
 
-<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">十月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">九月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">八月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">七月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">六月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">五月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">四月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">三月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/02/">二月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">十二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">十一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">八月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/07/">七月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/06/">六月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/05/">五月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/04/">四月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/03/">三月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">六月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">三月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">十月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">八月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">六月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">三月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">十二月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">十一月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/06/">六月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/05/">五月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">四月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">三月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/02/">二月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2024/1026143114.html">Hexo搭建博客问题记录</a>
+          </li>
+        
+          <li>
+            <a href="/2024/1026131638.html">华宝添益(511990)折价套利记录</a>
+          </li>
+        
+          <li>
+            <a href="/2024/1026131259.html">chronyd配置了local的NTP server后, NTP报文出现public ip的问题</a>
+          </li>
+        
+          <li>
+            <a href="/2024/1017202436.html">MySQL8.0以上版本如何重置密码</a>
+          </li>
+        
+          <li>
+            <a href="/2024/1017195632.html">在Rocky Linux上安装Docker</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2024 PC<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
 </html>
-
-<script type="text/javascript" src="/js/clicklove.js"></script>
