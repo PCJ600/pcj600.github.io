@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言Redis是用C语言开发的，但并没有直接使用C语言数组去表示字符串，而是使用简单动态字符串(Simple dynamic String，简称SDS)作为字符串的底层实现。 以下给出SDS相关的一些常见问题，通过源码分析和实际验证，思考这些问题的答案，了解实现原理和设计思路。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis学习笔记(一)——简单动态字符串">
+<meta property="og:url" content="https://pcj600.github.io/2021/1211202806.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="前言Redis是用C语言开发的，但并没有直接使用C语言数组去表示字符串，而是使用简单动态字符串(Simple dynamic String，简称SDS)作为字符串的底层实现。 以下给出SDS相关的一些常见问题，通过源码分析和实际验证，思考这些问题的答案，了解实现原理和设计思路。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pcj600.github.io/2021/1211202806/image1.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/1211202806/image2.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/1211202806/image3.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/1211202806/image4.png">
+<meta property="og:image" content="https://pcj600.github.io/2021/1211202806/image5.png">
+<meta property="article:published_time" content="2021-12-11T12:28:06.000Z">
+<meta property="article:modified_time" content="2024-08-18T12:34:49.438Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pcj600.github.io/2021/1211202806/image1.png">
+
+<link rel="canonical" href="https://pcj600.github.io/2021/1211202806.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redis学习笔记(一)——简单动态字符串 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Life is short, Play more!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">32</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">41</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">138</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2021/1211202806.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis学习笔记(一)——简单动态字符串
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-12-11 20:28:06" itemprop="dateCreated datePublished" datetime="2021-12-11T20:28:06+08:00">2021-12-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>17k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>15 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Redis是用C语言开发的，但并没有直接使用C语言数组去表示字符串，而是使用简单动态字符串(Simple dynamic String，简称SDS)作为字符串的底层实现。</p>
+<p>以下给出SDS相关的一些常见问题，通过源码分析和实际验证，思考这些问题的答案，了解实现原理和设计思路。</p>
+<span id="more"></span>
+
+<p><strong>源码版本：</strong></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/3.0.0">Redis 3.0.0</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+<h2 id="思考问题"><a href="#思考问题" class="headerlink" title="思考问题"></a>思考问题<span id="jump0"></span></h2><ul>
+<li><a href="#jump1">SDS的数据结构，字符串如何表示的</a><ul>
+<li><a href="#jump2">SDS结构体各成员的作用</a></li>
+<li><a href="#jump3">创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少</a></li>
+</ul>
+</li>
+<li><a href="#jump4">SDS相较于C风格字符串的优点</a><ul>
+<li><a href="#jump5">SDS的空间分配策略是如何杜绝缓冲区溢出问题的</a></li>
+<li><a href="#jump6">SDS是如何减少修改字符串时带来的内存重分配次数</a><ul>
+<li><a href="#jump7">字符串增长场景，SDS扩容策略</a></li>
+<li><a href="#jump8">字符串缩短场景，SDS空间释放策略</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#jump9">SDS最大长度是多少</a></li>
+<li><a href="#jump10">字符串键的三种编码方式</a><ul>
+<li><a href="#jump11">int编码</a></li>
+<li><a href="#jump12">embstr编码</a></li>
+<li><a href="#jump13">raw编码</a></li>
+<li><a href="#jump14">设计embstr编码的用意是什么</a></li>
+<li><a href="#jump15">三种编码之间的转换规则</a></li>
+</ul>
+</li>
+<li><a href="#jump16">对于很短的字符串，并不需要4字节表示长度，REDIS 3.2中的SDS实现是如何优化，节约内存的</a><ul>
+<li><a href="#jump17">给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？</a></li>
+</ul>
+</li>
+<li><a href="#jump18">REDIS字符串命令</a></li>
+</ul>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><h3 id="SDS的数据结构，字符串是如何表示的"><a href="#SDS的数据结构，字符串是如何表示的" class="headerlink" title="SDS的数据结构，字符串是如何表示的 "></a>SDS的数据结构，字符串是如何表示的 <span id="jump1"></span></h3><p>REDIS 3.0中，SDS的数据结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> &#123;</span></span><br><span class="line">	<span class="type">int</span> len;		<span class="comment">// 字符串长度，即对C风格字符串调用strlen的结果</span></span><br><span class="line">	<span class="type">int</span> <span class="built_in">free</span>;		<span class="comment">// buf数组中的未使用字节数</span></span><br><span class="line">	<span class="type">char</span> buf[];		<span class="comment">// &#x27;\0&#x27;结尾</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>注意sizeof(struct sdshdr)的结果等于8，不是9；这里的buf为柔性数组成员。至于为什么用柔性数组成员可以参考这篇文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/davygeek/p/5748852.html">https://www.cnblogs.com/davygeek/p/5748852.html</a></p>
+<h4 id="SDS结构体各成员的作用"><a href="#SDS结构体各成员的作用" class="headerlink" title="SDS结构体各成员的作用"></a>SDS结构体各成员的作用<span id="jump2"></span></h4><ul>
+<li>len: 表示buf数组中已使用的字节数(<strong>不包括’\0’</strong>)，即字符串长度。好处是获取字符串长度时间为O(1)</li>
+<li>free: 表示buf数组中未使用的字节数。</li>
+<li>buf: 用于保存字符串，遵循C风格字符串原则，以’\0’结尾。</li>
+</ul>
+<h4 id="创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？"><a href="#创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？" class="headerlink" title="创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？"></a>创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？<span id="jump3"></span></h4><p><strong>思考问题</strong>：写入一个字符串键key, 值为长度为5的字符串”Redis”，它的SDS表示中len, free, buf成员值各是多少？</p>
+<p><strong>源码分析：</strong></p>
+<p>1、Redis调用<code>sdsnew</code>创建一个包含给定C字符串的SDS，这里的initlen &#x3D; strlen(“Redis”) &#x3D; 5。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sds <span class="title function_">sdsnew</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *init)</span> &#123;</span><br><span class="line">    <span class="type">size_t</span> initlen = (init == <span class="literal">NULL</span>) ? <span class="number">0</span> : <span class="built_in">strlen</span>(init);	<span class="comment">// 调用strlen获取长度</span></span><br><span class="line">    <span class="keyword">return</span> sdsnewlen(init, initlen);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2、再调用<code>sdsnewlen</code>，返回SDS。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">sds <span class="title function_">sdsnewlen</span><span class="params">(<span class="type">const</span> <span class="type">void</span> *init, <span class="type">size_t</span> initlen)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span>;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// sds遵循C风格字符串原则，以&#x27;\0&#x27;结尾，额外1字节不计数len</span></span><br><span class="line">    <span class="keyword">if</span> (init) &#123;</span><br><span class="line">        sh = zmalloc(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+initlen+<span class="number">1</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        sh = zcalloc(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+initlen+<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (sh == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    sh-&gt;len = initlen;			<span class="comment">// len = strlen(init)</span></span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = <span class="number">0</span>;				<span class="comment">// 创建一个包含C字符串SDS场景，free = 0</span></span><br><span class="line">    <span class="keyword">if</span> (initlen &amp;&amp; init)</span><br><span class="line">        <span class="built_in">memcpy</span>(sh-&gt;buf, init, initlen);</span><br><span class="line">    sh-&gt;buf[initlen] = <span class="string">&#x27;\0&#x27;</span>;	<span class="comment">// sds遵循C风格字符串原则，以&#x27;\0&#x27;结尾，额外1字节不计入len</span></span><br><span class="line">    <span class="keyword">return</span> (<span class="type">char</span>*)sh-&gt;buf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，创建给定C字符串的SDS场景：</p>
+<ul>
+<li><p>len的值为strlen(“Redis”) &#x3D; 5</p>
+</li>
+<li><p>free的值为0</p>
+</li>
+<li><p>buf的内容为 “Redis”, 以’\0’结尾，6字节大小</p>
+</li>
+</ul>
+<p>SDS实例图：<br><img data-src="/2021/1211202806/image1.png"></p>
+<p><strong>思考问题：</strong> 初始化SDS时free为啥给0？—— 平时使用字符串还是只读场景偏多，这样能节约空间。</p>
+<p><strong>GDB验证：</strong></p>
+<p>Redis是基于内存的数据库，可以通过GDB打印内存，查看这个key对应的SDS结构体，是否和源码分析结果一致：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p server.db[0].dict.ht[0]</span><br><span class="line">$1 = &#123;table = 0x7f3008d40900, size = 4, sizemask = 3, used = 1&#125;</span><br><span class="line"></span><br><span class="line">(gdb) p *(struct redisObject *) (server.db[0].dict.ht[0].table[0].v)</span><br><span class="line">$2 = &#123;type = 0, encoding = 8, lru = 11494144, refcount = 1, ptr = 0x7f3008d40838&#125;</span><br><span class="line"># type = REDIS_STRING(0), encoding = REDIS_ENCODING_EMBSTR(8)</span><br><span class="line"></span><br><span class="line">(gdb) p  (*(robj *)server.db[0].dict.ht[0].table[0].v).ptr</span><br><span class="line">$3 = (void *) 0x7f3008d40838</span><br><span class="line"></span><br><span class="line">(gdb) p  (sds) 0x7f3008d40838</span><br><span class="line">$4 = (sds) 0x7f3008d40838 &quot;redis&quot;		# 存储字符串键的值</span><br><span class="line"></span><br><span class="line">(gdb) p *(struct sdshdr *)(0x7f3008d40838 - 0x8)			# len 4字节， free 4字节，减去8字节正好是struct sdshdr的首地址</span><br><span class="line">$5 = &#123;len = 5, free = 0, buf = 0x7f3008d40838 &quot;Redis&quot;&#125;  	# 和以上源码分析的SDS结构体内容一致</span><br></pre></td></tr></table></figure>
+
+<p><strong>上述GDB调试操作的依据说明：</strong></p>
+<ul>
+<li><p>Redis将所有数据库保存在服务器状态<code>server</code>变量中，默认创建16个数据库，默认目标数据库为0号(db[0])</p>
+</li>
+<li><p>dict为数据库键空间，保存所有键值对，底层实现为哈希表，其中ht[0]存储key-value，ht[1]用于rehash</p>
+</li>
+<li><p>table类型为<code>dictEntry **</code>, 链地址法实现哈希表，table[0]不为NULL，说明这个key的hashcode % size的结果为0</p>
+</li>
+<li><p>ptr类型为void *。对于字符串键而言，ptr实际类型为char *，存储内容为”Redis”串，而不是struct sdshdr的首地址。</p>
+</li>
+</ul>
+<p><strong>注：</strong>Redis并没有直接使用sds, list这些基本数据结构去实现数据库，而是在这些基本数据结构上构筑了一个<strong>对象系统</strong>，统一使用redisObject对象：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisObject</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> type:<span class="number">4</span>;			    <span class="comment">// 类型</span></span><br><span class="line">    <span class="type">unsigned</span> encoding:<span class="number">4</span>;			<span class="comment">// 编码</span></span><br><span class="line">    <span class="type">unsigned</span> lru:<span class="number">24</span>;				<span class="comment">// 记录对象最后一次被命令程序访问的时间</span></span><br><span class="line">    <span class="type">int</span> refcount;					<span class="comment">// 引用计数</span></span><br><span class="line">    <span class="type">void</span> *ptr;						<span class="comment">// 指向底层实现数据结构的指针</span></span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>ptr为void *泛型指针，指向底层实现的数据结构。void *是C语言实现泛型编程的常用手段。</p>
+</li>
+<li><p>type为对象类型。type属性设计目的很简单，因为仅通过ptr这个泛型指针无法获取这个对象真正的类型。对于字符串键，type值取0（REDIS_STRING）</p>
+</li>
+<li><p>encoding为编码类型。encoding属性设计目的在于，根据不同场景，为对象设置不同的底层数据结构实现来优化性能。此例中，encoding值取8(REDIS_ENCODING_EMBSTR)，表示编码方式为embstr。</p>
+</li>
+</ul>
+<h3 id="SDS相较于C风格字符串的优点"><a href="#SDS相较于C风格字符串的优点" class="headerlink" title="SDS相较于C风格字符串的优点"></a>SDS相较于C风格字符串的优点<span id="jump4"></span></h3><ul>
+<li><p>获取字符串长度的时间复杂度为O(1) （对于SDS来说，获取长度只需访问len成员）</p>
+</li>
+<li><p>杜绝缓冲区溢出问题</p>
+</li>
+<li><p>减少字符串修改时导致的内存重分配次数</p>
+</li>
+<li><p>二进制安全，除了能保存文本数据，还可以保存二进制数据</p>
+</li>
+</ul>
+<h4 id="SDS的空间分配策略是如何杜绝缓冲区溢出问题的？"><a href="#SDS的空间分配策略是如何杜绝缓冲区溢出问题的？" class="headerlink" title="SDS的空间分配策略是如何杜绝缓冲区溢出问题的？"></a>SDS的空间分配策略是如何杜绝缓冲区溢出问题的？<span id="jump5"></span></h4><p>以SDS拼接函数<code>sdscat</code>为例，源码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">sds <span class="title function_">sdscat</span><span class="params">(sds s, <span class="type">const</span> <span class="type">char</span> *t)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> sdscatlen(s, t, <span class="built_in">strlen</span>(t));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">sds <span class="title function_">sdscatlen</span><span class="params">(sds s, <span class="type">const</span> <span class="type">void</span> *t, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span>;</span></span><br><span class="line">    <span class="type">size_t</span> curlen = sdslen(s);		<span class="comment">// 得到源字符串长度</span></span><br><span class="line"></span><br><span class="line">    s = sdsMakeRoomFor(s,len);		<span class="comment">// 拼接前检查s的剩余空间是否足够，如空间不足需先扩展空间</span></span><br><span class="line">    <span class="keyword">if</span> (s == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    sh = (<span class="type">void</span>*) (s-(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)));</span><br><span class="line">    <span class="built_in">memcpy</span>(s+curlen, t, len);</span><br><span class="line">    sh-&gt;len = curlen+len;</span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = sh-&gt;<span class="built_in">free</span>-len;</span><br><span class="line">    s[curlen+len] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    <span class="keyword">return</span> s;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，<code>sdscat</code>拼接字符串前，会先通过<code>sdsMakeRoomFor</code>检查s的剩余空间是否足够，<strong>如果空间不足，会先调用<code>realloc</code>扩展出足够空间后</strong>，再通过<code>memcpy</code>拼接字符串。 所以杜绝了缓冲区溢出问题。</p>
+<h4 id="SDS是如何减少修改字符串时带来的内存重分配次数"><a href="#SDS是如何减少修改字符串时带来的内存重分配次数" class="headerlink" title="SDS是如何减少修改字符串时带来的内存重分配次数"></a>SDS是如何减少修改字符串时带来的内存重分配次数<span id="jump6"></span></h4><p>对于C字符串，每次增长或缩短操作，都会导致一次内存重分配，性能较差。</p>
+<p>SDS中引入free属性，通过未使用空间，优化字符串的增长或缩短操作，减少内存重分配次数。</p>
+<h4 id="字符串增长场景，SDS扩容策略"><a href="#字符串增长场景，SDS扩容策略" class="headerlink" title="字符串增长场景，SDS扩容策略"></a>字符串增长场景，SDS扩容策略<span id="jump7"></span></h4><p>对于字符串增长场景，REDIS采用空间预分配的思想，即不仅分配修改后的SDS必需的空间，<strong>还会额外分配一定的未使用空间</strong>。源码参考<code>sdsMakeRoomFor</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_MAX_PREALLOC (1024 * 1024)</span></span><br><span class="line">sds <span class="title function_">sdsMakeRoomFor</span><span class="params">(sds s, <span class="type">size_t</span> addlen)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span>, *<span class="title">newsh</span>;</span></span><br><span class="line">    <span class="type">size_t</span> <span class="built_in">free</span> = sdsavail(s);</span><br><span class="line">    <span class="type">size_t</span> len, newlen;</span><br><span class="line">	<span class="keyword">if</span> (<span class="built_in">free</span> &gt;= addlen) <span class="keyword">return</span> s;			<span class="comment">// 如果剩余空间足够直接返回</span></span><br><span class="line">	len = sdslen(s);</span><br><span class="line">	sh = (<span class="type">void</span>*) (s-(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)));</span><br><span class="line">	newlen = (len+addlen);</span><br><span class="line">	<span class="keyword">if</span> (newlen &lt; SDS_MAX_PREALLOC)			<span class="comment">// 如修改后的SDS长度小于1M,realloc重新分配两倍空间</span></span><br><span class="line">   		newlen *= <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">    	newlen += SDS_MAX_PREALLOC;			<span class="comment">// 如修改后的SDS长度大于等于1M, realloc重新分配1M的空间</span></span><br><span class="line">	newsh = zrealloc(sh, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+newlen+<span class="number">1</span>);</span><br><span class="line">	<span class="keyword">if</span> (newsh == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">	newsh-&gt;<span class="built_in">free</span> = newlen - len;</span><br><span class="line">	<span class="keyword">return</span> newsh-&gt;buf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，额外分配的未使用空间大小由修改后的SDS长度决定：</p>
+<ul>
+<li>如果对SDS修改后，SDS长度(即len属性的值)小于1MB，REDIS会额外分配len个字节的空间。例如，给定SDS串s(“hello”)，调用sdscat(s, “world”)之后，len &#x3D; 10，free &#x3D; 10, buf数组大小变为 10 + 10 + 1 &#x3D; 21字节。</li>
+<li>如果对SDS修改后，SDS长度大于等于1MB， REDIS只额外分配1MB的空间，目的是避免内存出现太大的浪费。</li>
+</ul>
+<p>相比C风格字符串，<strong>SDS的扩容策略将增长N次字符串需要的内存重分配次数从N次降低为最多N次</strong>。</p>
+<p>GDB验证结果如下，和分析源码得出的结论一致：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key hello</span><br><span class="line">[OOK</span><br><span class="line">(gdb) p *(struct sdshdr *)((*(robj *)server.db[0].dict.ht[0].table[3].v).ptr - 0x8)</span><br><span class="line">$1 = &#123;len = 5, free = 0, buf = 0x7f571f1407f8 &quot;hello&quot;&#125;</span><br><span class="line"></span><br><span class="line">127.0.0.1:6379&gt; APPEND key world</span><br><span class="line">(integer) 10</span><br><span class="line">(gdb) p *(struct sdshdr *)((*(robj *)server.db[0].dict.ht[0].table[3].v).ptr - 0x8)</span><br><span class="line">$2 = &#123;len = 10, free = 10, buf = 0x7f571f1407e8 &quot;helloworld&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="字符串缩短场景，SDS空间释放策略"><a href="#字符串缩短场景，SDS空间释放策略" class="headerlink" title="字符串缩短场景，SDS空间释放策略"></a>字符串缩短场景，SDS空间释放策略<span id="jump8"></span></h4><p>对于字符串缩短场景，REDIS采用惰性空间释放策略，即并不立即回收空闲内存，而是仅使用free属性记录空闲字节数，如果将来需对SDS做增长操作，可以直接使用这部分空闲内存，无需做内存重分配。</p>
+<p>源码分析：<code>sdsclear</code>用于清空SDS保存的字符串内容，采用惰性空闲释放策略，复杂度仅为O(1)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">sdsclear</span><span class="params">(sds s)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span> =</span> (<span class="type">void</span>*) (s-(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)));</span><br><span class="line">    sh-&gt;<span class="built_in">free</span> += sh-&gt;len;</span><br><span class="line">    sh-&gt;len = <span class="number">0</span>;</span><br><span class="line">    sh-&gt;buf[<span class="number">0</span>] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同时，REDIS提供API <code>sdsRemoveFreeSpace</code>，通过realloc仅分配实际大小的内存，真正地回收空闲内存，解决惰性空间释放策略带来的内存浪费问题。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">sds <span class="title function_">sdsRemoveFreeSpace</span><span class="params">(sds s)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span>;</span></span><br><span class="line">    sh = (<span class="type">void</span>*) (s-(<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)));</span><br><span class="line">    sh = zrealloc(sh, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+sh-&gt;len+<span class="number">1</span>);	<span class="comment">// 仅分配实际大小的内存</span></span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = <span class="number">0</span>;										<span class="comment">// free写0</span></span><br><span class="line">    <span class="keyword">return</span> sh-&gt;buf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="SDS最大长度是多少？"><a href="#SDS最大长度是多少？" class="headerlink" title="SDS最大长度是多少？"></a>SDS最大长度是多少？<span id="jump9"></span></h3><p>Redis 3.0</p>
+<ul>
+<li><p>struct sdshdr的len成员记录SDS长度，类型为int，4字节，理论上最大长度 2^32 &#x2F; 2^10 &#x2F; 2^10 &#x3D; 4096MB</p>
+</li>
+<li><p>在set, append操作中通过硬编码写死字符串的最大长度为512MB，超过这个长度会报错，源码参考<code>checkStringLength</code>。</p>
+</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">checkStringLength</span><span class="params">(redisClient *c, <span class="type">long</span> <span class="type">long</span> size)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (size &gt; <span class="number">512</span>*<span class="number">1024</span>*<span class="number">1024</span>) &#123;</span><br><span class="line">        addReplyError(c,<span class="string">&quot;string exceeds maximum allowed size (512MB)&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> REDIS_ERR;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> REDIS_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>综上， Redis 3.0中SDS最大长度为 512MB。</p>
+<p>Redis 6.0.10</p>
+<ul>
+<li>通过配置项<code>proto-max-bulk-len</code>指定SDS长度，默认是512MB，用户可以自行配置这个值，这点和Redis 3.0有区别。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> <span class="title function_">checkStringLength</span><span class="params">(client *c, <span class="type">long</span> <span class="type">long</span> size)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!(c-&gt;flags &amp; CLIENT_MASTER) &amp;&amp; size &gt; server.proto_max_bulk_len) &#123;</span><br><span class="line">        addReplyError(c,<span class="string">&quot;string exceeds maximum allowed size (proto-max-bulk-len)&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> C_ERR;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> C_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>综上， Redis 6.0中SDS最大长度默认为512MB，用户可以自行配置这个值。</p>
+<h3 id="字符串键的三种编码方式"><a href="#字符串键的三种编码方式" class="headerlink" title="字符串键的三种编码方式"></a>字符串键的三种编码方式<span id="jump10"></span></h3><p>Redis中字符串对象有三种编码，分别是int , embstr, raw。以下分别介绍这三种编码：</p>
+<h4 id="int编码"><a href="#int编码" class="headerlink" title="int编码"></a>int编码<span id="jump11"></span></h4><p>如果一个字符串对象保存的内容是整数值，且这个整数可以用long表示，Redis就把它的编码设置为int</p>
+<p>举例：执行 set key “123”命令，会创建一个int编码的字符串对象</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key 123</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;int&quot;</span><br></pre></td></tr></table></figure>
+
+<p>内存中的<code>redisObject</code>对象内容如下：</p>
+<p><img data-src="/2021/1211202806/image2.png"></p>
+<p>int类型编码的字符串，要求整数落在long的范围内。在64位环境上，long范围：-9223372036854775808～+9223372036854775807，不同的键值和编码结果参考下表：</p>
+<table>
+<thead>
+<tr>
+<th align="left">键值</th>
+<th align="left">编码</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">+123</td>
+<td align="left">embstr</td>
+</tr>
+<tr>
+<td align="left">-123</td>
+<td align="left">int</td>
+</tr>
+<tr>
+<td align="left">–123</td>
+<td align="left">embstr</td>
+</tr>
+<tr>
+<td align="left">-9223372036854775808</td>
+<td align="left">int</td>
+</tr>
+<tr>
+<td align="left">-9223372036854775809</td>
+<td align="left">embstr</td>
+</tr>
+<tr>
+<td align="left">9223372036854775807</td>
+<td align="left">int</td>
+</tr>
+<tr>
+<td align="left">9223372036854775808</td>
+<td align="left">embstr</td>
+</tr>
+</tbody></table>
+<p><strong>源码分析：</strong></p>
+<p><code>createStringObjectFromLongLong</code>根据传入的long long类型的整数值，创建一个字符串对象。如果入参在long范围之内，就创建int编码的字符串对象，源码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> REDIS_SHARED_INTEGERS 10000</span></span><br><span class="line">robj *<span class="title function_">createStringObjectFromLongLong</span><span class="params">(<span class="type">long</span> <span class="type">long</span> value)</span> &#123;</span><br><span class="line">    robj *o;</span><br><span class="line">    <span class="comment">// value 的大小在 0 - 10000之间，直接返回一个共享对象</span></span><br><span class="line">    <span class="keyword">if</span> (value &gt;= <span class="number">0</span> &amp;&amp; value &lt; REDIS_SHARED_INTEGERS) &#123;</span><br><span class="line">        incrRefCount(shared.integers[value]);</span><br><span class="line">        o = shared.integers[value];</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="comment">// 如果在long范围内，就创建编码为int的字符串</span></span><br><span class="line">        <span class="keyword">if</span> (value &gt;= LONG_MIN &amp;&amp; value &lt;= LONG_MAX) &#123;</span><br><span class="line">            o = createObject(REDIS_STRING, <span class="literal">NULL</span>);</span><br><span class="line">            o-&gt;encoding = REDIS_ENCODING_INT;</span><br><span class="line">            o-&gt;ptr = (<span class="type">void</span>*)((<span class="type">long</span>)value);	<span class="comment">// ptr实际指向一个long类型的value</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 如果在long之外，就创建一个编码为embstr的字符串</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            o = createObject(REDIS_STRING,sdsfromlonglong(value));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="REDIS中的对象共享机制"><a href="#REDIS中的对象共享机制" class="headerlink" title="REDIS中的对象共享机制"></a>REDIS中的对象共享机制</h4><p>Redis服务器初始化的时候，会预先创建1万个字符串对象 (0 ~ 9999), 当服务器需要使用值为 0 - 9999的字符串对象时，服务器会直接使用这些共享对象，而不是去新创建一个对象。这个用意在于节约内存。</p>
+<p><strong>举例：</strong></p>
+<p>创建字符串键A，B，值都写“1”, 那么这两个键共享同一个redisObject对象，且这个redisObject对象的ptr指向的内容为1</p>
+<p><strong>GDB验证结果：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">(gdb)  p *(robj *)server.db[0].dict.ht[0].table[0].v</span><br><span class="line">$15 = &#123;type = 0, encoding = 1, lru = 11668863, refcount = 3, ptr = 0x1&#125;</span><br><span class="line">(gdb)  p *(robj *)server.db[0].dict.ht[0].table[2].v</span><br><span class="line">$16 = &#123;type = 0, encoding = 1, lru = 11668863, refcount = 3, ptr = 0x1&#125;</span><br><span class="line">(gdb)  p &amp;(*(robj *)server.db[0].dict.ht[0].table[0].v)</span><br><span class="line">$17 = (robj *) 0x7fa7c1457360</span><br><span class="line">(gdb)  p &amp;(*(robj *)server.db[0].dict.ht[0].table[2].v)</span><br><span class="line">$18 = (robj *) 0x7fa7c1457360		# 和$17相同，都是0x7fa7c1457360，说明这是一个共享对象</span><br></pre></td></tr></table></figure>
+
+<p>此时，两个key和共享字符串对象的内存示意图：</p>
+<p><img data-src="/2021/1211202806/image3.png"></p>
+<h4 id="raw编码"><a href="#raw编码" class="headerlink" title="raw编码"></a>raw编码<span id="jump13"></span></h4><p>如果字符串对象保存的是一个字符串值，且这个字符串长度大于39个字节，REDIS就使用SDS存储这个字符串，并设置编码类型为raw。</p>
+<p><strong>举例：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key 1234567891234567891234567891234567891234</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding ket</span><br><span class="line">&quot;raw&quot;</span><br><span class="line">127.0.0.1:6379&gt; strlen key</span><br><span class="line">(integer) 40</span><br></pre></td></tr></table></figure>
+
+<p>raw编码的字符串示意图：</p>
+<p><img data-src="/2021/1211202806/image4.png"></p>
+<p><strong>源码分析：</strong></p>
+<p><code>createStringObject</code>用于创建一个SDS表示的字符串对象。当字符串长度大于39字节时使用raw编码， 否则用embstr编码，源码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* The current limit of 39 is chosen so that the biggest string object</span></span><br><span class="line"><span class="comment"> * we allocate as EMBSTR will still fit into the 64 byte arena of jemalloc. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> REDIS_ENCODING_EMBSTR_SIZE_LIMIT 39</span></span><br><span class="line">robj *<span class="title function_">createStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (len &lt;= REDIS_ENCODING_EMBSTR_SIZE_LIMIT)</span><br><span class="line">        <span class="keyword">return</span> createEmbeddedStringObject(ptr,len);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> createRawStringObject(ptr,len);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">robj *<span class="title function_">createRawStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> createObject(REDIS_STRING,sdsnewlen(ptr,len));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">robj *<span class="title function_">createObject</span><span class="params">(<span class="type">int</span> type, <span class="type">void</span> *ptr)</span> &#123;</span><br><span class="line">    robj *o = zmalloc(<span class="keyword">sizeof</span>(*o));</span><br><span class="line">    o-&gt;type = type;</span><br><span class="line">    o-&gt;encoding = REDIS_ENCODING_RAW;	<span class="comment">// 设置编码类型为raw</span></span><br><span class="line">    o-&gt;ptr = ptr;</span><br><span class="line">    o-&gt;refcount = <span class="number">1</span>;</span><br><span class="line">    o-&gt;lru = LRU_CLOCK();</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="embstr编码"><a href="#embstr编码" class="headerlink" title="embstr编码"></a>embstr编码<span id="jump12"></span></h4><p>如果字符串对象保存的是一个字符串值，且这个字符串长度小于等于39个字节，REDIS就使用SDS存储这个字符串，并设置编码类型为embstr，<strong>embstr是专门用于保存短字符串的一种优化编码方式。</strong></p>
+<p><strong>举例：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key hello</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;embstr&quot;</span><br></pre></td></tr></table></figure>
+
+<p>和raw编码类似，embstr编码也使用<code>redisObject</code>和<code>sdshdr</code>保存字符串，但差别在于：</p>
+<ul>
+<li>raw编码需调用<strong>2</strong>次malloc创建<code>redisObject</code>和<code>sdshdr</code>对象，且<code>redisObject</code>和<code>sdshdr</code>内存不连续</li>
+<li>而embstr编码只需<strong>1</strong>次malloc创建<code>redisObject</code>和<code>sdshdr</code>对象，且<code>redisObject</code>和<code>sdshdr</code>内存是连续的</li>
+</ul>
+<p>GDB查看embstr编码字符串的内存：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p &amp;(*(robj *)server.db[0].dict.ht[0].table[3].v)</span><br><span class="line">$1 = (robj *) 0x7f43ebd3b9c0</span><br><span class="line">(gdb) p *(robj *)server.db[0].dict.ht[0].table[3].v</span><br><span class="line">$2 = &#123;type = 0, encoding = 8, lru = 11755503, refcount = 1, ptr = 0x7f43ebd3b9d8&#125;</span><br><span class="line">(gdb) p *(struct sdshdr *)0x7f43ebd3b9d0</span><br><span class="line">$3 = &#123;len = 5, free = 0, buf = 0x7f43ebd3b9d8 &quot;hello&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>观察结果发现robj和sdshdr内存确实是连续的，embstr编码的内存示意图：</p>
+<p><img data-src="/2021/1211202806/image5.png"></p>
+<p><strong>源码分析：</strong></p>
+<p><code>createEmbeddedStringObject</code>用于创建一个embstr编码的字符串</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">robj *<span class="title function_">createEmbeddedStringObject</span><span class="params">(<span class="type">char</span> *ptr, <span class="type">size_t</span> len)</span> &#123;</span><br><span class="line">    robj *o = zmalloc(<span class="keyword">sizeof</span>(robj)+<span class="keyword">sizeof</span>(<span class="keyword">struct</span> sdshdr)+len+<span class="number">1</span>); <span class="comment">// 仅1次malloc</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sdshdr</span> *<span class="title">sh</span> =</span> (<span class="type">void</span>*)(o+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    o-&gt;type = REDIS_STRING;</span><br><span class="line">    o-&gt;encoding = REDIS_ENCODING_EMBSTR;</span><br><span class="line">    o-&gt;ptr = sh+<span class="number">1</span>;</span><br><span class="line">    o-&gt;refcount = <span class="number">1</span>;</span><br><span class="line">    o-&gt;lru = LRU_CLOCK();</span><br><span class="line"></span><br><span class="line">    sh-&gt;len = len;</span><br><span class="line">    sh-&gt;<span class="built_in">free</span> = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (ptr) &#123;</span><br><span class="line">        <span class="built_in">memcpy</span>(sh-&gt;buf,ptr,len);</span><br><span class="line">        sh-&gt;buf[len] = <span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">memset</span>(sh-&gt;buf,<span class="number">0</span>,len+<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="设计embstr编码的用意是什么"><a href="#设计embstr编码的用意是什么" class="headerlink" title="设计embstr编码的用意是什么"></a>设计embstr编码的用意是什么<span id="jump14"></span></h4><p>相比于raw编码，embstr编码存储短字符串的优点：</p>
+<ul>
+<li><p>创建字符串对象时，malloc次数从2次变为1次，释放字符串对象时，free次数从2次变成1次。</p>
+</li>
+<li><p>embstr编码中，<code>redisObject</code>和<code>sdshdr</code>内存连续，可以更好利用缓存，提升效率。</p>
+</li>
+</ul>
+<h4 id="三种编码之间的转换规则"><a href="#三种编码之间的转换规则" class="headerlink" title="三种编码之间的转换规则"></a>三种编码之间的转换规则<span id="jump15"></span></h4><p><strong>规则1：</strong> embstr对象执行修改命令后，总是会变成一个raw编码对象。</p>
+<p><strong>规则2：</strong> 对于int对象，如果在这个对象执行的操作导致其保存的值不在long范围内，这个对象编码总是变成raw</p>
+<p><strong>源码分析：</strong></p>
+<p>以APPEND命令为例，源码参考<code>appendCommand</code>，此函数最终调用<code>dbUnshareStringValue</code>，总是创建一个raw编码的对象。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">appendCommand</span><span class="params">(redisClient *c)</span> &#123;</span><br><span class="line">    <span class="type">size_t</span> totlen;</span><br><span class="line">    robj *o, *append;</span><br><span class="line">    o = lookupKeyWrite(c-&gt;db,c-&gt;argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">if</span> (o == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="comment">// 键值对不存在就创建一个新的 ......</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 键值对存在 ......</span></span><br><span class="line">        <span class="comment">/* &quot;append&quot; is an argument, so always an sds */</span></span><br><span class="line">        append = c-&gt;argv[<span class="number">2</span>];</span><br><span class="line">        totlen = stringObjectLen(o)+sdslen(append-&gt;ptr);</span><br><span class="line">        <span class="keyword">if</span> (checkStringLength(c,totlen) != REDIS_OK)</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        <span class="comment">/* Append the value */</span></span><br><span class="line">        o = dbUnshareStringValue(c-&gt;db,c-&gt;argv[<span class="number">1</span>],o);</span><br><span class="line">        o-&gt;ptr = sdscatlen(o-&gt;ptr,append-&gt;ptr,sdslen(append-&gt;ptr));</span><br><span class="line">        totlen = sdslen(o-&gt;ptr);</span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">// ......</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">robj *<span class="title function_">dbUnshareStringValue</span><span class="params">(redisDb *db, robj *key, robj *o)</span> &#123;</span><br><span class="line">    redisAssert(o-&gt;type == REDIS_STRING);</span><br><span class="line">    <span class="keyword">if</span> (o-&gt;refcount != <span class="number">1</span> || o-&gt;encoding != REDIS_ENCODING_RAW) &#123;</span><br><span class="line">        robj *decoded = getDecodedObject(o);</span><br><span class="line">        o = createRawStringObject(decoded-&gt;ptr, sdslen(decoded-&gt;ptr)); <span class="comment">// embstr对象执行修改命令后，总是会变成一个raw编码对象。</span></span><br><span class="line">        decrRefCount(decoded);</span><br><span class="line">        dbOverwrite(db,key,o);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证结果：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">127.0.0.1:6379&gt; set key &quot;hello&quot;</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;embstr&quot;</span><br><span class="line">127.0.0.1:6379&gt; append key &quot; world!&quot;</span><br><span class="line">(integer) 12</span><br><span class="line">127.0.0.1:6379&gt; object encoding key</span><br><span class="line">&quot;raw&quot;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="REDIS3-2中的SDS实现"><a href="#REDIS3-2中的SDS实现" class="headerlink" title="REDIS3.2中的SDS实现"></a>REDIS3.2中的SDS实现<span id="jump16"></span></h4><p>REDIS 3.2中，根据SDS的长度又细分为5类，对于不同长度的字符串，用不同的sdshdrX结构体存储，实现节约内存的目的。</p>
+<p>以REDIS 6.0.10源码为例，sdshdr结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="type">char</span> *sds;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Note: sdshdr5 is never used, we just access the flags byte directly.</span></span><br><span class="line"><span class="comment"> * However is here to document the layout of type 5 SDS strings. */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr5</span> &#123;</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, and 5 msb of string length */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr8</span> &#123;</span></span><br><span class="line">    <span class="type">uint8_t</span> len; <span class="comment">/* used */</span></span><br><span class="line">    <span class="type">uint8_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr16</span> &#123;</span></span><br><span class="line">    <span class="type">uint16_t</span> len; <span class="comment">/* used */</span></span><br><span class="line">    <span class="type">uint16_t</span> alloc; <span class="comment">/* excluding the he</span></span><br><span class="line"><span class="comment">    ader and null terminator */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr32</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> len; <span class="comment">/* used */</span></span><br><span class="line">    <span class="type">uint32_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">struct</span> __<span class="title">attribute__</span> ((__<span class="title">packed__</span>)) <span class="title">sdshdr64</span> &#123;</span></span><br><span class="line">    <span class="type">uint64_t</span> len; <span class="comment">/* used */</span></span><br><span class="line">    <span class="type">uint64_t</span> alloc; <span class="comment">/* excluding the header and null terminator */</span></span><br><span class="line">    <span class="type">unsigned</span> <span class="type">char</span> flags; <span class="comment">/* 3 lsb of type, 5 unused bits */</span></span><br><span class="line">    <span class="type">char</span> buf[];</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>各结构体成员作用：</strong></p>
+<ul>
+<li><p>len表示字符串实际长度。</p>
+</li>
+<li><p>alloc表示为sds分配的大小，不包括’\0’。</p>
+</li>
+<li><p>flags表示sdshdr类型，用于判断sds的类型。flags本身是char类型有8位，其中高5位保留，只用低3位足以这表示5种sdshdr类型，参考源码：</p>
+</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_5  0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_8  1</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_16 2</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_32 3</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_64 4</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_MASK 7</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> SDS_TYPE_BITS 3</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><code>__attribute__ ((__packed__))</code>作用？</strong></p>
+<p><code>__attribute__ ((__packed__))</code>是GCC特有的语法，作用是取消结构体的字节对齐，采用内存紧凑模式排列。</p>
+<p>这里给出加上或不加关键字时，各sdshdr结构体的大小：</p>
+<table>
+<thead>
+<tr>
+<th align="left">结构体</th>
+<th align="left">加GCC关键字<code>__attribute__ ((__packed__))</code></th>
+<th align="left">不加关键字</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">sdshdr5</td>
+<td align="left">1字节</td>
+<td align="left">1</td>
+</tr>
+<tr>
+<td align="left">sdshdr8</td>
+<td align="left">3</td>
+<td align="left">3</td>
+</tr>
+<tr>
+<td align="left">sdshdr16</td>
+<td align="left">5</td>
+<td align="left">6</td>
+</tr>
+<tr>
+<td align="left">sdshdr32</td>
+<td align="left">9</td>
+<td align="left">12</td>
+</tr>
+<tr>
+<td align="left">sdshdr64</td>
+<td align="left">17</td>
+<td align="left">24</td>
+</tr>
+</tbody></table>
+<p><strong>问题思考</strong>：取消结构体字节对齐的用意是什么，有什么优点？</p>
+<ul>
+<li>1个好处是节约了内存，时间换空间。</li>
+<li>另1个好处是使得<strong>通过内存直接访问结构体内部变量非常方便</strong>，比如通过buf[-1]这种骚操作可以直接访问到<code>flags</code>成员，从而判断sds类型，实现非常简洁。源码参考如下：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sds s;</span><br><span class="line"><span class="type">char</span> type = s[<span class="number">-1</span>] &amp; SDS_TYPE_MASK;</span><br></pre></td></tr></table></figure>
+
+<h4 id="给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？"><a href="#给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？" class="headerlink" title="给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？"></a>给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？<span id="jump17"></span></h4><p>以REDIS 6.0.10源码为例，参考<code>sdsReqType</code>的实现：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">char</span> <span class="title function_">sdsReqType</span><span class="params">(<span class="type">size_t</span> string_size)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (string_size &lt; <span class="number">32</span>)</span><br><span class="line">        <span class="keyword">return</span> SDS_TYPE_5;</span><br><span class="line">    <span class="keyword">if</span> (string_size &lt; <span class="number">0xff</span>)</span><br><span class="line">        <span class="keyword">return</span> SDS_TYPE_8;</span><br><span class="line">    <span class="keyword">if</span> (string_size &lt; <span class="number">0xffff</span>)</span><br><span class="line">        <span class="keyword">return</span> SDS_TYPE_16;</span><br><span class="line">    <span class="keyword">if</span> (string_size &lt; <span class="number">0xffffffff</span>)</span><br><span class="line">        <span class="keyword">return</span> SDS_TYPE_32;</span><br><span class="line">    <span class="keyword">return</span> SDS_TYPE_64;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>得出如下结论：</p>
+<ul>
+<li>SDS长度小于32，用sdshdr5类型表示</li>
+<li>SDS长度在 [32, 255），用sdshdr8类型表示</li>
+<li>依次类推 ……</li>
+</ul>
+<p><strong>思考问题：</strong><code>set key hello</code>， 键key和值hello都是用sdshdr5表示的吗？</p>
+<p>详细分析过程参考文章：<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000017450295">https://segmentfault.com/a/1190000017450295</a></p>
+<p>以下仅给出结论和验证结果：</p>
+<p><strong>结论：</strong></p>
+<ul>
+<li><p><strong>对于长度小于32的字符串键和值，键通过sdshdr5表示，而值通过sdshdr8表示</strong></p>
+</li>
+<li><p>对于值，使用<code>createEmbeddedStringObject</code>总是创建一个sdshdr8类型的对象。</p>
+</li>
+<li><p>对于键，通过调用链<code>setGenericCommand--&gt;genericSetKey--&gt;dbAdd</code>，最终调用<code>sdsdup</code>，创建一个sdshdr5类型的对象。调用栈参考：</p>
+</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">(gdb) bt</span><br><span class="line">#0  dbAdd (db=0x557b1c4d9690, key=0x557b1c4f5720, val=0x557b1c4f4730) at db.c:185</span><br><span class="line">#1  0x0000557b1b95751d in genericSetKey (c=c@entry=0x557b1c4ecfa0, db=0x557b1c4d9690, key=key@entry=0x557b1c4f5720,</span><br><span class="line">    val=val@entry=0x557b1c4f4730, keepttl=keepttl@entry=0, signal=signal@entry=1) at db.c:252</span><br><span class="line">#2  0x0000557b1b9649e7 in setGenericCommand (c=c@entry=0x557b1c4ecfa0, flags=flags@entry=0, key=0x557b1c4f5720,</span><br><span class="line">    val=0x557b1c4f4730, expire=expire@entry=0x0, unit=unit@entry=0, ok_reply=0x0, abort_reply=0x0) at t_string.c:87</span><br><span class="line">#3  0x0000557b1b964c51 in setCommand (c=0x557b1c4ecfa0) at t_string.c:146</span><br><span class="line">#4  0x0000557b1b93bd5e in call (c=0x557b1c4ecfa0, flags=15) at server.c:3368</span><br><span class="line">#5  0x0000557b1b93c7a5 in processCommand (c=c@entry=0x557b1c4ecfa0) at server.c:3797</span><br><span class="line">#6  0x0000557b1b94a7b0 in processCommandAndResetClient (c=c@entry=0x557b1c4ecfa0) at networking.c:1895</span><br><span class="line">#7  0x0000557b1b94f09a in processInputBuffer (c=0x557b1c4ecfa0) at networking.c:1978</span><br><span class="line">#8  0x0000557b1b9cbd48 in callHandler (handler=&lt;optimized out&gt;, conn=0x557b1c4fdd60) at connhelpers.h:79</span><br><span class="line">#9  connSocketEventHandler (el=&lt;optimized out&gt;, fd=&lt;optimized out&gt;, clientData=0x557b1c4fdd60, mask=&lt;optimized out&gt;)</span><br><span class="line">    at connection.c:296</span><br><span class="line">#10 0x0000557b1b9356c7 in aeProcessEvents (eventLoop=eventLoop@entry=0x557b1c479aa0, flags=flags@entry=27) at ae.c:479</span><br><span class="line">#11 0x0000557b1b935a0d in aeMain (eventLoop=0x557b1c479aa0) at ae.c:539</span><br><span class="line">#12 0x0000557b1b932216 in main (argc=2, argv=0x7ffe8e366c18) at server.c:5498</span><br></pre></td></tr></table></figure>
+
+<p><strong>GDB验证结果：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">(gdb) x/tb ((*(robj *)server.db[0].dict.ht[0].table[1].v).ptr - 1) // value</span><br><span class="line">0x557b1c4f4742: 00000001	// 注意value的最后三位为001，表示SDS_TYPE_8</span><br><span class="line">$2 = &#123;len = 5 &#x27;\005&#x27;, alloc = 5 &#x27;\005&#x27;, flags = 1 &#x27;\001&#x27;, buf = 0x557b1c4f4743 &quot;hello&quot;&#125;</span><br><span class="line"></span><br><span class="line">(gdb) p (sds)server.db[0].dict.ht[0].table[1].key</span><br><span class="line">$3 = (sds) 0x557b1c502f61 &quot;key&quot;</span><br><span class="line">(gdb) x/tb 0x557b1c502f61 - 0x1</span><br><span class="line">0x557b1c502f60: 00011000	// 注意key的最后三位为000，表示SDS_TYPE_5</span><br></pre></td></tr></table></figure>
+
+<p><strong>思考问题</strong>：对于短字符串，为什么键底层类型为sdshdr5，值底层类型设置却成sdshdr8？</p>
+<p>个人分析：实际应用场景中，通常键的更新次数远小于值的更新次数。所以对键采用最小的内存存储，以节省空间；对值用更大的内存存储，减少内存重分配的次数，提高性能。</p>
+<h4 id="REDIS字符串命令"><a href="#REDIS字符串命令" class="headerlink" title="REDIS字符串命令"></a>REDIS字符串命令<span id="jump18"></span></h4><p>REDIS 字符串命令参考官方网站：<a target="_blank" rel="noopener" href="https://redis.io/commands#string">https://redis.io/commands#string</a></p>
+<p>以下仅给出几个最常用的命令:</p>
+<ul>
+<li>set key value</li>
+<li>get key</li>
+<li>append key value</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》第2章 简单动态字符串，第8章 对象</p>
+<p>【2】<a target="_blank" rel="noopener" href="https://blog.huangz.me/diary/2014/how-to-read-redis-source-code.html">如何阅读Redis源码</a></p>
+<p>【3】<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000017450295">【Redis源码分析】一个对SDSHDR5是否使用的疑问</a></p>
+<p>【4】<a target="_blank" rel="noopener" href="https://www.cnblogs.com/davygeek/p/5748852.html">柔性数组</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2021/1211202806.html" title="Redis学习笔记(一)——简单动态字符串">https://pcj600.github.io/2021/1211202806.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"><i class="fa fa-tag"></i> Redis</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/1130202525.html" rel="prev" title="Hiredis查询失败时出现key丢失问题定位">
+      <i class="fa fa-chevron-left"></i> Hiredis查询失败时出现key丢失问题定位
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/1212203239.html" rel="next" title="Redis学习笔记(二)——链表">
+      Redis学习笔记(二)——链表 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%9D%E8%80%83%E9%97%AE%E9%A2%98"><span class="nav-text">思考问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SDS%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%8C%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%98%AF%E5%A6%82%E4%BD%95%E8%A1%A8%E7%A4%BA%E7%9A%84"><span class="nav-text">SDS的数据结构，字符串是如何表示的 </span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SDS%E7%BB%93%E6%9E%84%E4%BD%93%E5%90%84%E6%88%90%E5%91%98%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="nav-text">SDS结构体各成员的作用</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E7%BB%99%E5%AE%9AC%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9A%84SDS%E5%9C%BA%E6%99%AF%EF%BC%8Csdshdr%E7%BB%93%E6%9E%84%E4%BD%93%E5%90%84%E6%88%90%E5%91%98%E5%88%9D%E5%80%BC%E6%98%AF%E5%A4%9A%E5%B0%91%EF%BC%9F"><span class="nav-text">创建给定C字符串的SDS场景，sdshdr结构体各成员初值是多少？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDS%E7%9B%B8%E8%BE%83%E4%BA%8EC%E9%A3%8E%E6%A0%BC%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9A%84%E4%BC%98%E7%82%B9"><span class="nav-text">SDS相较于C风格字符串的优点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SDS%E7%9A%84%E7%A9%BA%E9%97%B4%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5%E6%98%AF%E5%A6%82%E4%BD%95%E6%9D%9C%E7%BB%9D%E7%BC%93%E5%86%B2%E5%8C%BA%E6%BA%A2%E5%87%BA%E9%97%AE%E9%A2%98%E7%9A%84%EF%BC%9F"><span class="nav-text">SDS的空间分配策略是如何杜绝缓冲区溢出问题的？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDS%E6%98%AF%E5%A6%82%E4%BD%95%E5%87%8F%E5%B0%91%E4%BF%AE%E6%94%B9%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%97%B6%E5%B8%A6%E6%9D%A5%E7%9A%84%E5%86%85%E5%AD%98%E9%87%8D%E5%88%86%E9%85%8D%E6%AC%A1%E6%95%B0"><span class="nav-text">SDS是如何减少修改字符串时带来的内存重分配次数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%A2%9E%E9%95%BF%E5%9C%BA%E6%99%AF%EF%BC%8CSDS%E6%89%A9%E5%AE%B9%E7%AD%96%E7%95%A5"><span class="nav-text">字符串增长场景，SDS扩容策略</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%BC%A9%E7%9F%AD%E5%9C%BA%E6%99%AF%EF%BC%8CSDS%E7%A9%BA%E9%97%B4%E9%87%8A%E6%94%BE%E7%AD%96%E7%95%A5"><span class="nav-text">字符串缩短场景，SDS空间释放策略</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDS%E6%9C%80%E5%A4%A7%E9%95%BF%E5%BA%A6%E6%98%AF%E5%A4%9A%E5%B0%91%EF%BC%9F"><span class="nav-text">SDS最大长度是多少？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E9%94%AE%E7%9A%84%E4%B8%89%E7%A7%8D%E7%BC%96%E7%A0%81%E6%96%B9%E5%BC%8F"><span class="nav-text">字符串键的三种编码方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#int%E7%BC%96%E7%A0%81"><span class="nav-text">int编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REDIS%E4%B8%AD%E7%9A%84%E5%AF%B9%E8%B1%A1%E5%85%B1%E4%BA%AB%E6%9C%BA%E5%88%B6"><span class="nav-text">REDIS中的对象共享机制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#raw%E7%BC%96%E7%A0%81"><span class="nav-text">raw编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#embstr%E7%BC%96%E7%A0%81"><span class="nav-text">embstr编码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1embstr%E7%BC%96%E7%A0%81%E7%9A%84%E7%94%A8%E6%84%8F%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-text">设计embstr编码的用意是什么</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E7%A7%8D%E7%BC%96%E7%A0%81%E4%B9%8B%E9%97%B4%E7%9A%84%E8%BD%AC%E6%8D%A2%E8%A7%84%E5%88%99"><span class="nav-text">三种编码之间的转换规则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REDIS3-2%E4%B8%AD%E7%9A%84SDS%E5%AE%9E%E7%8E%B0"><span class="nav-text">REDIS3.2中的SDS实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BB%99%E5%AE%9A%E4%B8%80%E4%B8%AA%E9%95%BF%E5%BA%A6%E4%B8%BAn%E7%9A%84sds%EF%BC%8C%E5%AE%83%E7%9A%84%E5%BA%95%E5%B1%82%E9%80%9A%E8%BF%87%E5%93%AA%E4%B8%AAsdshdr%E7%B1%BB%E5%9E%8B%E8%A1%A8%E7%A4%BA%EF%BC%9F"><span class="nav-text">给定一个长度为n的sds，它的底层通过哪个sdshdr类型表示？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#REDIS%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%91%BD%E4%BB%A4"><span class="nav-text">REDIS字符串命令</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">138</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">32</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">444k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">6:44</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>
