@@ -24,41 +24,6 @@
       </tags>
   </entry>
   <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/0329142613.html</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/0322220956.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -110,6 +75,41 @@
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/0329142613.html</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -5442,7 +5442,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h2 id="操作记录"><a href="#操作记录" class="headerlink" title="操作记录"></a>操作记录</h2><p>从1月19日(周五)开始每天使用一拖七大法申购, 从1月24日开始每天早盘卖出，场外转托管, 直到2月8日(节前最后一个交易日)结束，每个身份证获利708元：<br><img data-src="/2024/0217194406/image2.png"><br>如果下次遇到同样的机会，就继续薅羊毛吧 ~</p>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -5465,7 +5465,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>为什么穷？因为我对钱不够热爱啊！</p>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -5483,7 +5483,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>这简单吗？太简单了，市场送钱我只管接就完事了。</p>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -5581,7 +5581,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 </ul>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -5843,7 +5843,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -5872,7 +5872,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h2 id="最后做个交易记录小结"><a href="#最后做个交易记录小结" class="headerlink" title="最后做个交易记录小结"></a>最后做个交易记录小结</h2><p>4.22日起连续申购3天，到4.29日全部卖出，盈利合计252元。<br><img data-src="/2024/0519204136/image2.png"></p>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -5926,18 +5926,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Notepad++不显示CRLF的方法</title>
-    <url>/2024/0528205224.html</url>
-    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
-]]></content>
-      <categories>
-        <category>other</category>
-      </categories>
-      <tags>
-        <tag>other</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何在centos7上安装ansible</title>
     <url>/2024/0524205110.html</url>
     <content><![CDATA[<p>先安装python3, 再通过pip安装ansible，最后把ansible安装路径添加到环境变量PATH，如下：</p>
@@ -5953,6 +5941,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>ansible</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/0528205224.html</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
       </tags>
   </entry>
   <entry>
@@ -6022,7 +6022,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p><img data-src="/2024/0627215354/image1.jpeg"></p>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -6232,7 +6232,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 </ul>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
         <tag>investment</tag>
@@ -7260,10 +7260,10 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p><img data-src="/2024/1003103743/image2.png"><br>计算一下9天收益约(100.0296-99.899)*700&#x3D;91.42，相当于年化5.3%，比余额宝香多了!</p>
 ]]></content>
       <categories>
-        <category>套利往事</category>
+        <category>investment</category>
       </categories>
       <tags>
-        <tag>套利往事</tag>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -8768,7 +8768,9 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
     <url>/2024/1026131638.html</url>
     <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
 <h2 id="折价套利流程"><a href="#折价套利流程" class="headerlink" title="折价套利流程"></a>折价套利流程</h2><p>T日买入 -&gt; T日享有收益 -&gt; T日赎回 -&gt; T+1日无收益 -&gt; T+2日资金可用<br>例如：在周五买入华宝添益再立即赎回，可以获得周五，周六，周日共三天利息，下周二资金可用。</p>
-<h2 id="实战记录"><a href="#实战记录" class="headerlink" title="实战记录"></a>实战记录</h2><p>9月30号当天A股疯涨，一些资金卖出华宝添益去追涨股票，导致华宝添益以99.920的价格低开，当天最低价居然只有99.72<br><img data-src="/2024/1026131638/image1.png"><br>假设9月30号以99.72价格买入再立即赎回，10月9号资金可用，资金占用9天，计8天利息，万元收益0.37, 折价套利的年化收益率：(100+0.0037<em>8-99.72)&#x2F;99.72&#x2F;9</em>365 &#x3D; 12.5%</p>
+<span id="more"></span>
+
+<h2 id="实战记录"><a href="#实战记录" class="headerlink" title="实战记录"></a>实战记录</h2><p>9月30号当天A股疯涨，一些资金卖出华宝添益去追涨股票，导致华宝添益以99.920的价格低开，当天最低价居然只有99.72<br><img data-src="/2024/1026131638/image1.png"><br>假设9月30号以99.72价格买入再立即赎回，10月9号资金可用，资金占用9天，计8天利息，万元收益0.37, 折价套利的年化收益率：(100+0.0037*8-99.72)&#x2F;99.72&#x2F;9*365 &#x3D; 12.5%</p>
 <p>这个收益率还是很诱人的，自然是要搞它一把。不过30号开盘那会我正巧有事处理，没能抄到最低，最终以99.899的价格成交了7手。<br><img data-src="/2024/1026131638/image2.png"><br>计算一下9天收益约(100.0296-99.899)*700&#x3D;91.42，相当于年化5.3%，还可以。</p>
 ]]></content>
       <categories>
@@ -8807,6 +8809,30 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Linux</tag>
         <tag>chronyd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo搭建博客的常见问题</title>
+    <url>/2024/1026143114.html</url>
+    <content><![CDATA[<h2 id="Hexo-github-homepage搭建个人站点"><a href="#Hexo-github-homepage搭建个人站点" class="headerlink" title="Hexo+github homepage搭建个人站点"></a>Hexo+github homepage搭建个人站点</h2><p>参考：<a href="https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite/">2024年，如何使用 github pages + Hexo + Next 搭建个人博客</a></p>
+<span id="more"></span>
+
+<h2 id="自定义文章底部的版权声明"><a href="#自定义文章底部的版权声明" class="headerlink" title="自定义文章底部的版权声明"></a>自定义文章底部的版权声明</h2><p>编辑themes&#x2F;next&#x2F;language&#x2F;zh-CN.yml</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">post:</span> </span><br><span class="line">  <span class="attr">copyright:</span></span><br><span class="line">    <span class="attr">license_content:</span> <span class="string">&quot;所有文章都欢迎转载，注明出处即可.&quot;</span></span><br></pre></td></tr></table></figure>
+<h2 id="给博客文章生成短链"><a href="#给博客文章生成短链" class="headerlink" title="给博客文章生成短链"></a>给博客文章生成短链</h2><p>编辑站点的<code>_config.yml</code>(非主题<code>_config.yml</code>)</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">permalink:</span> <span class="string">:layout/:year:month:day:hour:minute:second.html</span></span><br><span class="line"><span class="attr">permalink_defaults:</span></span><br><span class="line"><span class="attr">pretty_urls:</span></span><br><span class="line">  <span class="attr">trailing_index:</span> <span class="literal">true</span> <span class="comment"># Set to false to remove trailing &#x27;index.html&#x27; from permalinks</span></span><br><span class="line">  <span class="attr">trailing_html:</span> <span class="literal">true</span> <span class="comment"># Set to false to remove trailing &#x27;.html&#x27; from permalinks</span></span><br></pre></td></tr></table></figure>
+<p>注:</p>
+<ul>
+<li>Hexo生成博客文章URL链接时，默认是:year&#x2F;:month&#x2F;:day&#x2F;:title&#x2F;这样的格式。如果博客文件名有中文的话，URL链接就会包含中文，复制URL路径把它粘贴到其他地方就会把中文变成一大堆乱码，使用不便而且会影响网站的SEO，同时链接层级太多也将影响SEO。</li>
+<li>URL构成越简单越好，百度建议URL不要超过255字节。一个英文字符1字节，一个中文字符2字节。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite">https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite</a><br><a href="https://www.duheweb.com/post/20210414222449.html">https://www.duheweb.com/post/20210414222449.html</a></p>
+]]></content>
+      <categories>
+        <category>Hexo</category>
+      </categories>
+      <tags>
+        <tag>Hexo</tag>
       </tags>
   </entry>
 </search>
