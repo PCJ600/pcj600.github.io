@@ -134,7 +134,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">139</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">141</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -197,7 +197,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0328201216.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0328201320.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -211,7 +211,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/0328201216.html" class="post-title-link" itemprop="url">Centos7.9上安装Docker</a>
+            <a href="/2024/0328201320.html" class="post-title-link" itemprop="url">Microk8s dqlite启动失败, raft_start(): io: load closed segment XXX: entries count in preamble is zero</a>
         </h2>
 
         <div class="post-meta">
@@ -221,7 +221,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2024-03-28 20:12:16" itemprop="dateCreated datePublished" datetime="2024-03-28T20:12:16+08:00">2024-03-28</time>
+              <time title="创建时间：2024-03-28 20:13:20" itemprop="dateCreated datePublished" datetime="2024-03-28T20:13:20+08:00">2024-03-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -229,7 +229,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
+                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
                 </span>
             </span>
 
@@ -239,14 +239,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>432</span>
+              <span>5.1k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>5 分钟</span>
             </span>
 
         </div>
@@ -258,14 +258,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>移除旧版本Docker</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
-
-<p>安装依赖</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+          <h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><p>后台查看Microk8s相关进程：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">  7281 ?        Ss    27:02 /bin/bash /var/lib/snapd/snap/microk8s/3699/apiservice-kicker</span><br><span class="line">749807 ?        S      0:00  \_ sleep 5</span><br><span class="line">  7290 ?        Ss     0:00 /bin/bash /var/lib/snapd/snap/microk8s/3699/run-cluster-agent-with-args</span><br><span class="line">  7362 ?        S      2:32  \_ python3 /snap/microk8s/3699/usr/bin/gunicorn3 cluster.agent:app --bind 0.0.0.0:25000 --keyfile /var/snap/microk8s/3699/certs/server.key --certfile /var/snap/microk8s/3699/certs/server.crt --timeout 240</span><br><span class="line">  7684 ?        S      0:02      \_ python3 /snap/microk8s/3699/usr/bin/gunicorn3 cluster.agent:app --bind 0.0.0.0:25000 --keyfile /var/snap/microk8s/3699/certs/server.key --certfile /var/snap/microk8s/3699/certs/server.crt --timeout 240</span><br><span class="line">  7310 ?        Ssl  399:16 /snap/microk8s/3699/bin/containerd --config /var/snap/microk8s/3699/args/containerd.toml --root /var/snap/microk8s/common/var/lib/containerd --state /var/snap/microk8s/common/run/containerd --address /var/snap/microk8s/common/run/containerd.sock</span><br></pre></td></tr></table></figure>
+<p>和正常环境对比，发现<code>k8s-dqlite</code>, <code>kubelite</code>进程执行异常，如下：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2024/0328201216.html#more" rel="contents">
+              <a class="btn" href="/2024/0328201320.html#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -802,7 +800,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">139</span>
+          <span class="site-state-item-count">141</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -858,12 +856,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">460k</span>
+    <span title="站点总字数">461k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">6:58</span>
+    <span title="站点阅读时长">6:59</span>
 </div>
 
 <!--

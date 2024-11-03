@@ -24,6 +24,72 @@
       </tags>
   </entry>
   <entry>
+    <title>2020-01-01-interview-questions</title>
+    <url>/2020/0101145555.html</url>
+    <content><![CDATA[<h1 id="MySQL"><a href="#MySQL" class="headerlink" title="MySQL"></a>MySQL</h1><h2 id="1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"><a href="#1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？" class="headerlink" title="1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"></a>1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？</h2><p>[<a href="https://pcj600.github.io/2021/0101162248.html]">https://pcj600.github.io/2021/0101162248.html]</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>标准IO库的缓冲模式</title>
+    <url>/2020/0322220956.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
+<p>写文件的时候，明明成功执行了fwrite, fprintf语句，文件却没有写入相应的内容。</p>
+<p>想搞清楚这些问题产生的原因，需要了解标准I&#x2F;O库的缓冲模式。</p>
+<span id="more"></span>
+
+<h2 id="标准I-O与unbuffered-I-O"><a href="#标准I-O与unbuffered-I-O" class="headerlink" title="标准I&#x2F;O与unbuffered I&#x2F;O"></a>标准I&#x2F;O与unbuffered I&#x2F;O</h2><p>linux对I&#x2F;O文件操作分为不带缓存I&#x2F;O(unbuffered I&#x2F;O)和带缓存I&#x2F;O(即标准I&#x2F;O)</p>
+<p>《APUE》中对术语unbuffered的定义: “The term <em>unbuffered</em> means that each read or write invokes a system call in the kernel”</p>
+<p><a href="https://blog.csdn.net/qq_33366098/article/details/77923722">这篇文章</a>讲了unbuffered I&#x2F;O和标准I&#x2F;O的区别，以下引用其中的描述：</p>
+<p>不带缓存I&#x2F;O，是指每次read, write都会进入内核，执行一次系统调用，不带缓存不是指直接对磁盘进行读写。比如read,write函数，它们属于系统调用，在用户态没有缓存，但是在内核是有缓存器的。如内核缓存未满，写入的数据还是在内核缓存，并没有真正写入硬盘。需要等待缓存写满或者内核需要重用该缓存以存放其他磁盘块数据时，才进行实际硬盘读写，这种方式被称为延迟写(delayed write)</p>
+<p>带缓存I&#x2F;O也叫标准I&#x2F;O。标准I&#x2F;O会在用户态建立一个缓存区，以尽可能减少read和write调用的次数，提高效率。</p>
+<p>unbuffered I&#x2F;O操作数据流向：数据-&gt;内核缓存区-&gt;磁盘</p>
+<p>标准I&#x2F;O操作数据流向：数据-&gt;流缓存区-&gt;内核缓存区-&gt;磁盘</p>
+<h2 id="缓冲"><a href="#缓冲" class="headerlink" title="缓冲"></a>缓冲</h2><p>标准I&#x2F;O库提供三种模式的缓冲: 全缓冲、行缓冲、不带缓冲</p>
+<h3 id="全缓冲-fully-buffered"><a href="#全缓冲-fully-buffered" class="headerlink" title="全缓冲(fully buffered)"></a>全缓冲(fully buffered)</h3><p>这种情况下，在填满标准I&#x2F;O缓冲区后才进行实际I&#x2F;O操作。对于驻留在磁盘上的文件通常用全缓冲。</p>
+<h3 id="行缓冲-line-buffered"><a href="#行缓冲-line-buffered" class="headerlink" title="行缓冲(line buffered)"></a>行缓冲(line buffered)</h3><p>这种情况下，当输入或输出遇到换行符，或者缓冲区已满时进行实际I&#x2F;O操作。当流涉及一个终端时，通常使用行缓冲。</p>
+<h3 id="不带缓冲-unbuffered"><a href="#不带缓冲-unbuffered" class="headerlink" title="不带缓冲(unbuffered)"></a>不带缓冲(unbuffered)</h3><p>这种情况下，标准I&#x2F;O库不对字符进行缓冲存储。例如标准出错流stderr通常是不带缓冲的，这使得出错信息可以尽快显示。</p>
+<h3 id="注："><a href="#注：" class="headerlink" title="注："></a>注：</h3><p>1.这里的实际I&#x2F;O操作不是指读写硬盘操作，而是指执行read, write系统调用。</p>
+<p>2.缓冲类型与具体的标准I&#x2F;O函数无关，与读写的文件类型有关。</p>
+<h2 id="举例说明"><a href="#举例说明" class="headerlink" title="举例说明"></a>举例说明</h2><h3 id="例1-全缓冲"><a href="#例1-全缓冲" class="headerlink" title="例1 全缓冲"></a>例1 全缓冲</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	char str[] = &quot;hello world&quot;;</span><br><span class="line">	FILE *fp = fopen(&quot;./text&quot;, &quot;w+&quot;);	// 省略了判空操作^_^</span><br><span class="line">	fprintf(fp, &quot;%s\n&quot;, str);</span><br><span class="line">    // fflush(fp);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译并运行程序，进入死循环后，观察text文件发现内容为空，hello world字符串并没有写入。</p>
+<p>这是因为对于磁盘上的文件默认是全缓冲的。因为写入的字符串长度小于缓冲区大小(我的ubuntu机器上，为4096字节)，所以不会直接写入文件。</p>
+<p>如需要立即输出，可以在for循环之前调用fflush函数，将缓冲区的内容写入磁盘。</p>
+<p>这解释了为什么有时明明成功执行了fwrite,fprintf语句，文件却没有写入相应的内容。</p>
+<h3 id="例2-行缓冲"><a href="#例2-行缓冲" class="headerlink" title="例2 行缓冲"></a>例2 行缓冲</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	fprintf(stdout, &quot;hello world&quot;);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译并运行程序，发现终端没有输出，即使fprintf已经执行。</p>
+<p>这是因为涉及终端的流默认是行缓冲的，当输入或输出遇到换行符时才进行实际I&#x2F;O操作。</p>
+<p>如果需要执行fprintf后立即打印，只需在”hello world”后添加换行符’\n’</p>
+<p>这个例子解释了为什么有时代码中执行了printf语句打印到终端，却没有看到输出的内容。</p>
+<h3 id="例3-无缓冲"><a href="#例3-无缓冲" class="headerlink" title="例3 无缓冲"></a>例3 无缓冲</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	fprintf(stderr, &quot;hello world&quot;);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译并运行程序,  终端立即输出hello world。可以看出标准错误是不带缓冲的。目的是使出错信息可以尽快显示。</p>
+<h3 id="例4-缓冲类型与读写的文件类型有关"><a href="#例4-缓冲类型与读写的文件类型有关" class="headerlink" title="例4 缓冲类型与读写的文件类型有关"></a>例4 缓冲类型与读写的文件类型有关</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;stdlib.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">#include&lt;sys/wait.h&gt;</span><br><span class="line"></span><br><span class="line">int main()</span><br><span class="line">&#123;</span><br><span class="line">	pid_t pid;</span><br><span class="line">	printf(&quot;before fork\n&quot;);</span><br><span class="line"></span><br><span class="line">	if((pid = fork()) &lt; 0) &#123;	// fork失败直接返回-1</span><br><span class="line">		exit(-1);</span><br><span class="line">	&#125; else if(pid &gt; 0) &#123;		// 父进程</span><br><span class="line">		wait(NULL);</span><br><span class="line">	&#125;</span><br><span class="line">	printf(&quot;pid = %d, hello\n&quot;, getpid());</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译并执行程序, 得到：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ./a.out</span><br><span class="line">before fork</span><br><span class="line">pid = 6033, hello</span><br><span class="line">pid = 6032, hello</span><br><span class="line">$ ./a.out &gt; output.txt		#将输出重定向到output.txt文件</span><br><span class="line">$ cat output.txt</span><br><span class="line">before fork</span><br><span class="line">pid = 6077, hello</span><br><span class="line">before fork</span><br><span class="line">pid = 6076, hello</span><br></pre></td></tr></table></figure>
+
+<p>发现两次输出的内容不同，将输出重定向到文件时，会多打印一行”before fork”，原因如下：</p>
+<p><strong>如果标准输出连到终端设备，默认是行缓冲的</strong>。”before fork”只输出一次，原因是调用第一个printf后，标准输出缓冲区由换行符冲洗，“before fork”被立即打印。</p>
+<p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
+<p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>记一次UDP sendto函数错误解决</title>
     <url>/2020/0329142613.html</url>
     <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
@@ -95,60 +161,6 @@
       </categories>
       <tags>
         <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>标准IO库的缓冲模式</title>
-    <url>/2020/0322220956.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
-<p>写文件的时候，明明成功执行了fwrite, fprintf语句，文件却没有写入相应的内容。</p>
-<p>想搞清楚这些问题产生的原因，需要了解标准I&#x2F;O库的缓冲模式。</p>
-<span id="more"></span>
-
-<h2 id="标准I-O与unbuffered-I-O"><a href="#标准I-O与unbuffered-I-O" class="headerlink" title="标准I&#x2F;O与unbuffered I&#x2F;O"></a>标准I&#x2F;O与unbuffered I&#x2F;O</h2><p>linux对I&#x2F;O文件操作分为不带缓存I&#x2F;O(unbuffered I&#x2F;O)和带缓存I&#x2F;O(即标准I&#x2F;O)</p>
-<p>《APUE》中对术语unbuffered的定义: “The term <em>unbuffered</em> means that each read or write invokes a system call in the kernel”</p>
-<p><a href="https://blog.csdn.net/qq_33366098/article/details/77923722">这篇文章</a>讲了unbuffered I&#x2F;O和标准I&#x2F;O的区别，以下引用其中的描述：</p>
-<p>不带缓存I&#x2F;O，是指每次read, write都会进入内核，执行一次系统调用，不带缓存不是指直接对磁盘进行读写。比如read,write函数，它们属于系统调用，在用户态没有缓存，但是在内核是有缓存器的。如内核缓存未满，写入的数据还是在内核缓存，并没有真正写入硬盘。需要等待缓存写满或者内核需要重用该缓存以存放其他磁盘块数据时，才进行实际硬盘读写，这种方式被称为延迟写(delayed write)</p>
-<p>带缓存I&#x2F;O也叫标准I&#x2F;O。标准I&#x2F;O会在用户态建立一个缓存区，以尽可能减少read和write调用的次数，提高效率。</p>
-<p>unbuffered I&#x2F;O操作数据流向：数据-&gt;内核缓存区-&gt;磁盘</p>
-<p>标准I&#x2F;O操作数据流向：数据-&gt;流缓存区-&gt;内核缓存区-&gt;磁盘</p>
-<h2 id="缓冲"><a href="#缓冲" class="headerlink" title="缓冲"></a>缓冲</h2><p>标准I&#x2F;O库提供三种模式的缓冲: 全缓冲、行缓冲、不带缓冲</p>
-<h3 id="全缓冲-fully-buffered"><a href="#全缓冲-fully-buffered" class="headerlink" title="全缓冲(fully buffered)"></a>全缓冲(fully buffered)</h3><p>这种情况下，在填满标准I&#x2F;O缓冲区后才进行实际I&#x2F;O操作。对于驻留在磁盘上的文件通常用全缓冲。</p>
-<h3 id="行缓冲-line-buffered"><a href="#行缓冲-line-buffered" class="headerlink" title="行缓冲(line buffered)"></a>行缓冲(line buffered)</h3><p>这种情况下，当输入或输出遇到换行符，或者缓冲区已满时进行实际I&#x2F;O操作。当流涉及一个终端时，通常使用行缓冲。</p>
-<h3 id="不带缓冲-unbuffered"><a href="#不带缓冲-unbuffered" class="headerlink" title="不带缓冲(unbuffered)"></a>不带缓冲(unbuffered)</h3><p>这种情况下，标准I&#x2F;O库不对字符进行缓冲存储。例如标准出错流stderr通常是不带缓冲的，这使得出错信息可以尽快显示。</p>
-<h3 id="注："><a href="#注：" class="headerlink" title="注："></a>注：</h3><p>1.这里的实际I&#x2F;O操作不是指读写硬盘操作，而是指执行read, write系统调用。</p>
-<p>2.缓冲类型与具体的标准I&#x2F;O函数无关，与读写的文件类型有关。</p>
-<h2 id="举例说明"><a href="#举例说明" class="headerlink" title="举例说明"></a>举例说明</h2><h3 id="例1-全缓冲"><a href="#例1-全缓冲" class="headerlink" title="例1 全缓冲"></a>例1 全缓冲</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	char str[] = &quot;hello world&quot;;</span><br><span class="line">	FILE *fp = fopen(&quot;./text&quot;, &quot;w+&quot;);	// 省略了判空操作^_^</span><br><span class="line">	fprintf(fp, &quot;%s\n&quot;, str);</span><br><span class="line">    // fflush(fp);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译并运行程序，进入死循环后，观察text文件发现内容为空，hello world字符串并没有写入。</p>
-<p>这是因为对于磁盘上的文件默认是全缓冲的。因为写入的字符串长度小于缓冲区大小(我的ubuntu机器上，为4096字节)，所以不会直接写入文件。</p>
-<p>如需要立即输出，可以在for循环之前调用fflush函数，将缓冲区的内容写入磁盘。</p>
-<p>这解释了为什么有时明明成功执行了fwrite,fprintf语句，文件却没有写入相应的内容。</p>
-<h3 id="例2-行缓冲"><a href="#例2-行缓冲" class="headerlink" title="例2 行缓冲"></a>例2 行缓冲</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	fprintf(stdout, &quot;hello world&quot;);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译并运行程序，发现终端没有输出，即使fprintf已经执行。</p>
-<p>这是因为涉及终端的流默认是行缓冲的，当输入或输出遇到换行符时才进行实际I&#x2F;O操作。</p>
-<p>如果需要执行fprintf后立即打印，只需在”hello world”后添加换行符’\n’</p>
-<p>这个例子解释了为什么有时代码中执行了printf语句打印到终端，却没有看到输出的内容。</p>
-<h3 id="例3-无缓冲"><a href="#例3-无缓冲" class="headerlink" title="例3 无缓冲"></a>例3 无缓冲</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	fprintf(stderr, &quot;hello world&quot;);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译并运行程序,  终端立即输出hello world。可以看出标准错误是不带缓冲的。目的是使出错信息可以尽快显示。</p>
-<h3 id="例4-缓冲类型与读写的文件类型有关"><a href="#例4-缓冲类型与读写的文件类型有关" class="headerlink" title="例4 缓冲类型与读写的文件类型有关"></a>例4 缓冲类型与读写的文件类型有关</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;stdlib.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">#include&lt;sys/wait.h&gt;</span><br><span class="line"></span><br><span class="line">int main()</span><br><span class="line">&#123;</span><br><span class="line">	pid_t pid;</span><br><span class="line">	printf(&quot;before fork\n&quot;);</span><br><span class="line"></span><br><span class="line">	if((pid = fork()) &lt; 0) &#123;	// fork失败直接返回-1</span><br><span class="line">		exit(-1);</span><br><span class="line">	&#125; else if(pid &gt; 0) &#123;		// 父进程</span><br><span class="line">		wait(NULL);</span><br><span class="line">	&#125;</span><br><span class="line">	printf(&quot;pid = %d, hello\n&quot;, getpid());</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译并执行程序, 得到：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ./a.out</span><br><span class="line">before fork</span><br><span class="line">pid = 6033, hello</span><br><span class="line">pid = 6032, hello</span><br><span class="line">$ ./a.out &gt; output.txt		#将输出重定向到output.txt文件</span><br><span class="line">$ cat output.txt</span><br><span class="line">before fork</span><br><span class="line">pid = 6077, hello</span><br><span class="line">before fork</span><br><span class="line">pid = 6076, hello</span><br></pre></td></tr></table></figure>
-
-<p>发现两次输出的内容不同，将输出重定向到文件时，会多打印一行”before fork”，原因如下：</p>
-<p><strong>如果标准输出连到终端设备，默认是行缓冲的</strong>。”before fork”只输出一次，原因是调用第一个printf后，标准输出缓冲区由换行符冲洗，“before fork”被立即打印。</p>
-<p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
-<p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -1506,6 +1518,138 @@
       <tags>
         <tag>troubleshooting</tag>
         <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>什么是三大范式, 为什么要有三大范式, 什么场景下不用遵循三大范式</title>
+    <url>/2021/0101162248.html</url>
+    <content><![CDATA[<h2 id="什么是三大范式"><a href="#什么是三大范式" class="headerlink" title="什么是三大范式"></a>什么是三大范式</h2><p>三大范式是数据库设计遵循的规范, 分别是：</p>
+<ul>
+<li>第一范式(1NF)：表中每列不可再拆分</li>
+<li>第二范式(2NF)：1NF基础上，要求非主键列完全依赖于主键，不能只依赖于主键的一部分(针对联合主键)</li>
+<li>第三范式(3NF)：2NF基础上, 要求任何非主键列必须直接依赖于主键，不能是传递依赖</li>
+</ul>
+<h2 id="为什么要有三大范式"><a href="#为什么要有三大范式" class="headerlink" title="为什么要有三大范式"></a>为什么要有三大范式</h2><p>减少数据冗余，保持数据一致性和完整性。</p>
+<h2 id="1NF"><a href="#1NF" class="headerlink" title="1NF"></a>1NF</h2><p>例: 有一个学生表，address字段的值为<code>江苏省南京市雨花台区XX街道XX小区</code></p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>name</th>
+<th>address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>张三</td>
+<td>江苏省南京市雨花台区XX街道XX小区</td>
+</tr>
+</tbody></table>
+<p>此时如果需要把学生按省,市,区分类, 无法满足需求；这里可以把address字段可以继续拆分为province, city, area, address，实现1NF</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>name</th>
+<th>province</th>
+<th>city</th>
+<th>area</th>
+<th>address</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>张三</td>
+<td>江苏</td>
+<td>南京</td>
+<td>雨花台</td>
+<td>XX街道XX小区</td>
+</tr>
+</tbody></table>
+<h2 id="2NF"><a href="#2NF" class="headerlink" title="2NF"></a>2NF</h2><p>例: 有一个学生课程表</p>
+<table>
+<thead>
+<tr>
+<th>学号(主键)</th>
+<th>课程(主键)</th>
+<th>教师姓名</th>
+<th>成绩</th>
+<th>学生姓名</th>
+<th>专业</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1001</td>
+<td>C语言</td>
+<td>张三</td>
+<td>80</td>
+<td>李四</td>
+<td>金融工程</td>
+</tr>
+<tr>
+<td>1002</td>
+<td>JAVA</td>
+<td>王五</td>
+<td>66</td>
+<td>王二</td>
+<td>计算机科学与技术</td>
+</tr>
+</tbody></table>
+<p>从上表看出, 教师姓名,成绩依赖于学号和课程，但学生姓名和专业仅依赖于学号，不依赖于课程，不符合2NF<br>可以拆成如下两张表，实现2NF</p>
+<table>
+<thead>
+<tr>
+<th>学号(主键)</th>
+<th>课程(主键)</th>
+<th>教师姓名</th>
+<th>成绩</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1001</td>
+<td>C语言</td>
+<td>张三</td>
+<td>80</td>
+</tr>
+<tr>
+<td>1002</td>
+<td>JAVA</td>
+<td>王五</td>
+<td>66</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>学号(主键)</th>
+<th>学生姓名</th>
+<th>专业</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1001</td>
+<td>李四</td>
+<td>金融工程</td>
+</tr>
+<tr>
+<td>1002</td>
+<td>王二</td>
+<td>计算机科学与技术</td>
+</tr>
+</tbody></table>
+<h2 id="3NF"><a href="#3NF" class="headerlink" title="3NF"></a>3NF</h2><p>例：有个学生表(学号,姓名,学院,学院地点,学院电话), 学号为主键。<br>这个数据库符合2NF，但不符合3NF，因为(学院地点,学院电话)依赖于学院，需要把表拆分为如下两个表，以符合3NF:</p>
+<ul>
+<li>学生表(学号,姓名,学院)</li>
+<li>学院表(学院,学院地点,学院电话)</li>
+</ul>
+<h2 id="什么场景可以不遵循三大范式"><a href="#什么场景可以不遵循三大范式" class="headerlink" title="什么场景可以不遵循三大范式"></a>什么场景可以不遵循三大范式</h2><p>为了提高查询效率，有时需要适当保留冗余数据，不必严格遵循三大范式<br>例: 订单表中添加”总金额”字段，”总金额”可以通过”数量”乘以”单价”得到，是冗余字段，不符合3NF。但是增加这个冗余字段，可以提高查询速度。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/6844904184865619982">https://juejin.cn/post/6844904184865619982</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -3959,6 +4103,27 @@
       </tags>
   </entry>
   <entry>
+    <title>tar打包时去掉目录前缀的方法</title>
+    <url>/2022/0604205633.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
+<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
+
+<p>利用-C参数，方法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
+
+<p>tar用法参考手册：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>tar</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>2022 Trend Micro 社招面经</title>
     <url>/2022/0320205239.html</url>
     <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
@@ -4354,24 +4519,6 @@
       </tags>
   </entry>
   <entry>
-    <title>crontab执行失败返回127的原因和解决方法</title>
-    <url>/2023/0508212643.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>crontab</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>pip3只下载不安装以及离线安装的方法</title>
     <url>/2023/0508213050.html</url>
     <content><![CDATA[<h3 id="只下载不安装"><a href="#只下载不安装" class="headerlink" title="只下载不安装"></a>只下载不安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
@@ -4392,24 +4539,21 @@
       </tags>
   </entry>
   <entry>
-    <title>tar打包时去掉目录前缀的方法</title>
-    <url>/2022/0604205633.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
-<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
-
-<p>利用-C参数，方法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
-
-<p>tar用法参考手册：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
+    <title>crontab执行失败返回127的原因和解决方法</title>
+    <url>/2023/0508212643.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
 ]]></content>
       <categories>
         <category>Linux</category>
       </categories>
       <tags>
         <tag>Linux</tag>
-        <tag>tar</tag>
+        <tag>troubleshooting</tag>
+        <tag>crontab</tag>
       </tags>
   </entry>
   <entry>
@@ -5187,21 +5331,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>RHEL9 Fatal glibc error, CPU does not support x86-64-v2 解决方法</title>
-    <url>/2023/1213193745.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL 9要求x86_64的CPU支持x86-64-v2，x86-64-v2需要处理器支持 CMPXCHG16B、LAHF-SAHF、POPCNT、SSE3、SSE4.1、SSE4.2、SSSE3 等现代指令集</p>
-<h2 id="检查CPU是否支持x86-64-v2的方法"><a href="#检查CPU是否支持x86-64-v2的方法" class="headerlink" title="检查CPU是否支持x86-64-v2的方法"></a>检查CPU是否支持x86-64-v2的方法</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">flags=$(<span class="built_in">cat</span> /proc/cpuinfo | grep flags | <span class="built_in">head</span> -n 1 | <span class="built_in">cut</span> -d: -f2)</span><br><span class="line">supports_v2=<span class="string">&#x27;awk &quot;/cx16/&amp;&amp;/lahf/&amp;&amp;/popcnt/&amp;&amp;/sse4_1/&amp;&amp;/sse4_2/&amp;&amp;/ssse3/ &#123;found=1&#125; END &#123;exit !found&#125;&quot;&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$flags</span>&quot;</span> | <span class="built_in">eval</span> <span class="variable">$supports_v2</span></span><br><span class="line"><span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU supports x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU doesn&#x27;t support x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/9.0_release_notes/architectures">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;9.0_release_notes&#x2F;architectures</a><br>【2】<a href="https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2">https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>判断虚拟机类型是VMware,AWS,Azure的方法</title>
     <url>/2023/1123193523.html</url>
     <content><![CDATA[<p>使用<code>dmidecode</code>，如下：</p>
@@ -5215,27 +5344,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>印度基金低风险套利回顾</title>
-    <url>/2024/0217194406.html</url>
-    <content><![CDATA[<p>2024年1月19日当天，印度基金(164824)开放申购，限额申购100元，当天溢价率13%左右，这个溢价率已经非常可观了，当然要祭出一拖七大法搞它一把！</p>
+    <title>RHEL9 Fatal glibc error, CPU does not support x86-64-v2 解决方法</title>
+    <url>/2023/1213193745.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL 9要求x86_64的CPU支持x86-64-v2，x86-64-v2需要处理器支持 CMPXCHG16B、LAHF-SAHF、POPCNT、SSE3、SSE4.1、SSE4.2、SSSE3 等现代指令集</p>
+<h2 id="检查CPU是否支持x86-64-v2的方法"><a href="#检查CPU是否支持x86-64-v2的方法" class="headerlink" title="检查CPU是否支持x86-64-v2的方法"></a>检查CPU是否支持x86-64-v2的方法</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">flags=$(<span class="built_in">cat</span> /proc/cpuinfo | grep flags | <span class="built_in">head</span> -n 1 | <span class="built_in">cut</span> -d: -f2)</span><br><span class="line">supports_v2=<span class="string">&#x27;awk &quot;/cx16/&amp;&amp;/lahf/&amp;&amp;/popcnt/&amp;&amp;/sse4_1/&amp;&amp;/sse4_2/&amp;&amp;/ssse3/ &#123;found=1&#125; END &#123;exit !found&#125;&quot;&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$flags</span>&quot;</span> | <span class="built_in">eval</span> <span class="variable">$supports_v2</span></span><br><span class="line"><span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU supports x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU doesn&#x27;t support x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
 <span id="more"></span>
-
-<p><img data-src="/2024/0217194406/image1.png"></p>
-<h2 id="一拖七套利原理简介"><a href="#一拖七套利原理简介" class="headerlink" title="一拖七套利原理简介"></a>一拖七套利原理简介</h2><p>详细的原理和方法可自行在雪球搜索，这里只做简单表述：</p>
-<ul>
-<li>印度基金(164824)是一个LOF基金，既可以在场内申赎，也可以在场内买卖</li>
-<li>当LOF基金的价格高于净值时，可以通过先申购再卖出的方式进行溢价套利</li>
-<li>印度基金T日在场内申购,  T+2日晚到账, T+3日可卖出；场外申购转托管在T+5日可卖出</li>
-<li>对于深市的印度基金，可以用3个深市股东账户+3个深市封闭基金账户+1个TA账户进行申购，这样单身份证可以申购700元，这就是一拖七</li>
-<li>必须有场内一折申购+免5的券商渠道，否则交易成本高达6%</li>
-</ul>
-<h2 id="操作记录"><a href="#操作记录" class="headerlink" title="操作记录"></a>操作记录</h2><p>从1月19日(周五)开始每天使用一拖七大法申购, 从1月24日开始每天早盘卖出，场外转托管, 直到2月8日(节前最后一个交易日)结束，每个身份证获利708元：<br><img data-src="/2024/0217194406/image2.png"><br>如果下次遇到同样的机会，就继续薅羊毛吧 ~</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/9.0_release_notes/architectures">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;9.0_release_notes&#x2F;architectures</a><br>【2】<a href="https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2">https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2</a></p>
 ]]></content>
       <categories>
-        <category>investment</category>
+        <category>Linux</category>
       </categories>
       <tags>
-        <tag>investment</tag>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -5449,6 +5569,53 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>印度基金低风险套利回顾</title>
+    <url>/2024/0217194406.html</url>
+    <content><![CDATA[<p>2024年1月19日当天，印度基金(164824)开放申购，限额申购100元，当天溢价率13%左右，这个溢价率已经非常可观了，当然要祭出一拖七大法搞它一把！</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0217194406/image1.png"></p>
+<h2 id="一拖七套利原理简介"><a href="#一拖七套利原理简介" class="headerlink" title="一拖七套利原理简介"></a>一拖七套利原理简介</h2><p>详细的原理和方法可自行在雪球搜索，这里只做简单表述：</p>
+<ul>
+<li>印度基金(164824)是一个LOF基金，既可以在场内申赎，也可以在场内买卖</li>
+<li>当LOF基金的价格高于净值时，可以通过先申购再卖出的方式进行溢价套利</li>
+<li>印度基金T日在场内申购,  T+2日晚到账, T+3日可卖出；场外申购转托管在T+5日可卖出</li>
+<li>对于深市的印度基金，可以用3个深市股东账户+3个深市封闭基金账户+1个TA账户进行申购，这样单身份证可以申购700元，这就是一拖七</li>
+<li>必须有场内一折申购+免5的券商渠道，否则交易成本高达6%</li>
+</ul>
+<h2 id="操作记录"><a href="#操作记录" class="headerlink" title="操作记录"></a>操作记录</h2><p>从1月19日(周五)开始每天使用一拖七大法申购, 从1月24日开始每天早盘卖出，场外转托管, 直到2月8日(节前最后一个交易日)结束，每个身份证获利708元：<br><img data-src="/2024/0217194406/image2.png"><br>如果下次遇到同样的机会，就继续薅羊毛吧 ~</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>全球芯片LOF大幅溢价，痛失巨肉我拍断大腿！</title>
+    <url>/2024/0310224202.html</url>
+    <content><![CDATA[<p>3月8号当天，全球芯片LOF(501225)出现15%的大幅溢价。这只基每个身份证限额申购1万，这意味着如果你在3月5号申购，在3月8号收盘前卖出，一户收益高达1500元，3天收益率15%，简直是抢钱！在如此恐怖的收益率面前，高利贷都只能算个弟弟！</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0310224202/image1.png"></p>
+<p>然而，我3月5号并没有申购，或者说完全没注意到这只鸡的存在，因为集思录里刚好没有收录这个基金，只能说获取信息的路子不够多啊。3月6号(周三)，我后知后觉，每户小额申购1千。</p>
+<p><img data-src="/2024/0310224202/image2.jpg"></p>
+<p>没有拉满到1万的原因是，我当时认为周三6个点的溢价不算太高，场内成交额不大，基金跟踪的费城半导体指数波动较大。结果没想到周四周五这货被连续爆炒，溢价冲上了惊人的15%！？？</p>
+<p>算了下这波没拉满起码少赚了几千块，看到别人几个账户一天怒赚1万+，我真是拍断大腿，只能留下羡慕和悔恨的泪水~</p>
+<p>打不过就加入！周五我继续小额参与了一把。15个点的溢价，承受两天的波动，风险在于英伟达的下跌带动基金净值下跌，以及下周三场内接盘侠不足导致溢价被抹平。</p>
+<p><img data-src="/2024/0310224202/image3.webp"></p>
+<p>吃肉还是吃面，下周三见分晓。</p>
+<p>为什么穷？因为我对钱不够热爱啊！</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>每天的三哥小鸡腿没了</title>
     <url>/2024/0313194703.html</url>
     <content><![CDATA[<p>查看印度基金(164824)公告，从2024年2月28日起，暂停印度基金的申购，限额100块的一拖七套利告一段落。这意味着看好印度股市的国内投资者，以后只能通过在场内买入获得份额。</p>
@@ -5517,29 +5684,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>全球芯片LOF大幅溢价，痛失巨肉我拍断大腿！</title>
-    <url>/2024/0310224202.html</url>
-    <content><![CDATA[<p>3月8号当天，全球芯片LOF(501225)出现15%的大幅溢价。这只基每个身份证限额申购1万，这意味着如果你在3月5号申购，在3月8号收盘前卖出，一户收益高达1500元，3天收益率15%，简直是抢钱！在如此恐怖的收益率面前，高利贷都只能算个弟弟！</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0310224202/image1.png"></p>
-<p>然而，我3月5号并没有申购，或者说完全没注意到这只鸡的存在，因为集思录里刚好没有收录这个基金，只能说获取信息的路子不够多啊。3月6号(周三)，我后知后觉，每户小额申购1千。</p>
-<p><img data-src="/2024/0310224202/image2.jpg"></p>
-<p>没有拉满到1万的原因是，我当时认为周三6个点的溢价不算太高，场内成交额不大，基金跟踪的费城半导体指数波动较大。结果没想到周四周五这货被连续爆炒，溢价冲上了惊人的15%！？？</p>
-<p>算了下这波没拉满起码少赚了几千块，看到别人几个账户一天怒赚1万+，我真是拍断大腿，只能留下羡慕和悔恨的泪水~</p>
-<p>打不过就加入！周五我继续小额参与了一把。15个点的溢价，承受两天的波动，风险在于英伟达的下跌带动基金净值下跌，以及下周三场内接盘侠不足导致溢价被抹平。</p>
-<p><img data-src="/2024/0310224202/image3.webp"></p>
-<p>吃肉还是吃面，下周三见分晓。</p>
-<p>为什么穷？因为我对钱不够热爱啊！</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -5623,31 +5767,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Shell</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Centos7.9上安装Docker</title>
-    <url>/2024/0328201216.html</url>
-    <content><![CDATA[<p>移除旧版本Docker</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
-
-<p>安装依赖</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<p>添加Docker存储库</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
-<p>安装</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
-<p>启动Docker服务</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-<p>查看Docker版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -5978,6 +6097,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>质疑标普，理解标普，加入标普</title>
+    <url>/2024/0616212811.html</url>
+    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
+<span id="more"></span>
+<p><img data-src="/2024/0616212811/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
+<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/0616212811/image2.png"><br><img data-src="/2024/0616212811/image3.png"></p>
+<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>继续捡钱，每天几百块！</title>
     <url>/2024/0627215354.html</url>
     <content><![CDATA[<p><font color='red'><strong>每日操作计划：</strong></font></p>
@@ -6004,22 +6139,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 </li>
 </ul>
 <p><img data-src="/2024/0627215354/image1.jpeg"></p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>质疑标普，理解标普，加入标普</title>
-    <url>/2024/0616212811.html</url>
-    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
-<span id="more"></span>
-<p><img data-src="/2024/0616212811/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
-<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/0616212811/image2.png"><br><img data-src="/2024/0616212811/image3.png"></p>
-<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
 ]]></content>
       <categories>
         <category>investment</category>
@@ -6422,44 +6541,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>源码编译并安装Squid的方法</title>
-    <url>/2024/0831132417.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RockyLinux9.4 yum包中的Squid版本是5.5, 不是最新的版本，我需要安装最新版本的Squid。</p>
-<h2 id="源码编译并安装Squid的步骤"><a href="#源码编译并安装Squid的步骤" class="headerlink" title="源码编译并安装Squid的步骤"></a>源码编译并安装Squid的步骤</h2><ul>
-<li>访问<a href="https://www.squid-cache.org/Versions/">Squid官网</a>，查看最新的稳定版本为 6.10</li>
-<li>下载6.10版本的源码，各发行版编译安装Squid的方法参考<a href="https://wiki.squid-cache.org/SquidFaq/CompilingSquid">官方文档</a></li>
-</ul>
-<p>下面给出我在RockyLinux9.4 VMware虚拟机上，编译安装Squid 6.10的过程：</p>
-<span id="more"></span>
-
-<h3 id="下载依赖"><a href="#下载依赖" class="headerlink" title="下载依赖"></a>下载依赖</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y perl gcc autoconf automake make <span class="built_in">sudo</span> wget</span><br><span class="line">yum install -y libxml2-devel libcap-devel libtool-ltdl-devel</span><br></pre></td></tr></table></figure>
-<h3 id="下载Squid源码并编译安装"><a href="#下载Squid源码并编译安装" class="headerlink" title="下载Squid源码并编译安装"></a>下载Squid源码并编译安装</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://www.squid-cache.org/Versions/v6/squid-6.10.tar.gz</span><br><span class="line">tar -zxvf squid-6.10.tar.gz</span><br><span class="line"><span class="built_in">cd</span> squid-6.10</span><br><span class="line"></span><br><span class="line">./configure --prefix=/usr --includedir=/usr/include --datadir=/usr/share --bindir=/usr/sbin --libexecdir=/usr/lib/squid --localstatedir=/var --sysconfdir=/etc/squid</span><br><span class="line">make -j4</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加squid用户-创建Squid日志目录并设置权限"><a href="#添加squid用户-创建Squid日志目录并设置权限" class="headerlink" title="添加squid用户, 创建Squid日志目录并设置权限"></a>添加squid用户, 创建Squid日志目录并设置权限</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br></pre></td></tr></table></figure>
-
-<h3 id="修改squid配置文件"><a href="#修改squid配置文件" class="headerlink" title="修改squid配置文件"></a>修改squid配置文件</h3><p>修改<code>/etc/squid/squid.conf</code>，新增如下配置项：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
-<p>注意事项：</p>
-<ul>
-<li>需要指定<code>cache_effective_user</code>和<code>cache_effective_group</code>, 一般设置为squid; 注意不能设置成root，否则启动会提示错误。</li>
-<li>如果不设置<code>cache_effective_user</code>和<code>cache_effective_group</code>, Squid进程的user和group为nobody，启动后会异常退出，报fopen写入cache.log没有权限(13)的错误！</li>
-<li>在squid配置文件里自定义<code>cache_log</code>,<code>access_log</code>的路径为&#x2F;var&#x2F;log&#x2F;squid。默认的路径为&#x2F;var&#x2F;log, squid用户没有权限写入。</li>
-</ul>
-<h3 id="测试Squid配置是否正确"><a href="#测试Squid配置是否正确" class="headerlink" title="测试Squid配置是否正确"></a>测试Squid配置是否正确</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k parse</span><br><span class="line">squid -z</span><br></pre></td></tr></table></figure>
-<p>如果提示报错，根据错误信息修改配置项。</p>
-<h3 id="启动Squid"><a href="#启动Squid" class="headerlink" title="启动Squid"></a>启动Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid <span class="comment"># 启动</span></span><br><span class="line">netstat -anpt | grep squid <span class="comment"># Squid默认端口3128, 用netstat查看3128端口是否LISTEN</span></span><br><span class="line">tcp6  0  0  :::3128          :::*         LISTEN    pid/(squid-1)</span><br></pre></td></tr></table></figure>
-<h3 id="测试Squid"><a href="#测试Squid" class="headerlink" title="测试Squid"></a>测试Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -x localhost:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-<h3 id="停止Squid"><a href="#停止Squid" class="headerlink" title="停止Squid"></a>停止Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k shutdown</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.squid-cache.org/">https://www.squid-cache.org/</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>前端基础</title>
     <url>/2024/0827223326.html</url>
     <content><![CDATA[<h1 id="Flask快速上手"><a href="#Flask快速上手" class="headerlink" title="Flask快速上手"></a>Flask快速上手</h1><p>FLask官方文档: <a href="https://flask.palletsprojects.com/en/3.0.x/quickstart/#a-minimal-application">https://flask.palletsprojects.com/en/3.0.x/quickstart/#a-minimal-application</a></p>
@@ -6693,6 +6774,44 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>源码编译并安装Squid的方法</title>
+    <url>/2024/0831132417.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RockyLinux9.4 yum包中的Squid版本是5.5, 不是最新的版本，我需要安装最新版本的Squid。</p>
+<h2 id="源码编译并安装Squid的步骤"><a href="#源码编译并安装Squid的步骤" class="headerlink" title="源码编译并安装Squid的步骤"></a>源码编译并安装Squid的步骤</h2><ul>
+<li>访问<a href="https://www.squid-cache.org/Versions/">Squid官网</a>，查看最新的稳定版本为 6.10</li>
+<li>下载6.10版本的源码，各发行版编译安装Squid的方法参考<a href="https://wiki.squid-cache.org/SquidFaq/CompilingSquid">官方文档</a></li>
+</ul>
+<p>下面给出我在RockyLinux9.4 VMware虚拟机上，编译安装Squid 6.10的过程：</p>
+<span id="more"></span>
+
+<h3 id="下载依赖"><a href="#下载依赖" class="headerlink" title="下载依赖"></a>下载依赖</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y perl gcc autoconf automake make <span class="built_in">sudo</span> wget</span><br><span class="line">yum install -y libxml2-devel libcap-devel libtool-ltdl-devel</span><br></pre></td></tr></table></figure>
+<h3 id="下载Squid源码并编译安装"><a href="#下载Squid源码并编译安装" class="headerlink" title="下载Squid源码并编译安装"></a>下载Squid源码并编译安装</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://www.squid-cache.org/Versions/v6/squid-6.10.tar.gz</span><br><span class="line">tar -zxvf squid-6.10.tar.gz</span><br><span class="line"><span class="built_in">cd</span> squid-6.10</span><br><span class="line"></span><br><span class="line">./configure --prefix=/usr --includedir=/usr/include --datadir=/usr/share --bindir=/usr/sbin --libexecdir=/usr/lib/squid --localstatedir=/var --sysconfdir=/etc/squid</span><br><span class="line">make -j4</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加squid用户-创建Squid日志目录并设置权限"><a href="#添加squid用户-创建Squid日志目录并设置权限" class="headerlink" title="添加squid用户, 创建Squid日志目录并设置权限"></a>添加squid用户, 创建Squid日志目录并设置权限</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br></pre></td></tr></table></figure>
+
+<h3 id="修改squid配置文件"><a href="#修改squid配置文件" class="headerlink" title="修改squid配置文件"></a>修改squid配置文件</h3><p>修改<code>/etc/squid/squid.conf</code>，新增如下配置项：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
+<p>注意事项：</p>
+<ul>
+<li>需要指定<code>cache_effective_user</code>和<code>cache_effective_group</code>, 一般设置为squid; 注意不能设置成root，否则启动会提示错误。</li>
+<li>如果不设置<code>cache_effective_user</code>和<code>cache_effective_group</code>, Squid进程的user和group为nobody，启动后会异常退出，报fopen写入cache.log没有权限(13)的错误！</li>
+<li>在squid配置文件里自定义<code>cache_log</code>,<code>access_log</code>的路径为&#x2F;var&#x2F;log&#x2F;squid。默认的路径为&#x2F;var&#x2F;log, squid用户没有权限写入。</li>
+</ul>
+<h3 id="测试Squid配置是否正确"><a href="#测试Squid配置是否正确" class="headerlink" title="测试Squid配置是否正确"></a>测试Squid配置是否正确</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k parse</span><br><span class="line">squid -z</span><br></pre></td></tr></table></figure>
+<p>如果提示报错，根据错误信息修改配置项。</p>
+<h3 id="启动Squid"><a href="#启动Squid" class="headerlink" title="启动Squid"></a>启动Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid <span class="comment"># 启动</span></span><br><span class="line">netstat -anpt | grep squid <span class="comment"># Squid默认端口3128, 用netstat查看3128端口是否LISTEN</span></span><br><span class="line">tcp6  0  0  :::3128          :::*         LISTEN    pid/(squid-1)</span><br></pre></td></tr></table></figure>
+<h3 id="测试Squid"><a href="#测试Squid" class="headerlink" title="测试Squid"></a>测试Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -x localhost:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<h3 id="停止Squid"><a href="#停止Squid" class="headerlink" title="停止Squid"></a>停止Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k shutdown</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.squid-cache.org/">https://www.squid-cache.org/</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Microk8s ingress启动失败, 10254端口被占用问题定位</title>
     <url>/2024/0904203111.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 VM里安装了Microk8s，且使用了Nginx ingress Controller插件，443端口正常。 VM重启一次后，发现443端口没有LISTEN，不能对外提供服务。 </p>
@@ -6791,27 +6910,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>iptables</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在RHEL9上安装MySQL</title>
-    <url>/2024/0916144756.html</url>
-    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
-
-<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
-<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
-<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
-<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
-<p>再输入你之前设置的root用户密码即可。</p>
-<span id="more"></span>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -7147,19 +7245,24 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>使用nmcli配置某个网卡的static IP,Gateway,DNS的方法</title>
-    <url>/2024/0925193901.html</url>
-    <content><![CDATA[<p>先查看当前网卡</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con show</span><br><span class="line">NAME	UUID	TYPE 		DEVICE</span><br><span class="line">eth0	XX	ethernet 	eth0</span><br><span class="line">lo	XX	loopback	lo</span><br></pre></td></tr></table></figure>
+    <title>在RHEL9上安装MySQL</title>
+    <url>/2024/0916144756.html</url>
+    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
 
-<p>例如，配置eth0网卡的static ip为10.206.216.93, gateway 10.206.216.254, DNS 10.204.16.18</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con del eth0</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes type ethernet ifname eth0 ip4 10.206.216.93/24 gw4 10.206.216.254 ipv4.dns &quot;8.8.8.8 4.4.4.4&quot;</span><br><span class="line">nmcli con up eth0</span><br></pre></td></tr></table></figure>
+<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
+<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
+<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
+<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
+<p>再输入你之前设置的root用户密码即可。</p>
+<span id="more"></span>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
 ]]></content>
       <categories>
-        <category>Linux</category>
+        <category>MySQL</category>
       </categories>
       <tags>
-        <tag>Linux</tag>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -7215,6 +7318,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Linux</tag>
         <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用nmcli配置某个网卡的static IP,Gateway,DNS的方法</title>
+    <url>/2024/0925193901.html</url>
+    <content><![CDATA[<p>先查看当前网卡</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con show</span><br><span class="line">NAME	UUID	TYPE 		DEVICE</span><br><span class="line">eth0	XX	ethernet 	eth0</span><br><span class="line">lo	XX	loopback	lo</span><br></pre></td></tr></table></figure>
+
+<p>例如，配置eth0网卡的static ip为10.206.216.93, gateway 10.206.216.254, DNS 10.204.16.18</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con del eth0</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes type ethernet ifname eth0 ip4 10.206.216.93/24 gw4 10.206.216.254 ipv4.dns &quot;8.8.8.8 4.4.4.4&quot;</span><br><span class="line">nmcli con up eth0</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -8234,91 +8353,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>在Rocky Linux上安装Docker</title>
-    <url>/2024/1017195632.html</url>
-    <content><![CDATA[<h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
-
-<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL8.0如何重置密码</title>
-    <url>/2024/1017202436.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
-<li>VMware Rocky Linux 9.4</li>
-<li>MySQL 8.0.36</li>
-</ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
-
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
-<p>连接成功后，执行如下sql命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在Docker中运行Squid</title>
-    <url>/2024/1017195435.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
-<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p>写一个Dockerfile构建Squid镜像; 再写一个启动脚本start_squid.sh，在启动脚本中配置并运行Squid。</p>
-<span id="more"></span>
-
-<h2 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h2><p>以rockylinux9.3做基础镜像，通过yum安装Squid, 拷贝squid.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">WORKDIR /</span><br><span class="line">RUN yum -y install procps net-tools squid</span><br><span class="line">COPY squid.conf /etc/squid/squid.conf</span><br><span class="line">COPY start_squid.sh /start_squid.sh</span><br><span class="line">RUN chmod +x start_squid.sh</span><br><span class="line"></span><br><span class="line">CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;/start_squid.sh&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>squid.conf可以在容器里装一个squid，再把<code>/etc/squid/squid.conf</code>拷出来，需要额外添加如下配置，从而以squid普通用户启动，否则启动会报错</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
-
-<h2 id="编写启动脚本start-squid-sh"><a href="#编写启动脚本start-squid-sh" class="headerlink" title="编写启动脚本start_squid.sh"></a>编写启动脚本start_squid.sh</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span> ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 60</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-<p>注：</p>
-<ul>
-<li>添加squid用户，创建squid日志目录并通过chown正确设置属主属组</li>
-<li>脚本结尾通过while死循环，防止容器退出</li>
-</ul>
-<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -f Dockerfile -t squid:1.0 .</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动容器"><a href="#启动容器" class="headerlink" title="启动容器"></a>启动容器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cid=$(docker run -d --privileged=true --net=host --ulimit nofile=65535:65535 squid:1.0)</span><br><span class="line">docker exec -it $&#123;cid&#125; /bin/bash</span><br></pre></td></tr></table></figure>
-
-<p>可能会遇到报错: Squid启动失败 <code>FATAL: xcalloc: Unable to allocate 1073741816 blocks of 432 bytes!</code></p>
-<p>解决方法：容器内查看ulimit -n的值为1073741816，这个值太大了，导致Squid分配内存失败。 可以调成65535, 具体做法是给docker run添加参数 –ulimit nofile&#x3D;65535:65535</p>
-<p>具体参考: <a href="https://github.com/langgenius/dify/issues/4371">https://github.com/langgenius/dify/issues/4371</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -9043,6 +9077,103 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Docker安装教程</title>
+    <url>/2024/1017195632.html</url>
+    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+
+<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+
+<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL8.0如何重置密码</title>
+    <url>/2024/1017202436.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
+
+<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<p>连接成功后，执行如下sql命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在Docker中运行Squid</title>
+    <url>/2024/1017195435.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
+<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p>写一个Dockerfile构建Squid镜像; 再写一个启动脚本start_squid.sh，在启动脚本中配置并运行Squid。</p>
+<span id="more"></span>
+
+<h2 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h2><p>以rockylinux9.3做基础镜像，通过yum安装Squid, 拷贝squid.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">WORKDIR /</span><br><span class="line">RUN yum -y install procps net-tools squid</span><br><span class="line">COPY squid.conf /etc/squid/squid.conf</span><br><span class="line">COPY start_squid.sh /start_squid.sh</span><br><span class="line">RUN chmod +x start_squid.sh</span><br><span class="line"></span><br><span class="line">CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;/start_squid.sh&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>squid.conf可以在容器里装一个squid，再把<code>/etc/squid/squid.conf</code>拷出来，需要额外添加如下配置，从而以squid普通用户启动，否则启动会报错</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
+
+<h2 id="编写启动脚本start-squid-sh"><a href="#编写启动脚本start-squid-sh" class="headerlink" title="编写启动脚本start_squid.sh"></a>编写启动脚本start_squid.sh</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span> ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 60</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li>添加squid用户，创建squid日志目录并通过chown正确设置属主属组</li>
+<li>脚本结尾通过while死循环，防止容器退出</li>
+</ul>
+<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -f Dockerfile -t squid:1.0 .</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动容器"><a href="#启动容器" class="headerlink" title="启动容器"></a>启动容器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cid=$(docker run -d --privileged=true --net=host --ulimit nofile=65535:65535 squid:1.0)</span><br><span class="line">docker exec -it $&#123;cid&#125; /bin/bash</span><br></pre></td></tr></table></figure>
+
+<p>可能会遇到报错: Squid启动失败 <code>FATAL: xcalloc: Unable to allocate 1073741816 blocks of 432 bytes!</code></p>
+<p>解决方法：容器内查看ulimit -n的值为1073741816，这个值太大了，导致Squid分配内存失败。 可以调成65535, 具体做法是给docker run添加参数 –ulimit nofile&#x3D;65535:65535</p>
+<p>具体参考: <a href="https://github.com/langgenius/dify/issues/4371">https://github.com/langgenius/dify/issues/4371</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>华宝添益(511990)折价套利记录</title>
     <url>/2024/1026131638.html</url>
     <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
@@ -9136,6 +9267,8 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
     <url>/2024/1030215315.html</url>
     <content><![CDATA[<h1 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h1><h2 id="错误日志"><a href="#错误日志" class="headerlink" title="错误日志"></a>错误日志</h2><p>错误日志记录了mysqld启动和停止时，以及服务器运行中错误信息。数据库出故障时，应首先查看此日志。<br>日志默认路径: <code>/var/log/mysql/mysqld.log</code>, 查看方式如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%log_error%&#x27;;</span><br><span class="line">+----------------------------+----------------------------------------+</span><br><span class="line">| Variable_name              | Value                                  |</span><br><span class="line">+----------------------------+----------------------------------------+</span><br><span class="line">| binlog_error_action        | ABORT_SERVER                           |</span><br><span class="line">| log_error                  | /var/log/mysql/mysqld.log              |</span><br><span class="line">| log_error_services         | log_filter_internal; log_sink_internal |</span><br><span class="line">| log_error_suppression_list |                                        |</span><br><span class="line">| log_error_verbosity        | 2                                      |</span><br><span class="line">+----------------------------+----------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
 
 <h2 id="二进制日志"><a href="#二进制日志" class="headerlink" title="二进制日志"></a>二进制日志</h2><p>binlog记录所有DDL和DML语句，但不包括select,show语句<br>binlog作用：</p>
 <ul>
@@ -9241,6 +9374,26 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Docker配置国内源加速</title>
+    <url>/2024/1031225813.html</url>
+    <content><![CDATA[<h2 id="配置国内源加速"><a href="#配置国内源加速" class="headerlink" title="配置国内源加速"></a>配置国内源加速</h2><p>添加配置文件<code>/etc/docker/daemon.json</code>, 内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;registry-mirrors&quot;: [&quot;https://6kx4zyno.mirror.aliyuncs.com&quot;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>本人使用的是阿里云服务器，所以配了个阿里云的</p>
+<h2 id="使配置生效"><a href="#使配置生效" class="headerlink" title="使配置生效"></a>使配置生效</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull busybox</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/data101/p/18248292">https://www.cnblogs.com/data101/p/18248292</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
       </tags>
   </entry>
 </search>
