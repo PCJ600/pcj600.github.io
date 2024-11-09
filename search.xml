@@ -235,35 +235,6 @@
       </tags>
   </entry>
   <entry>
-    <title>使用git rebase合并多条commit记录</title>
-    <url>/2020/0504171429.html</url>
-    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f70c5a84996c05511d3f98034d56ca05706d62f8 (HEAD -&gt; test) fourth commit</span><br><span class="line">56a79bb29da6e483fc6de6e8f271e1a5dcba52a5 third commit</span><br><span class="line">64db6fddd02a04194b3ca22e91dd1de23f9f81d7 second commit</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<p>比如这里希望合并本地的前三条记录(f70c, 56a7, 64db)，<strong>需找到待合并记录(64db)的前一条记录的commitID(7837)，作为git rebase -i命令的参数</strong>。</p>
-<p><strong>输入git rebase -i 7837, 进入历史提交的编辑界面：</strong><br><img data-src="/2020/0504171429/image1.png"></p>
-<p>需要注意的是，上图显示的提交顺序与git log是相反的。<strong>将除了第一行的pick都改成squash, 保存退出(:wq)</strong>,再将commit信息改成merge three commit, 保存退出，再次使用git log查看：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f448ac261c7e26682935201244eda0e9d93fd307 (HEAD -&gt; test) merge three commits</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
-
-<p>发现f70c, 56a7, 64db三条本地记录已经被成功合并为一条新记录。</p>
-<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ul>
-<li><p><font color='red'><strong>只对从未推送至公共仓库的提交记录执行git rebase</strong></font></p>
-</li>
-<li><p>原因可参考<a href = "https://www.progit.cn/">https://www.progit.cn/</a>  “Git分支 -&gt; 变基的风险”，该小节详细讲述了在一个公共仓库执行变基操作的问题。</p>
-</li>
-</ul>
-<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><p><a href = "https://www.progit.cn/">https://www.progit.cn/  </a></p>
-]]></content>
-      <categories>
-        <category>Git</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>tmux常用操作</title>
     <url>/2020/0504172127.html</url>
     <content><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>TMUX指<strong>terminal multiplexer</strong>，即终端复用软件。tmux结构包含以下三个部分：</p>
@@ -294,6 +265,35 @@
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用git rebase合并多条commit记录</title>
+    <url>/2020/0504171429.html</url>
+    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f70c5a84996c05511d3f98034d56ca05706d62f8 (HEAD -&gt; test) fourth commit</span><br><span class="line">56a79bb29da6e483fc6de6e8f271e1a5dcba52a5 third commit</span><br><span class="line">64db6fddd02a04194b3ca22e91dd1de23f9f81d7 second commit</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<p>比如这里希望合并本地的前三条记录(f70c, 56a7, 64db)，<strong>需找到待合并记录(64db)的前一条记录的commitID(7837)，作为git rebase -i命令的参数</strong>。</p>
+<p><strong>输入git rebase -i 7837, 进入历史提交的编辑界面：</strong><br><img data-src="/2020/0504171429/image1.png"></p>
+<p>需要注意的是，上图显示的提交顺序与git log是相反的。<strong>将除了第一行的pick都改成squash, 保存退出(:wq)</strong>,再将commit信息改成merge three commit, 保存退出，再次使用git log查看：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f448ac261c7e26682935201244eda0e9d93fd307 (HEAD -&gt; test) merge three commits</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
+
+<p>发现f70c, 56a7, 64db三条本地记录已经被成功合并为一条新记录。</p>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ul>
+<li><p><font color='red'><strong>只对从未推送至公共仓库的提交记录执行git rebase</strong></font></p>
+</li>
+<li><p>原因可参考<a href = "https://www.progit.cn/">https://www.progit.cn/</a>  “Git分支 -&gt; 变基的风险”，该小节详细讲述了在一个公共仓库执行变基操作的问题。</p>
+</li>
+</ul>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><p><a href = "https://www.progit.cn/">https://www.progit.cn/  </a></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -400,24 +400,6 @@
       </categories>
       <tags>
         <tag>GDB</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/0726174432.html</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -672,6 +654,24 @@
       <tags>
         <tag>Assembly</tag>
         <tag>CSAPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/0726174432.html</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -1017,6 +1017,32 @@
       </tags>
   </entry>
   <entry>
+    <title>Linux常见控制字符介绍</title>
+    <url>/2020/0829191318.html</url>
+    <content><![CDATA[<h2 id="ctrl-c"><a href="#ctrl-c" class="headerlink" title="ctrl + c"></a>ctrl + c</h2><p>中断键，给前台进程组中所有进程发送<code>SIGINT</code>信号，并终止进程。</p>
+<h2 id="ctrl-z"><a href="#ctrl-z" class="headerlink" title="ctrl + z"></a>ctrl + z</h2><p>挂起键，给前台进程组中所有进程发送<code>SIGTSTP</code>信号,  并挂起进程。被挂起的进程并没有真正结束，可以使用<code>fg</code>或<code>bg</code>命令恢复被挂起的进程。</p>
+<span id="more"></span>
+
+<ul>
+<li>fg —— 将后台作业放到前台终端运行。例如用VIM编辑文件时，需要敲shell命令。可以先用<code>Ctrl + Z</code>挂起VIM，敲完shell命令后再使用<code>fg</code>命令恢复VIM继续编辑，好处是不用退出VIM程序。</li>
+<li>bg —— 恢复后台被挂起的作业，变成在后台继续执行。例如前台启动一个程序时，不希望一直等待程序运行结束，可以先用<code>Ctrl+Z</code>挂起进程，再使用<code>bg</code>命令后台恢复程序的执行，好处是不用终止程序。</li>
+<li>jobs —— 显示当前shell中后台正在运行或被挂起的任务列表。</li>
+</ul>
+<h2 id="ctrl-d"><a href="#ctrl-d" class="headerlink" title="ctrl + d"></a>ctrl + d</h2><p>表示一个特殊二进制值<code>EOF</code>，表示已到达文件末尾(<code>end of file</code>), 可以用来快速退出终端。</p>
+<h2 id="ctrl-s"><a href="#ctrl-s" class="headerlink" title="ctrl + s"></a>ctrl + s</h2><p>中断控制台的输出。有时终端卡死了，敲什么都没反应，很可能是敲了<code>Ctrl + S</code>，可以接着敲<code>Ctrl + q</code>恢复。</p>
+<h2 id="ctrl"><a href="#ctrl" class="headerlink" title="ctrl + \"></a>ctrl + \</h2><p>终止进程，并向进程发送<code>SIGQUIT</code>信号，默认会产生<code>coredump</code>文件。</p>
+<h2 id="ctrl-l"><a href="#ctrl-l" class="headerlink" title="ctrl + l"></a>ctrl + l</h2><p>清屏， 相当于终端里敲<code>clear</code>。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://www.jianshu.com/p/730989a7302e">Linux常见信号大全</a></p>
+<p><a href="https://blog.csdn.net/mylizh/article/details/38385739?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param">Linux中ctrl-c, ctrl-z, ctrl-d区别</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>CSAPP malloc实验</title>
     <url>/2020/0926191511.html</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>实现自己的动态内存分配器（<code>malloc</code>、<code>free</code>、<code>realloc</code>）。</p>
@@ -1243,32 +1269,6 @@
       </categories>
       <tags>
         <tag>CSAPP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Linux常见控制字符介绍</title>
-    <url>/2020/0829191318.html</url>
-    <content><![CDATA[<h2 id="ctrl-c"><a href="#ctrl-c" class="headerlink" title="ctrl + c"></a>ctrl + c</h2><p>中断键，给前台进程组中所有进程发送<code>SIGINT</code>信号，并终止进程。</p>
-<h2 id="ctrl-z"><a href="#ctrl-z" class="headerlink" title="ctrl + z"></a>ctrl + z</h2><p>挂起键，给前台进程组中所有进程发送<code>SIGTSTP</code>信号,  并挂起进程。被挂起的进程并没有真正结束，可以使用<code>fg</code>或<code>bg</code>命令恢复被挂起的进程。</p>
-<span id="more"></span>
-
-<ul>
-<li>fg —— 将后台作业放到前台终端运行。例如用VIM编辑文件时，需要敲shell命令。可以先用<code>Ctrl + Z</code>挂起VIM，敲完shell命令后再使用<code>fg</code>命令恢复VIM继续编辑，好处是不用退出VIM程序。</li>
-<li>bg —— 恢复后台被挂起的作业，变成在后台继续执行。例如前台启动一个程序时，不希望一直等待程序运行结束，可以先用<code>Ctrl+Z</code>挂起进程，再使用<code>bg</code>命令后台恢复程序的执行，好处是不用终止程序。</li>
-<li>jobs —— 显示当前shell中后台正在运行或被挂起的任务列表。</li>
-</ul>
-<h2 id="ctrl-d"><a href="#ctrl-d" class="headerlink" title="ctrl + d"></a>ctrl + d</h2><p>表示一个特殊二进制值<code>EOF</code>，表示已到达文件末尾(<code>end of file</code>), 可以用来快速退出终端。</p>
-<h2 id="ctrl-s"><a href="#ctrl-s" class="headerlink" title="ctrl + s"></a>ctrl + s</h2><p>中断控制台的输出。有时终端卡死了，敲什么都没反应，很可能是敲了<code>Ctrl + S</code>，可以接着敲<code>Ctrl + q</code>恢复。</p>
-<h2 id="ctrl"><a href="#ctrl" class="headerlink" title="ctrl + \"></a>ctrl + \</h2><p>终止进程，并向进程发送<code>SIGQUIT</code>信号，默认会产生<code>coredump</code>文件。</p>
-<h2 id="ctrl-l"><a href="#ctrl-l" class="headerlink" title="ctrl + l"></a>ctrl + l</h2><p>清屏， 相当于终端里敲<code>clear</code>。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://www.jianshu.com/p/730989a7302e">Linux常见信号大全</a></p>
-<p><a href="https://blog.csdn.net/mylizh/article/details/38385739?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param">Linux中ctrl-c, ctrl-z, ctrl-d区别</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -2270,6 +2270,29 @@
       </tags>
   </entry>
   <entry>
+    <title>配置Git代理，解决下载龟速问题</title>
+    <url>/2021/0605195418.html</url>
+    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
+<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>首先，你的本地机器必须有socks5代理</p>
+<p>进<code>git bash</code>，敲如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global http.sslverify false</span><br><span class="line">git config -l</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h4 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h4><p>git clone报错: fatal: unable to access XXX.git: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443</p>
+<h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><p>StackOverFlow上能搜到同样问题，参考：<a href="https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error">https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error</a></p>
+<p>进<code>git bash</code>，敲如下命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global --add remote.origin.proxy &quot;127.0.0.1:1087&quot;</span><br></pre></td></tr></table></figure>
+
+<p>其中1087为http端口，打开你的ss软件，在设置中查看端口号即可：<br><img data-src="/2021/0605195418/image1.png"></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis学习笔记(九)——AOF持久化</title>
     <url>/2021/0320195112.html</url>
     <content><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>Redis提供了AOF(append only file)持久化功能，通过保存服务器执行的写命令的方式记录数据库状态。本文介绍如下内容：</p>
@@ -2370,26 +2393,21 @@
       </tags>
   </entry>
   <entry>
-    <title>配置Git代理，解决下载龟速问题</title>
-    <url>/2021/0605195418.html</url>
-    <content><![CDATA[<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>git clone龟速或出错，需要配置代理。</p>
-<h3 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h3><p>首先，你的本地机器必须有socks5代理</p>
-<p>进<code>git bash</code>，敲如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:1080&#x27;</span><br><span class="line">git config --global http.sslverify false</span><br><span class="line">git config -l</span><br></pre></td></tr></table></figure>
+    <title>修改Docker容器的存储路径</title>
+    <url>/2021/1016200721.html</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>docker拉取的镜像默认存储在根路径(<code>/var/lib/docker</code>)，但根路径存储空间有限。我们可以通过挂载更大的磁盘，将docker数据迁移到挂载磁盘上, 以解决空间不足问题。具体方法如下：</p>
 <span id="more"></span>
 
-<h4 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h4><p>git clone报错: fatal: unable to access XXX.git: OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to github.com:443</p>
-<h4 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h4><p>StackOverFlow上能搜到同样问题，参考：<a href="https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error">https://stackoverflow.com/questions/49345357/fatal-unable-to-access-https-github-com-xxx-openssl-ssl-connect-ssl-error</a></p>
-<p>进<code>git bash</code>，敲如下命令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">git config --global --add remote.origin.proxy &quot;127.0.0.1:1087&quot;</span><br></pre></td></tr></table></figure>
+<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>假设挂载磁盘在<code>/usr1</code>，需要将docker数据迁移到路径<code>/usr1</code>下。步骤如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">service docker stop 				# 停止容器</span><br><span class="line">mv /var/lib/docker /usr1/docker 	# 迁移docker数据到新路径，新路径只需保证在/usr1下即可</span><br><span class="line">ln -s /usr1/docker /var/lib/docker  # 创建软连接</span><br><span class="line">service docker start				# 重新启动docker</span><br></pre></td></tr></table></figure>
 
-<p>其中1087为http端口，打开你的ss软件，在设置中查看端口号即可：<br><img data-src="/2021/0605195418/image1.png"></p>
+<p>通过 <code>df -h</code>命令可确认修改生效。</p>
 ]]></content>
       <categories>
-        <category>Git</category>
+        <category>Docker</category>
       </categories>
       <tags>
-        <tag>Git</tag>
+        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -2426,24 +2444,6 @@
       </categories>
       <tags>
         <tag>LeetCode</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>修改Docker容器的存储路径</title>
-    <url>/2021/1016200721.html</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>docker拉取的镜像默认存储在根路径(<code>/var/lib/docker</code>)，但根路径存储空间有限。我们可以通过挂载更大的磁盘，将docker数据迁移到挂载磁盘上, 以解决空间不足问题。具体方法如下：</p>
-<span id="more"></span>
-
-<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>假设挂载磁盘在<code>/usr1</code>，需要将docker数据迁移到路径<code>/usr1</code>下。步骤如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">service docker stop 				# 停止容器</span><br><span class="line">mv /var/lib/docker /usr1/docker 	# 迁移docker数据到新路径，新路径只需保证在/usr1下即可</span><br><span class="line">ln -s /usr1/docker /var/lib/docker  # 创建软连接</span><br><span class="line">service docker start				# 重新启动docker</span><br></pre></td></tr></table></figure>
-
-<p>通过 <code>df -h</code>命令可确认修改生效。</p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -4293,25 +4293,6 @@
       </tags>
   </entry>
   <entry>
-    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
-    <url>/2023/0201210135.html</url>
-    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Centos7中修改hostname的方法</title>
     <url>/2023/0213210415.html</url>
     <content><![CDATA[<h2 id="hostname临时修改主机名"><a href="#hostname临时修改主机名" class="headerlink" title="hostname临时修改主机名"></a>hostname临时修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostname XXX</span><br></pre></td></tr></table></figure>
@@ -4329,6 +4310,25 @@
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RPM打包时指定python自动编译版本为3.X的方法</title>
+    <url>/2023/0201210135.html</url>
+    <content><![CDATA[<h3 id="指定python自动编译的版本为python3的方法"><a href="#指定python自动编译的版本为python3的方法" class="headerlink" title="指定python自动编译的版本为python3的方法"></a>指定python自动编译的版本为python3的方法</h3><p>在spec文件里添加</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define  __python /usr/bin/python3</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h3 id="RPM打包时关闭python自动编译的方法"><a href="#RPM打包时关闭python自动编译的方法" class="headerlink" title="RPM打包时关闭python自动编译的方法"></a>RPM打包时关闭python自动编译的方法</h3><p>编辑 <code>/usr/lib/rpm/redhat/macros</code>， 注释掉<code>brp-python-bytecompile</code>一行</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%__os_install_post    \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-compress \</span><br><span class="line">    %&#123;!?__debug_package:\</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-comment-note %&#123;__strip&#125; %&#123;__objdump&#125; \</span><br><span class="line">    &#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-strip-static-archive %&#123;__strip&#125; \</span><br><span class="line">    /usr/lib/rpm/brp-python-bytecompile %&#123;__python&#125; %&#123;?_python_bytecompile_errors_terminate_build&#125; \</span><br><span class="line">    /usr/lib/rpm/redhat/brp-python-hardlink \</span><br><span class="line">    %&#123;!?__jar_repack:/usr/lib/rpm/redhat/brp-java-repack-jars&#125; \</span><br><span class="line">%&#123;nil&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -5250,25 +5250,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
-    <url>/2023/0815215310.html</url>
-    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
     <url>/2023/0822215515.html</url>
     <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
@@ -5281,6 +5262,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>]</span><br><span class="line">first, *middle, last = grades</span><br><span class="line"><span class="built_in">print</span>(middle)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br></pre></td></tr></table></figure>
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p01_unpack_sequence_into_separate_variables.html">Python Cookbook 第一章</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/0815215310.html</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5618,24 +5618,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>每天的三哥小鸡腿没了</title>
-    <url>/2024/0313194703.html</url>
-    <content><![CDATA[<p>查看印度基金(164824)公告，从2024年2月28日起，暂停印度基金的申购，限额100块的一拖七套利告一段落。这意味着看好印度股市的国内投资者，以后只能通过在场内买入获得份额。</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0313194703/image1.png"><br>关于暂停申购的原因，官方说是为<strong>保护基金持有人利益</strong>，这个说法真的是TM把我整乐了。太阳从西边出来了，镰刀喊着要保护韭菜的利益了，就问你信不信吧！真正原因我想应该是套利申购份额越来越多，基金公司外汇额度不够用了。为了保护所谓的投资者利益，每天放着这么多申购费都不赚，有钱不赚王八下蛋，这么有良心的基金公司把我感动的都快哭了！</p>
-<p>印度基金作为唯一一支能投资三哥的基金，稀缺性比较强，目前溢价率在7%左右。后市缺少了套利大军的砸盘，估计溢价率会进一步抬升。如果你看好三哥市场，已经申购到手的份额不妨拿一拿，不急着卖，让子弹再飞一会。（个人利益相关，不构成投资建议）<br><img data-src="/2024/0313194703/image2.png"></p>
-<p>总结下，这次的套利行情从1月19日开始，到2月28日结束，时间竟然持续一个月之久。如果每天坚持一拖七申购卖出，一个账户可以获利近1000元，你能搞3个账户就赚3000元，6个账户就赚6000元 。而为了赚到这个钱需要做的，无非就是事先用几个小时学习下基金套利的知识，再准备好几台拖拉机而已，教程网上一搜一大把。</p>
-<p>这简单吗？太简单了，市场送钱我只管接就完事了。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>GRUB菜单不显示问题定位</title>
     <url>/2024/0321195218.html</url>
     <content><![CDATA[<h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>Rocky Linux 9.2环境，手工配置了<code>GRUB_TIMEOUT</code>为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。</p>
@@ -5666,6 +5648,24 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>Linux</tag>
         <tag>troubleshooting</tag>
         <tag>GRUB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>每天的三哥小鸡腿没了</title>
+    <url>/2024/0313194703.html</url>
+    <content><![CDATA[<p>查看印度基金(164824)公告，从2024年2月28日起，暂停印度基金的申购，限额100块的一拖七套利告一段落。这意味着看好印度股市的国内投资者，以后只能通过在场内买入获得份额。</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0313194703/image1.png"><br>关于暂停申购的原因，官方说是为<strong>保护基金持有人利益</strong>，这个说法真的是TM把我整乐了。太阳从西边出来了，镰刀喊着要保护韭菜的利益了，就问你信不信吧！真正原因我想应该是套利申购份额越来越多，基金公司外汇额度不够用了。为了保护所谓的投资者利益，每天放着这么多申购费都不赚，有钱不赚王八下蛋，这么有良心的基金公司把我感动的都快哭了！</p>
+<p>印度基金作为唯一一支能投资三哥的基金，稀缺性比较强，目前溢价率在7%左右。后市缺少了套利大军的砸盘，估计溢价率会进一步抬升。如果你看好三哥市场，已经申购到手的份额不妨拿一拿，不急着卖，让子弹再飞一会。（个人利益相关，不构成投资建议）<br><img data-src="/2024/0313194703/image2.png"></p>
+<p>总结下，这次的套利行情从1月19日开始，到2月28日结束，时间竟然持续一个月之久。如果每天坚持一拖七申购卖出，一个账户可以获利近1000元，你能搞3个账户就赚3000元，6个账户就赚6000元 。而为了赚到这个钱需要做的，无非就是事先用几个小时学习下基金套利的知识，再准备好几台拖拉机而已，教程网上一搜一大把。</p>
+<p>这简单吗？太简单了，市场送钱我只管接就完事了。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -5708,27 +5708,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux双网卡环境概率出现DNS解析错误</title>
-    <url>/2024/0327201019.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
-<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
-<span id="more"></span>
-<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img data-src="/2024/0327201019/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
-<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
-<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>Network</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标普500LOF又来送钱，一拖七拖拉机开起来！</title>
     <url>/2024/0322200351.html</url>
     <content><![CDATA[<p>标普500LOF(161125)公告，3月22日开放申购，限额申购100元，溢价率达到了离谱的40%！！！为了平抑这不合理的溢价，我决定用一拖七拖拉机狠狠拖它一把！</p>
@@ -5752,6 +5731,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux双网卡环境概率出现DNS解析错误</title>
+    <url>/2024/0327201019.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
+<span id="more"></span>
+<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img data-src="/2024/0327201019/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
+<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
+<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -5913,25 +5913,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
-    <url>/2024/0421203823.html</url>
-    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
-<span id="more"></span>
-<p><img data-src="/2024/0421203823/image1.png"></p>
-<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
-<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
-<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
-<p><img data-src="/2024/0421203823/image2.png"></p>
-<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>投资组合中是否应该包括黄金</title>
     <url>/2024/0413202714.html</url>
     <content><![CDATA[<p>最近有朋友问我，你对黄金怎么看？现在可以买黄金吗？</p>
@@ -5971,26 +5952,16 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>掌握夜市委托，出货快人一步</title>
-    <url>/2024/0519204136.html</url>
-    <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/0421203823.html</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
 <span id="more"></span>
-
-<p><img data-src="/2024/0519204136/image1.png"></p>
-<p>4月25日，场内新增的申购份额有3318万份，但成交额只有228万，只有不到10%的套利党成功出货。我当天成功出掉一组拖拉机，直接白捡 (1.099-0.924)&#x2F;0.924<em>100</em>7&#x3D;132元</p>
-<p>那么，如何成为这顺利吃肉的10%呢？这里我给大家分享两个知识点，教大家今后如何在赌场里捞这种钱。</p>
-<h2 id="1-利用夜市委托规则，提前占座"><a href="#1-利用夜市委托规则，提前占座" class="headerlink" title="1. 利用夜市委托规则，提前占座"></a>1. 利用夜市委托规则，提前占座</h2><p>首先，我们要明白A股的交易规则是“价格优先，时间优先”。<font color ='red'><strong>价格优先意味着低价卖出的申报会优先成交；而时间优先则意味着在价格相同时，谁挂单早谁就先成交。</strong></font></p>
-<p><strong>那么，什么是夜市委托呢？简单说，就是在前一个交易日晚上清算后，提前进行第二个交易日的委托</strong>。这样，你就可以在其他人还在睡梦中时，就已经占好了位置，等待开盘后的成交。</p>
-<p>夜市委托的开始时间因券商而异，以我常用的华B来说，通常在前一个交易日的17点30分左右开始。</p>
-<p>接下来，以黄金LOF（161116）为例，来说说夜市委托的具体操作：</p>
-<ul>
-<li><p>在24日19点左右（具体时间因券商而异）, 你能查到22日申购的份额到达持仓, 成本价0.924。<font color ='red'>*<em>到达持仓后立刻挂跌停单，跌停价为24日收盘价1.221的90%，再四舍五入到小数点后三位。比如, 1.221</em>0.9&#x3D;1.0989，你的卖出价就设为1.099</font>**。注意，这里价格千万不能输错，多一分钱你卖不掉，少一分钱算无效单！</p>
-</li>
-<li><p><font color ='red'><strong>在25日14点57分前，手动撤掉所有未卖出的委托单。等到17点30分，找一个安静的地方坐下来，拿出手机，使出单身二十多年的手速，疯狂刷跌停单，跌停价输入1.099*0.9&#x3D;0.989</strong></font>。直到系统不再提示”此时间段不允许委托”，再把其他账号一个个全都挂上去。</p>
-</li>
-</ul>
-<h2 id="2-选择不拥挤的券商，人多的地方你别去"><a href="#2-选择不拥挤的券商，人多的地方你别去" class="headerlink" title="2. 选择不拥挤的券商，人多的地方你别去"></a>2. 选择不拥挤的券商，人多的地方你别去</h2><p>某些网红券商因为聚集了大量的套利用户，交易通道极其拥堵，出货机会渺茫。根据朋友们的反馈，用了华B的很多都顺利出货了，而用了YH的很多都没跑掉。如果你没有跑掉，那再高的溢价都是镜花水月，你的所有操作，就是白忙活，纯纯给券商贡献利润。</p>
-<h2 id="最后做个交易记录小结"><a href="#最后做个交易记录小结" class="headerlink" title="最后做个交易记录小结"></a>最后做个交易记录小结</h2><p>4.22日起连续申购3天，到4.29日全部卖出，盈利合计252元。<br><img data-src="/2024/0519204136/image2.png"></p>
+<p><img data-src="/2024/0421203823/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img data-src="/2024/0421203823/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
 ]]></content>
       <categories>
         <category>investment</category>
@@ -6077,6 +6048,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>质疑标普，理解标普，加入标普</title>
+    <url>/2024/0616212811.html</url>
+    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
+<span id="more"></span>
+<p><img data-src="/2024/0616212811/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
+<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/0616212811/image2.png"><br><img data-src="/2024/0616212811/image3.png"></p>
+<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>k8s中的pod域名解析失败问题定位</title>
     <url>/2024/0612205430.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在k8s中启动了一个Host网络模式的pod，这个pod的域名解析失败了。</p>
@@ -6096,22 +6083,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>质疑标普，理解标普，加入标普</title>
-    <url>/2024/0616212811.html</url>
-    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
-<span id="more"></span>
-<p><img data-src="/2024/0616212811/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
-<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/0616212811/image2.png"><br><img data-src="/2024/0616212811/image3.png"></p>
-<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -6171,6 +6142,35 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Linux</tag>
         <tag>troubleshooting</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>掌握夜市委托，出货快人一步</title>
+    <url>/2024/0519204136.html</url>
+    <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0519204136/image1.png"></p>
+<p>4月25日，场内新增的申购份额有3318万份，但成交额只有228万，只有不到10%的套利党成功出货。我当天成功出掉一组拖拉机，直接白捡 (1.099-0.924)&#x2F;0.924<em>100</em>7&#x3D;132元</p>
+<p>那么，如何成为这顺利吃肉的10%呢？这里我给大家分享两个知识点，教大家今后如何在赌场里捞这种钱。</p>
+<h2 id="1-利用夜市委托规则，提前占座"><a href="#1-利用夜市委托规则，提前占座" class="headerlink" title="1. 利用夜市委托规则，提前占座"></a>1. 利用夜市委托规则，提前占座</h2><p>首先，我们要明白A股的交易规则是“价格优先，时间优先”。<font color ='red'><strong>价格优先意味着低价卖出的申报会优先成交；而时间优先则意味着在价格相同时，谁挂单早谁就先成交。</strong></font></p>
+<p><strong>那么，什么是夜市委托呢？简单说，就是在前一个交易日晚上清算后，提前进行第二个交易日的委托</strong>。这样，你就可以在其他人还在睡梦中时，就已经占好了位置，等待开盘后的成交。</p>
+<p>夜市委托的开始时间因券商而异，以我常用的华B来说，通常在前一个交易日的17点30分左右开始。</p>
+<p>接下来，以黄金LOF（161116）为例，来说说夜市委托的具体操作：</p>
+<ul>
+<li><p>在24日19点左右（具体时间因券商而异）, 你能查到22日申购的份额到达持仓, 成本价0.924。<font color ='red'>*<em>到达持仓后立刻挂跌停单，跌停价为24日收盘价1.221的90%，再四舍五入到小数点后三位。比如, 1.221</em>0.9&#x3D;1.0989，你的卖出价就设为1.099</font>**。注意，这里价格千万不能输错，多一分钱你卖不掉，少一分钱算无效单！</p>
+</li>
+<li><p><font color ='red'><strong>在25日14点57分前，手动撤掉所有未卖出的委托单。等到17点30分，找一个安静的地方坐下来，拿出手机，使出单身二十多年的手速，疯狂刷跌停单，跌停价输入1.099*0.9&#x3D;0.989</strong></font>。直到系统不再提示”此时间段不允许委托”，再把其他账号一个个全都挂上去。</p>
+</li>
+</ul>
+<h2 id="2-选择不拥挤的券商，人多的地方你别去"><a href="#2-选择不拥挤的券商，人多的地方你别去" class="headerlink" title="2. 选择不拥挤的券商，人多的地方你别去"></a>2. 选择不拥挤的券商，人多的地方你别去</h2><p>某些网红券商因为聚集了大量的套利用户，交易通道极其拥堵，出货机会渺茫。根据朋友们的反馈，用了华B的很多都顺利出货了，而用了YH的很多都没跑掉。如果你没有跑掉，那再高的溢价都是镜花水月，你的所有操作，就是白忙活，纯纯给券商贡献利润。</p>
+<h2 id="最后做个交易记录小结"><a href="#最后做个交易记录小结" class="headerlink" title="最后做个交易记录小结"></a>最后做个交易记录小结</h2><p>4.22日起连续申购3天，到4.29日全部卖出，盈利合计252元。<br><img data-src="/2024/0519204136/image2.png"></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -6291,6 +6291,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</title>
+    <url>/2024/0712221104.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0712221104/image1.png"><br>查看<code>/etc/NetworkManager/system-connections/</code>，发现找不到网卡配置文件。</p>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>centos7使用的网卡配置文件是ifcfg-files(<code>/etc/sysconfig/network-scripts/ifcfg-XXX</code>)，而RHEL9使用的是keyfiles(<code>/etc/NetworkManager/system-connections/XXX.nmconnection</code>)。<br>升级到Rocky 9后，需要把eth0网卡重新配置一下。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>使用nmcli，先删除’Wired connection 1’这个连接，再为eth0网卡生成新的连接，方法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 删除 Wired connection 1 连接</span><br><span class="line">nmcli dev disconnect eth0</span><br><span class="line">nmcli con del c04f10b8-8831-3d68-9b79-2ac22907357c # nmcli con show 查找`Wired connection 1`连接的uuid，根据uuid删除连接</span><br><span class="line">ip -4 route flush dev eth0</span><br><span class="line"></span><br><span class="line"># 重新生成eth0连接 (这里设置static IP 10.206.216.91，网关10.206.216.254, dns 8.8.8.8)</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes  type ethernet ifname eth0 ipv4.method manual ip4 &quot;10.206.216.91/24&quot; gw4 &quot;10.206.216.254&quot;  ipv4.dns &quot;8.8.8.8&quot;</span><br><span class="line">nmcli c up eth0</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles">https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何修复Rocky Linux 9 OpenSSH CVE-2024-6387漏洞</title>
     <url>/2024/0710220944.html</url>
     <content><![CDATA[<p>关于漏洞的详细说明，参考Rocky官方文档：<a href="https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression">https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression</a></p>
@@ -6310,27 +6331,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</title>
-    <url>/2024/0712221104.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0712221104/image1.png"><br>查看<code>/etc/NetworkManager/system-connections/</code>，发现找不到网卡配置文件。</p>
-<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>centos7使用的网卡配置文件是ifcfg-files(<code>/etc/sysconfig/network-scripts/ifcfg-XXX</code>)，而RHEL9使用的是keyfiles(<code>/etc/NetworkManager/system-connections/XXX.nmconnection</code>)。<br>升级到Rocky 9后，需要把eth0网卡重新配置一下。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>使用nmcli，先删除’Wired connection 1’这个连接，再为eth0网卡生成新的连接，方法如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 删除 Wired connection 1 连接</span><br><span class="line">nmcli dev disconnect eth0</span><br><span class="line">nmcli con del c04f10b8-8831-3d68-9b79-2ac22907357c # nmcli con show 查找`Wired connection 1`连接的uuid，根据uuid删除连接</span><br><span class="line">ip -4 route flush dev eth0</span><br><span class="line"></span><br><span class="line"># 重新生成eth0连接 (这里设置static IP 10.206.216.91，网关10.206.216.254, dns 8.8.8.8)</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes  type ethernet ifname eth0 ipv4.method manual ip4 &quot;10.206.216.91/24&quot; gw4 &quot;10.206.216.254&quot;  ipv4.dns &quot;8.8.8.8&quot;</span><br><span class="line">nmcli c up eth0</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles">https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -9475,6 +9475,70 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>快速安装Nginx</title>
+    <url>/2024/1109163902.html</url>
+    <content><![CDATA[<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><p>OS: RockyLinux 9.4</p>
+<h2 id="查看Nginx版本"><a href="#查看Nginx版本" class="headerlink" title="查看Nginx版本"></a>查看Nginx版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># yum list | grep nginx</span><br><span class="line">nginx.x86_64                                         1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-all-modules.noarch                             1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-core.x86_64                                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-filesystem.noarch                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-image-filter.x86_64                   1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-perl.x86_64                           1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-xslt-filter.x86_64                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-mail.x86_64                                1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-stream.x86_64                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">pcp-pmda-nginx.x86_64                                6.2.0-5.el9_4                       appstream</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="通过yum安装Nginx"><a href="#通过yum安装Nginx" class="headerlink" title="通过yum安装Nginx"></a>通过yum安装Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y nginx</span><br></pre></td></tr></table></figure>
+<p>安装成功后，查看Nginx版本信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nginx -v</span><br><span class="line">nginx version: nginx/1.20.1</span><br></pre></td></tr></table></figure>
+<h2 id="查看Nginx的安装路径-主程序，配置文件的路径"><a href="#查看Nginx的安装路径-主程序，配置文件的路径" class="headerlink" title="查看Nginx的安装路径(主程序，配置文件的路径)"></a>查看Nginx的安装路径(主程序，配置文件的路径)</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rpm -qpl nginx</span><br><span class="line">/usr/bin/nginx-upgrade</span><br><span class="line">/usr/lib/systemd/system/nginx.service</span><br><span class="line">/usr/share/man/man8/nginx.8.gz</span><br><span class="line">/usr/share/nginx/html/index.html</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line"># rpm -ql nginx-core</span><br><span class="line">/etc/logrotate.d/nginx</span><br><span class="line">/etc/nginx/nginx.conf</span><br><span class="line">/usr/lib64/nginx/modules</span><br><span class="line">/usr/sbin/nginx</span><br><span class="line">/var/lib/nginx</span><br><span class="line">/var/log/nginx</span><br><span class="line">/var/log/nginx/access.log</span><br><span class="line">/var/log/nginx/error.log</span><br><span class="line">.....</span><br></pre></td></tr></table></figure>
+<p>注:</p>
+<ul>
+<li>&#x2F;etc&#x2F;nginx&#x2F; Nginx配置文件路径</li>
+<li>&#x2F;usr&#x2F;share&#x2F;nginx&#x2F;html&#x2F; 通常把静态文件放这里</li>
+</ul>
+<h2 id="运行Nginx"><a href="#运行Nginx" class="headerlink" title="运行Nginx"></a>运行Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl stop firewalld 	# 先关闭防火墙</span><br><span class="line">systemctl start nginx		# 启动Nginx</span><br><span class="line"></span><br><span class="line">ss -antp | grep nginx		# 查看80端口已经LISTEN</span><br><span class="line">LISTEN    0      511           0.0.0.0:80           0.0.0.0:*</span><br><span class="line">LISTEN    0      511              [::]:80              [::]:*</span><br></pre></td></tr></table></figure>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p><code>curl http://&#123;your_ip&#125;:80</code> 返回200 OK, 或者你在浏览器里访问IP能看到Nginx页面说明成功</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.nginx.org.cn/article/detail/545">https://www.nginx.org.cn/article/detail/545</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Nginx入门</title>
+    <url>/2024/1109151034.html</url>
+    <content><![CDATA[<p><a href="https://www.nginx.org.cn/article/detail/545">https://www.nginx.org.cn/article/detail/545</a></p>
+<h1 id="Nginx简介"><a href="#Nginx简介" class="headerlink" title="Nginx简介"></a>Nginx简介</h1><p>一个开源、高性能、高可靠的web服务器，支持热部署。占用内存少，并发能力强，使用BSD协议(允许免费使用或修改)。</p>
+<h1 id="Nginx使用场景"><a href="#Nginx使用场景" class="headerlink" title="Nginx使用场景"></a>Nginx使用场景</h1><ul>
+<li>反向代理, 包括缓存, 负载均衡</li>
+<li>静态资源服务</li>
+<li>API服务, OpenResty</li>
+</ul>
+<h1 id="Nginx特点"><a href="#Nginx特点" class="headerlink" title="Nginx特点"></a>Nginx特点</h1><ul>
+<li>高并发环境，比其他WEB服务器有更快响应</li>
+<li>低内存消耗，单机支持10万以上并发连接</li>
+<li>支持热部署</li>
+<li>BSD许可协议，允许用户免费使用Nginx，且允许用户在自己项目中直接使用或修改Nginx源码</li>
+</ul>
+<h1 id="Nginx快速安装"><a href="#Nginx快速安装" class="headerlink" title="Nginx快速安装"></a>Nginx快速安装</h1><p>TODO: add link</p>
+<h1 id="重要概念"><a href="#重要概念" class="headerlink" title="重要概念"></a>重要概念</h1><h2 id="简单请求和非简单请求"><a href="#简单请求和非简单请求" class="headerlink" title="简单请求和非简单请求"></a>简单请求和非简单请求</h2><p>首先我们来了解一下简单请求和非简单请求，如果同时满足下面两个条件，就属于简单请求：</p>
+<p>请求方法是 HEAD、GET、POST 三种之一；<br>HTTP 头信息不超过右边着几个字段：Accept、Accept-Language、Content-Language、Last-Event-ID<br>Content-Type 只限于三个值 application&#x2F;x-www-form-urlencoded、multipart&#x2F;form-data、text&#x2F;plain；<br>凡是不同时满足这两个条件的，都属于非简单请求。</p>
+<p>浏览器处理简单请求和非简单请求的方式不一样：(抓包)<br>对于简单请求，浏览器会在头信息中增加 Origin 字段后直接发出，Origin 字段用来说明，本次请求来自的哪个源（协议+域名+端口）。</p>
+<p>如果服务器发现 Origin 指定的源不在许可范围内，服务器会返回一个正常的 HTTP 回应，浏览器取到回应之后发现回应的头信息中没有包含 Access-Control-Allow-Origin 字段，就抛出一个错误给 XHR 的 error 事件；</p>
+<p>如果服务器发现 Origin 指定的域名在许可范围内，服务器返回的响应会多出几个 Access-Control- 开头的头信息字段。</p>
+<p>非简单请求</p>
+<p>非简单请求是那种对服务器有特殊要求的请求，比如请求方法是 PUT 或 DELETE，或 Content-Type 值为 application&#x2F;json。浏览器会在正式通信之前，发送一次 HTTP 预检 OPTIONS 请求，先询问服务器，当前网页所在的域名是否在服务器的许可名单之中，以及可以使用哪些 HTTP 请求方法和头信息字段。只有得到肯定答复，浏览器才会发出正式的 XHR 请求，否则报错。</p>
+<h2 id="跨域"><a href="#跨域" class="headerlink" title="跨域"></a>跨域</h2><p>在浏览器上当前访问的网站向另一个网站发送请求获取数据的过程就是跨域请求。<br>跨域是浏览器的同源策略决定的，是一个重要的浏览器安全策略，用于限制一个 origin 的文档或者它加载的脚本与另一个源的资源进行交互，它能够帮助阻隔恶意文档，减少可能被攻击的媒介，可以使用 CORS 配置解除这个限制。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 同源的例子</span><br><span class="line">http://example.com/app1/index.html  # 只是路径不同</span><br><span class="line">http://example.com/app2/index.html</span><br><span class="line"></span><br><span class="line">http://Example.com:80  # 只是大小写差异</span><br><span class="line">http://example.com</span><br><span class="line"></span><br><span class="line"># 不同源的例子</span><br><span class="line">http://example.com/app1   # 协议不同</span><br><span class="line">https://example.com/app2</span><br><span class="line"></span><br><span class="line">http://example.com        # host 不同</span><br><span class="line">http://www.example.com</span><br><span class="line">http://myapp.example.com</span><br><span class="line"></span><br><span class="line">http://example.com        # 端口不同</span><br><span class="line">http://example.com:8080</span><br></pre></td></tr></table></figure>
+<h2 id="正向代理和反向代理"><a href="#正向代理和反向代理" class="headerlink" title="正向代理和反向代理"></a>正向代理和反向代理</h2><p>正向代理：你的浏览器无法直接访问谷哥，这时候可以通过一个代理服务器来帮助你访问谷哥，那么这个服务器就叫正向代理。<br>反向代理: 去饭店吃饭，可以点川菜、粤菜、江浙菜，饭店也分别有三个菜系的厨师, 但是你作为顾客不用管哪个厨师给你做的菜，只用点菜即可，小二将你菜单中的菜分配给不同的厨师来具体处理，那么这个小二就是反向代理服务器。</p>
+<h2 id="负载均衡"><a href="#负载均衡" class="headerlink" title="负载均衡"></a>负载均衡</h2><h2 id="动静分离"><a href="#动静分离" class="headerlink" title="动静分离"></a>动静分离</h2><p>&lt;– TO BE CONTINUED –&gt;</p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
       </tags>
   </entry>
 </search>
