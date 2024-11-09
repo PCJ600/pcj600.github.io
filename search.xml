@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>2020-01-01-interview-questions</title>
+    <url>/2020/0101145555.html</url>
+    <content><![CDATA[<h1 id="MySQL"><a href="#MySQL" class="headerlink" title="MySQL"></a>MySQL</h1><h2 id="1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"><a href="#1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？" class="headerlink" title="1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"></a>1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？</h2><p>[<a href="https://pcj600.github.io/2021/0101162248.html]">https://pcj600.github.io/2021/0101162248.html]</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Linux下生成core dump文件</title>
     <url>/2020/0228210741.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
@@ -21,18 +33,6 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>2020-01-01-interview-questions</title>
-    <url>/2020/0101145555.html</url>
-    <content><![CDATA[<h1 id="MySQL"><a href="#MySQL" class="headerlink" title="MySQL"></a>MySQL</h1><h2 id="1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"><a href="#1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？" class="headerlink" title="1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"></a>1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？</h2><p>[<a href="https://pcj600.github.io/2021/0101162248.html]">https://pcj600.github.io/2021/0101162248.html]</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
       </tags>
   </entry>
   <entry>
@@ -235,6 +235,35 @@
       </tags>
   </entry>
   <entry>
+    <title>使用git rebase合并多条commit记录</title>
+    <url>/2020/0504171429.html</url>
+    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f70c5a84996c05511d3f98034d56ca05706d62f8 (HEAD -&gt; test) fourth commit</span><br><span class="line">56a79bb29da6e483fc6de6e8f271e1a5dcba52a5 third commit</span><br><span class="line">64db6fddd02a04194b3ca22e91dd1de23f9f81d7 second commit</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<p>比如这里希望合并本地的前三条记录(f70c, 56a7, 64db)，<strong>需找到待合并记录(64db)的前一条记录的commitID(7837)，作为git rebase -i命令的参数</strong>。</p>
+<p><strong>输入git rebase -i 7837, 进入历史提交的编辑界面：</strong><br><img data-src="/2020/0504171429/image1.png"></p>
+<p>需要注意的是，上图显示的提交顺序与git log是相反的。<strong>将除了第一行的pick都改成squash, 保存退出(:wq)</strong>,再将commit信息改成merge three commit, 保存退出，再次使用git log查看：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f448ac261c7e26682935201244eda0e9d93fd307 (HEAD -&gt; test) merge three commits</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
+
+<p>发现f70c, 56a7, 64db三条本地记录已经被成功合并为一条新记录。</p>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ul>
+<li><p><font color='red'><strong>只对从未推送至公共仓库的提交记录执行git rebase</strong></font></p>
+</li>
+<li><p>原因可参考<a href = "https://www.progit.cn/">https://www.progit.cn/</a>  “Git分支 -&gt; 变基的风险”，该小节详细讲述了在一个公共仓库执行变基操作的问题。</p>
+</li>
+</ul>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><p><a href = "https://www.progit.cn/">https://www.progit.cn/  </a></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>tmux常用操作</title>
     <url>/2020/0504172127.html</url>
     <content><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>TMUX指<strong>terminal multiplexer</strong>，即终端复用软件。tmux结构包含以下三个部分：</p>
@@ -265,35 +294,6 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用git rebase合并多条commit记录</title>
-    <url>/2020/0504171429.html</url>
-    <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f70c5a84996c05511d3f98034d56ca05706d62f8 (HEAD -&gt; test) fourth commit</span><br><span class="line">56a79bb29da6e483fc6de6e8f271e1a5dcba52a5 third commit</span><br><span class="line">64db6fddd02a04194b3ca22e91dd1de23f9f81d7 second commit</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<p>比如这里希望合并本地的前三条记录(f70c, 56a7, 64db)，<strong>需找到待合并记录(64db)的前一条记录的commitID(7837)，作为git rebase -i命令的参数</strong>。</p>
-<p><strong>输入git rebase -i 7837, 进入历史提交的编辑界面：</strong><br><img data-src="/2020/0504171429/image1.png"></p>
-<p>需要注意的是，上图显示的提交顺序与git log是相反的。<strong>将除了第一行的pick都改成squash, 保存退出(:wq)</strong>,再将commit信息改成merge three commit, 保存退出，再次使用git log查看：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">git <span class="built_in">log</span> --pretty=oneline</span></span><br><span class="line">f448ac261c7e26682935201244eda0e9d93fd307 (HEAD -&gt; test) merge three commits</span><br><span class="line">783795e5285155f37c10b72ec9160e554c198ae0 first commit</span><br></pre></td></tr></table></figure>
-
-<p>发现f70c, 56a7, 64db三条本地记录已经被成功合并为一条新记录。</p>
-<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2><ul>
-<li><p><font color='red'><strong>只对从未推送至公共仓库的提交记录执行git rebase</strong></font></p>
-</li>
-<li><p>原因可参考<a href = "https://www.progit.cn/">https://www.progit.cn/</a>  “Git分支 -&gt; 变基的风险”，该小节详细讲述了在一个公共仓库执行变基操作的问题。</p>
-</li>
-</ul>
-<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><p><a href = "https://www.progit.cn/">https://www.progit.cn/  </a></p>
-]]></content>
-      <categories>
-        <category>Git</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -1017,32 +1017,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Linux常见控制字符介绍</title>
-    <url>/2020/0829191318.html</url>
-    <content><![CDATA[<h2 id="ctrl-c"><a href="#ctrl-c" class="headerlink" title="ctrl + c"></a>ctrl + c</h2><p>中断键，给前台进程组中所有进程发送<code>SIGINT</code>信号，并终止进程。</p>
-<h2 id="ctrl-z"><a href="#ctrl-z" class="headerlink" title="ctrl + z"></a>ctrl + z</h2><p>挂起键，给前台进程组中所有进程发送<code>SIGTSTP</code>信号,  并挂起进程。被挂起的进程并没有真正结束，可以使用<code>fg</code>或<code>bg</code>命令恢复被挂起的进程。</p>
-<span id="more"></span>
-
-<ul>
-<li>fg —— 将后台作业放到前台终端运行。例如用VIM编辑文件时，需要敲shell命令。可以先用<code>Ctrl + Z</code>挂起VIM，敲完shell命令后再使用<code>fg</code>命令恢复VIM继续编辑，好处是不用退出VIM程序。</li>
-<li>bg —— 恢复后台被挂起的作业，变成在后台继续执行。例如前台启动一个程序时，不希望一直等待程序运行结束，可以先用<code>Ctrl+Z</code>挂起进程，再使用<code>bg</code>命令后台恢复程序的执行，好处是不用终止程序。</li>
-<li>jobs —— 显示当前shell中后台正在运行或被挂起的任务列表。</li>
-</ul>
-<h2 id="ctrl-d"><a href="#ctrl-d" class="headerlink" title="ctrl + d"></a>ctrl + d</h2><p>表示一个特殊二进制值<code>EOF</code>，表示已到达文件末尾(<code>end of file</code>), 可以用来快速退出终端。</p>
-<h2 id="ctrl-s"><a href="#ctrl-s" class="headerlink" title="ctrl + s"></a>ctrl + s</h2><p>中断控制台的输出。有时终端卡死了，敲什么都没反应，很可能是敲了<code>Ctrl + S</code>，可以接着敲<code>Ctrl + q</code>恢复。</p>
-<h2 id="ctrl"><a href="#ctrl" class="headerlink" title="ctrl + \"></a>ctrl + \</h2><p>终止进程，并向进程发送<code>SIGQUIT</code>信号，默认会产生<code>coredump</code>文件。</p>
-<h2 id="ctrl-l"><a href="#ctrl-l" class="headerlink" title="ctrl + l"></a>ctrl + l</h2><p>清屏， 相当于终端里敲<code>clear</code>。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://www.jianshu.com/p/730989a7302e">Linux常见信号大全</a></p>
-<p><a href="https://blog.csdn.net/mylizh/article/details/38385739?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param">Linux中ctrl-c, ctrl-z, ctrl-d区别</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>CSAPP malloc实验</title>
     <url>/2020/0926191511.html</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>实现自己的动态内存分配器（<code>malloc</code>、<code>free</code>、<code>realloc</code>）。</p>
@@ -1269,6 +1243,32 @@
       </categories>
       <tags>
         <tag>CSAPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux常见控制字符介绍</title>
+    <url>/2020/0829191318.html</url>
+    <content><![CDATA[<h2 id="ctrl-c"><a href="#ctrl-c" class="headerlink" title="ctrl + c"></a>ctrl + c</h2><p>中断键，给前台进程组中所有进程发送<code>SIGINT</code>信号，并终止进程。</p>
+<h2 id="ctrl-z"><a href="#ctrl-z" class="headerlink" title="ctrl + z"></a>ctrl + z</h2><p>挂起键，给前台进程组中所有进程发送<code>SIGTSTP</code>信号,  并挂起进程。被挂起的进程并没有真正结束，可以使用<code>fg</code>或<code>bg</code>命令恢复被挂起的进程。</p>
+<span id="more"></span>
+
+<ul>
+<li>fg —— 将后台作业放到前台终端运行。例如用VIM编辑文件时，需要敲shell命令。可以先用<code>Ctrl + Z</code>挂起VIM，敲完shell命令后再使用<code>fg</code>命令恢复VIM继续编辑，好处是不用退出VIM程序。</li>
+<li>bg —— 恢复后台被挂起的作业，变成在后台继续执行。例如前台启动一个程序时，不希望一直等待程序运行结束，可以先用<code>Ctrl+Z</code>挂起进程，再使用<code>bg</code>命令后台恢复程序的执行，好处是不用终止程序。</li>
+<li>jobs —— 显示当前shell中后台正在运行或被挂起的任务列表。</li>
+</ul>
+<h2 id="ctrl-d"><a href="#ctrl-d" class="headerlink" title="ctrl + d"></a>ctrl + d</h2><p>表示一个特殊二进制值<code>EOF</code>，表示已到达文件末尾(<code>end of file</code>), 可以用来快速退出终端。</p>
+<h2 id="ctrl-s"><a href="#ctrl-s" class="headerlink" title="ctrl + s"></a>ctrl + s</h2><p>中断控制台的输出。有时终端卡死了，敲什么都没反应，很可能是敲了<code>Ctrl + S</code>，可以接着敲<code>Ctrl + q</code>恢复。</p>
+<h2 id="ctrl"><a href="#ctrl" class="headerlink" title="ctrl + \"></a>ctrl + \</h2><p>终止进程，并向进程发送<code>SIGQUIT</code>信号，默认会产生<code>coredump</code>文件。</p>
+<h2 id="ctrl-l"><a href="#ctrl-l" class="headerlink" title="ctrl + l"></a>ctrl + l</h2><p>清屏， 相当于终端里敲<code>clear</code>。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://www.jianshu.com/p/730989a7302e">Linux常见信号大全</a></p>
+<p><a href="https://blog.csdn.net/mylizh/article/details/38385739?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param">Linux中ctrl-c, ctrl-z, ctrl-d区别</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -1529,6 +1529,8 @@
 <li>第二范式(2NF)：1NF基础上，要求非主键列完全依赖于主键，不能只依赖于主键的一部分(针对联合主键)</li>
 <li>第三范式(3NF)：2NF基础上, 要求任何非主键列必须直接依赖于主键，不能是传递依赖</li>
 </ul>
+<span id="more"></span>
+
 <h2 id="为什么要有三大范式"><a href="#为什么要有三大范式" class="headerlink" title="为什么要有三大范式"></a>为什么要有三大范式</h2><p>减少数据冗余，保持数据一致性和完整性。</p>
 <h2 id="1NF"><a href="#1NF" class="headerlink" title="1NF"></a>1NF</h2><p>例: 有一个学生表，address字段的值为<code>江苏省南京市雨花台区XX街道XX小区</code></p>
 <table>
@@ -3848,6 +3850,147 @@
       </tags>
   </entry>
   <entry>
+    <title>2022 Trend Micro 社招面经</title>
+    <url>/2022/0320205239.html</url>
+    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
+<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
+<li>2022-02-25 官网投递简历，职位：Linux开发</li>
+</ul>
+<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
+
+<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
+<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
+<ul>
+<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
+</li>
+<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
+</li>
+</ul>
+<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
+<p>线上面试，用的微软Teams，二对一，80min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>问项目（30min）</p>
+<ul>
+<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
+<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
+<li>举一个项目中你遇到的难题，如何解决的</li>
+<li>你的项目中为什么用Redis，不用MySQL</li>
+<li>……</li>
+</ul>
+</li>
+<li><p>1道编程题 （15min）</p>
+<ul>
+<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
+</ul>
+</li>
+<li><p>技术问题（25min）</p>
+<ul>
+<li>给每个中国人分一个IP地址，够分吗</li>
+<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
+<li>后台服务变慢，谈谈你的定位思路</li>
+<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
+<li>Redis过期键的实现原理，过期时间怎么存储的</li>
+<li>Redis缓存逐出策略</li>
+<li>全中国人的数据能放到一张MySQL表里吗</li>
+<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
+<li>Linux下如何定时备份一个文件</li>
+</ul>
+</li>
+<li><p>其它问题（10min）</p>
+<ul>
+<li>同事对你的评价</li>
+<li>你的缺点是什么</li>
+<li>同事觉得你有什么阴暗面</li>
+<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
+</ul>
+</li>
+</ul>
+<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
+<p>现场面试，二对一，50min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>简单问项目（10min）</p>
+</li>
+<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
+</li>
+<li><p>你在项目组里还负责了哪些项目和工作</p>
+</li>
+<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
+</li>
+<li><p>你平时用到的开发工具和编程语言</p>
+</li>
+<li><p>说下你的团队成员组成</p>
+</li>
+<li><p>说说你最近在看的书</p>
+</li>
+<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
+<ul>
+<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
+</ul>
+</li>
+<li><p>项目中遇到别人不配合你的工作怎么办</p>
+</li>
+<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
+</li>
+<li><p>评价你同事的水平</p>
+</li>
+<li><p>有没有感觉有技术能力比较弱的同事</p>
+</li>
+<li><p>你还有什么问题（问团队成员组成）</p>
+</li>
+</ul>
+<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
+<p>现场面试，一对一，30min</p>
+<ul>
+<li><p>自我介绍</p>
+</li>
+<li><p>为什么选择我们公司，选择这个职位</p>
+</li>
+<li><p>你为什么离职</p>
+</li>
+<li><p>你当初考虑XX公司的原因是什么</p>
+</li>
+<li><p>你有考虑过内部转岗吗</p>
+</li>
+<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
+</li>
+<li><p>你同事对你的评价</p>
+</li>
+<li><p>说说你的优点</p>
+</li>
+<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
+</li>
+</ul>
+<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
+<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
+<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
+<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
+<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
+<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
+<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
+<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
+<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
+<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
+<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
+<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
+<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
+<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
+<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
+<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/0129204852.html</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -4124,147 +4267,6 @@
       </tags>
   </entry>
   <entry>
-    <title>2022 Trend Micro 社招面经</title>
-    <url>/2022/0320205239.html</url>
-    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
-<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
-<li>2022-02-25 官网投递简历，职位：Linux开发</li>
-</ul>
-<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
-
-<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
-<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
-<ul>
-<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
-</li>
-<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
-</li>
-</ul>
-<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
-<p>线上面试，用的微软Teams，二对一，80min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>问项目（30min）</p>
-<ul>
-<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
-<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
-<li>举一个项目中你遇到的难题，如何解决的</li>
-<li>你的项目中为什么用Redis，不用MySQL</li>
-<li>……</li>
-</ul>
-</li>
-<li><p>1道编程题 （15min）</p>
-<ul>
-<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
-</ul>
-</li>
-<li><p>技术问题（25min）</p>
-<ul>
-<li>给每个中国人分一个IP地址，够分吗</li>
-<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
-<li>后台服务变慢，谈谈你的定位思路</li>
-<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
-<li>Redis过期键的实现原理，过期时间怎么存储的</li>
-<li>Redis缓存逐出策略</li>
-<li>全中国人的数据能放到一张MySQL表里吗</li>
-<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
-<li>Linux下如何定时备份一个文件</li>
-</ul>
-</li>
-<li><p>其它问题（10min）</p>
-<ul>
-<li>同事对你的评价</li>
-<li>你的缺点是什么</li>
-<li>同事觉得你有什么阴暗面</li>
-<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
-</ul>
-</li>
-</ul>
-<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
-<p>现场面试，二对一，50min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>简单问项目（10min）</p>
-</li>
-<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
-</li>
-<li><p>你在项目组里还负责了哪些项目和工作</p>
-</li>
-<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
-</li>
-<li><p>你平时用到的开发工具和编程语言</p>
-</li>
-<li><p>说下你的团队成员组成</p>
-</li>
-<li><p>说说你最近在看的书</p>
-</li>
-<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
-<ul>
-<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
-</ul>
-</li>
-<li><p>项目中遇到别人不配合你的工作怎么办</p>
-</li>
-<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
-</li>
-<li><p>评价你同事的水平</p>
-</li>
-<li><p>有没有感觉有技术能力比较弱的同事</p>
-</li>
-<li><p>你还有什么问题（问团队成员组成）</p>
-</li>
-</ul>
-<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
-<p>现场面试，一对一，30min</p>
-<ul>
-<li><p>自我介绍</p>
-</li>
-<li><p>为什么选择我们公司，选择这个职位</p>
-</li>
-<li><p>你为什么离职</p>
-</li>
-<li><p>你当初考虑XX公司的原因是什么</p>
-</li>
-<li><p>你有考虑过内部转岗吗</p>
-</li>
-<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
-</li>
-<li><p>你同事对你的评价</p>
-</li>
-<li><p>说说你的优点</p>
-</li>
-<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
-</li>
-</ul>
-<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
-<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
-<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
-<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
-<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
-<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
-<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
-<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
-<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
-<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
-<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
-<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
-<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
-<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
-<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
-<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>k8s删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/1116205828.html</url>
     <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>强制删除deployment和pod后，问题解决：</p>
@@ -4519,6 +4521,24 @@
       </tags>
   </entry>
   <entry>
+    <title>crontab执行失败返回127的原因和解决方法</title>
+    <url>/2023/0508212643.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>crontab</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>pip3只下载不安装以及离线安装的方法</title>
     <url>/2023/0508213050.html</url>
     <content><![CDATA[<h3 id="只下载不安装"><a href="#只下载不安装" class="headerlink" title="只下载不安装"></a>只下载不安装</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
@@ -4536,24 +4556,6 @@
       </categories>
       <tags>
         <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>crontab执行失败返回127的原因和解决方法</title>
-    <url>/2023/0508212643.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>添加PATH，在脚本里添加如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>crontab</tag>
       </tags>
   </entry>
   <entry>
@@ -5706,6 +5708,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Linux双网卡环境概率出现DNS解析错误</title>
+    <url>/2024/0327201019.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
+<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
+<span id="more"></span>
+<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img data-src="/2024/0327201019/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
+<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
+<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>标普500LOF又来送钱，一拖七拖拉机开起来！</title>
     <url>/2024/0322200351.html</url>
     <content><![CDATA[<p>标普500LOF(161125)公告，3月22日开放申购，限额申购100元，溢价率达到了离谱的40%！！！为了平抑这不合理的溢价，我决定用一拖七拖拉机狠狠拖它一把！</p>
@@ -5729,27 +5752,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Linux双网卡环境概率出现DNS解析错误</title>
-    <url>/2024/0327201019.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9 虚拟机, 双网卡(eth0和eth1)配置如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0 10.206.216.27/24  DNS 10.204.16.18</span><br><span class="line">eth1 192.168.1.27/24   DNS 192.168.1.1</span><br></pre></td></tr></table></figure>
-<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>手动配置eth1的DNS后，网络不通，通过抓包发现是eth1的DNS server配置有误，<strong>但机器重启后网络有概率能恢复正常</strong>。</p>
-<span id="more"></span>
-<h2 id="定位方法"><a href="#定位方法" class="headerlink" title="定位方法"></a>定位方法</h2><p>在网络不通的时候，查看<code>/etc/resolv.conf</code>内容：<br><img data-src="/2024/0327201019/image1.png"><br>找到原因：<strong>libc解析器不支持超过3条以上的nameserver</strong>，网络不通的时候，可以正常工作的nameserver 10.204.16.18恰好在第4条，所以DNS解析失败。</p>
-<p>解决方法：删掉第二、三行这两个系统自动生成的v6 dns server，保证<code>resolv.conf</code>里的nameserver记录不超过3条即可。</p>
-<p>注意不要直接修改<code>/etc/resolv.conf</code>，RHEL9上删除nameserver可以使用<code>nmcli</code>，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nmcli con mod eth0 ipv6.ignore-auto-dns yes</span><br><span class="line">nmcli con mod eth1 ipv6.ignore-auto-dns yes</span><br><span class="line">systemctl restart NetworkManager</span><br></pre></td></tr></table></figure>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html">man resolv.conf</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -5911,6 +5913,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/0421203823.html</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
+<span id="more"></span>
+<p><img data-src="/2024/0421203823/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img data-src="/2024/0421203823/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>投资组合中是否应该包括黄金</title>
     <url>/2024/0413202714.html</url>
     <content><![CDATA[<p>最近有朋友问我，你对黄金怎么看？现在可以买黄金吗？</p>
@@ -5941,25 +5962,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>如何设置止损和止盈？</li>
 </ul>
 <p>只有事先想清楚这些问题，谋定而后动，才能做出理性的投资决策。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
-    <url>/2024/0421203823.html</url>
-    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
-<span id="more"></span>
-<p><img data-src="/2024/0421203823/image1.png"></p>
-<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
-<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
-<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
-<p><img data-src="/2024/0421203823/image2.png"></p>
-<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
 ]]></content>
       <categories>
         <category>investment</category>
@@ -8353,6 +8355,39 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Docker安装教程</title>
+    <url>/2024/1017195632.html</url>
+    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+
+<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+
+<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -9077,39 +9112,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Docker安装教程</title>
-    <url>/2024/1017195632.html</url>
-    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
-
-<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
-
-<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
-
-<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
-
-<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
-<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL8.0如何重置密码</title>
     <url>/2024/1017202436.html</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
@@ -9394,6 +9396,85 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何定制RockyLinux ISO</title>
+    <url>/2024/1105202802.html</url>
+    <content><![CDATA[<h1 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h1><p>基于Rocky9官方ISO做定制，构建自己的ISO</p>
+<ul>
+<li>可以添加非官方预装的RPM包</li>
+<li>实现Kickstart自动化安装, 完成分区等操作</li>
+<li>ISO安装后，可以执行自定义脚本，比如安装你手动添加的RPM包</li>
+</ul>
+<h1 id="Rocky9-官方ISO内容分析"><a href="#Rocky9-官方ISO内容分析" class="headerlink" title="Rocky9 官方ISO内容分析"></a>Rocky9 官方ISO内容分析</h1><p>挂载Rocky9 ISO，得到如下内容:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">BaseOS/</span><br><span class="line">EFI/</span><br><span class="line">images/</span><br><span class="line">isolinux/</span><br><span class="line">LICENSE</span><br><span class="line">media.repo</span><br><span class="line">minimal/</span><br></pre></td></tr></table></figure>
+<p>ISO各个目录&#x2F;文件的作用：</p>
+<span id="more"></span>
+<ul>
+<li>BaseOS&#x2F;：这个目录包含了Rocky Linux的基础操作系统环境。它提供了操作系统的核心组件和必要的软件包，用于构建和运行基本的系统</li>
+<li>EFI&#x2F;：这个目录包含了用于UEFI（统一可扩展固件接口）启动的文件。这些文件使得系统能够在支持UEFI的硬件上启动</li>
+<li>images&#x2F;：这个目录包含了用于云环境的Rocky Linux镜像。这些镜像可以被用于各种云服务提供商，以便于在云中部署Rocky Linux</li>
+<li>isolinux&#x2F;：这个目录包含了启动Rocky Linux安装介质所需的引导装载器文件。这些文件负责在系统启动时加载Linux内核和初始化RAM磁盘</li>
+<li>minimal&#x2F;：这个目录包含了用于最小化安装的Rocky Linux环境。它通常用于安装一个最小化的Rocky Linux系统，不包括完整的DVD镜像或者通过网络安装</li>
+<li>media.repo：这个文件是一个YUM仓库配置文件，它允许用户直接从安装介质（如DVD或USB驱动器）安装软件包。这个文件指定了安装介质中软件包的位置，使得系统能够从本地介质而不是网络仓库安装软件</li>
+<li>LICENSE：这个文件包含了Rocky Linux发行版的许可证信息。它说明了用户可以如何使用和分发Rocky Linux</li>
+</ul>
+<h1 id="定制ISO的流程简述"><a href="#定制ISO的流程简述" class="headerlink" title="定制ISO的流程简述"></a>定制ISO的流程简述</h1><ul>
+<li>准备一台Rocky9.X编译机, 安装必要编译依赖, 下载Rocky官方的ISO, 挂载ISO。</li>
+<li>把自定义的RPM包复制到Packages&#x2F;目录下, 调用createrepo更新RPM信息。</li>
+<li>编写ks.cfg,实现kickstart定制化的自动安装</li>
+<li>调用genisoimage生成VA的ISO, 调用implantisomd5校验ISO的md5</li>
+</ul>
+<h1 id="定制ISO的具体步骤"><a href="#定制ISO的具体步骤" class="headerlink" title="定制ISO的具体步骤"></a>定制ISO的具体步骤</h1><h2 id="0-准备一台RockyLinux9-X编译机，安装必要的编译依赖"><a href="#0-准备一台RockyLinux9-X编译机，安装必要的编译依赖" class="headerlink" title="0.准备一台RockyLinux9.X编译机，安装必要的编译依赖"></a>0.准备一台RockyLinux9.X编译机，安装必要的编译依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf install -y epel-release genisoimage isomd5sum anaconda \</span><br><span class="line">createrepo mkisofs rsync yum-utils squashfs-tools rpm-build \</span><br><span class="line">glibc-devel krb5-devel autoconf automake pykickstart</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-下载Rocky9-4-minimal官方ISO-挂载ISO"><a href="#1-下载Rocky9-4-minimal官方ISO-挂载ISO" class="headerlink" title="1.下载Rocky9.4 minimal官方ISO, 挂载ISO"></a>1.下载Rocky9.4 minimal官方ISO, 挂载ISO</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.4-x86_64-minimal.iso</span><br><span class="line">mkdir tmp ISO</span><br><span class="line">mount -o loop Rocky-9.4-x86_64-minimal.iso tmp/</span><br><span class="line">cp -a tmp/* ISO/</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-添加非预装的RPM包到ISO"><a href="#2-添加非预装的RPM包到ISO" class="headerlink" title="2. 添加非预装的RPM包到ISO"></a>2. 添加非预装的RPM包到ISO</h2><p>添加RPM包的原理是：</p>
+<ul>
+<li>启动一台新安装的Rocky 9.4的虚拟机或容器, 执行<code>rpm -qa &gt; old_rpm_list</code>记录当前系统的所有RPM包</li>
+<li>执行yum install安装RPM包, 安装成功后, 再次执行<code>rpm -qa &gt; new_rpm_list</code></li>
+<li>通过diff命令比较new_rpm_list和old_rpm_list的差异, 得到这个RPM包依赖的所有RPM包, 把所有RPM包下载到本地</li>
+<li>最后把RPM包都传到ISO的Packages目录, 调用createrepo更新RPM信息</li>
+</ul>
+<p>	</p>
+<p><strong>以安装Squid这个非预装的RPM包为例, 给出具体操作步骤:</strong></p>
+<p>新安装一台Rocky9.4的VM，或者启动一个新的Rocky9.4容器，执行如下操作:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm -qa &gt; old_rpm_list</span><br><span class="line">yum install -y squid </span><br><span class="line">rpm -qa &gt; new_rpm_list</span><br><span class="line">diff old_rpm_list new_rpm_list</span><br><span class="line">&gt; perl-English-1.11-481.el9.noarch</span><br><span class="line">&gt; perl-Math-Complex-1.59-481.el9.noarch</span><br><span class="line">&gt; perl-Math-BigInt-1.9998.18-460.el9.noarch</span><br><span class="line">&gt; perl-DBI-1.643-9.el9.x86_64</span><br><span class="line">&gt; libecap-1.0.1-10.el9.x86_64</span><br><span class="line">&gt; perl-Digest-SHA-6.02-461.el9.x86_64</span><br><span class="line">&gt; httpd-filesystem-2.4.57-11.el9_4.1.noarch</span><br><span class="line">&gt; squid-5.5-13.el9_4.x86_64</span><br><span class="line"></span><br><span class="line"># 逐一下载上面的RPM包</span><br><span class="line">yum reinstall -y [RPM包] --downloadonly --downloaddir=./</span><br><span class="line"></span><br><span class="line"># 把所有RPM包传到ISO/minimal/Packages目录下</span><br><span class="line"></span><br><span class="line"># 调用createrepo更新RPM信息, 删掉原来的xml</span><br><span class="line">cd ISO/minimal/</span><br><span class="line">createrepo -g repodata/*.xml ./</span><br><span class="line"></span><br><span class="line">执行成功后，查看repodata目录, 可以手动把旧的文件(*.xml.gz,*.bz2)删掉</span><br><span class="line"># ll -rt</span><br><span class="line">-rw-r--r-- 1 root root  223063 May  6  2024 b293fe7dc4f43936b010f1e39498d1c1914ec9b64b239ca295a99024469ad291-other.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  639692 May  6  2024 910d1caf3c2f6f2be8ec8d1690ade00b3ca742ff265c58bfe8e09564907c7b1f-primary.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  432959 May  6  2024 6727bfc392a5f0d542bfa33e2e7c66c0acfac68ca643a815ff142eceb83c14eb-filelists.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  277890 May  6  2024 4844662615d6cdbd59e187e2ff1f4d3aa7fbc153dd28b6024c7eef14e9e14c94-other.sqlite.bz2</span><br><span class="line">-rw-r--r-- 1 root root  546603 May  6  2024 33df6249457b6e40f26bcee5eee9fbecbdb8026b50c9ce3a354001ea04fcaa9d-filelists.sqlite.bz2</span><br><span class="line">-rw-r--r-- 1 root root 1338121 May  6  2024 bd201f63f99e67d65f859f38ab472022f055238d74c78c6dd407ef57c4f0f90d-primary.sqlite.bz2</span><br><span class="line"></span><br><span class="line">-rw-r--r-- 1 root root  288689 Nov  5 22:04 7ec709b6d42da53e7fb35b426e69414a518151eb4814b1fe1703b7b18d519e33-x86_64.xml</span><br><span class="line">-rw-r--r-- 1 root root  644366 Nov  5 22:04 aa896d64b33075d63a1a150b45f78069845b6ba23e1d9b6914028c89d3444343-primary.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  446349 Nov  5 22:04 96bac81c16728c9c33f8a7da9388ceaeb8fa19a0d173fd3220ca34f5e91e5966-filelists.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  225673 Nov  5 22:04 4b548eb44fe93e0561e5c451d5d26ae93033ba268276eb953c2a88f3d898d554-other.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root   71732 Nov  5 22:04 d250f7f881bb991be3648c021fb305dd6085b902321b26f52033500ebff7cae1-x86_64.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  279932 Nov  5 22:04 35a6d5480475ae34480bd0b8eeeeb4954135b980d7585f645f92adc563af724b-other.sqlite.bz2</span><br><span class="line">-rw-r--r-- 1 root root  554441 Nov  5 22:04 131a105582b0b396b43bfe2085074488ec256b9901e115f1699d9ef40f0cbfce-filelists.sqlite.bz2</span><br><span class="line">-rw-r--r-- 1 root root 1352325 Nov  5 22:04 fb6353f4de5dacf439dd366b2caf0d7f8fff4da3dca132dbbd86b820bbed0e28-primary.sqlite.bz2</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-添加ks-cfg，实现Kickstart自动化安装ISO"><a href="#3-添加ks-cfg，实现Kickstart自动化安装ISO" class="headerlink" title="3. 添加ks.cfg，实现Kickstart自动化安装ISO"></a>3. 添加ks.cfg，实现Kickstart自动化安装ISO</h2><p>比如说我想在ks.cfg中做如下配置:</p>
+<ul>
+<li>自定义分区。使用LVM分区，添加逻辑卷组(命名为VA)，再分三个区分别挂载到路径(&#x2F; &#x2F;data &#x2F;back)</li>
+<li>设置root密码为password@123</li>
+<li>设置hostname为localhost.localdomain</li>
+<li>把主网卡名称设置为eth0, static IP 192.168.192.3, 掩码255.255.255.252, 网关192.168.192.2, DNS 8.8.8.8</li>
+<li>禁用firewall, 关闭selinux</li>
+<li>安装自定义的RPM包(Squid)</li>
+<li>安装完成后执行一些自定义指令(比如启动Squid,设置Squid开机自启动)</li>
+</ul>
+<p>注意，我们不需要从零编写ks.cfg，这样太麻烦了。更好的做法是用官方ISO装一台RockyLinux9.4 VM，在图形界面手动完成以上配置，等安装完成后把&#x2F;root&#x2F;anaconda-ks.cfg拷出来，重命名为ks.cfg，再做简单修改即可。<br>ks.cfg内容可以参考：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Generated by Anaconda 34.25.4.9</span><br><span class="line"># Generated by pykickstart v3.32</span><br><span class="line">#version=RHEL9</span><br><span class="line"># Use graphical install</span><br><span class="line">graphical</span><br><span class="line">repo --name=&quot;minimal&quot; --baseurl=file:///run/install/sources/mount-0000-cdrom/minimal</span><br><span class="line"></span><br><span class="line"># Run the Setup Agent on first boot</span><br><span class="line">firstboot --enable</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># Keyboard layouts</span><br><span class="line">keyboard --xlayouts=&#x27;us&#x27;</span><br><span class="line"># System language</span><br><span class="line">lang en_US.UTF-8</span><br><span class="line"></span><br><span class="line"># Network information</span><br><span class="line">network  --bootproto=static --device=eth0 --gateway=192.168.192.2 --ip=192.168.192.3 --nameserver=8.8.8.8 --netmask=255.255.255.252 --ipv6=auto --activate</span><br><span class="line">network  --hostname=localhost.localdomain</span><br><span class="line"></span><br><span class="line"># Use CDROM installation media</span><br><span class="line">cdrom</span><br><span class="line"></span><br><span class="line"># System timezone</span><br><span class="line">timezone Asia/Shanghai --utc</span><br><span class="line"></span><br><span class="line"># Root password</span><br><span class="line">rootpw --iscrypted --allow-ssh $6$TUP1uudnSI9B7Z6W$LyM66VXooostM4L8gU1D8Vwh1Si7fnocLA7EdLbpYI8sWvDcf2qS5gu4drGfajfwYMLh6pvXOV/G5A4BFWaxe0</span><br><span class="line"></span><br><span class="line"># System bootloader configuration</span><br><span class="line">bootloader --append=&quot; crashkernel=auto rootdelay=300 systemd.unified_cgroup_hierarchy=1 biosdevname=0 net.ifnames=0&quot; --location=mbr --boot-drive=sda</span><br><span class="line"></span><br><span class="line"># Generated using Blivet version 3.6.0</span><br><span class="line">ignoredisk --only-use=sda</span><br><span class="line"># Partition clearing information</span><br><span class="line">clearpart --none --initlabel</span><br><span class="line"># Disk partitioning information</span><br><span class="line">part /boot --fstype=&quot;ext4&quot; --ondisk=sda --size=1024</span><br><span class="line">part pv.881 --fstype=&quot;lvmpv&quot; --ondisk=sda --size=19450</span><br><span class="line">part biosboot --fstype=&quot;biosboot&quot; --ondisk=sda --size=2</span><br><span class="line">volgroup VA --pesize=4096 pv.881</span><br><span class="line">logvol swap --fstype=&quot;swap&quot; --size=2048 --name=swap --vgname=VA</span><br><span class="line">logvol /back --fstype=&quot;ext4&quot; --size=5120 --name=back --vgname=VA</span><br><span class="line">logvol /data --fstype=&quot;ext4&quot; --size=1024 --name=data --vgname=VA</span><br><span class="line">logvol / --fstype=&quot;ext4&quot; --percent=100 --name=root --vgname=VA</span><br><span class="line"></span><br><span class="line"># Disable SELinux</span><br><span class="line">selinux --disabled</span><br><span class="line"></span><br><span class="line"># # Reboot after installation</span><br><span class="line">reboot --eject</span><br><span class="line"></span><br><span class="line">%packages</span><br><span class="line">@^minimal-environment</span><br><span class="line">@standard</span><br><span class="line"></span><br><span class="line"># Add your RPM packages</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line">%end</span><br><span class="line"></span><br><span class="line">%addon com_redhat_kdump --enable --reserve-mb=&#x27;auto&#x27;</span><br><span class="line"></span><br><span class="line">%end</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">%post --logfile=/root/ks-post.log</span><br><span class="line"></span><br><span class="line">echo &quot;Post-Script for installation&quot;</span><br><span class="line"></span><br><span class="line">systemctl enable squid</span><br><span class="line">systemctl restart squid</span><br><span class="line"></span><br><span class="line">%end</span><br></pre></td></tr></table></figure>
+
+<p>使用ksvalidator检查ks.cfg语法, 再把ks.cfg拷贝到ISO目录</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cp ks.cfg isobuild/isolinux/ks.cfg</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改isolinux-cfg-grub-cfg"><a href="#修改isolinux-cfg-grub-cfg" class="headerlink" title="修改isolinux.cfg, grub.cfg"></a>修改isolinux.cfg, grub.cfg</h2><p><strong>修改ISO中的isolinux.cfg文件</strong><br>需要删掉文件末尾的默认启动菜单, 再添加你的启动菜单，通过inst.ks指定ks.cfg路径，如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">label kickstart</span><br><span class="line">  menu label ^Install My Custom ISO(Based on Rocky 9.4)</span><br><span class="line">  menu default</span><br><span class="line">  kernel vmlinuz</span><br><span class="line">  append initrd=initrd.img inst.stage2=hd:LABEL=VA quiet inst.ks=hd:LABEL=VA:/isolinux/ks.cfg inst.text selinux=0 biosdevname=0 net.ifnames=0</span><br></pre></td></tr></table></figure>
+
+<p><strong>修改ISO中的grub.cfg文件</strong><br>需要修改默认的menuentry, 通过inst.ks指定ks.cfg路径，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">### BEGIN /etc/grub.d/10_linux ###</span><br><span class="line">menuentry &#x27;Install My Custom ISO(Based on Rocky Linux 9.4)&#x27; --class fedora --class gnu-linux --class gnu --class os &#123;</span><br><span class="line">    linuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=VA quiet inst.ks=hd:LABEL=VA:/isolinux/ks.cfg inst.text selinux=0 biosdevname=0 net.ifnames=0</span><br><span class="line">    initrdefi /images/pxeboot/initrd.img</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="构建ISO"><a href="#构建ISO" class="headerlink" title="构建ISO"></a>构建ISO</h2><p>调用genisoimage生成ISO, 调用implantisomd5校验ISO的md5</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">genisoimage -input-charset utf-8 -U -r -v -T -J -joliet-long -V &quot;VA&quot; -volset &quot;VA&quot; -A &quot;VA&quot; \</span><br><span class="line">-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table \</span><br><span class="line">-eltorito-alt-boot -e images/efiboot.img -no-emul-boot -o custom.iso ISO/</span><br><span class="line"></span><br><span class="line">implantisomd5 custom.iso</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试-安装ISO"><a href="#测试-安装ISO" class="headerlink" title="测试, 安装ISO"></a>测试, 安装ISO</h2><p>最后安装ISO, 测试KickStart安装是否成功。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/automatically_installing_rhel/creating-kickstart-files_rhel-installer">https://docs.redhat.com/en/documentation/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;automatically_installing_rhel&#x2F;creating-kickstart-files_rhel-installer</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
 </search>
