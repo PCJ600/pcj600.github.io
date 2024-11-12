@@ -328,7 +328,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>451</span>
+              <span>1.2k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -347,10 +347,9 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>强制删除deployment和pod后，问题解决：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n <span class="variable">$&#123;ns&#125;</span> delete deployment --all --force</span><br><span class="line">kubectl -n <span class="variable">$&#123;ns&#125;</span> delete pod --all --force</span><br></pre></td></tr></table></figure>
-<p>判断namespace的状态是否为Terminating：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">check_if_namespace_is_terminating</span></span>() &#123;</span><br><span class="line">    status=$(kubectl get ns <span class="variable">$&#123;ns&#125;</span> -o json | jq .status.phase -r)</span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$status</span>&quot;</span> = <span class="string">&quot;Terminating&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">return</span> 1</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">    <span class="built_in">return</span> 0</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <h2 id="先尝试强制删除deployment和pod等资源"><a href="#先尝试强制删除deployment和pod等资源" class="headerlink" title="先尝试强制删除deployment和pod等资源"></a>先尝试强制删除deployment和pod等资源</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n $&#123;ns&#125; delete deployment --all --force</span><br><span class="line">kubectl -n $&#123;ns&#125; delete pod --all --force</span><br></pre></td></tr></table></figure>
+
+<h2 id="如果还是失败，通过API强制删除namespace"><a href="#如果还是失败，通过API强制删除namespace" class="headerlink" title="如果还是失败，通过API强制删除namespace"></a>如果还是失败，通过API强制删除namespace</h2><h3 id="获取需要强制删除的namespace信息"><a href="#获取需要强制删除的namespace信息" class="headerlink" title="获取需要强制删除的namespace信息"></a>获取需要强制删除的namespace信息</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get ns $&#123;ns&#125; -o json &gt; old_ns.json</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2022/1116205828.html#more" rel="contents">
@@ -865,7 +864,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:14</span>
+    <span title="站点阅读时长">7:15</span>
 </div>
 
 <!--
