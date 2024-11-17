@@ -134,7 +134,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">148</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">149</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -193,6 +193,130 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1109151034.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/1109151034.html" class="post-title-link" itemprop="url">Nginx入门</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-11-09 15:10:34" itemprop="dateCreated datePublished" datetime="2024-11-09T15:10:34+08:00">2024-11-09</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Nginx/" itemprop="url" rel="index"><span itemprop="name">Nginx</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>7.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Nginx简介"><a href="#Nginx简介" class="headerlink" title="Nginx简介"></a>Nginx简介</h1><p>高性能的web服务器, 反向代理服务器, 负载均衡器, HTTP缓存</p>
+<h1 id="竞品"><a href="#竞品" class="headerlink" title="竞品"></a>竞品</h1><ul>
+<li>Apache - 老牌Web服务器, 重量级, 高并发差</li>
+<li>Lighttpd - 轻量级,高性能Web</li>
+<li>Tomcat, Jetty - Java, 重量级Web</li>
+<li>IIS - 基于Windows</li>
+</ul>
+<h1 id="Nginx版本"><a href="#Nginx版本" class="headerlink" title="Nginx版本"></a>Nginx版本</h1><ul>
+<li>Nginx</li>
+<li>Nginx plus 商业版</li>
+<li>OpenResty</li>
+<li>Tengine</li>
+</ul>
+<h1 id="Nginx应用场景"><a href="#Nginx应用场景" class="headerlink" title="Nginx应用场景"></a>Nginx应用场景</h1><ul>
+<li>http服务器(静态服务器)</li>
+<li>虚拟主机（一台服务器虚拟多个网站)</li>
+<li>反向代理、负载均衡</li>
+<li>安全管理, API Gateway, 跨域问题, UrlRewrite</li>
+</ul>
+<h1 id="Nginx特点-为什么用Nginx"><a href="#Nginx特点-为什么用Nginx" class="headerlink" title="Nginx特点&#x2F;为什么用Nginx"></a>Nginx特点&#x2F;为什么用Nginx</h1><ul>
+<li>响应快</li>
+<li>高并发(单机支持10w+, 并发连接上限取决与内存)</li>
+<li>高扩展性</li>
+<li>低内存消耗</li>
+<li>高可靠性(worker进程异常退出, master进程可以快速拉起新的worker进程提供服务)</li>
+<li>热部署(不停止服务, 升级Nginx的可执行文件, 更新配置，更换日志文件)</li>
+<li>配置简单</li>
+<li>最自由的BSD许可协议</li>
+</ul>
+<h1 id="Nginx安装"><a href="#Nginx安装" class="headerlink" title="Nginx安装"></a>Nginx安装</h1><p><a href="https://pcj600.github.io/2024/1109163902.html">https://pcj600.github.io/2024/1109163902.html</a></p>
+<h1 id="内核参数优化"><a href="#内核参数优化" class="headerlink" title="内核参数优化"></a>内核参数优化</h1><ul>
+<li>file-max: 表示进程可以同时打开的最大句柄数，这个参数直接限制最大并发连接数</li>
+<li>tcp_tw_reuse: 设为1, 允许将TIME-WAIT的socket重新用于新TCP连接</li>
+<li>tcp_fin_timeout: 表示服务器主动关闭连接时, socket保持在FIN_WAIT_2状态最大时间</li>
+<li>tcp_max_tw_buckets: 表示OS允许TIME_WAIT套接字数量的最大值, 如果超过这个数字, TIME_WAIT被立刻清除并打印告警, 过多的TIME_WAIT会导致Web服务器变慢</li>
+<li>tcp_syncookies: 解决TCP的SYN攻击</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/1109151034.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -648,95 +772,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1026131259.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/1026131259.html" class="post-title-link" itemprop="url">chronyd配置了local的NTP server后, NTP报文出现public ip的问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-10-26 13:12:59" itemprop="dateCreated datePublished" datetime="2024-10-26T13:12:59+08:00">2024-10-26</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>2.1k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>2 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户在Rocky Linux 9.4的VM上配了一个local的NTP server(IP: 10.64.1.76)。配置完成后, 时钟可以同步，但一段时间后客户的firewall收到告警, 拒绝了大量目标端口为123的请求, 且这些请求的目的IP并不是客户指定的NTP server的IP，客户要求解释原因并给出解决方案。</p>
-<h2 id="定位"><a href="#定位" class="headerlink" title="定位"></a>定位</h2><p>先通过<code>chronyc sourcestats</code>命令，查看当前连接的NTP服务器</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/1026131259.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -808,7 +843,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">148</span>
+          <span class="site-state-item-count">149</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -867,7 +902,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">487k</span>
+    <span title="站点总字数">488k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>

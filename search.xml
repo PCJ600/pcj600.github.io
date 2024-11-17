@@ -868,6 +868,26 @@
       </tags>
   </entry>
   <entry>
+    <title>内核延时函数msleep和mdelay区别</title>
+    <url>/2020/0815181004.html</url>
+    <content><![CDATA[<p><code>msleep</code>和<code>mdelay</code>都是内核的延时函数，原型如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">mdelay</span><span class="params">(<span class="type">unsigned</span> <span class="type">long</span> msecs)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">msleep</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> millisecs)</span>;</span><br></pre></td></tr></table></figure>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><p><code>mdelay</code>是忙等待函数，会占用<code>CPU</code>资源，延迟时间是准确的。</p>
+<p><code>msleep</code>是休眠函数，不占用<code>CPU</code>资源，延迟时间通常高于给定值。</p>
+<span id="more"></span>
+
+<p><strong>具体可以参考如下文章：</strong></p>
+<p><a href="https://topic.alibabacloud.com/a/the-difference-between-mdelay--and-msleep--in-linux-linux_1_16_20266988.html">The difference between Mdelay and Msleep in Linux</a></p>
+<p><a href="https://www.cnblogs.com/xihong2014/p/6740876.html">Linux中内核延时函数</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Linux内核模块编译方法</title>
     <url>/2020/0815180606.html</url>
     <content><![CDATA[<h3 id="运行环境"><a href="#运行环境" class="headerlink" title="运行环境"></a>运行环境</h3><p><code>Linux debian 4.19.0-10-amd64</code></p>
@@ -902,26 +922,6 @@
 
 
 
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>内核延时函数msleep和mdelay区别</title>
-    <url>/2020/0815181004.html</url>
-    <content><![CDATA[<p><code>msleep</code>和<code>mdelay</code>都是内核的延时函数，原型如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">mdelay</span><span class="params">(<span class="type">unsigned</span> <span class="type">long</span> msecs)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">msleep</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> millisecs)</span>;</span><br></pre></td></tr></table></figure>
-<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><p><code>mdelay</code>是忙等待函数，会占用<code>CPU</code>资源，延迟时间是准确的。</p>
-<p><code>msleep</code>是休眠函数，不占用<code>CPU</code>资源，延迟时间通常高于给定值。</p>
-<span id="more"></span>
-
-<p><strong>具体可以参考如下文章：</strong></p>
-<p><a href="https://topic.alibabacloud.com/a/the-difference-between-mdelay--and-msleep--in-linux-linux_1_16_20266988.html">The difference between Mdelay and Msleep in Linux</a></p>
-<p><a href="https://www.cnblogs.com/xihong2014/p/6740876.html">Linux中内核延时函数</a></p>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -1303,6 +1303,75 @@
       </tags>
   </entry>
   <entry>
+    <title>Redis学习笔记(五)——整数集合</title>
+    <url>/2020/1206192958.html</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
+<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
+<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3><span id="more"></span>
+
+<h4 id="1-1-数据结构设计"><a href="#1-1-数据结构设计" class="headerlink" title="1.1 数据结构设计"></a>1.1 数据结构设计</h4><p>以Redis6.0源码为例，整数集合由<code>intset.c/intset</code>结构定义，数据结构设计如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> encoding;			<span class="comment">// 编码方式</span></span><br><span class="line">    <span class="type">uint32_t</span> length;			<span class="comment">// 集合中的元素个数</span></span><br><span class="line">    <span class="type">int8_t</span> contents[];			<span class="comment">// 用于保存集合中的元素</span></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>length属性表示整数集合中元素的个数。</li>
+<li>集合中所有元素以<strong>有序、无重复</strong>的方式保存在contents数组。</li>
+<li><strong>虽然contents是int8_t类型，但它本身不保存int8_t类型的元素</strong>。实际上，contents数组保存的元素类型由encoding属性决定，encoding属性有以下3种取值：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// intset.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
+
+<p>举例，如encoding取值为<code>INTSET_ENC_INT32</code>，表示contents数组保存的每个元素都是int32_t类型的整数。</p>
+<p>下图表示一个包含3个类型为uint16_t的元素的整数集合：<br><img data-src="/2020/1206192958/image1.png"></p>
+<p>当创建空的整数集合时，为了节约内存，默认的encoding取值为<code>INTSET_ENC_INT16</code>(参考<code>intset.c/intsetNew</code>的实现)</p>
+<h4 id="1-2-升级操作"><a href="#1-2-升级操作" class="headerlink" title="1.2 升级操作"></a>1.2 升级操作</h4><p>考虑插入新元素a到整数集合S的场景：如果新元素所占字节大小大于整数集合中现有的任意一个元素所占字节大小(即<code>sizeof(a) &gt; S.encoding</code>），就需要先对整数集合执行<strong>升级</strong>操作后，再执行插入操作。</p>
+<p>升级操作的要点如下：</p>
+<ul>
+<li>根据新元素类型，计算扩展后的整数集合需要分配的空间大小，并调用realloc分配空间。</li>
+<li>将原整数集合中所有元素类型转换为和新元素相同，并将所有转化后的元素有序地放到正确的位置上。</li>
+<li>将新元素添加到整数集合。<strong>升级后新元素放置的位置要么在最开头，要么在最结尾</strong>，其原因在于：<strong>能引发升级的新元素，它的值要么小于先前整数集合中的所有元素，要么大于所有元素。</strong></li>
+</ul>
+<p>升级操作的源码实现参考<code>intset.c/intsetUpgradeAndAdd</code>, 如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> intset *<span class="title function_">intsetUpgradeAndAdd</span><span class="params">(intset *is, <span class="type">int64_t</span> value)</span> &#123;</span><br><span class="line">    <span class="type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);</span><br><span class="line">    <span class="type">uint8_t</span> newenc = _intsetValueEncoding(value);</span><br><span class="line">    <span class="type">int</span> length = intrev32ifbe(is-&gt;length);</span><br><span class="line">    <span class="type">int</span> prepend = value &lt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* First set new encoding and resize */</span></span><br><span class="line">    is-&gt;encoding = intrev32ifbe(newenc);</span><br><span class="line">    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span></span><br><span class="line"><span class="comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span></span><br><span class="line"><span class="comment">     * space at either the beginning or the end of the intset. */</span></span><br><span class="line">    <span class="keyword">while</span>(length--)</span><br><span class="line">        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the value at the beginning or the end. */</span></span><br><span class="line">    <span class="keyword">if</span> (prepend)</span><br><span class="line">        _intsetSet(is,<span class="number">0</span>,value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        _intsetSet(is,intrev32ifbe(is-&gt;length),value);</span><br><span class="line">    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> is;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>另外，Redis中的整数集合不支持降级操作。</p>
+<h3 id="2-整数集合的API"><a href="#2-整数集合的API" class="headerlink" title="2. 整数集合的API"></a>2. 整数集合的API</h3><table>
+<thead>
+<tr>
+<th align="left">API</th>
+<th align="left">功能</th>
+<th align="left">复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">intset *intsetNew(void);</td>
+<td align="left">创建空的整数集合</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">intset *intsetAdd(intset *is, int64_t value, uint8_t *success);</td>
+<td align="left">插入新元素到整数集合</td>
+<td align="left">O(N)</td>
+</tr>
+<tr>
+<td align="left">intset *intsetRemove(intset *is, int64_t value, int *success);</td>
+<td align="left">删除整数集合中的指定元素</td>
+<td align="left">O(N)</td>
+</tr>
+<tr>
+<td align="left">uint8_t intsetFind(intset *is, int64_t value);</td>
+<td align="left">查询元素是否在整数集合中。用二分查找法实现</td>
+<td align="left">O(logN)</td>
+</tr>
+</tbody></table>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》 —— 第6章 整数集合</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>设计跳表, C语言实现</title>
     <url>/2020/1205192333.html</url>
     <content><![CDATA[<h3 id="跳跃表简介"><a href="#跳跃表简介" class="headerlink" title="跳跃表简介"></a>跳跃表简介</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。其性能和红黑树相当，且跳跃表实现更为简单。</p>
@@ -1391,75 +1460,6 @@
       <tags>
         <tag>C</tag>
         <tag>LeetCode</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis学习笔记(五)——整数集合</title>
-    <url>/2020/1206192958.html</url>
-    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
-<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
-<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3><span id="more"></span>
-
-<h4 id="1-1-数据结构设计"><a href="#1-1-数据结构设计" class="headerlink" title="1.1 数据结构设计"></a>1.1 数据结构设计</h4><p>以Redis6.0源码为例，整数集合由<code>intset.c/intset</code>结构定义，数据结构设计如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> encoding;			<span class="comment">// 编码方式</span></span><br><span class="line">    <span class="type">uint32_t</span> length;			<span class="comment">// 集合中的元素个数</span></span><br><span class="line">    <span class="type">int8_t</span> contents[];			<span class="comment">// 用于保存集合中的元素</span></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>length属性表示整数集合中元素的个数。</li>
-<li>集合中所有元素以<strong>有序、无重复</strong>的方式保存在contents数组。</li>
-<li><strong>虽然contents是int8_t类型，但它本身不保存int8_t类型的元素</strong>。实际上，contents数组保存的元素类型由encoding属性决定，encoding属性有以下3种取值：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// intset.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
-
-<p>举例，如encoding取值为<code>INTSET_ENC_INT32</code>，表示contents数组保存的每个元素都是int32_t类型的整数。</p>
-<p>下图表示一个包含3个类型为uint16_t的元素的整数集合：<br><img data-src="/2020/1206192958/image1.png"></p>
-<p>当创建空的整数集合时，为了节约内存，默认的encoding取值为<code>INTSET_ENC_INT16</code>(参考<code>intset.c/intsetNew</code>的实现)</p>
-<h4 id="1-2-升级操作"><a href="#1-2-升级操作" class="headerlink" title="1.2 升级操作"></a>1.2 升级操作</h4><p>考虑插入新元素a到整数集合S的场景：如果新元素所占字节大小大于整数集合中现有的任意一个元素所占字节大小(即<code>sizeof(a) &gt; S.encoding</code>），就需要先对整数集合执行<strong>升级</strong>操作后，再执行插入操作。</p>
-<p>升级操作的要点如下：</p>
-<ul>
-<li>根据新元素类型，计算扩展后的整数集合需要分配的空间大小，并调用realloc分配空间。</li>
-<li>将原整数集合中所有元素类型转换为和新元素相同，并将所有转化后的元素有序地放到正确的位置上。</li>
-<li>将新元素添加到整数集合。<strong>升级后新元素放置的位置要么在最开头，要么在最结尾</strong>，其原因在于：<strong>能引发升级的新元素，它的值要么小于先前整数集合中的所有元素，要么大于所有元素。</strong></li>
-</ul>
-<p>升级操作的源码实现参考<code>intset.c/intsetUpgradeAndAdd</code>, 如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> intset *<span class="title function_">intsetUpgradeAndAdd</span><span class="params">(intset *is, <span class="type">int64_t</span> value)</span> &#123;</span><br><span class="line">    <span class="type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);</span><br><span class="line">    <span class="type">uint8_t</span> newenc = _intsetValueEncoding(value);</span><br><span class="line">    <span class="type">int</span> length = intrev32ifbe(is-&gt;length);</span><br><span class="line">    <span class="type">int</span> prepend = value &lt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* First set new encoding and resize */</span></span><br><span class="line">    is-&gt;encoding = intrev32ifbe(newenc);</span><br><span class="line">    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span></span><br><span class="line"><span class="comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span></span><br><span class="line"><span class="comment">     * space at either the beginning or the end of the intset. */</span></span><br><span class="line">    <span class="keyword">while</span>(length--)</span><br><span class="line">        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the value at the beginning or the end. */</span></span><br><span class="line">    <span class="keyword">if</span> (prepend)</span><br><span class="line">        _intsetSet(is,<span class="number">0</span>,value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        _intsetSet(is,intrev32ifbe(is-&gt;length),value);</span><br><span class="line">    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> is;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>另外，Redis中的整数集合不支持降级操作。</p>
-<h3 id="2-整数集合的API"><a href="#2-整数集合的API" class="headerlink" title="2. 整数集合的API"></a>2. 整数集合的API</h3><table>
-<thead>
-<tr>
-<th align="left">API</th>
-<th align="left">功能</th>
-<th align="left">复杂度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">intset *intsetNew(void);</td>
-<td align="left">创建空的整数集合</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">intset *intsetAdd(intset *is, int64_t value, uint8_t *success);</td>
-<td align="left">插入新元素到整数集合</td>
-<td align="left">O(N)</td>
-</tr>
-<tr>
-<td align="left">intset *intsetRemove(intset *is, int64_t value, int *success);</td>
-<td align="left">删除整数集合中的指定元素</td>
-<td align="left">O(N)</td>
-</tr>
-<tr>
-<td align="left">uint8_t intsetFind(intset *is, int64_t value);</td>
-<td align="left">查询元素是否在整数集合中。用二分查找法实现</td>
-<td align="left">O(logN)</td>
-</tr>
-</tbody></table>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》 —— 第6章 整数集合</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -2494,6 +2494,26 @@
       </categories>
       <tags>
         <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用wget批量下载指定类型文件</title>
+    <url>/2021/1016200952.html</url>
+    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
+
+<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
+
+
+]]></content>
+      <categories>
+        <category>wget</category>
+      </categories>
+      <tags>
+        <tag>wget</tag>
       </tags>
   </entry>
   <entry>
@@ -5230,25 +5250,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
-    <url>/2023/0815215310.html</url>
-    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
     <url>/2023/0822215515.html</url>
     <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
@@ -5261,6 +5262,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>]</span><br><span class="line">first, *middle, last = grades</span><br><span class="line"><span class="built_in">print</span>(middle)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br></pre></td></tr></table></figure>
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p01_unpack_sequence_into_separate_variables.html">Python Cookbook 第一章</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/0815215310.html</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5285,21 +5305,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python给切片命名，增强可读性</title>
-    <url>/2023/0829193419.html</url>
-    <content><![CDATA[<p>使用内置的<code>slice</code>函数创建切片，而不是硬编码下标，从而增强代码可读性，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip=<span class="string">&quot;&lt;127.0.0.1&gt;&quot;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>GET_IP = <span class="built_in">slice</span>(<span class="number">1</span>,-<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip[GET_IP]</span><br><span class="line"><span class="string">&#x27;127.0.0.1&#x27;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p11_naming_slice.html">https://python3-cookbook.readthedocs.io/zh_CN&#x2F;latest&#x2F;c01&#x2F;p11_naming_slice.html</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python 查找最大或最小的N个元素</title>
     <url>/2023/0822193150.html</url>
     <content><![CDATA[<p>除了直接排序，还可以利用<code>heaq</code>模块的<code>nlargest()</code>和<code>nsmallest()</code>方法，例如：</p>
@@ -5313,18 +5318,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>RHEL9 Fatal glibc error, CPU does not support x86-64-v2 解决方法</title>
-    <url>/2023/1213193745.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL 9要求x86_64的CPU支持x86-64-v2，x86-64-v2需要处理器支持 CMPXCHG16B、LAHF-SAHF、POPCNT、SSE3、SSE4.1、SSE4.2、SSSE3 等现代指令集</p>
-<h2 id="检查CPU是否支持x86-64-v2的方法"><a href="#检查CPU是否支持x86-64-v2的方法" class="headerlink" title="检查CPU是否支持x86-64-v2的方法"></a>检查CPU是否支持x86-64-v2的方法</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">flags=$(<span class="built_in">cat</span> /proc/cpuinfo | grep flags | <span class="built_in">head</span> -n 1 | <span class="built_in">cut</span> -d: -f2)</span><br><span class="line">supports_v2=<span class="string">&#x27;awk &quot;/cx16/&amp;&amp;/lahf/&amp;&amp;/popcnt/&amp;&amp;/sse4_1/&amp;&amp;/sse4_2/&amp;&amp;/ssse3/ &#123;found=1&#125; END &#123;exit !found&#125;&quot;&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$flags</span>&quot;</span> | <span class="built_in">eval</span> <span class="variable">$supports_v2</span></span><br><span class="line"><span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU supports x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU doesn&#x27;t support x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/9.0_release_notes/architectures">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;9.0_release_notes&#x2F;architectures</a><br>【2】<a href="https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2">https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2</a></p>
+    <title>Python给切片命名，增强可读性</title>
+    <url>/2023/0829193419.html</url>
+    <content><![CDATA[<p>使用内置的<code>slice</code>函数创建切片，而不是硬编码下标，从而增强代码可读性，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip=<span class="string">&quot;&lt;127.0.0.1&gt;&quot;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>GET_IP = <span class="built_in">slice</span>(<span class="number">1</span>,-<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip[GET_IP]</span><br><span class="line"><span class="string">&#x27;127.0.0.1&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p11_naming_slice.html">https://python3-cookbook.readthedocs.io/zh_CN&#x2F;latest&#x2F;c01&#x2F;p11_naming_slice.html</a></p>
 ]]></content>
       <categories>
-        <category>Linux</category>
+        <category>Python</category>
       </categories>
       <tags>
-        <tag>Linux</tag>
+        <tag>Python</tag>
       </tags>
   </entry>
   <entry>
@@ -5341,23 +5346,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>使用wget批量下载指定类型文件</title>
-    <url>/2021/1016200952.html</url>
-    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
-
-<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
+    <title>RHEL9 Fatal glibc error, CPU does not support x86-64-v2 解决方法</title>
+    <url>/2023/1213193745.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL 9要求x86_64的CPU支持x86-64-v2，x86-64-v2需要处理器支持 CMPXCHG16B、LAHF-SAHF、POPCNT、SSE3、SSE4.1、SSE4.2、SSSE3 等现代指令集</p>
+<h2 id="检查CPU是否支持x86-64-v2的方法"><a href="#检查CPU是否支持x86-64-v2的方法" class="headerlink" title="检查CPU是否支持x86-64-v2的方法"></a>检查CPU是否支持x86-64-v2的方法</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">flags=$(<span class="built_in">cat</span> /proc/cpuinfo | grep flags | <span class="built_in">head</span> -n 1 | <span class="built_in">cut</span> -d: -f2)</span><br><span class="line">supports_v2=<span class="string">&#x27;awk &quot;/cx16/&amp;&amp;/lahf/&amp;&amp;/popcnt/&amp;&amp;/sse4_1/&amp;&amp;/sse4_2/&amp;&amp;/ssse3/ &#123;found=1&#125; END &#123;exit !found&#125;&quot;&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$flags</span>&quot;</span> | <span class="built_in">eval</span> <span class="variable">$supports_v2</span></span><br><span class="line"><span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU supports x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU doesn&#x27;t support x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
 <span id="more"></span>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
-
-
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/9.0_release_notes/architectures">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;9.0_release_notes&#x2F;architectures</a><br>【2】<a href="https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2">https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2</a></p>
 ]]></content>
       <categories>
-        <category>wget</category>
+        <category>Linux</category>
       </categories>
       <tags>
-        <tag>wget</tag>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -5618,6 +5618,24 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>每天的三哥小鸡腿没了</title>
+    <url>/2024/0313194703.html</url>
+    <content><![CDATA[<p>查看印度基金(164824)公告，从2024年2月28日起，暂停印度基金的申购，限额100块的一拖七套利告一段落。这意味着看好印度股市的国内投资者，以后只能通过在场内买入获得份额。</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0313194703/image1.png"><br>关于暂停申购的原因，官方说是为<strong>保护基金持有人利益</strong>，这个说法真的是TM把我整乐了。太阳从西边出来了，镰刀喊着要保护韭菜的利益了，就问你信不信吧！真正原因我想应该是套利申购份额越来越多，基金公司外汇额度不够用了。为了保护所谓的投资者利益，每天放着这么多申购费都不赚，有钱不赚王八下蛋，这么有良心的基金公司把我感动的都快哭了！</p>
+<p>印度基金作为唯一一支能投资三哥的基金，稀缺性比较强，目前溢价率在7%左右。后市缺少了套利大军的砸盘，估计溢价率会进一步抬升。如果你看好三哥市场，已经申购到手的份额不妨拿一拿，不急着卖，让子弹再飞一会。（个人利益相关，不构成投资建议）<br><img data-src="/2024/0313194703/image2.png"></p>
+<p>总结下，这次的套利行情从1月19日开始，到2月28日结束，时间竟然持续一个月之久。如果每天坚持一拖七申购卖出，一个账户可以获利近1000元，你能搞3个账户就赚3000元，6个账户就赚6000元 。而为了赚到这个钱需要做的，无非就是事先用几个小时学习下基金套利的知识，再准备好几台拖拉机而已，教程网上一搜一大把。</p>
+<p>这简单吗？太简单了，市场送钱我只管接就完事了。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>GRUB菜单不显示问题定位</title>
     <url>/2024/0321195218.html</url>
     <content><![CDATA[<h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>Rocky Linux 9.2环境，手工配置了<code>GRUB_TIMEOUT</code>为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。</p>
@@ -5648,24 +5666,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>Linux</tag>
         <tag>troubleshooting</tag>
         <tag>GRUB</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>每天的三哥小鸡腿没了</title>
-    <url>/2024/0313194703.html</url>
-    <content><![CDATA[<p>查看印度基金(164824)公告，从2024年2月28日起，暂停印度基金的申购，限额100块的一拖七套利告一段落。这意味着看好印度股市的国内投资者，以后只能通过在场内买入获得份额。</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0313194703/image1.png"><br>关于暂停申购的原因，官方说是为<strong>保护基金持有人利益</strong>，这个说法真的是TM把我整乐了。太阳从西边出来了，镰刀喊着要保护韭菜的利益了，就问你信不信吧！真正原因我想应该是套利申购份额越来越多，基金公司外汇额度不够用了。为了保护所谓的投资者利益，每天放着这么多申购费都不赚，有钱不赚王八下蛋，这么有良心的基金公司把我感动的都快哭了！</p>
-<p>印度基金作为唯一一支能投资三哥的基金，稀缺性比较强，目前溢价率在7%左右。后市缺少了套利大军的砸盘，估计溢价率会进一步抬升。如果你看好三哥市场，已经申购到手的份额不妨拿一拿，不急着卖，让子弹再飞一会。（个人利益相关，不构成投资建议）<br><img data-src="/2024/0313194703/image2.png"></p>
-<p>总结下，这次的套利行情从1月19日开始，到2月28日结束，时间竟然持续一个月之久。如果每天坚持一拖七申购卖出，一个账户可以获利近1000元，你能搞3个账户就赚3000元，6个账户就赚6000元 。而为了赚到这个钱需要做的，无非就是事先用几个小时学习下基金套利的知识，再准备好几台拖拉机而已，教程网上一搜一大把。</p>
-<p>这简单吗？太简单了，市场送钱我只管接就完事了。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -5755,6 +5755,23 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>判断两个IP地址是否在同一网段(Shell实现)</title>
+    <url>/2024/0328195011.html</url>
+    <content><![CDATA[<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：提取 CIDR 的网络地址和子网掩码</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_network</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_subnet</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $2&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：将 IP 地址转换为二进制格式</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">ip_to_binary</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> ip=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">local</span> binary=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="built_in">local</span> IFS=<span class="string">&#x27;.&#x27;</span></span><br><span class="line">    <span class="built_in">local</span> octets=(<span class="variable">$ip</span>)</span><br><span class="line">    <span class="keyword">for</span> octet <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$&#123;octets[@]&#125;</span>&quot;</span>; <span class="keyword">do</span></span><br><span class="line">        <span class="built_in">local</span> bin_octet=<span class="string">&quot;&quot;</span></span><br><span class="line">        <span class="built_in">local</span> num=<span class="variable">$octet</span></span><br><span class="line">        <span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="number">8</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">            bin_octet=$((num % <span class="number">2</span>))<span class="variable">$bin_octet</span></span><br><span class="line">            num=$((num / <span class="number">2</span>))</span><br><span class="line">        <span class="keyword">done</span></span><br><span class="line">        binary+=<span class="variable">$bin_octet</span></span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$binary</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 函数：比较两个 IP 地址是否在同一网段</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">same_network</span></span>() &#123;</span><br><span class="line">    network1=$(extract_network <span class="variable">$1</span>)</span><br><span class="line">    subnet1=$(extract_subnet <span class="variable">$1</span>)</span><br><span class="line">    network2=$(extract_network <span class="variable">$2</span>)</span><br><span class="line">    subnet2=$(extract_subnet <span class="variable">$2</span>)</span><br><span class="line"></span><br><span class="line">    binary1=$(ip_to_binary <span class="variable">$network1</span>)</span><br><span class="line">    binary2=$(ip_to_binary <span class="variable">$network2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 截取相同长度的二进制子串</span></span><br><span class="line">    binary1=$(<span class="built_in">echo</span> <span class="variable">$binary1</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet1</span>)</span><br><span class="line">    binary2=$(<span class="built_in">echo</span> <span class="variable">$binary2</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$binary1</span>&quot;</span> == <span class="string">&quot;<span class="variable">$binary2</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 不在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>CIDR1&#x3D;”10.206.216.21&#x2F;24”<br>CIDR2&#x3D;”10.206.217.10&#x2F;24”<br>same_network $CIDR1 $CIDR2</p>
+]]></content>
+      <categories>
+        <category>Shell</category>
+      </categories>
+      <tags>
+        <tag>Shell</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>kubectl执行失败后等待一段时间重试(Shell实现)</title>
     <url>/2024/0328201659.html</url>
     <content><![CDATA[<p>使用Shell脚本实现功能： <code>kubectl</code>执行失败后，等待30秒后再重试，一共重试3次，代码如下：</p>
@@ -5807,49 +5824,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>判断两个IP地址是否在同一网段(Shell实现)</title>
-    <url>/2024/0328195011.html</url>
-    <content><![CDATA[<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：提取 CIDR 的网络地址和子网掩码</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_network</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_subnet</span></span>() &#123;</span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$1</span> | awk -F <span class="string">&#x27;/&#x27;</span> <span class="string">&#x27;&#123;print $2&#125;&#x27;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 函数：将 IP 地址转换为二进制格式</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">ip_to_binary</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> ip=<span class="variable">$1</span></span><br><span class="line">    <span class="built_in">local</span> binary=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="built_in">local</span> IFS=<span class="string">&#x27;.&#x27;</span></span><br><span class="line">    <span class="built_in">local</span> octets=(<span class="variable">$ip</span>)</span><br><span class="line">    <span class="keyword">for</span> octet <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$&#123;octets[@]&#125;</span>&quot;</span>; <span class="keyword">do</span></span><br><span class="line">        <span class="built_in">local</span> bin_octet=<span class="string">&quot;&quot;</span></span><br><span class="line">        <span class="built_in">local</span> num=<span class="variable">$octet</span></span><br><span class="line">        <span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="number">8</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">            bin_octet=$((num % <span class="number">2</span>))<span class="variable">$bin_octet</span></span><br><span class="line">            num=$((num / <span class="number">2</span>))</span><br><span class="line">        <span class="keyword">done</span></span><br><span class="line">        binary+=<span class="variable">$bin_octet</span></span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="variable">$binary</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 函数：比较两个 IP 地址是否在同一网段</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">same_network</span></span>() &#123;</span><br><span class="line">    network1=$(extract_network <span class="variable">$1</span>)</span><br><span class="line">    subnet1=$(extract_subnet <span class="variable">$1</span>)</span><br><span class="line">    network2=$(extract_network <span class="variable">$2</span>)</span><br><span class="line">    subnet2=$(extract_subnet <span class="variable">$2</span>)</span><br><span class="line"></span><br><span class="line">    binary1=$(ip_to_binary <span class="variable">$network1</span>)</span><br><span class="line">    binary2=$(ip_to_binary <span class="variable">$network2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 截取相同长度的二进制子串</span></span><br><span class="line">    binary1=$(<span class="built_in">echo</span> <span class="variable">$binary1</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet1</span>)</span><br><span class="line">    binary2=$(<span class="built_in">echo</span> <span class="variable">$binary2</span> | <span class="built_in">cut</span> -c1-<span class="variable">$subnet2</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$binary1</span>&quot;</span> == <span class="string">&quot;<span class="variable">$binary2</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;两个 CIDR 不在同一网段&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>CIDR1&#x3D;”10.206.216.21&#x2F;24”<br>CIDR2&#x3D;”10.206.217.10&#x2F;24”<br>same_network $CIDR1 $CIDR2</p>
-]]></content>
-      <categories>
-        <category>Shell</category>
-      </categories>
-      <tags>
-        <tag>Shell</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Linux双网卡默认路由优先级不正确，导致网络不通问题定位</title>
-    <url>/2024/0410202218.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 双网卡环境，两个网卡配置如下：(<strong>eth0 走内网，eth1 走外网</strong>)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0  192.168.10.20/24     网关: 192.168.10.254</span><br><span class="line">eth1  10.206.216.92/24     网关: 10.206.216.254</span><br></pre></td></tr></table></figure>
-<p>配置完成后，<code>curl https://www.baidu.com</code>访问百度失败，发现网络不通。</p>
-<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><span id="more"></span>
-<p>使用<code>route</code>命令查路由表，发现eth0的默认路由Metric值为100，小于eth1的Metric(101)，这说明eth0默认路由优先级更高，**<code>curl https://www.baidu.com</code> 匹配的是eth0的默认路由，但我们需要通过eth1访问外网**，所以网络不通。<br><img data-src="/2024/0410202218/image1.png"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>有两种方法，任选其一即可</p>
-<h3 id="方法1-手动修改eth0默认路由的metric值，需大于eth1"><a href="#方法1-手动修改eth0默认路由的metric值，需大于eth1" class="headerlink" title="方法1: 手动修改eth0默认路由的metric值，需大于eth1"></a>方法1: 手动修改eth0默认路由的metric值，需大于eth1</h3><p>以下命令设置eth0的默认路由metric值为200，大于eth1的默认路由metric(101)</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 ipv4.route-metric 200</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
-<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
-<h3 id="方法2：删除eth0的默认路由，只保留eth1的默认路由"><a href="#方法2：删除eth0的默认路由，只保留eth1的默认路由" class="headerlink" title="方法2：删除eth0的默认路由，只保留eth1的默认路由"></a>方法2：删除eth0的默认路由，只保留eth1的默认路由</h3><p>通过配置<code>ipv4.never-default=no</code>，删除eth0网卡的默认路由，参考如下命令：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli c mod eth0 ipv4.never-default no gw4 192.168.10.254</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
-<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/managing-the-default-gateway-setting_configuring-and-managing-networking">Red Hat Customer Portal – Chapter 23. Managing the default gateway setting</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>Network</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>股票账户除了炒股还能做什么?</title>
     <url>/2024/0331201904.html</url>
     <content><![CDATA[<p>除了炒股，股票账户还有哪些功能？开股票账户是不是和去赌场赌博是一回事？股票账户有靠谱的赚钱手艺吗？</p>
@@ -5889,6 +5863,32 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux双网卡默认路由优先级不正确，导致网络不通问题定位</title>
+    <url>/2024/0410202218.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 双网卡环境，两个网卡配置如下：(<strong>eth0 走内网，eth1 走外网</strong>)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0  192.168.10.20/24     网关: 192.168.10.254</span><br><span class="line">eth1  10.206.216.92/24     网关: 10.206.216.254</span><br></pre></td></tr></table></figure>
+<p>配置完成后，<code>curl https://www.baidu.com</code>访问百度失败，发现网络不通。</p>
+<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><span id="more"></span>
+<p>使用<code>route</code>命令查路由表，发现eth0的默认路由Metric值为100，小于eth1的Metric(101)，这说明eth0默认路由优先级更高，**<code>curl https://www.baidu.com</code> 匹配的是eth0的默认路由，但我们需要通过eth1访问外网**，所以网络不通。<br><img data-src="/2024/0410202218/image1.png"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>有两种方法，任选其一即可</p>
+<h3 id="方法1-手动修改eth0默认路由的metric值，需大于eth1"><a href="#方法1-手动修改eth0默认路由的metric值，需大于eth1" class="headerlink" title="方法1: 手动修改eth0默认路由的metric值，需大于eth1"></a>方法1: 手动修改eth0默认路由的metric值，需大于eth1</h3><p>以下命令设置eth0的默认路由metric值为200，大于eth1的默认路由metric(101)</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 ipv4.route-metric 200</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
+<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
+<h3 id="方法2：删除eth0的默认路由，只保留eth1的默认路由"><a href="#方法2：删除eth0的默认路由，只保留eth1的默认路由" class="headerlink" title="方法2：删除eth0的默认路由，只保留eth1的默认路由"></a>方法2：删除eth0的默认路由，只保留eth1的默认路由</h3><p>通过配置<code>ipv4.never-default=no</code>，删除eth0网卡的默认路由，参考如下命令：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli c mod eth0 ipv4.never-default no gw4 192.168.10.254</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
+<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/managing-the-default-gateway-setting_configuring-and-managing-networking">Red Hat Customer Portal – Chapter 23. Managing the default gateway setting</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -6065,6 +6065,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/0528205224.html</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>k8s中的pod域名解析失败问题定位</title>
     <url>/2024/0612205430.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在k8s中启动了一个Host网络模式的pod，这个pod的域名解析失败了。</p>
@@ -6084,18 +6096,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Notepad++不显示CRLF的方法</title>
-    <url>/2024/0528205224.html</url>
-    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
-]]></content>
-      <categories>
-        <category>other</category>
-      </categories>
-      <tags>
-        <tag>other</tag>
       </tags>
   </entry>
   <entry>
@@ -6211,6 +6211,34 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Squid配置用户名密码的方法</title>
+    <url>/2024/0703220137.html</url>
+    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>Centos7.9 Squid 3.5.20</p>
+<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">htpasswd -c /etc/squid/squid_user peter</span><br><span class="line">New password: 123</span><br><span class="line">Re-type new password: 123</span><br><span class="line">Adding password for user peter</span><br></pre></td></tr></table></figure>
+<p>检查密码文件<code>/etc/squid/squid_user</code>，可以找到刚才添加的用户<code>peter</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/squid/squid_user</span><br><span class="line">peter:$XXXXXXXXXXXXXXXXXXX</span><br></pre></td></tr></table></figure>
+<p>对密码文件设置适当权限</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chown squid /etc/squid/squid_user</span><br></pre></td></tr></table></figure>
+<p>验证用户名和密码是否正确, 执行<code>basic_ncsa_auth</code>程序，输入<code>peter 123</code>，显示OK说明正确。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">peter 123</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>2 修改squid配置文件<code>/etc/squid/squid.conf</code>，添加认证相关的配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Insert your own rules here to allow access from your clients</span><br><span class="line"></span><br><span class="line"># http_access allow localhost 加注释，表示localhost也需要认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Proxy Authentication Required</span><br><span class="line">auth_param basic credentialsttl 2 hours</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line"></span><br><span class="line">acl authUsers proxy_auth REQUIRED</span><br><span class="line">http_access allow authUsers</span><br><span class="line"></span><br><span class="line">http_access deny all</span><br></pre></td></tr></table></figure>
+
+<p>修改配置完成后，重启Squid (<code>systemctl restart squid</code>)</p>
+<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>使用<code>curl</code>测试Squid用户名密码认证配置<br>不使用用户名密码认证，访问失败，返回407<br><img data-src="/2024/0703220137/image1.png"><br>使用正确的用户名密码认证，访问成功<br><img data-src="/2024/0703220137/image2.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://www.cnblogs.com/blxt/p/14501176.html">Squid设置用户名密码</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>curl代理用户名或密码出现特殊字符时需要转义</title>
     <url>/2024/0704220405.html</url>
     <content><![CDATA[<p>举例：使用代理<code>127.0.0.1:3128</code>访问百度, 用户名<code>peter</code>, 密码<code>123!</code></p>
@@ -6263,27 +6291,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</title>
-    <url>/2024/0712221104.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0712221104/image1.png"><br>查看<code>/etc/NetworkManager/system-connections/</code>，发现找不到网卡配置文件。</p>
-<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>centos7使用的网卡配置文件是ifcfg-files(<code>/etc/sysconfig/network-scripts/ifcfg-XXX</code>)，而RHEL9使用的是keyfiles(<code>/etc/NetworkManager/system-connections/XXX.nmconnection</code>)。<br>升级到Rocky 9后，需要把eth0网卡重新配置一下。</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>使用nmcli，先删除’Wired connection 1’这个连接，再为eth0网卡生成新的连接，方法如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 删除 Wired connection 1 连接</span><br><span class="line">nmcli dev disconnect eth0</span><br><span class="line">nmcli con del c04f10b8-8831-3d68-9b79-2ac22907357c # nmcli con show 查找`Wired connection 1`连接的uuid，根据uuid删除连接</span><br><span class="line">ip -4 route flush dev eth0</span><br><span class="line"></span><br><span class="line"># 重新生成eth0连接 (这里设置static IP 10.206.216.91，网关10.206.216.254, dns 8.8.8.8)</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes  type ethernet ifname eth0 ipv4.method manual ip4 &quot;10.206.216.91/24&quot; gw4 &quot;10.206.216.254&quot;  ipv4.dns &quot;8.8.8.8&quot;</span><br><span class="line">nmcli c up eth0</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles">https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何修复Rocky Linux 9 OpenSSH CVE-2024-6387漏洞</title>
     <url>/2024/0710220944.html</url>
     <content><![CDATA[<p>关于漏洞的详细说明，参考Rocky官方文档：<a href="https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression">https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression</a></p>
@@ -6303,6 +6310,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</title>
+    <url>/2024/0712221104.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0712221104/image1.png"><br>查看<code>/etc/NetworkManager/system-connections/</code>，发现找不到网卡配置文件。</p>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>centos7使用的网卡配置文件是ifcfg-files(<code>/etc/sysconfig/network-scripts/ifcfg-XXX</code>)，而RHEL9使用的是keyfiles(<code>/etc/NetworkManager/system-connections/XXX.nmconnection</code>)。<br>升级到Rocky 9后，需要把eth0网卡重新配置一下。</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>使用nmcli，先删除’Wired connection 1’这个连接，再为eth0网卡生成新的连接，方法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 删除 Wired connection 1 连接</span><br><span class="line">nmcli dev disconnect eth0</span><br><span class="line">nmcli con del c04f10b8-8831-3d68-9b79-2ac22907357c # nmcli con show 查找`Wired connection 1`连接的uuid，根据uuid删除连接</span><br><span class="line">ip -4 route flush dev eth0</span><br><span class="line"></span><br><span class="line"># 重新生成eth0连接 (这里设置static IP 10.206.216.91，网关10.206.216.254, dns 8.8.8.8)</span><br><span class="line">nmcli con add con-name eth0 autoconnect yes  type ethernet ifname eth0 ipv4.method manual ip4 &quot;10.206.216.91/24&quot; gw4 &quot;10.206.216.254&quot;  ipv4.dns &quot;8.8.8.8&quot;</span><br><span class="line">nmcli c up eth0</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles">https://www.redhat.com/en/blog/rhel-9-networking-say-goodbye-ifcfg-files-and-hello-keyfiles</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
       </tags>
   </entry>
   <entry>
@@ -6448,25 +6476,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>如何查看Squid的DNS缓存</title>
-    <url>/2024/0820194846.html</url>
-    <content><![CDATA[<p>使用<code>squidclient mgr:ipcache</code>命令查看Squid的DNS缓存记录<br>如果squid端口不是3128, 需要指定端口号, <code>squidclient -p &#123;port&#125; mgr:ipcache</code></p>
-<span id="more"></span>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># squidclient mgr:ipcache</span><br><span class="line">...</span><br><span class="line">IP Cache Statistics:</span><br><span class="line">...</span><br><span class="line">IP Cache Contents:</span><br><span class="line"> Hostname                        Flg lstref    TTL  N(b)</span><br><span class="line"> www.trendmicro.com                      19     41  1( 0)                                 23.195.109.63-OK</span><br><span class="line"> localhost6.localdomain6          H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost6                       H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost.localdomain            H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost                        H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost4.localdomain4          H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> localhost4                       H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> www.baidu.com                         1139  -1079  2( 0)                                103.235.47.188-OK</span><br><span class="line">                                                                                          103.235.46.96-OK</span><br></pre></td></tr></table></figure>
-
-<h2 id="DNS请求抓包"><a href="#DNS请求抓包" class="headerlink" title="DNS请求抓包"></a>DNS请求抓包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tcpdump udp port 53 -w dns.pcap</span><br><span class="line">curl -x 127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-<p>10.206.216.93为nameserver的IP<br><img data-src="/2024/0820194846/image1.png"></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://wiki.squid-cache.org/Features/CacheManager/IpCache">https://wiki.squid-cache.org/Features/CacheManager/IpCache</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>awk 删除第一行并提取第一列</title>
     <url>/2024/0820194607.html</url>
     <content><![CDATA[<p>例：用kubectl获取某个namespace下的所有pod</p>
@@ -6483,25 +6492,16 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Squid配置用户名密码的方法</title>
-    <url>/2024/0703220137.html</url>
-    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>Centos7.9 Squid 3.5.20</p>
-<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">htpasswd -c /etc/squid/squid_user peter</span><br><span class="line">New password: 123</span><br><span class="line">Re-type new password: 123</span><br><span class="line">Adding password for user peter</span><br></pre></td></tr></table></figure>
-<p>检查密码文件<code>/etc/squid/squid_user</code>，可以找到刚才添加的用户<code>peter</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/squid/squid_user</span><br><span class="line">peter:$XXXXXXXXXXXXXXXXXXX</span><br></pre></td></tr></table></figure>
-<p>对密码文件设置适当权限</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chown squid /etc/squid/squid_user</span><br></pre></td></tr></table></figure>
-<p>验证用户名和密码是否正确, 执行<code>basic_ncsa_auth</code>程序，输入<code>peter 123</code>，显示OK说明正确。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">peter 123</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+    <title>如何查看Squid的DNS缓存</title>
+    <url>/2024/0820194846.html</url>
+    <content><![CDATA[<p>使用<code>squidclient mgr:ipcache</code>命令查看Squid的DNS缓存记录<br>如果squid端口不是3128, 需要指定端口号, <code>squidclient -p &#123;port&#125; mgr:ipcache</code></p>
 <span id="more"></span>
 
-<p>2 修改squid配置文件<code>/etc/squid/squid.conf</code>，添加认证相关的配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Insert your own rules here to allow access from your clients</span><br><span class="line"></span><br><span class="line"># http_access allow localhost 加注释，表示localhost也需要认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Proxy Authentication Required</span><br><span class="line">auth_param basic credentialsttl 2 hours</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line"></span><br><span class="line">acl authUsers proxy_auth REQUIRED</span><br><span class="line">http_access allow authUsers</span><br><span class="line"></span><br><span class="line">http_access deny all</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># squidclient mgr:ipcache</span><br><span class="line">...</span><br><span class="line">IP Cache Statistics:</span><br><span class="line">...</span><br><span class="line">IP Cache Contents:</span><br><span class="line"> Hostname                        Flg lstref    TTL  N(b)</span><br><span class="line"> www.trendmicro.com                      19     41  1( 0)                                 23.195.109.63-OK</span><br><span class="line"> localhost6.localdomain6          H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost6                       H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost.localdomain            H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost                        H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost4.localdomain4          H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> localhost4                       H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> www.baidu.com                         1139  -1079  2( 0)                                103.235.47.188-OK</span><br><span class="line">                                                                                          103.235.46.96-OK</span><br></pre></td></tr></table></figure>
 
-<p>修改配置完成后，重启Squid (<code>systemctl restart squid</code>)</p>
-<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>使用<code>curl</code>测试Squid用户名密码认证配置<br>不使用用户名密码认证，访问失败，返回407<br><img data-src="/2024/0703220137/image1.png"><br>使用正确的用户名密码认证，访问成功<br><img data-src="/2024/0703220137/image2.png"></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://www.cnblogs.com/blxt/p/14501176.html">Squid设置用户名密码</a></p>
+<h2 id="DNS请求抓包"><a href="#DNS请求抓包" class="headerlink" title="DNS请求抓包"></a>DNS请求抓包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tcpdump udp port 53 -w dns.pcap</span><br><span class="line">curl -x 127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<p>10.206.216.93为nameserver的IP<br><img data-src="/2024/0820194846/image1.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://wiki.squid-cache.org/Features/CacheManager/IpCache">https://wiki.squid-cache.org/Features/CacheManager/IpCache</a></p>
 ]]></content>
       <categories>
         <category>Squid</category>
@@ -6540,44 +6540,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Python</tag>
         <tag>Django</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>源码编译并安装Squid的方法</title>
-    <url>/2024/0831132417.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RockyLinux9.4 yum包中的Squid版本是5.5, 不是最新的版本，我需要安装最新版本的Squid。</p>
-<h2 id="源码编译并安装Squid的步骤"><a href="#源码编译并安装Squid的步骤" class="headerlink" title="源码编译并安装Squid的步骤"></a>源码编译并安装Squid的步骤</h2><ul>
-<li>访问<a href="https://www.squid-cache.org/Versions/">Squid官网</a>，查看最新的稳定版本为 6.10</li>
-<li>下载6.10版本的源码，各发行版编译安装Squid的方法参考<a href="https://wiki.squid-cache.org/SquidFaq/CompilingSquid">官方文档</a></li>
-</ul>
-<p>下面给出我在RockyLinux9.4 VMware虚拟机上，编译安装Squid 6.10的过程：</p>
-<span id="more"></span>
-
-<h3 id="下载依赖"><a href="#下载依赖" class="headerlink" title="下载依赖"></a>下载依赖</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y perl gcc autoconf automake make <span class="built_in">sudo</span> wget</span><br><span class="line">yum install -y libxml2-devel libcap-devel libtool-ltdl-devel</span><br></pre></td></tr></table></figure>
-<h3 id="下载Squid源码并编译安装"><a href="#下载Squid源码并编译安装" class="headerlink" title="下载Squid源码并编译安装"></a>下载Squid源码并编译安装</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://www.squid-cache.org/Versions/v6/squid-6.10.tar.gz</span><br><span class="line">tar -zxvf squid-6.10.tar.gz</span><br><span class="line"><span class="built_in">cd</span> squid-6.10</span><br><span class="line"></span><br><span class="line">./configure --prefix=/usr --includedir=/usr/include --datadir=/usr/share --bindir=/usr/sbin --libexecdir=/usr/lib/squid --localstatedir=/var --sysconfdir=/etc/squid</span><br><span class="line">make -j4</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加squid用户-创建Squid日志目录并设置权限"><a href="#添加squid用户-创建Squid日志目录并设置权限" class="headerlink" title="添加squid用户, 创建Squid日志目录并设置权限"></a>添加squid用户, 创建Squid日志目录并设置权限</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br></pre></td></tr></table></figure>
-
-<h3 id="修改squid配置文件"><a href="#修改squid配置文件" class="headerlink" title="修改squid配置文件"></a>修改squid配置文件</h3><p>修改<code>/etc/squid/squid.conf</code>，新增如下配置项：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
-<p>注意事项：</p>
-<ul>
-<li>需要指定<code>cache_effective_user</code>和<code>cache_effective_group</code>, 一般设置为squid; 注意不能设置成root，否则启动会提示错误。</li>
-<li>如果不设置<code>cache_effective_user</code>和<code>cache_effective_group</code>, Squid进程的user和group为nobody，启动后会异常退出，报fopen写入cache.log没有权限(13)的错误！</li>
-<li>在squid配置文件里自定义<code>cache_log</code>,<code>access_log</code>的路径为&#x2F;var&#x2F;log&#x2F;squid。默认的路径为&#x2F;var&#x2F;log, squid用户没有权限写入。</li>
-</ul>
-<h3 id="测试Squid配置是否正确"><a href="#测试Squid配置是否正确" class="headerlink" title="测试Squid配置是否正确"></a>测试Squid配置是否正确</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k parse</span><br><span class="line">squid -z</span><br></pre></td></tr></table></figure>
-<p>如果提示报错，根据错误信息修改配置项。</p>
-<h3 id="启动Squid"><a href="#启动Squid" class="headerlink" title="启动Squid"></a>启动Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid <span class="comment"># 启动</span></span><br><span class="line">netstat -anpt | grep squid <span class="comment"># Squid默认端口3128, 用netstat查看3128端口是否LISTEN</span></span><br><span class="line">tcp6  0  0  :::3128          :::*         LISTEN    pid/(squid-1)</span><br></pre></td></tr></table></figure>
-<h3 id="测试Squid"><a href="#测试Squid" class="headerlink" title="测试Squid"></a>测试Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -x localhost:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-<h3 id="停止Squid"><a href="#停止Squid" class="headerlink" title="停止Squid"></a>停止Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k shutdown</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.squid-cache.org/">https://www.squid-cache.org/</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Squid</tag>
       </tags>
   </entry>
   <entry>
@@ -6814,6 +6776,44 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>源码编译并安装Squid的方法</title>
+    <url>/2024/0831132417.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RockyLinux9.4 yum包中的Squid版本是5.5, 不是最新的版本，我需要安装最新版本的Squid。</p>
+<h2 id="源码编译并安装Squid的步骤"><a href="#源码编译并安装Squid的步骤" class="headerlink" title="源码编译并安装Squid的步骤"></a>源码编译并安装Squid的步骤</h2><ul>
+<li>访问<a href="https://www.squid-cache.org/Versions/">Squid官网</a>，查看最新的稳定版本为 6.10</li>
+<li>下载6.10版本的源码，各发行版编译安装Squid的方法参考<a href="https://wiki.squid-cache.org/SquidFaq/CompilingSquid">官方文档</a></li>
+</ul>
+<p>下面给出我在RockyLinux9.4 VMware虚拟机上，编译安装Squid 6.10的过程：</p>
+<span id="more"></span>
+
+<h3 id="下载依赖"><a href="#下载依赖" class="headerlink" title="下载依赖"></a>下载依赖</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y perl gcc autoconf automake make <span class="built_in">sudo</span> wget</span><br><span class="line">yum install -y libxml2-devel libcap-devel libtool-ltdl-devel</span><br></pre></td></tr></table></figure>
+<h3 id="下载Squid源码并编译安装"><a href="#下载Squid源码并编译安装" class="headerlink" title="下载Squid源码并编译安装"></a>下载Squid源码并编译安装</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://www.squid-cache.org/Versions/v6/squid-6.10.tar.gz</span><br><span class="line">tar -zxvf squid-6.10.tar.gz</span><br><span class="line"><span class="built_in">cd</span> squid-6.10</span><br><span class="line"></span><br><span class="line">./configure --prefix=/usr --includedir=/usr/include --datadir=/usr/share --bindir=/usr/sbin --libexecdir=/usr/lib/squid --localstatedir=/var --sysconfdir=/etc/squid</span><br><span class="line">make -j4</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加squid用户-创建Squid日志目录并设置权限"><a href="#添加squid用户-创建Squid日志目录并设置权限" class="headerlink" title="添加squid用户, 创建Squid日志目录并设置权限"></a>添加squid用户, 创建Squid日志目录并设置权限</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br></pre></td></tr></table></figure>
+
+<h3 id="修改squid配置文件"><a href="#修改squid配置文件" class="headerlink" title="修改squid配置文件"></a>修改squid配置文件</h3><p>修改<code>/etc/squid/squid.conf</code>，新增如下配置项：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
+<p>注意事项：</p>
+<ul>
+<li>需要指定<code>cache_effective_user</code>和<code>cache_effective_group</code>, 一般设置为squid; 注意不能设置成root，否则启动会提示错误。</li>
+<li>如果不设置<code>cache_effective_user</code>和<code>cache_effective_group</code>, Squid进程的user和group为nobody，启动后会异常退出，报fopen写入cache.log没有权限(13)的错误！</li>
+<li>在squid配置文件里自定义<code>cache_log</code>,<code>access_log</code>的路径为&#x2F;var&#x2F;log&#x2F;squid。默认的路径为&#x2F;var&#x2F;log, squid用户没有权限写入。</li>
+</ul>
+<h3 id="测试Squid配置是否正确"><a href="#测试Squid配置是否正确" class="headerlink" title="测试Squid配置是否正确"></a>测试Squid配置是否正确</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k parse</span><br><span class="line">squid -z</span><br></pre></td></tr></table></figure>
+<p>如果提示报错，根据错误信息修改配置项。</p>
+<h3 id="启动Squid"><a href="#启动Squid" class="headerlink" title="启动Squid"></a>启动Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid <span class="comment"># 启动</span></span><br><span class="line">netstat -anpt | grep squid <span class="comment"># Squid默认端口3128, 用netstat查看3128端口是否LISTEN</span></span><br><span class="line">tcp6  0  0  :::3128          :::*         LISTEN    pid/(squid-1)</span><br></pre></td></tr></table></figure>
+<h3 id="测试Squid"><a href="#测试Squid" class="headerlink" title="测试Squid"></a>测试Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -x localhost:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<h3 id="停止Squid"><a href="#停止Squid" class="headerlink" title="停止Squid"></a>停止Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k shutdown</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.squid-cache.org/">https://www.squid-cache.org/</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Microk8s ingress启动失败, 10254端口被占用问题定位</title>
     <url>/2024/0904203111.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 VM里安装了Microk8s，且使用了Nginx ingress Controller插件，443端口正常。 VM重启一次后，发现443端口没有LISTEN，不能对外提供服务。 </p>
@@ -6912,6 +6912,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>iptables</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在RHEL9上安装MySQL</title>
+    <url>/2024/0916144756.html</url>
+    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
+
+<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
+<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
+<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
+<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
+<p>再输入你之前设置的root用户密码即可。</p>
+<span id="more"></span>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -7245,27 +7266,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Django</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在RHEL9上安装MySQL</title>
-    <url>/2024/0916144756.html</url>
-    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
-
-<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
-<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
-<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
-<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
-<p>再输入你之前设置的root用户密码即可。</p>
-<span id="more"></span>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -8389,159 +8389,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>MySQL8.0如何重置密码</title>
-    <url>/2024/1017202436.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
-<li>VMware Rocky Linux 9.4</li>
-<li>MySQL 8.0.36</li>
-</ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
-
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
-<p>连接成功后，执行如下sql命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在Docker中运行Squid</title>
-    <url>/2024/1017195435.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
-<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p>写一个Dockerfile构建Squid镜像; 再写一个启动脚本start_squid.sh，在启动脚本中配置并运行Squid。</p>
-<span id="more"></span>
-
-<h2 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h2><p>以rockylinux9.3做基础镜像，通过yum安装Squid, 拷贝squid.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">WORKDIR /</span><br><span class="line">RUN yum -y install procps net-tools squid</span><br><span class="line">COPY squid.conf /etc/squid/squid.conf</span><br><span class="line">COPY start_squid.sh /start_squid.sh</span><br><span class="line">RUN chmod +x start_squid.sh</span><br><span class="line"></span><br><span class="line">CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;/start_squid.sh&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>squid.conf可以在容器里装一个squid，再把<code>/etc/squid/squid.conf</code>拷出来，需要额外添加如下配置，从而以squid普通用户启动，否则启动会报错</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
-
-<h2 id="编写启动脚本start-squid-sh"><a href="#编写启动脚本start-squid-sh" class="headerlink" title="编写启动脚本start_squid.sh"></a>编写启动脚本start_squid.sh</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span> ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 60</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-<p>注：</p>
-<ul>
-<li>添加squid用户，创建squid日志目录并通过chown正确设置属主属组</li>
-<li>脚本结尾通过while死循环，防止容器退出</li>
-</ul>
-<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -f Dockerfile -t squid:1.0 .</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动容器"><a href="#启动容器" class="headerlink" title="启动容器"></a>启动容器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cid=$(docker run -d --privileged=true --net=host --ulimit nofile=65535:65535 squid:1.0)</span><br><span class="line">docker exec -it $&#123;cid&#125; /bin/bash</span><br></pre></td></tr></table></figure>
-
-<p>可能会遇到报错: Squid启动失败 <code>FATAL: xcalloc: Unable to allocate 1073741816 blocks of 432 bytes!</code></p>
-<p>解决方法：容器内查看ulimit -n的值为1073741816，这个值太大了，导致Squid分配内存失败。 可以调成65535, 具体做法是给docker run添加参数 –ulimit nofile&#x3D;65535:65535</p>
-<p>具体参考: <a href="https://github.com/langgenius/dify/issues/4371">https://github.com/langgenius/dify/issues/4371</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>华宝添益(511990)折价套利记录</title>
-    <url>/2024/1026131638.html</url>
-    <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
-<h2 id="折价套利流程"><a href="#折价套利流程" class="headerlink" title="折价套利流程"></a>折价套利流程</h2><p>T日买入 -&gt; T日享有收益 -&gt; T日赎回 -&gt; T+1日无收益 -&gt; T+2日资金可用<br>例如：在周五买入华宝添益再立即赎回，可以获得周五，周六，周日共三天利息，下周二资金可用。</p>
-<span id="more"></span>
-
-<h2 id="实战记录"><a href="#实战记录" class="headerlink" title="实战记录"></a>实战记录</h2><p>9月30号当天A股疯涨，一些资金卖出华宝添益去追涨股票，导致华宝添益以99.920的价格低开，当天最低价居然只有99.72<br><img data-src="/2024/1026131638/image1.png"><br>假设9月30号以99.72价格买入再立即赎回，10月9号资金可用，资金占用9天，计8天利息，万元收益0.37, 折价套利的年化收益率：(100+0.0037*8-99.72)&#x2F;99.72&#x2F;9*365 &#x3D; 12.5%</p>
-<p>这个收益率还是很诱人的，自然是要搞它一把。不过30号开盘那会我正巧有事处理，没能抄到最低，最终以99.899的价格成交了7手。<br><img data-src="/2024/1026131638/image2.png"><br>计算一下9天收益约(100.0296-99.899)*700&#x3D;91.42，相当于年化5.3%，还可以。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>chronyd配置了local的NTP server后, NTP报文出现public ip的问题</title>
-    <url>/2024/1026131259.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户在Rocky Linux 9.4的VM上配了一个local的NTP server(IP: 10.64.1.76)。配置完成后, 时钟可以同步，但一段时间后客户的firewall收到告警, 拒绝了大量目标端口为123的请求, 且这些请求的目的IP并不是客户指定的NTP server的IP，客户要求解释原因并给出解决方案。</p>
-<h2 id="定位"><a href="#定位" class="headerlink" title="定位"></a>定位</h2><p>先通过<code>chronyc sourcestats</code>命令，查看当前连接的NTP服务器</p>
-<span id="more"></span>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev</span><br><span class="line">==============================================================================</span><br><span class="line">10.64.1.76                  1   0     0     +0.000   2000.000    +15us  4000ms</span><br><span class="line">117.80.112.205              0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">202.112.29.82               0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">tock.ntp.infomaniak.ch      0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">2001:da8:9000::130          2   0     2     +0.000   2000.000  -1254us  4000ms</span><br><span class="line">ntp1.flashdance.cx          0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">tock.ntp.infomaniak.ch      0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">2001:470:1d:281::123        1   0     0     +0.000   2000.000    -12ms  4000ms</span><br><span class="line">time.cloudflare.com         1   0     0     +0.000   2000.000  -2445us  4000ms</span><br></pre></td></tr></table></figure>
-<p>结果显示, 除了客户指定的NTP server(10.64.1.76), chronyd的确连接了其他的server, 通过tcpdump抓包也能看出NTP报文中出现了public IP</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@localhost ~]# tcpdump -i eth0 dst port 123 -n</span><br><span class="line">07:14:03.968036 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.30612 &gt; 2001:da8:9000::130.ntp: NTPv4, Client, length 48</span><br><span class="line">07:14:05.261407 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.34042 &gt; 2606:4700:f1::123.ntp: NTPv4, Client, length 48</span><br><span class="line">07:14:05.850132 IP 10.206.216.92.63453 &gt; 10.64.1.76.ntp: NTPv4, Client, length 48</span><br><span class="line">07:14:06.383730 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.39439 &gt; 2001:470:1d:281::123.ntp: NTPv4, Client, length 48</span><br><span class="line">07:15:08.229127 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.57634 &gt; 2001:da8:9000::130.ntp: NTPv4, Client, length 48</span><br><span class="line">07:15:10.499490 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.52853 &gt; 2606:4700:f1::123.ntp: NTPv4, Client, length 48</span><br></pre></td></tr></table></figure>
-
-<p>检查配置文件&#x2F;etc&#x2F;chrony.conf, 发现同时配置了server和pool, 如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server 10.64.1.76 iburst</span><br><span class="line">pool 2.rocky.pool.ntp.org iburst</span><br></pre></td></tr></table></figure>
-<p>查阅资料发现，当同时配了server和pool时，chrony会同时向server以及NTP pool中的server发送请求，根据一定的算法和策略选择最准确可靠的源来同步系统时钟。 默认的<code>2.rocky.pool.ntp.org</code>是一个public的NTP pool，所以客户防火墙deny了这些public IP.</p>
-<p>想搞清楚NTP选择source的策略，需要下一份源码调试，后面有时间再来研究</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># chronyd --version  确认chronyd版本</span><br><span class="line">chronyd (chrony) version 4.3</span><br><span class="line">源码: https://git.tuxfamily.org/chrony/chrony.git/</span><br></pre></td></tr></table></figure>
-
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><ul>
-<li>让客户放开这些public IP，或者123端口(这种做法显然不安全)</li>
-<li>或者禁用pool, 修改&#x2F;etc&#x2F;chrony.conf, 删掉<code>pool 2.rocky.pool.ntp.org iburst</code>, 再<code>systemctl restart chronyd</code>重启chronyd. (这种方法会降低时间同步的可靠性，如果local server不工作，时间同步就会失败)</li>
-</ul>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://chrony-project.org/index.html">https://chrony-project.org/index.html</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>chronyd</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Hexo搭建博客问题记录</title>
-    <url>/2024/1026143114.html</url>
-    <content><![CDATA[<h2 id="Hexo-github-homepage搭建个人站点"><a href="#Hexo-github-homepage搭建个人站点" class="headerlink" title="Hexo+github homepage搭建个人站点"></a>Hexo+github homepage搭建个人站点</h2><p>参考：<a href="https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite/">2024年，如何使用 github pages + Hexo + Next 搭建个人博客</a></p>
-<span id="more"></span>
-
-<h2 id="SEO搜索引擎优化"><a href="#SEO搜索引擎优化" class="headerlink" title="SEO搜索引擎优化"></a>SEO搜索引擎优化</h2><p>SEO (Search Engine Optimization)，即搜索引擎优化。<br>简单来说，SEO就是您可以使用提升网站排名的所有方法的总称，SEO用于确保您的网站及其内容在搜索引擎结果页面（SERP）上的可见性。</p>
-<h3 id="编辑网站信息"><a href="#编辑网站信息" class="headerlink" title="编辑网站信息"></a>编辑网站信息</h3><p>编辑<code>_config.yaml</code>, 找到<code># Site</code>部分，编辑网站信息</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Site</span><br><span class="line">title: PC&#x27;s Blog</span><br><span class="line">subtitle: Life is short, Play more!</span><br><span class="line">description: &quot;PC&#x27;s Blog, PC的博客, PC的日志&quot;</span><br><span class="line">keywords: &quot;PC,博客,Blog,Hexo&quot;</span><br><span class="line">author: PC</span><br><span class="line">language: zh-CN</span><br><span class="line">timezone: Asia/Shanghai</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加网站地图"><a href="#添加网站地图" class="headerlink" title="添加网站地图"></a>添加网站地图</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-generator-seo-friendly-sitemap --save</span><br></pre></td></tr></table></figure>
-<p>Hexo配置文件中添加</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sitemap:</span><br><span class="line">    path: sitemap.xml</span><br><span class="line">    tag: false</span><br><span class="line">    category: false</span><br></pre></td></tr></table></figure>
-<ul>
-<li>tag:false, category:false: 网站地图排除标签和分类页面</li>
-<li>将sitemap.xml, post-sitemap.xml, page-sitemap.xml 提交后Google Search Console</li>
-</ul>
-<h3 id="添加robots-txt"><a href="#添加robots-txt" class="headerlink" title="添加robots.txt"></a>添加robots.txt</h3><ul>
-<li><code>robots.txt</code>是存放在网站根目录下的一个纯文本文件，可以指定搜索引擎蜘蛛只抓取指定内容，或禁止抓取网站部分内容，可以指定sitemap地址 <a href="https://www.w3cschool.cn/tools/index?name=createrobots">robots.txt在线生成工具</a></li>
-<li>在source目录下新建robots.txt</li>
-</ul>
-<h3 id="nofollow标签"><a href="#nofollow标签" class="headerlink" title="nofollow标签"></a>nofollow标签</h3><h3 id="给博客文章生成短链"><a href="#给博客文章生成短链" class="headerlink" title="给博客文章生成短链"></a>给博客文章生成短链</h3><p>编辑站点的<code>_config.yml</code>(非主题<code>_config.yml</code>)</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">permalink:</span> <span class="string">:layout/:year:month:day:hour:minute:second.html</span></span><br><span class="line"><span class="attr">permalink_defaults:</span></span><br><span class="line"><span class="attr">pretty_urls:</span></span><br><span class="line">  <span class="attr">trailing_index:</span> <span class="literal">true</span> <span class="comment"># Set to false to remove trailing &#x27;index.html&#x27; from permalinks</span></span><br><span class="line">  <span class="attr">trailing_html:</span> <span class="literal">true</span> <span class="comment"># Set to false to remove trailing &#x27;.html&#x27; from permalinks</span></span><br></pre></td></tr></table></figure>
-<p>注:</p>
-<ul>
-<li>Hexo生成博客文章URL链接时，默认是:year&#x2F;:month&#x2F;:day&#x2F;:title&#x2F;这样的格式。如果博客文件名有中文的话，URL链接就会包含中文，复制URL路径把它粘贴到其他地方就会把中文变成一大堆乱码，使用不便而且会影响网站的SEO，同时链接层级太多也将影响SEO。</li>
-<li>URL构成越简单越好，百度建议URL不要超过255字节。一个英文字符1字节，一个中文字符2字节。</li>
-</ul>
-<h2 id="自定义文章底部的版权声明"><a href="#自定义文章底部的版权声明" class="headerlink" title="自定义文章底部的版权声明"></a>自定义文章底部的版权声明</h2><p>编辑themes&#x2F;next&#x2F;language&#x2F;zh-CN.yml</p>
-<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">post:</span> </span><br><span class="line">  <span class="attr">copyright:</span></span><br><span class="line">    <span class="attr">license_content:</span> <span class="string">&quot;所有文章都欢迎转载，注明出处即可.&quot;</span></span><br></pre></td></tr></table></figure>
-
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite">https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite</a><br><a href="https://www.duheweb.com/post/20210414222449.html">https://www.duheweb.com/post/20210414222449.html</a><br><a href="https://blog.dejavu.moe/posts/hexo-seo/">https://blog.dejavu.moe/posts/hexo-seo/</a></p>
-]]></content>
-      <categories>
-        <category>Hexo</category>
-      </categories>
-      <tags>
-        <tag>Hexo</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -9266,6 +9113,159 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>MySQL8.0如何重置密码</title>
+    <url>/2024/1017202436.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
+
+<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<p>连接成功后，执行如下sql命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在Docker中运行Squid</title>
+    <url>/2024/1017195435.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
+<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p>写一个Dockerfile构建Squid镜像; 再写一个启动脚本start_squid.sh，在启动脚本中配置并运行Squid。</p>
+<span id="more"></span>
+
+<h2 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h2><p>以rockylinux9.3做基础镜像，通过yum安装Squid, 拷贝squid.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">WORKDIR /</span><br><span class="line">RUN yum -y install procps net-tools squid</span><br><span class="line">COPY squid.conf /etc/squid/squid.conf</span><br><span class="line">COPY start_squid.sh /start_squid.sh</span><br><span class="line">RUN chmod +x start_squid.sh</span><br><span class="line"></span><br><span class="line">CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;/start_squid.sh&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>squid.conf可以在容器里装一个squid，再把<code>/etc/squid/squid.conf</code>拷出来，需要额外添加如下配置，从而以squid普通用户启动，否则启动会报错</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
+
+<h2 id="编写启动脚本start-squid-sh"><a href="#编写启动脚本start-squid-sh" class="headerlink" title="编写启动脚本start_squid.sh"></a>编写启动脚本start_squid.sh</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span> ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 60</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li>添加squid用户，创建squid日志目录并通过chown正确设置属主属组</li>
+<li>脚本结尾通过while死循环，防止容器退出</li>
+</ul>
+<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -f Dockerfile -t squid:1.0 .</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动容器"><a href="#启动容器" class="headerlink" title="启动容器"></a>启动容器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cid=$(docker run -d --privileged=true --net=host --ulimit nofile=65535:65535 squid:1.0)</span><br><span class="line">docker exec -it $&#123;cid&#125; /bin/bash</span><br></pre></td></tr></table></figure>
+
+<p>可能会遇到报错: Squid启动失败 <code>FATAL: xcalloc: Unable to allocate 1073741816 blocks of 432 bytes!</code></p>
+<p>解决方法：容器内查看ulimit -n的值为1073741816，这个值太大了，导致Squid分配内存失败。 可以调成65535, 具体做法是给docker run添加参数 –ulimit nofile&#x3D;65535:65535</p>
+<p>具体参考: <a href="https://github.com/langgenius/dify/issues/4371">https://github.com/langgenius/dify/issues/4371</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>华宝添益(511990)折价套利记录</title>
+    <url>/2024/1026131638.html</url>
+    <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
+<h2 id="折价套利流程"><a href="#折价套利流程" class="headerlink" title="折价套利流程"></a>折价套利流程</h2><p>T日买入 -&gt; T日享有收益 -&gt; T日赎回 -&gt; T+1日无收益 -&gt; T+2日资金可用<br>例如：在周五买入华宝添益再立即赎回，可以获得周五，周六，周日共三天利息，下周二资金可用。</p>
+<span id="more"></span>
+
+<h2 id="实战记录"><a href="#实战记录" class="headerlink" title="实战记录"></a>实战记录</h2><p>9月30号当天A股疯涨，一些资金卖出华宝添益去追涨股票，导致华宝添益以99.920的价格低开，当天最低价居然只有99.72<br><img data-src="/2024/1026131638/image1.png"><br>假设9月30号以99.72价格买入再立即赎回，10月9号资金可用，资金占用9天，计8天利息，万元收益0.37, 折价套利的年化收益率：(100+0.0037*8-99.72)&#x2F;99.72&#x2F;9*365 &#x3D; 12.5%</p>
+<p>这个收益率还是很诱人的，自然是要搞它一把。不过30号开盘那会我正巧有事处理，没能抄到最低，最终以99.899的价格成交了7手。<br><img data-src="/2024/1026131638/image2.png"><br>计算一下9天收益约(100.0296-99.899)*700&#x3D;91.42，相当于年化5.3%，还可以。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>chronyd配置了local的NTP server后, NTP报文出现public ip的问题</title>
+    <url>/2024/1026131259.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户在Rocky Linux 9.4的VM上配了一个local的NTP server(IP: 10.64.1.76)。配置完成后, 时钟可以同步，但一段时间后客户的firewall收到告警, 拒绝了大量目标端口为123的请求, 且这些请求的目的IP并不是客户指定的NTP server的IP，客户要求解释原因并给出解决方案。</p>
+<h2 id="定位"><a href="#定位" class="headerlink" title="定位"></a>定位</h2><p>先通过<code>chronyc sourcestats</code>命令，查看当前连接的NTP服务器</p>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev</span><br><span class="line">==============================================================================</span><br><span class="line">10.64.1.76                  1   0     0     +0.000   2000.000    +15us  4000ms</span><br><span class="line">117.80.112.205              0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">202.112.29.82               0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">tock.ntp.infomaniak.ch      0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">2001:da8:9000::130          2   0     2     +0.000   2000.000  -1254us  4000ms</span><br><span class="line">ntp1.flashdance.cx          0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">tock.ntp.infomaniak.ch      0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">2001:470:1d:281::123        1   0     0     +0.000   2000.000    -12ms  4000ms</span><br><span class="line">time.cloudflare.com         1   0     0     +0.000   2000.000  -2445us  4000ms</span><br></pre></td></tr></table></figure>
+<p>结果显示, 除了客户指定的NTP server(10.64.1.76), chronyd的确连接了其他的server, 通过tcpdump抓包也能看出NTP报文中出现了public IP</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[root@localhost ~]# tcpdump -i eth0 dst port 123 -n</span><br><span class="line">07:14:03.968036 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.30612 &gt; 2001:da8:9000::130.ntp: NTPv4, Client, length 48</span><br><span class="line">07:14:05.261407 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.34042 &gt; 2606:4700:f1::123.ntp: NTPv4, Client, length 48</span><br><span class="line">07:14:05.850132 IP 10.206.216.92.63453 &gt; 10.64.1.76.ntp: NTPv4, Client, length 48</span><br><span class="line">07:14:06.383730 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.39439 &gt; 2001:470:1d:281::123.ntp: NTPv4, Client, length 48</span><br><span class="line">07:15:08.229127 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.57634 &gt; 2001:da8:9000::130.ntp: NTPv4, Client, length 48</span><br><span class="line">07:15:10.499490 IP6 2620:101:4002:800b:456f:575f:396d:fe0d.52853 &gt; 2606:4700:f1::123.ntp: NTPv4, Client, length 48</span><br></pre></td></tr></table></figure>
+
+<p>检查配置文件&#x2F;etc&#x2F;chrony.conf, 发现同时配置了server和pool, 如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server 10.64.1.76 iburst</span><br><span class="line">pool 2.rocky.pool.ntp.org iburst</span><br></pre></td></tr></table></figure>
+<p>查阅资料发现，当同时配了server和pool时，chrony会同时向server以及NTP pool中的server发送请求，根据一定的算法和策略选择最准确可靠的源来同步系统时钟。 默认的<code>2.rocky.pool.ntp.org</code>是一个public的NTP pool，所以客户防火墙deny了这些public IP.</p>
+<p>想搞清楚NTP选择source的策略，需要下一份源码调试，后面有时间再来研究</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># chronyd --version  确认chronyd版本</span><br><span class="line">chronyd (chrony) version 4.3</span><br><span class="line">源码: https://git.tuxfamily.org/chrony/chrony.git/</span><br></pre></td></tr></table></figure>
+
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><ul>
+<li>让客户放开这些public IP，或者123端口(这种做法显然不安全)</li>
+<li>或者禁用pool, 修改&#x2F;etc&#x2F;chrony.conf, 删掉<code>pool 2.rocky.pool.ntp.org iburst</code>, 再<code>systemctl restart chronyd</code>重启chronyd. (这种方法会降低时间同步的可靠性，如果local server不工作，时间同步就会失败)</li>
+</ul>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://chrony-project.org/index.html">https://chrony-project.org/index.html</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>chronyd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo搭建博客问题记录</title>
+    <url>/2024/1026143114.html</url>
+    <content><![CDATA[<h2 id="Hexo-github-homepage搭建个人站点"><a href="#Hexo-github-homepage搭建个人站点" class="headerlink" title="Hexo+github homepage搭建个人站点"></a>Hexo+github homepage搭建个人站点</h2><p>参考：<a href="https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite/">2024年，如何使用 github pages + Hexo + Next 搭建个人博客</a></p>
+<span id="more"></span>
+
+<h2 id="SEO搜索引擎优化"><a href="#SEO搜索引擎优化" class="headerlink" title="SEO搜索引擎优化"></a>SEO搜索引擎优化</h2><p>SEO (Search Engine Optimization)，即搜索引擎优化。<br>简单来说，SEO就是您可以使用提升网站排名的所有方法的总称，SEO用于确保您的网站及其内容在搜索引擎结果页面（SERP）上的可见性。</p>
+<h3 id="编辑网站信息"><a href="#编辑网站信息" class="headerlink" title="编辑网站信息"></a>编辑网站信息</h3><p>编辑<code>_config.yaml</code>, 找到<code># Site</code>部分，编辑网站信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Site</span><br><span class="line">title: PC&#x27;s Blog</span><br><span class="line">subtitle: Life is short, Play more!</span><br><span class="line">description: &quot;PC&#x27;s Blog, PC的博客, PC的日志&quot;</span><br><span class="line">keywords: &quot;PC,博客,Blog,Hexo&quot;</span><br><span class="line">author: PC</span><br><span class="line">language: zh-CN</span><br><span class="line">timezone: Asia/Shanghai</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加网站地图"><a href="#添加网站地图" class="headerlink" title="添加网站地图"></a>添加网站地图</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">npm install hexo-generator-seo-friendly-sitemap --save</span><br></pre></td></tr></table></figure>
+<p>Hexo配置文件中添加</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sitemap:</span><br><span class="line">    path: sitemap.xml</span><br><span class="line">    tag: false</span><br><span class="line">    category: false</span><br></pre></td></tr></table></figure>
+<ul>
+<li>tag:false, category:false: 网站地图排除标签和分类页面</li>
+<li>将sitemap.xml, post-sitemap.xml, page-sitemap.xml 提交后Google Search Console</li>
+</ul>
+<h3 id="添加robots-txt"><a href="#添加robots-txt" class="headerlink" title="添加robots.txt"></a>添加robots.txt</h3><ul>
+<li><code>robots.txt</code>是存放在网站根目录下的一个纯文本文件，可以指定搜索引擎蜘蛛只抓取指定内容，或禁止抓取网站部分内容，可以指定sitemap地址 <a href="https://www.w3cschool.cn/tools/index?name=createrobots">robots.txt在线生成工具</a></li>
+<li>在source目录下新建robots.txt</li>
+</ul>
+<h3 id="nofollow标签"><a href="#nofollow标签" class="headerlink" title="nofollow标签"></a>nofollow标签</h3><h3 id="给博客文章生成短链"><a href="#给博客文章生成短链" class="headerlink" title="给博客文章生成短链"></a>给博客文章生成短链</h3><p>编辑站点的<code>_config.yml</code>(非主题<code>_config.yml</code>)</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">permalink:</span> <span class="string">:layout/:year:month:day:hour:minute:second.html</span></span><br><span class="line"><span class="attr">permalink_defaults:</span></span><br><span class="line"><span class="attr">pretty_urls:</span></span><br><span class="line">  <span class="attr">trailing_index:</span> <span class="literal">true</span> <span class="comment"># Set to false to remove trailing &#x27;index.html&#x27; from permalinks</span></span><br><span class="line">  <span class="attr">trailing_html:</span> <span class="literal">true</span> <span class="comment"># Set to false to remove trailing &#x27;.html&#x27; from permalinks</span></span><br></pre></td></tr></table></figure>
+<p>注:</p>
+<ul>
+<li>Hexo生成博客文章URL链接时，默认是:year&#x2F;:month&#x2F;:day&#x2F;:title&#x2F;这样的格式。如果博客文件名有中文的话，URL链接就会包含中文，复制URL路径把它粘贴到其他地方就会把中文变成一大堆乱码，使用不便而且会影响网站的SEO，同时链接层级太多也将影响SEO。</li>
+<li>URL构成越简单越好，百度建议URL不要超过255字节。一个英文字符1字节，一个中文字符2字节。</li>
+</ul>
+<h2 id="自定义文章底部的版权声明"><a href="#自定义文章底部的版权声明" class="headerlink" title="自定义文章底部的版权声明"></a>自定义文章底部的版权声明</h2><p>编辑themes&#x2F;next&#x2F;language&#x2F;zh-CN.yml</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">post:</span> </span><br><span class="line">  <span class="attr">copyright:</span></span><br><span class="line">    <span class="attr">license_content:</span> <span class="string">&quot;所有文章都欢迎转载，注明出处即可.&quot;</span></span><br></pre></td></tr></table></figure>
+
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite">https://mini-pi.github.io/2024/02/28/how-to-make-blog-wedsite</a><br><a href="https://www.duheweb.com/post/20210414222449.html">https://www.duheweb.com/post/20210414222449.html</a><br><a href="https://blog.dejavu.moe/posts/hexo-seo/">https://blog.dejavu.moe/posts/hexo-seo/</a></p>
+]]></content>
+      <categories>
+        <category>Hexo</category>
+      </categories>
+      <tags>
+        <tag>Hexo</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL运维</title>
     <url>/2024/1030215315.html</url>
     <content><![CDATA[<h1 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h1><h2 id="错误日志"><a href="#错误日志" class="headerlink" title="错误日志"></a>错误日志</h2><p>错误日志记录了mysqld启动和停止时，以及服务器运行中错误信息。数据库出故障时，应首先查看此日志。<br>日志默认路径: <code>/var/log/mysql/mysqld.log</code>, 查看方式如下：</p>
@@ -9522,8 +9522,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>OpenResty</li>
 <li>Tengine</li>
 </ul>
-<span id="more"></span>
-
 <h1 id="Nginx应用场景"><a href="#Nginx应用场景" class="headerlink" title="Nginx应用场景"></a>Nginx应用场景</h1><ul>
 <li>http服务器(静态服务器)</li>
 <li>虚拟主机（一台服务器虚拟多个网站)</li>
@@ -9548,6 +9546,8 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>tcp_max_tw_buckets: 表示OS允许TIME_WAIT套接字数量的最大值, 如果超过这个数字, TIME_WAIT被立刻清除并打印告警, 过多的TIME_WAIT会导致Web服务器变慢</li>
 <li>tcp_syncookies: 解决TCP的SYN攻击</li>
 </ul>
+<span id="more"></span>
+
 <h1 id="Nginx常用命令"><a href="#Nginx常用命令" class="headerlink" title="Nginx常用命令"></a>Nginx常用命令</h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nginx -h        # 查看Nginx用法</span><br><span class="line">nginx -s reload # 向主进程发HUP信号，重新加载配置文件，热重启</span><br><span class="line">nginx -s reopen # 向主进程发USR1信号，重新打开日志文件</span><br><span class="line">nginx -s quit   # 向主进程发QUIT信号, 处理完所有正在进行请求后再停止服务 (优雅关闭)</span><br><span class="line">nginx -s stop   # 向主进程发TERM信号，立即停止所有服务</span><br><span class="line">nginx -T        # 查看当前配置</span><br><span class="line">nginx -t        # 测试配置是否有问题</span><br></pre></td></tr></table></figure>
 <p>stop快速停止服务, worker进程和master进程收到信号后立刻跳出循环<br>quit优雅停止服务, 关闭监听端口,停止接收新连接，把当前连接处理完，最后退出进程</p>
 <h1 id="Nginx进程间的关系"><a href="#Nginx进程间的关系" class="headerlink" title="Nginx进程间的关系"></a>Nginx进程间的关系</h1><p>一个master进程管理多个worker进程, worker进程数和CPU核心数相等</p>
@@ -9807,6 +9807,32 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is www web site</span><br><span class="line"># curl 123.petertest.com</span><br><span class="line">this is aud web site</span><br></pre></td></tr></table></figure>
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7096443628326748174">手把手教你配置Nginx的虚拟主机</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Nginx文件下载服务器搭建</title>
+    <url>/2024/1117153133.html</url>
+    <content><![CDATA[<h1 id="Nginx文件下载服务器搭建"><a href="#Nginx文件下载服务器搭建" class="headerlink" title="Nginx文件下载服务器搭建"></a>Nginx文件下载服务器搭建</h1><p>80端口启动下载服务器, 下载<code>/var/www/downloads</code>目录下的文件，<code>nginx.conf</code>如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    location /downloads/ &#123;</span><br><span class="line">        root /var/www/downloads;</span><br><span class="line">	    autoindex on; # 显示目录</span><br><span class="line">		autoindex_localtime on;a</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>浏览器中访问，可以查到文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://192.168.52.200/</span><br><span class="line">Index of /</span><br><span class="line">../</span><br><span class="line">1.txt     17-Nov-2024 14:52      0</span><br><span class="line">2.txt     13-Nov-2024 21:44      0</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h2 id="添加登录认证"><a href="#添加登录认证" class="headerlink" title="添加登录认证"></a>添加登录认证</h2><p>有时我们需要对用户身份进行认证。这里采用basic认证, 方法如下:<br/><br>先生成密码文件，用户名admin, 密码123456</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo -n &quot;admin:&quot; &gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">openssl passwd &gt;&gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line"># 输入密码123456</span><br></pre></td></tr></table></figure>
+<p>查看密码文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">admin:$1$6ptGV8Fm$781jZKRgxV8wB.HtyTSdk.</span><br></pre></td></tr></table></figure>
+<p>修改nginx.conf，添加auth配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line"></span><br><span class="line">    auth_basic &quot;Restricted site&quot;;</span><br><span class="line">    auth_basic_user_file /etc/nginx/conf.d/.nginx_http_passwd;</span><br><span class="line">    # ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重启Nginx，通过浏览器测试，此时会要求用户输入用户名和密码。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html">https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html</a></p>
 ]]></content>
       <categories>
         <category>Nginx</category>
