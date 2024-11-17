@@ -380,10 +380,6 @@
           <h2 id="什么是虚拟主机"><a href="#什么是虚拟主机" class="headerlink" title="什么是虚拟主机"></a>什么是虚拟主机</h2><p>虚拟主机是指，把一台物理主机划分为多台虚拟主机，每台虚拟主机都可以是一个独立的网站，可以有独立的域名，具有完整的服务器功能。</p>
 <p>Nginx提供虚拟主机功能，使我们不必为每个网站都提供一台Nginx服务器；只需运行一组Nginx进程，就可以运行多个域名不同网站</p>
 <h2 id="配置虚拟主机的方法"><a href="#配置虚拟主机的方法" class="headerlink" title="配置虚拟主机的方法"></a>配置虚拟主机的方法</h2><p>Nginx配置虚拟主机的方式有三种:</p>
-<ul>
-<li>基于域名的虚拟主机(不同的域名，相同的IP，这种方式用的最多)</li>
-<li>基于端口的虚拟主机(通过不同的端口号区分虚拟主机)</li>
-<li>基于IP的虚拟主机 (不同域名, 不同的IP, 需要多个网络接口, 用的比较少，不演示)
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/1116173059.html#more" rel="contents">
@@ -471,8 +467,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.bilibili.com/video/BV1oi421m7Qa?spm_id_from=333.788.videopod.episodes&vd_source=d8559c2d87607be86810cd806158bb86">https://www.bilibili.com/video/BV1oi421m7Qa?spm_id_from=333.788.videopod.episodes&amp;vd_source=d8559c2d87607be86810cd806158bb86</a><br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://102no.com/2021/06/07/10-nginx-learn-books/#%E3%80%8ANginx%E5%BC%80%E5%8F%91%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E7%B2%BE%E9%80%9A%E3%80%8B">https://102no.com/2021/06/07/10-nginx-learn-books/#%E3%80%8ANginx%E5%BC%80%E5%8F%91%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E7%B2%BE%E9%80%9A%E3%80%8B</a><br>(Nginx&#x2F;Redis&#x2F;kernel)</p>
-<p>Nginx 1.20.1</p>
+          <p>Nginx 1.20.1</p>
 <ul>
 <li>Nginx.conf如何解析</li>
 <li>多进程网络连接</li>
@@ -480,30 +475,14 @@
 <li>线程池源码</li>
 <li>进程间通信共享内存的实现</li>
 </ul>
-<p>经典问题:</p>
-<ul>
-<li>多进程如何实现</li>
-<li>惊群</li>
-<li>内存池</li>
-<li>多个进程锁</li>
-</ul>
-<h1 id="ngx-modules-c文件定义ngx-modules数组"><a href="#ngx-modules-c文件定义ngx-modules数组" class="headerlink" title="ngx_modules.c文件定义ngx_modules数组"></a>ngx_modules.c文件定义ngx_modules数组</h1><h1 id="Nginx-conf解析"><a href="#Nginx-conf解析" class="headerlink" title="Nginx.conf解析"></a>Nginx.conf解析</h1><p>ngx_set_worker_processes</p>
-<p>单独用len计长度, 便于内存池管理</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">typedef struct &#123;</span><br><span class="line">    size_t      len;</span><br><span class="line">    u_char     *data;</span><br><span class="line">&#125; ngx_str_t;</span><br></pre></td></tr></table></figure>
-
-<p>多个进程监听不同的端口怎么做的?</p>
-<p>ngx_http_optimize_servers<br>ngx_http_init_listening<br>ngx_http_add_listening<br>ngx_create_listening</p>
-<h1 id="内存池"><a href="#内存池" class="headerlink" title="内存池"></a>内存池</h1><p>Nginx用在哪里?<br>连接建立, 为fd分配内存池</p>
-<p>内存池实现ngx_calloc.c</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">typedef struct ngx_pool_large_s  ngx_pool_large_t;</span><br><span class="line"></span><br><span class="line">struct ngx_pool_large_s &#123;</span><br><span class="line">    ngx_pool_large_t     *next;</span><br><span class="line">    void                 *alloc;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">单链表</span><br><span class="line">(alloc | next) -&gt; (alloc | next) -&gt; (alloc | next)</span><br><span class="line"></span><br><span class="line">typedef struct &#123;</span><br><span class="line">    u_char               *last;				// 当前内存可分配的地址</span><br><span class="line">    u_char               *end;				// 当前内存结尾地址</span><br><span class="line">    ngx_pool_t           *next;				// 指向下一块内存的结构体</span><br><span class="line">    ngx_uint_t            failed;			// 记录分配失败次数</span><br><span class="line">&#125; ngx_pool_data_t;</span><br><span class="line"></span><br><span class="line">typedef struct &#123;</span><br><span class="line">    u_char               *last;</span><br><span class="line">    u_char               *end;</span><br><span class="line">    ngx_pool_t           *next;</span><br><span class="line">    ngx_uint_t            failed;</span><br><span class="line">&#125; ngx_pool_data_t;</span><br><span class="line"></span><br><span class="line">struct ngx_pool_s &#123;</span><br><span class="line">    ngx_pool_data_t       d;</span><br><span class="line">    size_t                max;</span><br><span class="line">    ngx_pool_t           *current;</span><br><span class="line">    ngx_chain_t          *chain;</span><br><span class="line">    ngx_pool_large_t     *large;</span><br><span class="line">    ngx_pool_cleanup_t   *cleanup;</span><br><span class="line">    ngx_log_t            *log;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="问题-C10K问题如何解决的"><a href="#问题-C10K问题如何解决的" class="headerlink" title="问题: C10K问题如何解决的"></a>问题: C10K问题如何解决的</h2><p>C10K问题: 如何在一台物理机支持1万个并发连接<br>IO 多路复用(epoll)</p>
-<p>问题: Master和Worker进程分别是什么,<br>master 加载配置文件，管理子进程<br>worker 每个worker进程可同时处理多个请求</p>
-<p>问题: 多个worker进程如何监听同一个端口的, 哪一个worker处理请求(惊群) ?<br>fork<br>每个进程epoll_wait -&gt; accept， 但只有一个进程accept执行成功</p>
-<p>只让一个进程的fd加到epoll里<br>atomic lock; (共享内存)</p>
-<p>问题: 多个server怎么启动的，端口LISTEN在哪?</p>
-
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/1114195846.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -585,11 +564,6 @@
       
           <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在Nginx上添加一个端口号为88的虚拟主机， 重新启动Nginx报错：<code> bind() to 0.0.0.0:88 failed (13: Permission denied)</code></p>
 <h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>查阅资料，发现这类bind无权限问题，大多由SElinux引起。SELinux有三种模式，如下：</p>
-<ul>
-<li>enforcing：强制模式，此时SELinux 运行中</li>
-<li>permissive：宽容模式，此时SELinux运行中，会像 enforcing 模式一样加载安全策略，但不会拒绝任何操作。</li>
-<li>disabled：关闭，SELinux 没有运行。</li>
-</ul>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2024/1110141108.html#more" rel="contents">
@@ -778,30 +752,6 @@
 <li>Nginx plus 商业版</li>
 <li>OpenResty</li>
 <li>Tengine</li>
-</ul>
-<h1 id="Nginx应用场景"><a href="#Nginx应用场景" class="headerlink" title="Nginx应用场景"></a>Nginx应用场景</h1><ul>
-<li>http服务器(静态服务器)</li>
-<li>虚拟主机（一台服务器虚拟多个网站)</li>
-<li>反向代理、负载均衡</li>
-<li>安全管理, API Gateway, 跨域问题, UrlRewrite</li>
-</ul>
-<h1 id="Nginx特点-为什么用Nginx"><a href="#Nginx特点-为什么用Nginx" class="headerlink" title="Nginx特点&#x2F;为什么用Nginx"></a>Nginx特点&#x2F;为什么用Nginx</h1><ul>
-<li>响应快</li>
-<li>高并发(单机支持10w+, 并发连接上限取决与内存)</li>
-<li>高扩展性</li>
-<li>低内存消耗</li>
-<li>高可靠性(worker进程异常退出, master进程可以快速拉起新的worker进程提供服务)</li>
-<li>热部署(不停止服务, 升级Nginx的可执行文件, 更新配置，更换日志文件)</li>
-<li>配置简单</li>
-<li>最自由的BSD许可协议</li>
-</ul>
-<h1 id="Nginx安装"><a href="#Nginx安装" class="headerlink" title="Nginx安装"></a>Nginx安装</h1><p><a href="https://pcj600.github.io/2024/1109163902.html">https://pcj600.github.io/2024/1109163902.html</a></p>
-<h1 id="内核参数优化"><a href="#内核参数优化" class="headerlink" title="内核参数优化"></a>内核参数优化</h1><ul>
-<li>file-max: 表示进程可以同时打开的最大句柄数，这个参数直接限制最大并发连接数</li>
-<li>tcp_tw_reuse: 设为1, 允许将TIME-WAIT的socket重新用于新TCP连接</li>
-<li>tcp_fin_timeout: 表示服务器主动关闭连接时, socket保持在FIN_WAIT_2状态最大时间</li>
-<li>tcp_max_tw_buckets: 表示OS允许TIME_WAIT套接字数量的最大值, 如果超过这个数字, TIME_WAIT被立刻清除并打印告警, 过多的TIME_WAIT会导致Web服务器变慢</li>
-<li>tcp_syncookies: 解决TCP的SYN攻击</li>
 </ul>
           <!--noindex-->
             <div class="post-button">
