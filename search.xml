@@ -125,6 +125,45 @@
       </tags>
   </entry>
   <entry>
+    <title>隐式函数声明[-Wimplicit-function-declaration]</title>
+    <url>/2020/0411143310.html</url>
+    <content><![CDATA[<h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
+<span id="more"></span>
+
+<h2 id="忽略隐式函数声明警告的危害"><a href="#忽略隐式函数声明警告的危害" class="headerlink" title="忽略隐式函数声明警告的危害"></a>忽略隐式函数声明警告的危害</h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img data-src="/2020/0411143310/image1.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ldd -r libadd.so</span><br><span class="line">undefined symbol: ad (./libadd.so)</span><br></pre></td></tr></table></figure>
+
+<p>此时写一个main程序，调用libadd.so中的sum方法求三数之和</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译main程序出错，错误原因在于<strong>编写add.c时将符号add错写成了ad，由于忽视隐式函数声明警告，导致该错误没有在编译add.c的时候及时发现。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -L. -ladd</span><br><span class="line">./libadd.so: undefined reference to `ad&#x27;</span><br><span class="line">collect2: error: ld returned 1 exit status</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对于用dlopen动态加载该so库的程序，如指定RTLD_NOW，dlopen立即失败；如指定RTLD_LAZY延迟绑定，则dlopen成功，但dlsym加载引用了未定义符号的函数(如sum函数)会出错，示例main程序如下：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;dlfcn.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">void</span> *handle = dlopen(<span class="string">&quot;./libadd.so&quot;</span>, RTLD_LAZY);</span><br><span class="line">	<span class="keyword">if</span>(handle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, dlerror());</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="type">int</span> (*add)(<span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line">	<span class="type">int</span> (*sum)(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line"></span><br><span class="line">	add = dlsym(handle, <span class="string">&quot;add&quot;</span>);	<span class="comment">// add方法正常执行</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 = %d\n&quot;</span>, add(<span class="number">1</span>, <span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">	sum = dlsym(handle, <span class="string">&quot;sum&quot;</span>);	<span class="comment">// 出错，报未定义符号ad</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 + 3 = %d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -ldl</span><br><span class="line">$ ./a.out</span><br><span class="line">1 + 2 = 3</span><br><span class="line">./a.out: symbol lookup error: ./libadd.so: undefined symbol: ad</span><br></pre></td></tr></table></figure>
+<p>虽然编译成功，libadd.so可以加载，add函数可以执行，但执行sum函数时报未定义符号错。如及时处理隐式函数声明警告，可以在编译add.c的时候就发现该问题。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><p>函数先声明再使用，包含必要的头文件。</p>
+</li>
+<li><p>重视编译器的隐式函数声明警告, 可开启-Werror选项检查, 不要简单使用-Wno忽略该编译告警。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>C</category>
+      </categories>
+      <tags>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Git常用命令</title>
     <url>/2020/0502171005.html</url>
     <content><![CDATA[<h3 id="0-git帮助"><a href="#0-git帮助" class="headerlink" title="0. git帮助"></a>0. git帮助</h3><ul>
@@ -193,45 +232,6 @@
       </categories>
       <tags>
         <tag>Git</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>隐式函数声明[-Wimplicit-function-declaration]</title>
-    <url>/2020/0411143310.html</url>
-    <content><![CDATA[<h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
-<span id="more"></span>
-
-<h2 id="忽略隐式函数声明警告的危害"><a href="#忽略隐式函数声明警告的危害" class="headerlink" title="忽略隐式函数声明警告的危害"></a>忽略隐式函数声明警告的危害</h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img data-src="/2020/0411143310/image1.png"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ldd -r libadd.so</span><br><span class="line">undefined symbol: ad (./libadd.so)</span><br></pre></td></tr></table></figure>
-
-<p>此时写一个main程序，调用libadd.so中的sum方法求三数之和</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译main程序出错，错误原因在于<strong>编写add.c时将符号add错写成了ad，由于忽视隐式函数声明警告，导致该错误没有在编译add.c的时候及时发现。</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -L. -ladd</span><br><span class="line">./libadd.so: undefined reference to `ad&#x27;</span><br><span class="line">collect2: error: ld returned 1 exit status</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>对于用dlopen动态加载该so库的程序，如指定RTLD_NOW，dlopen立即失败；如指定RTLD_LAZY延迟绑定，则dlopen成功，但dlsym加载引用了未定义符号的函数(如sum函数)会出错，示例main程序如下：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;dlfcn.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">void</span> *handle = dlopen(<span class="string">&quot;./libadd.so&quot;</span>, RTLD_LAZY);</span><br><span class="line">	<span class="keyword">if</span>(handle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, dlerror());</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="type">int</span> (*add)(<span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line">	<span class="type">int</span> (*sum)(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line"></span><br><span class="line">	add = dlsym(handle, <span class="string">&quot;add&quot;</span>);	<span class="comment">// add方法正常执行</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 = %d\n&quot;</span>, add(<span class="number">1</span>, <span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">	sum = dlsym(handle, <span class="string">&quot;sum&quot;</span>);	<span class="comment">// 出错，报未定义符号ad</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 + 3 = %d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -ldl</span><br><span class="line">$ ./a.out</span><br><span class="line">1 + 2 = 3</span><br><span class="line">./a.out: symbol lookup error: ./libadd.so: undefined symbol: ad</span><br></pre></td></tr></table></figure>
-<p>虽然编译成功，libadd.so可以加载，add函数可以执行，但执行sum函数时报未定义符号错。如及时处理隐式函数声明警告，可以在编译add.c的时候就发现该问题。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li><p>函数先声明再使用，包含必要的头文件。</p>
-</li>
-<li><p>重视编译器的隐式函数声明警告, 可开启-Werror选项检查, 不要简单使用-Wno忽略该编译告警。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>C</category>
-      </categories>
-      <tags>
-        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -5571,6 +5571,29 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>全球芯片LOF大幅溢价，痛失巨肉我拍断大腿！</title>
+    <url>/2024/0310224202.html</url>
+    <content><![CDATA[<p>3月8号当天，全球芯片LOF(501225)出现15%的大幅溢价。这只基每个身份证限额申购1万，这意味着如果你在3月5号申购，在3月8号收盘前卖出，一户收益高达1500元，3天收益率15%，简直是抢钱！在如此恐怖的收益率面前，高利贷都只能算个弟弟！</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0310224202/image1.png"></p>
+<p>然而，我3月5号并没有申购，或者说完全没注意到这只鸡的存在，因为集思录里刚好没有收录这个基金，只能说获取信息的路子不够多啊。3月6号(周三)，我后知后觉，每户小额申购1千。</p>
+<p><img data-src="/2024/0310224202/image2.jpg"></p>
+<p>没有拉满到1万的原因是，我当时认为周三6个点的溢价不算太高，场内成交额不大，基金跟踪的费城半导体指数波动较大。结果没想到周四周五这货被连续爆炒，溢价冲上了惊人的15%！？？</p>
+<p>算了下这波没拉满起码少赚了几千块，看到别人几个账户一天怒赚1万+，我真是拍断大腿，只能留下羡慕和悔恨的泪水~</p>
+<p>打不过就加入！周五我继续小额参与了一把。15个点的溢价，承受两天的波动，风险在于英伟达的下跌带动基金净值下跌，以及下周三场内接盘侠不足导致溢价被抹平。</p>
+<p><img data-src="/2024/0310224202/image3.webp"></p>
+<p>吃肉还是吃面，下周三见分晓。</p>
+<p>为什么穷？因为我对钱不够热爱啊！</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>印度基金低风险套利回顾</title>
     <url>/2024/0217194406.html</url>
     <content><![CDATA[<p>2024年1月19日当天，印度基金(164824)开放申购，限额申购100元，当天溢价率13%左右，这个溢价率已经非常可观了，当然要祭出一拖七大法搞它一把！</p>
@@ -5586,29 +5609,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>必须有场内一折申购+免5的券商渠道，否则交易成本高达6%</li>
 </ul>
 <h2 id="操作记录"><a href="#操作记录" class="headerlink" title="操作记录"></a>操作记录</h2><p>从1月19日(周五)开始每天使用一拖七大法申购, 从1月24日开始每天早盘卖出，场外转托管, 直到2月8日(节前最后一个交易日)结束，每个身份证获利708元：<br><img data-src="/2024/0217194406/image2.png"><br>如果下次遇到同样的机会，就继续薅羊毛吧 ~</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>全球芯片LOF大幅溢价，痛失巨肉我拍断大腿！</title>
-    <url>/2024/0310224202.html</url>
-    <content><![CDATA[<p>3月8号当天，全球芯片LOF(501225)出现15%的大幅溢价。这只基每个身份证限额申购1万，这意味着如果你在3月5号申购，在3月8号收盘前卖出，一户收益高达1500元，3天收益率15%，简直是抢钱！在如此恐怖的收益率面前，高利贷都只能算个弟弟！</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0310224202/image1.png"></p>
-<p>然而，我3月5号并没有申购，或者说完全没注意到这只鸡的存在，因为集思录里刚好没有收录这个基金，只能说获取信息的路子不够多啊。3月6号(周三)，我后知后觉，每户小额申购1千。</p>
-<p><img data-src="/2024/0310224202/image2.jpg"></p>
-<p>没有拉满到1万的原因是，我当时认为周三6个点的溢价不算太高，场内成交额不大，基金跟踪的费城半导体指数波动较大。结果没想到周四周五这货被连续爆炒，溢价冲上了惊人的15%！？？</p>
-<p>算了下这波没拉满起码少赚了几千块，看到别人几个账户一天怒赚1万+，我真是拍断大腿，只能留下羡慕和悔恨的泪水~</p>
-<p>打不过就加入！周五我继续小额参与了一把。15个点的溢价，承受两天的波动，风险在于英伟达的下跌带动基金净值下跌，以及下周三场内接盘侠不足导致溢价被抹平。</p>
-<p><img data-src="/2024/0310224202/image3.webp"></p>
-<p>吃肉还是吃面，下周三见分晓。</p>
-<p>为什么穷？因为我对钱不够热爱啊！</p>
 ]]></content>
       <categories>
         <category>investment</category>
@@ -8356,103 +8356,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Docker安装教程</title>
-    <url>/2024/1017195632.html</url>
-    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
-
-<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
-
-<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
-
-<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
-
-<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
-<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL8.0如何重置密码</title>
-    <url>/2024/1017202436.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
-<li>VMware Rocky Linux 9.4</li>
-<li>MySQL 8.0.36</li>
-</ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
-
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
-<p>连接成功后，执行如下sql命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在Docker中运行Squid</title>
-    <url>/2024/1017195435.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
-<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p>写一个Dockerfile构建Squid镜像; 再写一个启动脚本start_squid.sh，在启动脚本中配置并运行Squid。</p>
-<span id="more"></span>
-
-<h2 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h2><p>以rockylinux9.3做基础镜像，通过yum安装Squid, 拷贝squid.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">WORKDIR /</span><br><span class="line">RUN yum -y install procps net-tools squid</span><br><span class="line">COPY squid.conf /etc/squid/squid.conf</span><br><span class="line">COPY start_squid.sh /start_squid.sh</span><br><span class="line">RUN chmod +x start_squid.sh</span><br><span class="line"></span><br><span class="line">CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;/start_squid.sh&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>squid.conf可以在容器里装一个squid，再把<code>/etc/squid/squid.conf</code>拷出来，需要额外添加如下配置，从而以squid普通用户启动，否则启动会报错</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
-
-<h2 id="编写启动脚本start-squid-sh"><a href="#编写启动脚本start-squid-sh" class="headerlink" title="编写启动脚本start_squid.sh"></a>编写启动脚本start_squid.sh</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span> ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 60</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-<p>注：</p>
-<ul>
-<li>添加squid用户，创建squid日志目录并通过chown正确设置属主属组</li>
-<li>脚本结尾通过while死循环，防止容器退出</li>
-</ul>
-<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -f Dockerfile -t squid:1.0 .</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动容器"><a href="#启动容器" class="headerlink" title="启动容器"></a>启动容器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cid=$(docker run -d --privileged=true --net=host --ulimit nofile=65535:65535 squid:1.0)</span><br><span class="line">docker exec -it $&#123;cid&#125; /bin/bash</span><br></pre></td></tr></table></figure>
-
-<p>可能会遇到报错: Squid启动失败 <code>FATAL: xcalloc: Unable to allocate 1073741816 blocks of 432 bytes!</code></p>
-<p>解决方法：容器内查看ulimit -n的值为1073741816，这个值太大了，导致Squid分配内存失败。 可以调成65535, 具体做法是给docker run添加参数 –ulimit nofile&#x3D;65535:65535</p>
-<p>具体参考: <a href="https://github.com/langgenius/dify/issues/4371">https://github.com/langgenius/dify/issues/4371</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -9177,6 +9080,103 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Docker安装教程</title>
+    <url>/2024/1017195632.html</url>
+    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+
+<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+
+<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL8.0如何重置密码</title>
+    <url>/2024/1017202436.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
+
+<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<p>连接成功后，执行如下sql命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在Docker中运行Squid</title>
+    <url>/2024/1017195435.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
+<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p>写一个Dockerfile构建Squid镜像; 再写一个启动脚本start_squid.sh，在启动脚本中配置并运行Squid。</p>
+<span id="more"></span>
+
+<h2 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h2><p>以rockylinux9.3做基础镜像，通过yum安装Squid, 拷贝squid.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">WORKDIR /</span><br><span class="line">RUN yum -y install procps net-tools squid</span><br><span class="line">COPY squid.conf /etc/squid/squid.conf</span><br><span class="line">COPY start_squid.sh /start_squid.sh</span><br><span class="line">RUN chmod +x start_squid.sh</span><br><span class="line"></span><br><span class="line">CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;/start_squid.sh&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>squid.conf可以在容器里装一个squid，再把<code>/etc/squid/squid.conf</code>拷出来，需要额外添加如下配置，从而以squid普通用户启动，否则启动会报错</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
+
+<h2 id="编写启动脚本start-squid-sh"><a href="#编写启动脚本start-squid-sh" class="headerlink" title="编写启动脚本start_squid.sh"></a>编写启动脚本start_squid.sh</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span> ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 60</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li>添加squid用户，创建squid日志目录并通过chown正确设置属主属组</li>
+<li>脚本结尾通过while死循环，防止容器退出</li>
+</ul>
+<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -f Dockerfile -t squid:1.0 .</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动容器"><a href="#启动容器" class="headerlink" title="启动容器"></a>启动容器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cid=$(docker run -d --privileged=true --net=host --ulimit nofile=65535:65535 squid:1.0)</span><br><span class="line">docker exec -it $&#123;cid&#125; /bin/bash</span><br></pre></td></tr></table></figure>
+
+<p>可能会遇到报错: Squid启动失败 <code>FATAL: xcalloc: Unable to allocate 1073741816 blocks of 432 bytes!</code></p>
+<p>解决方法：容器内查看ulimit -n的值为1073741816，这个值太大了，导致Squid分配内存失败。 可以调成65535, 具体做法是给docker run添加参数 –ulimit nofile&#x3D;65535:65535</p>
+<p>具体参考: <a href="https://github.com/langgenius/dify/issues/4371">https://github.com/langgenius/dify/issues/4371</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>华宝添益(511990)折价套利记录</title>
     <url>/2024/1026131638.html</url>
     <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
@@ -9549,63 +9549,13 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <span id="more"></span>
 
 <h1 id="Nginx常用命令"><a href="#Nginx常用命令" class="headerlink" title="Nginx常用命令"></a>Nginx常用命令</h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nginx -h        # 查看Nginx用法</span><br><span class="line">nginx -s reload # 向主进程发HUP信号，重新加载配置文件，热重启</span><br><span class="line">nginx -s reopen # 向主进程发USR1信号，重新打开日志文件</span><br><span class="line">nginx -s quit   # 向主进程发QUIT信号, 处理完所有正在进行请求后再停止服务 (优雅关闭)</span><br><span class="line">nginx -s stop   # 向主进程发TERM信号，立即停止所有服务</span><br><span class="line">nginx -T        # 查看当前配置</span><br><span class="line">nginx -t        # 测试配置是否有问题</span><br></pre></td></tr></table></figure>
-
 <p>stop快速停止服务, worker进程和master进程收到信号后立刻跳出循环<br>quit优雅停止服务, 关闭监听端口,停止接收新连接，把当前连接处理完，最后退出进程</p>
 <h1 id="Nginx进程间的关系"><a href="#Nginx进程间的关系" class="headerlink" title="Nginx进程间的关系"></a>Nginx进程间的关系</h1><p>一个master进程管理多个worker进程, worker进程数和CPU核心数相等</p>
 <h1 id="Nginx主配置文件"><a href="#Nginx主配置文件" class="headerlink" title="Nginx主配置文件"></a>Nginx主配置文件</h1><p>主配置文件<code>/etc/nginx/nginx.conf</code>, 基础配置说明如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">user nginx;                               # 以Nginx用户启动</span><br><span class="line">worker_processes auto;                    # work process进程的个数</span><br><span class="line">error_log /var/log/nginx/error.log;       # 错误日志路径</span><br><span class="line">pid /run/nginx.pid; </span><br><span class="line"></span><br><span class="line">include /usr/share/nginx/modules/*.conf;</span><br><span class="line"></span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections 1024;              # 单个进程可接收连接数</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    log_format  main  &#x27;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#x27;</span><br><span class="line">                      &#x27;$status $body_bytes_sent &quot;$http_referer&quot; &#x27;</span><br><span class="line">                      &#x27;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#x27;;</span><br><span class="line"></span><br><span class="line">    access_log  /var/log/nginx/access.log  main;</span><br><span class="line"></span><br><span class="line">    sendfile            on;</span><br><span class="line">    tcp_nopush          on;</span><br><span class="line">    tcp_nodelay         on;</span><br><span class="line">    keepalive_timeout   65;</span><br><span class="line">    types_hash_max_size 4096;</span><br><span class="line"></span><br><span class="line">    include             /etc/nginx/mime.types;		# 服务器发送MIME type给客户端，让客户端知道请求的文件类型</span><br><span class="line">    default_type        application/octet-stream;</span><br><span class="line"></span><br><span class="line">    include /etc/nginx/conf.d/*.conf;</span><br><span class="line"></span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;							# LISTEN端口</span><br><span class="line">        listen       [::]:80;</span><br><span class="line">        server_name  _;								# 主机名</span><br><span class="line">        root         /usr/share/nginx/html;			# 在哪里找页面</span><br><span class="line"></span><br><span class="line">        # Load configuration files for the default server block.</span><br><span class="line">        include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">        error_page 404 /404.html;</span><br><span class="line">        location = /404.html &#123;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        error_page 500 502 503 504 /50x.html;</span><br><span class="line">        location = /50x.html &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">user nginx;                               # 以Nginx用户启动</span><br><span class="line">worker_processes auto;                    # work process进程的个数</span><br><span class="line">error_log /var/log/nginx/error.log;       # 错误日志路径</span><br><span class="line">pid /run/nginx.pid; </span><br><span class="line"></span><br><span class="line">include /usr/share/nginx/modules/*.conf;</span><br><span class="line"></span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections 1024;              # 单个进程可接收连接数</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    log_format  main  &#x27;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#x27;</span><br><span class="line">                      &#x27;$status $body_bytes_sent &quot;$http_referer&quot; &#x27;</span><br><span class="line">                      &#x27;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#x27;;</span><br><span class="line"></span><br><span class="line">    access_log  /var/log/nginx/access.log  main;</span><br><span class="line"></span><br><span class="line">    sendfile            on;</span><br><span class="line">    tcp_nopush          on;</span><br><span class="line">    tcp_nodelay         on;</span><br><span class="line">    keepalive_timeout   65;</span><br><span class="line">    types_hash_max_size 4096;</span><br><span class="line"></span><br><span class="line">    include             /etc/nginx/mime.types;		# 服务器发送MIME type给客户端，让客户端知道请求的文件类型</span><br><span class="line">    default_type        application/octet-stream;</span><br><span class="line"></span><br><span class="line">    include /etc/nginx/conf.d/*.conf;</span><br><span class="line"></span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;							# LISTEN端口</span><br><span class="line">        listen       [::]:80;</span><br><span class="line">        server_name  _;								# 主机名</span><br><span class="line">        root         /usr/share/nginx/html;			# 在哪里找页面</span><br><span class="line"></span><br><span class="line">        # Load configuration files for the default server block.</span><br><span class="line">        include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">        error_page 404 /404.html;</span><br><span class="line">        location = /404.html &#123;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page 500 502 503 504 /50x.html;</span><br><span class="line">        location = /50x.html &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h1 id="虚拟主机配置"><a href="#虚拟主机配置" class="headerlink" title="虚拟主机配置"></a>虚拟主机配置</h1><ul>
-<li>虚拟主机是指，在一台服务器主机虚拟出多台主机，每台虚拟主机都可以具有独立的域名，具有完整的服务器功能</li>
-<li>同一台主机上的虚拟主机之间是完全独立的。从网站访问者来看，每一台虚拟主机和一台独立的主机完全一样。</li>
-<li>利用虚拟主机，不必为每个要运行的网站提供一台单独的Nginx服务器或单独运行一组Nginx进程。虚拟主机提供了在同一台服务器、同一组Nginx进程上运行多个网站的功能。</li>
-</ul>
-<h2 id="实例：在一台机器上配置多台虚拟主机"><a href="#实例：在一台机器上配置多台虚拟主机" class="headerlink" title="实例：在一台机器上配置多台虚拟主机"></a>实例：在一台机器上配置多台虚拟主机</h2><p>例如，我需要实现如下效果:</p>
-<ul>
-<li>访问80端口返回&#x2F;www&#x2F;www页面, 显示”this is www web site”</li>
-<li>访问88端口返回&#x2F;www&#x2F;vod页面，显示”this is vod web site”</li>
-</ul>
-<p><strong>操作步骤：</strong><br>配置多个站点</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir -p /www/vod /www/www</span><br><span class="line">cat &quot;welcome to vod site&quot; &gt; /www/vod/index.html</span><br><span class="line">cat &quot;welcome to www site&quot; &gt; /www/www/index.html</span><br></pre></td></tr></table></figure>
-<p>修改nginx.conf，添加两个server配置，如下</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 虚拟主机1</span><br><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  _;</span><br><span class="line">    root         /www/www;</span><br><span class="line"></span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    error_page 404 /404.html;</span><br><span class="line">    location = /404.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error_page 500 502 503 504 /50x.html;</span><br><span class="line">    location = /50x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># 虚拟主机2</span><br><span class="line">server &#123;</span><br><span class="line">    listen       88;			# 第二个虚拟主机使用88端口</span><br><span class="line">    server_name  _;</span><br><span class="line">    root         /www/vod;		# 访问/www/vod下的页面</span><br><span class="line"></span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    error_page 404 /404.html;</span><br><span class="line">    location = /404.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error_page 500 502 503 504 /50x.html;</span><br><span class="line">    location = /50x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>使用<code>nginx -s reload</code>重新加载配置，测试80,88两个端口可以访问</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl localhost:88</span><br><span class="line">this is vod web site</span><br><span class="line"># curl localhost:80</span><br><span class="line">this is www web site</span><br></pre></td></tr></table></figure>
-<p>注: 如遇到Nginx报错: bind() to 0.0.0.0:8088 failed (13: Permission denied), 可参考<a href="https://pcj600.github.io/2024/1110141108.html">link</a></p>
-<h1 id="servername的多种匹配方式"><a href="#servername的多种匹配方式" class="headerlink" title="servername的多种匹配方式"></a>servername的多种匹配方式</h1><h2 id="同一个servername中匹配多个域名"><a href="#同一个servername中匹配多个域名" class="headerlink" title="同一个servername中匹配多个域名"></a>同一个servername中匹配多个域名</h2><p>例如，我需要通过不同的域名访问相同的页面, 实现如下效果：</p>
-<ul>
-<li>vod.petertest.com -&gt; 访问&#x2F;vww&#x2F;vod 页面 -&gt; 输出 this is vod site</li>
-<li>vod1.petertest.com -&gt; 也访问&#x2F;www&#x2F;vod 页面 -&gt; 输出 this is vod site</li>
-</ul>
-<p><strong>操作步骤：</strong><br>nginx.conf中, 只需一个server配置项，就可以配多个servername, 不需要复制server配置块。修改方法如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com vod1.petertest.com;	# 在一个server中配置多个servername</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-<p>测试结果:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is vod web site</span><br><span class="line"># curl vod1.petertest.com</span><br><span class="line">this is vod web site</span><br></pre></td></tr></table></figure>
-
-<h2 id="通配符匹配多个servername"><a href="#通配符匹配多个servername" class="headerlink" title="通配符匹配多个servername"></a>通配符匹配多个servername</h2><p>修改nginx.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  *.petertest.com;</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="通配符结束匹配"><a href="#通配符结束匹配" class="headerlink" title="通配符结束匹配"></a>通配符结束匹配</h2><p>例如，我需要实现如下匹配：</p>
-<ul>
-<li>vod.petertest.com 匹配到<code>/www/www</code></li>
-<li>其他vod.petertest.XXX 匹配到<code>/www/vod</code></li>
-</ul>
-<p><strong>操作步骤：</strong><br>修改Nginx.conf, 如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com;</span><br><span class="line">      root         /www/www;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.*;			# 通配符结束匹配</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<p>测试结果</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is www web site</span><br><span class="line"># curl vod.petertest.io</span><br><span class="line">this is vod web site</span><br></pre></td></tr></table></figure>
-
-<h2 id="正则匹配"><a href="#正则匹配" class="headerlink" title="正则匹配"></a>正则匹配</h2><p>例如，我需要实现如下匹配：</p>
-<ul>
-<li>vod.petertest.com 匹配到<code>/www/www</code></li>
-<li>其他vod.petertest.XXX 匹配到<code>/www/vod</code></li>
-</ul>
-<p><strong>操作步骤：</strong><br>修改Nginx.conf, 如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com;</span><br><span class="line">      root         /www/www;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  ~^[0-9]+\.petertest\.com$;			# 通配符结束匹配</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-<p>测试结果：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is www web site</span><br><span class="line"># curl 123.petertest.com</span><br><span class="line">this is vod web site</span><br></pre></td></tr></table></figure>
-
+<h1 id="虚拟主机配置-server-name配置"><a href="#虚拟主机配置-server-name配置" class="headerlink" title="虚拟主机配置(server_name配置)"></a>虚拟主机配置(server_name配置)</h1><p><a href="https://pcj600.github.io/2024/1116173059.html">https://pcj600.github.io/2024/1116173059.html</a></p>
+<h2 id="Nginx-Location配置"><a href="#Nginx-Location配置" class="headerlink" title="Nginx Location配置"></a>Nginx Location配置</h2><p>[TODO]</p>
 <h1 id="基于域名的几种互联网需求解析"><a href="#基于域名的几种互联网需求解析" class="headerlink" title="基于域名的几种互联网需求解析"></a>基于域名的几种互联网需求解析</h1><p>补充: hosts泛解析 <a href="https://cloud.tencent.com/developer/article/1534150">https://cloud.tencent.com/developer/article/1534150</a> (dnsmaxq) 本机DNS指向dnsmasq,dnsmasq做泛解析，把域名都解析到同一个IP</p>
 <h2 id="多用户二级域名需求-微博"><a href="#多用户二级域名需求-微博" class="headerlink" title="多用户二级域名需求(微博)"></a>多用户二级域名需求(微博)</h2><p>*.weibo.com -&gt; Nginx -&gt; 真正的业务服务器(拿到域名，解析出二级域名)</p>
 <h2 id="短网址"><a href="#短网址" class="headerlink" title="短网址"></a>短网址</h2><p>*.com&#x2F;asdasjda12312 -&gt; Nginx -&gt; 真正的网址</p>
@@ -9824,7 +9774,120 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>使用<code>nginx -t</code>检查配置文件是否正确，使用<code>nginx -s reload</code>重新加载配置，测试结果如下:</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">welcome to vod site</span><br><span class="line"># curl vod.petertest.com:88</span><br><span class="line">welcome to aud site</span><br></pre></td></tr></table></figure>
 
+<h2 id="Nginx-server-name的其他配置案例"><a href="#Nginx-server-name的其他配置案例" class="headerlink" title="Nginx server_name的其他配置案例"></a>Nginx server_name的其他配置案例</h2><h3 id="同一个server-name匹配多个域名"><a href="#同一个server-name匹配多个域名" class="headerlink" title="同一个server_name匹配多个域名"></a>同一个server_name匹配多个域名</h3><p>通过不同的域名访问相同的页面, 实现如下效果：</p>
+<ul>
+<li>访问vod.petertest.com -&gt; 返回&#x2F;vww&#x2F;vod 页面</li>
+<li>访问vod1.petertest.com -&gt; 也返回&#x2F;www&#x2F;vod 页面</li>
+</ul>
+<p>方法：修改nginx.conf的server配置块, 一个server_name中配置多个域名，如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com vod1.petertest.com;	# 在一个server中配置多个servername</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is vod web site</span><br><span class="line"># curl vod1.petertest.com</span><br><span class="line">this is vod web site</span><br></pre></td></tr></table></figure>
+<h3 id="通配符匹配多个server-name"><a href="#通配符匹配多个server-name" class="headerlink" title="通配符匹配多个server_name"></a>通配符匹配多个server_name</h3><p>例如，访问<code>.petertest.com</code>结尾的域名，返回&#x2F;www&#x2F;vod页面</p>
+<p>Nginx.conf配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  *.petertest.com;	# 通配符匹配</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<h3 id="通配符结束匹配"><a href="#通配符结束匹配" class="headerlink" title="通配符结束匹配"></a>通配符结束匹配</h3><p>实现如下效果：</p>
+<ul>
+<li>访问vod.petertest.com -&gt; 返回&#x2F;vww&#x2F;vod 页面</li>
+<li>访问vod.petertest.XXX -&gt; 返回&#x2F;www&#x2F;aud 页面</li>
+</ul>
+<p>Nginx.conf配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com;</span><br><span class="line">      root         /www/www;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.*;			# 通配符结束匹配</span><br><span class="line">      root         /www/aud;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is www web site</span><br><span class="line"># curl vod.petertest.io</span><br><span class="line">this is aud web site</span><br></pre></td></tr></table></figure>
+<h3 id="正则匹配"><a href="#正则匹配" class="headerlink" title="正则匹配"></a>正则匹配</h3><p>实现如下效果：</p>
+<ul>
+<li>访问vod.petertest.com -&gt; 返回&#x2F;vww&#x2F;vod 页面</li>
+<li>访问123.petertest.com -&gt; 返回&#x2F;www&#x2F;aud 页面</li>
+</ul>
+<p>Nginx.conf配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com;</span><br><span class="line">      root         /www/www;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  ~^[0-9]+\.petertest\.com$;			# 正则匹配</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is www web site</span><br><span class="line"># curl 123.petertest.com</span><br><span class="line">this is aud web site</span><br></pre></td></tr></table></figure>
+
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7096443628326748174">手把手教你配置Nginx的虚拟主机</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Nginx中的location配置</title>
+    <url>/2024/1117141829.html</url>
+    <content><![CDATA[<p>Nginx的location配置，用于定义请求的URI和服务器响应之间的对应关系。</p>
+<h2 id="location语法"><a href="#location语法" class="headerlink" title="location语法"></a>location语法</h2><p>Nginx的location规则匹配的是URI, 不需要考虑后面的query_string。语法如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">location [ = | ~ | ~* | ^~ | 空格 ] /URI &#123; </span><br><span class="line">	... </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="location-modifier的解释"><a href="#location-modifier的解释" class="headerlink" title="location modifier的解释"></a>location modifier的解释</h2><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&#x3D;</td>
+<td>精确匹配, 如匹配成功就立即停止搜索</td>
+</tr>
+<tr>
+<td>^~</td>
+<td>前缀匹配, 不使用正则表达式。如果匹配成功, 并且匹配字符串是最长的，就不再匹配其他location</td>
+</tr>
+<tr>
+<td>~</td>
+<td>正则匹配，区分大小写</td>
+</tr>
+<tr>
+<td>~*</td>
+<td>正则匹配，不区分大小写</td>
+</tr>
+<tr>
+<td>空格</td>
+<td>前缀匹配, 不使用正则表达式</td>
+</tr>
+</tbody></table>
+<span id="more"></span>
+
+<h2 id="location-modifier的匹配顺序"><a href="#location-modifier的匹配顺序" class="headerlink" title="location modifier的匹配顺序"></a>location modifier的匹配顺序</h2><ol>
+<li>先精确匹配<code>=</code>，如精确匹配成功会立刻停止搜索</li>
+<li>再前缀匹配(<code>^~</code>和空格), 如果匹配最长的结果是<code>^~</code>, 立刻停止搜索; 否则暂存匹配最长的结果(空格)，继续往下走</li>
+<li>查找正则匹配(<code>&#39;~&#39;</code>和<code>&#39;~*&#39;</code>), 如果同时有多个正则匹配，按配置文件中定义的先后顺序，优先取配置文件中最上面的，立刻停止搜索；否则往下走</li>
+<li>返回第2步保存的结果(匹配最长的空格匹配)</li>
+</ol>
+<p>官方文档的描述: <a href="http://nginx.org/en/docs/http/ngx_http_core_module.html#location">http://nginx.org/en/docs/http/ngx_http_core_module.html#location</a></p>
+<p>以下通过几个示例加深理解</p>
+<h2 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h2><h3 id="例1-Nginx官方文档的例子"><a href="#例1-Nginx官方文档的例子" class="headerlink" title="例1(Nginx官方文档的例子):"></a>例1(Nginx官方文档的例子):</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">location = / &#123;</span><br><span class="line">    return 200 &#x27;1&#x27;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">location / &#123;</span><br><span class="line">    return 200 &#x27;2&#x27;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">location /documents/ &#123;</span><br><span class="line">    return 200 &#x27;3&#x27;;</span><br><span class="line"></span><br><span class="line">location ^~ /images/ &#123;</span><br><span class="line">    return 200 &#x27;4&#x27;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">location ~* \.(gif|jpg|jpeg)$ &#123;</span><br><span class="line">    return 200 &#x27;5&#x27;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl localhost/</span><br><span class="line">&#x27;1&#x27;</span><br><span class="line">curl localhost/index.html</span><br><span class="line">&#x27;2&#x27;</span><br><span class="line">curl localhost/documents/document.html</span><br><span class="line">&#x27;3&#x27;</span><br><span class="line">curl localhost/images/1.gif</span><br><span class="line">&#x27;4&#x27;</span><br><span class="line">curl localhost/documents/1.jpg</span><br><span class="line">&#x27;5&#x27;</span><br></pre></td></tr></table></figure>
+<p>解释: 对于<code>localhost/documents/1.jpg</code>, 前缀匹配最长结果为空格匹配<code>/documents/</code>, 所以继续正则匹配, 正则匹配命中<code>location ~* \.(gif|jpg|jpeg)$</code>，所以返回5</p>
+<h3 id="例2"><a href="#例2" class="headerlink" title="例2:"></a>例2:</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">location /document &#123;</span><br><span class="line">    return 200 &#x27;1&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">location ~* ^/document$ &#123;</span><br><span class="line">    return 200 &#x27;2&#x27;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl localhost/document</span><br><span class="line">2</span><br></pre></td></tr></table></figure>
+<p>解释: 前缀匹配的结果为空格匹配, 所以继续执行正则匹配, 正则匹配可以命中，所以返回2</p>
+<h3 id="例3"><a href="#例3" class="headerlink" title="例3"></a>例3</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">location ^~ /doc &#123;</span><br><span class="line">	return 200 &#x27;1&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">location ~ ^/document$ &#123;</span><br><span class="line">    return 200 &#x27;2&#x27;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl localhost/document</span><br><span class="line">&#x27;1&#x27;</span><br><span class="line">curl localhost/doc</span><br><span class="line">&#x27;1&#x27;</span><br></pre></td></tr></table></figure>
+<p>解释: <code>^~</code>前缀匹配命中后，立刻停止搜索，不会进行正则匹配, 所以返回1</p>
+<h3 id="例4"><a href="#例4" class="headerlink" title="例4"></a>例4</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">location ~ ^/document &#123;</span><br><span class="line">    return 200 &#x27;1&#x27;;</span><br><span class="line">&#125;</span><br><span class="line">location ~ ^/document2 &#123;</span><br><span class="line">    return 200 &#x27;2&#x27;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl localhost/document2</span><br><span class="line">1</span><br></pre></td></tr></table></figure>
+<p>解释: 正则匹配是按照配置文件中定义的顺序，先匹配成功的返回，所以返回1</p>
+<h3 id="例5"><a href="#例5" class="headerlink" title="例5"></a>例5</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">location /images/1.jpg &#123;</span><br><span class="line">  return 200  &#x27;1&#x27;;     </span><br><span class="line">&#125;        </span><br><span class="line"></span><br><span class="line">location ^~ /images/ &#123; </span><br><span class="line">  return 200  &#x27;2&#x27;;      </span><br><span class="line">&#125;    </span><br><span class="line"></span><br><span class="line">location ~ /images/ &#123;        </span><br><span class="line">  return 200  &#x27;3&#x27;;   </span><br><span class="line">&#125; </span><br><span class="line"></span><br><span class="line">location ~ /images/1.jpg &#123;        </span><br><span class="line">  return 200  &#x27;4&#x27;;   </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl localhost/images/1.png </span><br><span class="line">&#x27;3&#x27;</span><br><span class="line">curl localhost/images/1 </span><br><span class="line">&#x27;2&#x27;</span><br></pre></td></tr></table></figure>
+<p>解释: </p>
+<ul>
+<li>对于第1个<code>/images/1.png</code>，前缀匹配最长的是空格(第1个location), 所以继续正则匹配; 正则匹配可以命中第3个和第4个，取最上面那个，所以返回3</li>
+<li>对于第2个<code>/images/1</code>，最长的前缀匹配为<code>^~</code>(第2个location)，所以直接返回2</li>
+</ul>
+<h2 id="location-实际使用"><a href="#location-实际使用" class="headerlink" title="location 实际使用"></a>location 实际使用</h2><p>实际使用中，要避免出现上述示例中混乱的配置；可以先放置精确匹配，再前缀匹配，最后是正则匹配</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    # 精确匹配</span><br><span class="line">    location = / &#123;</span><br><span class="line">        # 配置...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    # 前缀匹配</span><br><span class="line">    location /static/ &#123;</span><br><span class="line">        # 配置...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    # 正则匹配</span><br><span class="line">    location ~* \.(jpg|jpeg|png)$ &#123;</span><br><span class="line">        # 配置...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://juejin.cn/post/6908623305129852942">https://juejin.cn/post/6908623305129852942</a><br>【2】<a href="https://juejin.cn/post/7048952689601806366">https://juejin.cn/post/7048952689601806366</a></p>
 ]]></content>
       <categories>
         <category>Nginx</category>

@@ -32,7 +32,7 @@
 <meta property="og:description" content="什么是虚拟主机虚拟主机是指，把一台物理主机划分为多台虚拟主机，每台虚拟主机都可以是一个独立的网站，可以有独立的域名，具有完整的服务器功能。 Nginx提供虚拟主机功能，使我们不必为每个网站都提供一台Nginx服务器；只需运行一组Nginx进程，就可以运行多个域名不同网站 配置虚拟主机的方法Nginx配置虚拟主机的方式有三种:  基于域名的虚拟主机(不同的域名，相同的IP，这种方式用的最多) 基于端">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-11-16T09:30:59.000Z">
-<meta property="article:modified_time" content="2024-11-16T09:32:03.506Z">
+<meta property="article:modified_time" content="2024-11-17T03:14:16.078Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="Nginx">
 <meta name="twitter:card" content="summary">
@@ -136,7 +136,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">147</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">148</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -248,14 +248,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.5k</span>
+              <span>4.1k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>2 分钟</span>
+              <span>4 分钟</span>
             </span>
 
         </div>
@@ -300,6 +300,37 @@
 
 <h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>使用<code>nginx -t</code>检查配置文件是否正确，使用<code>nginx -s reload</code>重新加载配置，测试结果如下:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">welcome to vod site</span><br><span class="line"># curl vod.petertest.com:88</span><br><span class="line">welcome to aud site</span><br></pre></td></tr></table></figure>
+
+<h2 id="Nginx-server-name的其他配置案例"><a href="#Nginx-server-name的其他配置案例" class="headerlink" title="Nginx server_name的其他配置案例"></a>Nginx server_name的其他配置案例</h2><h3 id="同一个server-name匹配多个域名"><a href="#同一个server-name匹配多个域名" class="headerlink" title="同一个server_name匹配多个域名"></a>同一个server_name匹配多个域名</h3><p>通过不同的域名访问相同的页面, 实现如下效果：</p>
+<ul>
+<li>访问vod.petertest.com -&gt; 返回&#x2F;vww&#x2F;vod 页面</li>
+<li>访问vod1.petertest.com -&gt; 也返回&#x2F;www&#x2F;vod 页面</li>
+</ul>
+<p>方法：修改nginx.conf的server配置块, 一个server_name中配置多个域名，如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com vod1.petertest.com;	# 在一个server中配置多个servername</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is vod web site</span><br><span class="line"># curl vod1.petertest.com</span><br><span class="line">this is vod web site</span><br></pre></td></tr></table></figure>
+<h3 id="通配符匹配多个server-name"><a href="#通配符匹配多个server-name" class="headerlink" title="通配符匹配多个server_name"></a>通配符匹配多个server_name</h3><p>例如，访问<code>.petertest.com</code>结尾的域名，返回&#x2F;www&#x2F;vod页面</p>
+<p>Nginx.conf配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  *.petertest.com;	# 通配符匹配</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<h3 id="通配符结束匹配"><a href="#通配符结束匹配" class="headerlink" title="通配符结束匹配"></a>通配符结束匹配</h3><p>实现如下效果：</p>
+<ul>
+<li>访问vod.petertest.com -&gt; 返回&#x2F;vww&#x2F;vod 页面</li>
+<li>访问vod.petertest.XXX -&gt; 返回&#x2F;www&#x2F;aud 页面</li>
+</ul>
+<p>Nginx.conf配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com;</span><br><span class="line">      root         /www/www;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.*;			# 通配符结束匹配</span><br><span class="line">      root         /www/aud;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is www web site</span><br><span class="line"># curl vod.petertest.io</span><br><span class="line">this is aud web site</span><br></pre></td></tr></table></figure>
+<h3 id="正则匹配"><a href="#正则匹配" class="headerlink" title="正则匹配"></a>正则匹配</h3><p>实现如下效果：</p>
+<ul>
+<li>访问vod.petertest.com -&gt; 返回&#x2F;vww&#x2F;vod 页面</li>
+<li>访问123.petertest.com -&gt; 返回&#x2F;www&#x2F;aud 页面</li>
+</ul>
+<p>Nginx.conf配置如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  vod.petertest.com;</span><br><span class="line">      root         /www/www;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br><span class="line">  server &#123;</span><br><span class="line">      listen       80;</span><br><span class="line">      server_name  ~^[0-9]+\.petertest\.com$;			# 正则匹配</span><br><span class="line">      root         /www/vod;</span><br><span class="line">      include /etc/nginx/default.d/*.conf;</span><br><span class="line"># ...</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>测试结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># curl vod.petertest.com</span><br><span class="line">this is www web site</span><br><span class="line"># curl 123.petertest.com</span><br><span class="line">this is aud web site</span><br></pre></td></tr></table></figure>
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://juejin.cn/post/7096443628326748174">手把手教你配置Nginx的虚拟主机</a></p>
 
@@ -360,7 +391,10 @@
     <a href="/2024/1114195846.html" rel="prev" title="Nginx源码解读">
       <i class="fa fa-chevron-left"></i> Nginx源码解读
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2024/1117141829.html" rel="next" title="Nginx中的location配置">
+      Nginx中的location配置 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -419,7 +453,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA"><span class="nav-text">什么是虚拟主机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-text">配置虚拟主机的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E5%9F%9F%E5%90%8D%E9%85%8D%E7%BD%AE%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA"><span class="nav-text">基于域名配置虚拟主机</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E5%AE%A2%E6%88%B7%E6%9C%BA%E7%9A%84HOSTS%E6%96%87%E4%BB%B6%EF%BC%8C%E6%B7%BB%E5%8A%A0%E6%9C%8D%E5%8A%A1%E5%99%A8IP%E5%92%8C%E5%9F%9F%E5%90%8D%E7%9A%84%E6%98%A0%E5%B0%84"><span class="nav-text">修改客户机的HOSTS文件，添加服务器IP和域名的映射</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%B8%A4%E4%B8%AA%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA%E5%87%86%E5%A4%87%E9%9D%99%E6%80%81%E9%A1%B5%E9%9D%A2"><span class="nav-text">为两个虚拟主机准备静态页面</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9Nginx-conf%E7%9A%84server%E9%85%8D%E7%BD%AE%E5%9D%97"><span class="nav-text">修改Nginx.conf的server配置块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E6%96%B0%E5%8A%A0%E8%BD%BDNginx%E9%85%8D%E7%BD%AE%EF%BC%8C%E6%B5%8B%E8%AF%95"><span class="nav-text">重新加载Nginx配置，测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E7%AB%AF%E5%8F%A3%E9%85%8D%E7%BD%AE%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA"><span class="nav-text">基于端口配置虚拟主机</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9Nginx-conf%E7%9A%84server%E9%85%8D%E7%BD%AE%E5%9D%97-1"><span class="nav-text">修改Nginx.conf的server配置块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-text">测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA"><span class="nav-text">什么是虚拟主机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-text">配置虚拟主机的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E5%9F%9F%E5%90%8D%E9%85%8D%E7%BD%AE%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA"><span class="nav-text">基于域名配置虚拟主机</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E5%AE%A2%E6%88%B7%E6%9C%BA%E7%9A%84HOSTS%E6%96%87%E4%BB%B6%EF%BC%8C%E6%B7%BB%E5%8A%A0%E6%9C%8D%E5%8A%A1%E5%99%A8IP%E5%92%8C%E5%9F%9F%E5%90%8D%E7%9A%84%E6%98%A0%E5%B0%84"><span class="nav-text">修改客户机的HOSTS文件，添加服务器IP和域名的映射</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%B8%A4%E4%B8%AA%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA%E5%87%86%E5%A4%87%E9%9D%99%E6%80%81%E9%A1%B5%E9%9D%A2"><span class="nav-text">为两个虚拟主机准备静态页面</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9Nginx-conf%E7%9A%84server%E9%85%8D%E7%BD%AE%E5%9D%97"><span class="nav-text">修改Nginx.conf的server配置块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E6%96%B0%E5%8A%A0%E8%BD%BDNginx%E9%85%8D%E7%BD%AE%EF%BC%8C%E6%B5%8B%E8%AF%95"><span class="nav-text">重新加载Nginx配置，测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E7%AB%AF%E5%8F%A3%E9%85%8D%E7%BD%AE%E8%99%9A%E6%8B%9F%E4%B8%BB%E6%9C%BA"><span class="nav-text">基于端口配置虚拟主机</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9Nginx-conf%E7%9A%84server%E9%85%8D%E7%BD%AE%E5%9D%97-1"><span class="nav-text">修改Nginx.conf的server配置块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-text">测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Nginx-server-name%E7%9A%84%E5%85%B6%E4%BB%96%E9%85%8D%E7%BD%AE%E6%A1%88%E4%BE%8B"><span class="nav-text">Nginx server_name的其他配置案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8C%E4%B8%80%E4%B8%AAserver-name%E5%8C%B9%E9%85%8D%E5%A4%9A%E4%B8%AA%E5%9F%9F%E5%90%8D"><span class="nav-text">同一个server_name匹配多个域名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E9%85%8D%E7%AC%A6%E5%8C%B9%E9%85%8D%E5%A4%9A%E4%B8%AAserver-name"><span class="nav-text">通配符匹配多个server_name</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E9%85%8D%E7%AC%A6%E7%BB%93%E6%9D%9F%E5%8C%B9%E9%85%8D"><span class="nav-text">通配符结束匹配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%A3%E5%88%99%E5%8C%B9%E9%85%8D"><span class="nav-text">正则匹配</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -435,7 +469,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">147</span>
+          <span class="site-state-item-count">148</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -456,6 +490,9 @@
   <div class="links-of-author motion-element">
       <span class="links-of-author-item">
         <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
       </span>
   </div>
 
@@ -491,12 +528,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">485k</span>
+    <span title="站点总字数">487k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:21</span>
+    <span title="站点阅读时长">7:23</span>
 </div>
 
 <!--
