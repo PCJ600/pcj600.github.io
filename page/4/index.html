@@ -134,7 +134,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">150</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">151</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -193,6 +193,799 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1016215805.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/1016215805.html" class="post-title-link" itemprop="url">MySQL进阶</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-10-16 21:58:05" itemprop="dateCreated datePublished" datetime="2024-10-16T21:58:05+08:00">2024-10-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>48k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>43 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
+<h2 id="存储引擎"><a href="#存储引擎" class="headerlink" title="存储引擎"></a>存储引擎</h2><p>存储引擎指存储数据，建立索引，更新&#x2F;查询数据等技术的实现方式。<br>存储引擎是基于表的，不是基于库的。</p>
+<h3 id="查某个表的存储引擎"><a href="#查某个表的存储引擎" class="headerlink" title="查某个表的存储引擎"></a>查某个表的存储引擎</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show create table 表名;</span><br></pre></td></tr></table></figure>
+<h3 id="查数据库支持的存储引擎"><a href="#查数据库支持的存储引擎" class="headerlink" title="查数据库支持的存储引擎"></a>查数据库支持的存储引擎</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show engines;</span><br></pre></td></tr></table></figure>
+
+<h3 id="创建表时指定引擎"><a href="#创建表时指定引擎" class="headerlink" title="创建表时指定引擎"></a>创建表时指定引擎</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">create table a(</span><br><span class="line">)engine = MyISAM;</span><br><span class="line"></span><br><span class="line">create table b(</span><br><span class="line">)engine = InnoDB;</span><br></pre></td></tr></table></figure>
+
+<h3 id="InnoDB"><a href="#InnoDB" class="headerlink" title="InnoDB"></a>InnoDB</h3><ul>
+<li>支持事务，行级锁，外键</li>
+<li>每张表对应一个表空间文件XXX.ibd，路径:<code>/var/lib/mysql/*.ibd</code></li>
+<li>逻辑存储结构: TableSpace(表空间), Segment(段), Extent(区), Page(页), Row(行)</li>
+</ul>
+<h3 id="MyISAM"><a href="#MyISAM" class="headerlink" title="MyISAM"></a>MyISAM</h3><p>MySQL早期的默认存储引擎</p>
+<ul>
+<li>不支持事务，不支持外键</li>
+<li>支持表锁，不支持行锁</li>
+<li>XX.sdi 存储表结构信息, XX.MYD 存储数据 XX.MYI存储索引</li>
+</ul>
+<h3 id="Memory"><a href="#Memory" class="headerlink" title="Memory"></a>Memory</h3><p>表数据存储在内存中，只能将这些表作为临时表或缓存使用</p>
+<ul>
+<li>内存存放</li>
+<li>hash索引(默认)</li>
+<li>XX.sdi 存储表结构</li>
+</ul>
+<h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><p>索引(index)是帮助MySQL高效查询数据的数据结构。<br>优缺点：提高查询效率，但索引本身占用空间，且降低更新表(INSERT,UPDATE,DELETE)的速度。</p>
+<h3 id="索引结构"><a href="#索引结构" class="headerlink" title="索引结构"></a>索引结构</h3><table>
+<thead>
+<tr>
+<th>索引结构</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>B+Tree索引</td>
+<td>最常见索引, 大部分引擎都支持B+树索引</td>
+</tr>
+<tr>
+<td>Hash索引</td>
+<td>底层用哈希表实现，只有精确匹配索引列的查询才有效，不支持范围查询和排序</td>
+</tr>
+<tr>
+<td>R-tree(空间索引)</td>
+<td>MyISAM的一个特殊索引类型，主要用于地理空间数据类型，通常使用较少</td>
+</tr>
+<tr>
+<td>Full-text(全文索引)</td>
+<td>一种通过建立倒排索引，快速匹配文档的方式，类似与Lucene,Solr,ES</td>
+</tr>
+</tbody></table>
+<h3 id="为什么InnoDB选择B-树，不用二叉树，B树"><a href="#为什么InnoDB选择B-树，不用二叉树，B树" class="headerlink" title="为什么InnoDB选择B+树，不用二叉树，B树"></a>为什么InnoDB选择B+树，不用二叉树，B树</h3><ul>
+<li>二叉树：顺序插入时，退化成链表，查询性能低；层级较深，查询速度慢。</li>
+<li>B-Tree: 叶子节点和非叶子节点都保存数据，查询不稳定；相比B+树IO消耗大</li>
+<li>B+Tree: 只有叶子节点存储数据，使得树更矮，减少IO操作次数；所有叶子节点构成一个有序链表<br>MySQL在原B+Tree基础上，增加一个指向相邻叶子节点的链表指针，提高区间访问性能。</li>
+</ul>
+<h3 id="索引分类"><a href="#索引分类" class="headerlink" title="索引分类"></a>索引分类</h3><table>
+<thead>
+<tr>
+<th>分类</th>
+<th>含义</th>
+<th>特点</th>
+<th>关键字</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>主键索引</td>
+<td>针对于表中主键创建的索引</td>
+<td>默认自动创建，只有一个</td>
+<td>PRIMARY</td>
+</tr>
+<tr>
+<td>唯一索引</td>
+<td>避免同一个表中某数据列的重复</td>
+<td>可以有多个</td>
+<td>UNIQUE</td>
+</tr>
+<tr>
+<td>常规索引</td>
+<td>快速定位特定数据</td>
+<td>可以有多个</td>
+<td></td>
+</tr>
+<tr>
+<td>全文索引</td>
+<td>查找文本中关键词</td>
+<td>可以有多个</td>
+<td>FULLTEXT</td>
+</tr>
+</tbody></table>
+<p>在InnoDB中，根据索引的存储形式，又可以分如下两种：</p>
+<table>
+<thead>
+<tr>
+<th>分类</th>
+<th>含义</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>聚集索引(Clustered Index)</td>
+<td>将数据和索引一起存储，叶子节点保存了行数据</td>
+<td>有且只有一个</td>
+</tr>
+<tr>
+<td>二级索引(Secondary Index)</td>
+<td>将数据和索引分开存储，叶子节点关联对应主键</td>
+<td>可存在多个</td>
+</tr>
+</tbody></table>
+<p>聚集索引选取规则：</p>
+<ul>
+<li>如果存在主键，主键索引就是聚集索引</li>
+<li>如果不存在主键，使用第一个唯一索引作为聚集索引</li>
+<li>如没有主键和合适的唯一索引，InnoDB会自动生成一个rowid作为隐藏的聚集索引</li>
+</ul>
+<h3 id="索引语法"><a href="#索引语法" class="headerlink" title="索引语法"></a>索引语法</h3><p>创建索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create [unique|fulltext] index index_name on table_name (index_col_name,...);</span><br></pre></td></tr></table></figure>
+<p>查看索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show index from table_name;</span><br></pre></td></tr></table></figure>
+<p>删除索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">drop index index_name on table_name;</span><br></pre></td></tr></table></figure>
+
+<p>例：按如下要求完成索引的创建</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> tb_user(</span><br><span class="line">	id <span class="type">bigint</span> auto_increment <span class="keyword">primary</span> key,</span><br><span class="line">	name <span class="type">varchar</span>(<span class="number">10</span>),</span><br><span class="line">	phone <span class="type">char</span>(<span class="number">11</span>),</span><br><span class="line">	email <span class="type">varchar</span>(<span class="number">36</span>),</span><br><span class="line">	profession <span class="type">varchar</span>(<span class="number">36</span>),</span><br><span class="line">	age tinyint unsigned,</span><br><span class="line">	gender <span class="type">char</span>(<span class="number">1</span>),</span><br><span class="line">	status <span class="type">int</span>,</span><br><span class="line">	createtime datetime</span><br><span class="line">)engine<span class="operator">=</span>InnoDB;</span><br></pre></td></tr></table></figure>
+
+<p>要求：</p>
+<ul>
+<li>name设置索引</li>
+<li>phone非空创建唯一索引</li>
+<li>profession,age,status设置联合索引</li>
+<li>email建立索引</li>
+</ul>
+<p>创建索引</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index idx_user_name <span class="keyword">on</span> tb_user(name);</span><br><span class="line"><span class="keyword">create</span> <span class="keyword">unique</span> index idx_user_phone <span class="keyword">on</span> tb_user(phone);</span><br><span class="line"><span class="keyword">create</span> index idx_user_pro_age_sta <span class="keyword">on</span> tb_user(profession,age,status);</span><br><span class="line"><span class="keyword">create</span> index idx_user_email <span class="keyword">on</span> tb_user(email);</span><br></pre></td></tr></table></figure>
+<p>查看索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show index from tb_user;</span><br><span class="line">+---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span><br><span class="line">| Table   | Non_unique | Key_name             | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment | Index_comment | Visible | Expression |</span><br><span class="line">+---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span><br><span class="line">| tb_user |          0 | PRIMARY              |            1 | id          | A         |           0 |     NULL |   NULL |      | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          0 | idx_user_phone       |            1 | phone       | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_name        |            1 | name        | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_pro_age_sta |            1 | profession  | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_pro_age_sta |            2 | age         | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_pro_age_sta |            3 | status      | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">| tb_user |          1 | idx_user_email       |            1 | email       | A         |           0 |     NULL |   NULL | YES  | BTREE      |         |               | YES     | NULL       |</span><br><span class="line">+---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span><br></pre></td></tr></table></figure>
+
+<h2 id="SQL性能分析"><a href="#SQL性能分析" class="headerlink" title="SQL性能分析"></a>SQL性能分析</h2><h3 id="查询SQL执行频率"><a href="#查询SQL执行频率" class="headerlink" title="查询SQL执行频率"></a>查询SQL执行频率</h3><p>通过如下命令，查看SQL中增删改查的频率</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show global status like &#x27;Com_______&#x27;;</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Variable_name | Value |</span><br><span class="line">+---------------+-------+</span><br><span class="line">| Com_binlog    | 0     |</span><br><span class="line">| Com_commit    | 0     |</span><br><span class="line">| Com_delete    | 0     |</span><br><span class="line">| Com_import    | 0     |</span><br><span class="line">| Com_insert    | 0     |</span><br><span class="line">| Com_repair    | 0     |</span><br><span class="line">| Com_revoke    | 0     |</span><br><span class="line">| Com_select    | 4     |</span><br><span class="line">| Com_signal    | 0     |</span><br><span class="line">| Com_update    | 0     |</span><br><span class="line">| Com_xa_end    | 0     |</span><br><span class="line">+---------------+-------+</span><br></pre></td></tr></table></figure>
+<h3 id="慢查询日志"><a href="#慢查询日志" class="headerlink" title="慢查询日志"></a>慢查询日志</h3><p>记录所有执行时间超过指定参数long_query_time(默认:10秒)的所有SQL语句日志</p>
+<p>MySQL的慢查询日志默认没有开，需要手动配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;slow_query%&#x27;;</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| Variable_name       | Value                             |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| slow_query_log      | OFF                               |</span><br><span class="line">| slow_query_log_file | /var/lib/mysql/localhost-slow.log |</span><br><span class="line">+---------------------+-----------------------------------+</span><br></pre></td></tr></table></figure>
+<p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]最后添加两行，开启MySQL慢查询日志，设置慢查询超时时间2秒</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">slow-query-log=on</span><br><span class="line">long_query_time=2</span><br></pre></td></tr></table></figure>
+<p>重启mysqld, 执行<code>systemctl restart mysqld</code>，再确认修改后的配置已生效</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;slow_query%&#x27;;</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| Variable_name       | Value                             |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">| slow_query_log      | ON                                |</span><br><span class="line">+---------------------+-----------------------------------+</span><br><span class="line">mysql&gt; show variables like &#x27;long_query_time&#x27;;</span><br><span class="line">+-----------------+----------+</span><br><span class="line">| Variable_name   | Value    |</span><br><span class="line">+-----------------+----------+</span><br><span class="line">| long_query_time | 2.000000 |</span><br><span class="line">+-----------------+----------+</span><br></pre></td></tr></table></figure>
+<h3 id="profile详情"><a href="#profile详情" class="headerlink" title="profile详情"></a>profile详情</h3><p>先打开profile开关</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select @@profiling;</span><br><span class="line">+-------------+</span><br><span class="line">| @@profiling |</span><br><span class="line">+-------------+</span><br><span class="line">|           0 |</span><br><span class="line">+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; set profiling = 1;</span><br></pre></td></tr></table></figure>
+<p>执行SQL操作后，通过show profiles查看指令的执行耗时</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show profiles;</span><br><span class="line">+----------+------------+------------------------------+</span><br><span class="line">| Query_ID | Duration   | Query                        |</span><br><span class="line">+----------+------------+------------------------------+</span><br><span class="line">|        1 | 0.00027175 | select * from tb_user        |</span><br><span class="line">|        2 | 0.00008450 | show profiles for query 1    |</span><br><span class="line">+----------+------------+------------------------------+</span><br><span class="line">mysql&gt; show profile for query 1;</span><br><span class="line">mysql&gt; show profile cpu for query 1;</span><br></pre></td></tr></table></figure>
+
+<h3 id="explain"><a href="#explain" class="headerlink" title="explain"></a>explain</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from tb_user where id = 1;</span><br></pre></td></tr></table></figure>
+
+<p>实例：给tb_user表生成100w条数据，用于测试查询性能</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">#!/usr/bin/env python3</span><br><span class="line">import random</span><br><span class="line">from datetime import datetime, timedelta</span><br><span class="line">import string</span><br><span class="line"></span><br><span class="line">#insert into tb_user(name,phone,email,profession,age,gender,status,createtime) values(&#x27;Jony&#x27;,&#x27;12345678111&#x27;, &#x27;example@163.com&#x27;, &#x27;RD&#x27;,18,&#x27;M&#x27;,1,NOW());</span><br><span class="line"></span><br><span class="line">def generate_phone():</span><br><span class="line">    return &#x27;1&#x27; + &#x27;&#x27;.join([str(random.randint(0, 9)) for _ in range(10)])</span><br><span class="line"></span><br><span class="line">def generate_random_date():</span><br><span class="line">    start_date = datetime(2024, 1, 1)</span><br><span class="line">    end_date = datetime(2024, 12, 31)</span><br><span class="line">    time_between_dates = end_date - start_date</span><br><span class="line">    days_between_dates = time_between_dates.days</span><br><span class="line">    random_number_of_days = random.randint(0, days_between_dates)</span><br><span class="line">    random_date = start_date + timedelta(days=random_number_of_days)</span><br><span class="line">    return random_date.strftime(&#x27;%Y-%m-%d&#x27;)</span><br><span class="line"></span><br><span class="line">def generate_random_name(length=5):</span><br><span class="line">    letters = string.ascii_letters</span><br><span class="line">    return &#x27;&#x27;.join(random.choice(letters) for _ in range(length))</span><br><span class="line"></span><br><span class="line">def insert_data():</span><br><span class="line">    with open(&#x27;./test.sql&#x27;, &#x27;w&#x27;) as f:</span><br><span class="line">        for i in range(1000000):</span><br><span class="line">            name = generate_random_name()</span><br><span class="line">            phone = generate_phone()</span><br><span class="line">            email = generate_random_name() + &#x27;@163.com&#x27;</span><br><span class="line">            profession = random.choice([&#x27;Sales&#x27;, &#x27;R&amp;D&#x27;, &#x27;Marketing&#x27;, &#x27;OPS&#x27;])</span><br><span class="line">            age = random.randint(0,130)</span><br><span class="line">            gender = random.choice([&#x27;F&#x27;,&#x27;M&#x27;])</span><br><span class="line">            status = random.choice([0, 1])</span><br><span class="line">            date = generate_random_date()</span><br><span class="line">            output = &quot;insert into tb_user(name,phone,email,profession,age,gender,status,createtime) values(&#x27;&#123;name&#125;&#x27;,&#x27;&#123;phone&#125;&#x27;, &#x27;&#123;email&#125;&#x27;, &#x27;&#123;profession&#125;&#x27;,&#123;age&#125;,&#x27;&#123;gender&#125;&#x27;, &#123;status&#125;, &#x27;&#123;date&#125;&#x27;);&quot;.format(name=name, phone=phone, email=email, profession=profession, age=age, gender=gender, status=status, date=date)</span><br><span class="line">            f.write(output + &#x27;\n&#x27;)</span><br><span class="line"></span><br><span class="line">insert_data()</span><br></pre></td></tr></table></figure>
+<p>再从SQL文件中批量导入tb_user表的数据到数据库pc</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -u root -p -D pc &lt; test.sql </span><br></pre></td></tr></table></figure>
+
+<p>explain执行计划中各字段含义</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select name from tb_user where id = 1;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | const | PRIMARY       | PRIMARY | 8       | const |    1 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<ul>
+<li>id<br>表示查询中执行select子句或操作表的顺序，id相同执行顺序从上到下，id不同，值越大越先执行</li>
+<li>select_type<br>表示select类型，常见取值有simple, primary, union, subquery(有子查询)</li>
+<li>type<br>表示连接类型，性能由好到差为NULL, system, const, eq_ref, ref, range, index, all</li>
+<li>possible_keys<br>显示可能应用在这张表的索引，一个或多个</li>
+<li>key<br>表示实际用到的索引，如果为NULL说明没使用索引</li>
+<li>key_len<br>表示索引中字节数，该值为索引字段最大可能长度，并非实际使用长度，长度越短越好</li>
+<li>rows<br>MySQL认为必须要执行查询的行数，在InnoDB表中，是一个估计值，可能并不总是准确的</li>
+<li>filtered<br>表示返回结果的行数占需读取行数百分比，filtered值越大越好</li>
+</ul>
+<p>例: explain type &#x3D; NULL (没有查表)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select &#x27;A&#x27;;</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra          |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | NULL  | NULL       | NULL | NULL          | NULL | NULL    | NULL | NULL |     NULL | No tables used |</span><br><span class="line">+----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+</span><br></pre></td></tr></table></figure>
+<p>例: explain type &#x3D; const (走主键索引&#x2F;唯一索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select name from tb_user where id = 1;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key     | key_len | ref   | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | const | PRIMARY       | PRIMARY | 8       | const |    1 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+---------+---------+-------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>例: explain type &#x3D; ref (走普通的非唯一索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select name from tb_user where name = &#x27;uXrBh&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+---------------+---------+-------+------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key           | key_len | ref   | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+---------------+---------+-------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_name | idx_user_name | 43      | const |    1 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+---------------+---------+-------+------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h2 id="索引应用"><a href="#索引应用" class="headerlink" title="索引应用"></a>索引应用</h2><h3 id="最左前缀法则"><a href="#最左前缀法则" class="headerlink" title="最左前缀法则"></a>最左前缀法则</h3><ul>
+<li>对于索引了多列的场景，最左前缀法则指查询从索引的最左列开始，且不跳过索引中的列</li>
+<li>如果跳跃某一列，索引将部分失效(后面字段索引失效)</li>
+</ul>
+<p>例：先查看tb_user表的索引</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">show</span> index <span class="keyword">from</span> tb_user;</span><br><span class="line"><span class="operator">+</span><span class="comment">---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">Table</span>   <span class="operator">|</span> Non_unique <span class="operator">|</span> Key_name             <span class="operator">|</span> Seq_in_index <span class="operator">|</span> Column_name <span class="operator">|</span> <span class="keyword">Collation</span> <span class="operator">|</span> <span class="keyword">Cardinality</span> <span class="operator">|</span> Sub_part <span class="operator">|</span> Packed <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Index_type <span class="operator">|</span> Comment <span class="operator">|</span> Index_comment <span class="operator">|</span> Visible <span class="operator">|</span> Expression <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">0</span> <span class="operator">|</span> <span class="keyword">PRIMARY</span>              <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> id          <span class="operator">|</span> A         <span class="operator">|</span>      <span class="number">245768</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_name        <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> name        <span class="operator">|</span> A         <span class="operator">|</span>      <span class="number">269997</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_pro_age_sta <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> profession  <span class="operator">|</span> A         <span class="operator">|</span>           <span class="number">3</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_pro_age_sta <span class="operator">|</span>            <span class="number">2</span> <span class="operator">|</span> age         <span class="operator">|</span> A         <span class="operator">|</span>         <span class="number">535</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_pro_age_sta <span class="operator">|</span>            <span class="number">3</span> <span class="operator">|</span> status      <span class="operator">|</span> A         <span class="operator">|</span>        <span class="number">1051</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_phone       <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> phone       <span class="operator">|</span> A         <span class="operator">|</span>      <span class="number">271498</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> tb_user <span class="operator">|</span>          <span class="number">1</span> <span class="operator">|</span> idx_user_email       <span class="operator">|</span>            <span class="number">1</span> <span class="operator">|</span> email       <span class="operator">|</span> A         <span class="operator">|</span>      <span class="number">269341</span> <span class="operator">|</span>     <span class="keyword">NULL</span> <span class="operator">|</span>   <span class="keyword">NULL</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span> YES     <span class="operator">|</span> <span class="keyword">NULL</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------+------------+----------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+---------+------------+</span></span><br></pre></td></tr></table></figure>
+<p>例: 符合最左前缀法则，走联合索引(profession,age,status)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;R&amp;D&#x27; and age = 31 and status = 1;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref               | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | const,const,const |  261 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>例：查询条件改成只有profession，仍然走联合索引(profession,age,status)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref   | rows   | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 147     | const | 127438 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>例：查询条件改成age, status，索引失效，走了全表扫描</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where age = 31 and status = 1;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |     1.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+<p>例：查询条件改成profession, status，索引部分失效，只有profession走了索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;R&amp;D&#x27; and status = 1;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref   | rows   | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 147     | const | 127438 |    10.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-----------------------+</span><br></pre></td></tr></table></figure>
+<p>例：查询条件改成age, status, profession, 走联合索引(profession,age,status) (只要存在即可，和语句中的先后位置无关)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">explain select * from tb_user where age = 31 and status = 1 and profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref               | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | const,const,const |  261 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="范围查询"><a href="#范围查询" class="headerlink" title="范围查询"></a>范围查询</h3><p>联合索引中，出现范围查询，则范围查询右侧的列索引失效</p>
+<p>例: age使用了范围查询，status没有走索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;软件工程&#x27; and age &gt; 30 and status = &#x27;0&#x27;;</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys        | key                  | key_len | ref  | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | range | idx_user_pro_age_sta | idx_user_pro_age_sta | 149     | NULL |    1 |    10.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br></pre></td></tr></table></figure>
+<p>例：把 age &gt; 30 改成 age &gt;&#x3D; 30，都可以走索引 (业务允许情况下，尽量用&gt;&#x3D;代替&gt;)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;软件工程&#x27; and age &gt;= 30 and status = &#x27;0&#x27;;</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys        | key                  | key_len | ref  | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | range | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | NULL |    1 |    10.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------------+----------------------+---------+------+------+----------+-----------------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="在索引列上进行运算，索引会失效"><a href="#在索引列上进行运算，索引会失效" class="headerlink" title="在索引列上进行运算，索引会失效"></a>在索引列上进行运算，索引会失效</h3><p>例: 对phone做substring运算，发现索引失效, type &#x3D; ALL</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where phone = &#x27;10931949622&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------+----------------+---------+-------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys  | key            | key_len | ref   | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+----------------+---------+-------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_phone | idx_user_phone | 45      | const |    1 |   100.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+----------------+---------+-------+------+----------+-----------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select * from tb_user where substring(phone,10,2) = &#x27;22&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |   100.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="字符串不加引号"><a href="#字符串不加引号" class="headerlink" title="字符串不加引号"></a>字符串不加引号</h3><p>字符串类型字段使用时，不加引号，索引将失效。</p>
+<p>例：查询手机号时，忘了加引号，也能查出结果，但索引失效</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where phone = 10931949622;</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys  | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | idx_user_phone | NULL | NULL    | NULL | 271498 |    10.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="头部模糊匹配，索引失效"><a href="#头部模糊匹配，索引失效" class="headerlink" title="头部模糊匹配，索引失效"></a>头部模糊匹配，索引失效</h3><p>例: like查询手机号。使用头部模糊匹配’%262’，索引失效；尾部模糊匹配’109%’，索引有效</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where phone like &#x27;109%&#x27;;</span><br><span class="line">+----+-------------+---------+------------+-------+----------------+----------------+---------+------+------+----------+-----------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys  | key            | key_len | ref  | rows | filtered | Extra                 |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------+----------------+---------+------+------+----------+-----------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | range | idx_user_phone | idx_user_phone | 45      | NULL | 2713 |   100.00 | Using index condition |</span><br><span class="line">+----+-------------+---------+------------+-------+----------------+----------------+---------+------+------+----------+-----------------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select * from tb_user where phone like &#x27;%622&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |    11.11 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="or连接的条件"><a href="#or连接的条件" class="headerlink" title="or连接的条件"></a>or连接的条件</h3><p>用or分割开的条件，如果or前条件中列有索引，or后条件没有索引，查询不会走索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where phone = &#x27;10931949622&#x27; or age = 23;</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys  | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | idx_user_phone | NULL | NULL    | NULL | 271498 |    10.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+----------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="数据分布情况也会影响是否使用索引"><a href="#数据分布情况也会影响是否使用索引" class="headerlink" title="数据分布情况也会影响是否使用索引"></a>数据分布情况也会影响是否使用索引</h3><p>如果MySQL评估使用索引比全表更慢，则不使用索引</p>
+<p>例: tb_user表数据profression都是not null的，使用where is not null查询没有走索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession is not null ;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key  | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | idx_user_pro_age_sta | NULL | NULL    | NULL | 271498 |    50.00 | Using where |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="索引提示"><a href="#索引提示" class="headerlink" title="索引提示"></a>索引提示</h3><p>SQL提示，是优化数据库的重要手段。指在SQL语句中加入一些认为提示来达到优化操作的目的。</p>
+<p>例：先创建一个profession单列索引</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create index idx_user_pro on tb_user(profession);</span><br></pre></td></tr></table></figure>
+<p>再查询profession为’R&amp;D’的员工。MySQL可以用普通索引idx_user_pro，也可以用联合索引idx_user_pro_age_sta</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+-----------------------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys                     | key                  | key_len | ref   | rows   | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+-----------------------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta,idx_user_pro | idx_user_pro_age_sta | 147     | const | 127438 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+-----------------------------------+----------------------+---------+-------+--------+----------+-------+</span><br></pre></td></tr></table></figure>
+
+<p>use index (建议使用索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user use index(idx_user_pro) where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+--------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key          | key_len | ref   | rows   | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+--------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro  | idx_user_pro | 147     | const | 127772 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+--------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>ignore index</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user ignore index(idx_user_pro) where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref   | rows   | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 147     | const | 127438 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------+--------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>force index (强制使用索引)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select * from tb_user force index(idx_user_pro) where profession = &#x27;R&amp;D&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+-------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key          | key_len | ref   | rows  | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+-------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro  | idx_user_pro | 147     | const | 90499 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+--------------+---------+-------+-------+----------+-------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h3><p>查询使用到了索引，并且查询的所有列，在该索引中已经全部能够找到(不需要回表)</p>
+<p>例: tb_user表已有联合索引(profession,age,status), 查询所有列在该索引中能找到时, Extra&#x3D;’Using index’，当查询字段新增name时，Extra&#x3D;’NULL’</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select id,profession,age,status from tb_user where profession = &#x27;R&amp;D&#x27;  and age = 31 and status = &#x27;0&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref               | rows | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | const,const,const |  249 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------------+</span><br><span class="line">1 row in set, 1 warning (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select id,profession,age,status,name from tb_user where profession = &#x27;R&amp;D&#x27;  and age = 31 and status = &#x27;0&#x27;;</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys        | key                  | key_len | ref               | rows | filtered | Extra |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ref  | idx_user_pro_age_sta | idx_user_pro_age_sta | 154     | const,const,const |  249 |   100.00 | NULL  |</span><br><span class="line">+----+-------------+---------+------------+------+----------------------+----------------------+---------+-------------------+------+----------+-------+</span><br></pre></td></tr></table></figure>
+<p>注:</p>
+<ul>
+<li>using index condition (查找使用了索引，但需要回表)</li>
+<li>using where; using index; (查找使用了索引，且需要数据都能在索引列中找到，无需回表)</li>
+</ul>
+<p><strong>聚集索引和辅助索引</strong><br><img data-src="/2024/1016215805/mysql-cluster-index.png"><br>注：</p>
+<ul>
+<li>聚集索引</li>
+<li>辅助索引 叶子节点存主键ID (聚集索引叶子节点已经存储行数据，没必要每个辅助索引也存一份行数据，只存主键ID节省空间)</li>
+</ul>
+<h3 id="前缀索引"><a href="#前缀索引" class="headerlink" title="前缀索引"></a>前缀索引</h3><p>当字段类型为字符串(varchar,text)时，可以只将字符串的一部分前缀，建立索引，这样可以大大节约索引空间，从而提高索引效率</p>
+<p>语法:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index idx_XXX <span class="keyword">on</span> table_name(<span class="keyword">column</span>(n));</span><br></pre></td></tr></table></figure>
+<p>前缀长度<br>可以根据索引选择性决定，选择性指不重复索引值&#x2F;数据表记录总数，选择性越高说明查询效率越好<br>唯一索引选择性为1，是最好的索引选择性</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select count(distinct substring(email, 1, 5)/count(*) from tb_user;</span><br></pre></td></tr></table></figure>
+<p>例: 给email建立前缀索引，取长度为5</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create index idx_email_5 on tb_user(email(5));</span><br></pre></td></tr></table></figure>
+
+<h3 id="单列索引与联合索引"><a href="#单列索引与联合索引" class="headerlink" title="单列索引与联合索引"></a>单列索引与联合索引</h3><p>联合索引指一个索引包含了多个列。<br>业务场景中，如果存在多个查询条件，建议建立联合索引，而非单列索引。</p>
+<h2 id="SQL优化"><a href="#SQL优化" class="headerlink" title="SQL优化"></a>SQL优化</h2><h3 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h3><ul>
+<li><p>批量插入，不要一条一条插入</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert into test values(1),(2),(3);</span><br></pre></td></tr></table></figure></li>
+<li><p>手动提交事务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">start transaction;</span><br><span class="line">insert into tb_test values(1),(2),(3);</span><br><span class="line">insert into tb_test values(4),(5),(6);</span><br><span class="line">insert into tb_test values(7),(8),(9);</span><br><span class="line">commit;</span><br></pre></td></tr></table></figure></li>
+<li><p>主键顺序插入</p>
+</li>
+<li><p>大批量插入数据，使用load指令加载本地文件到数据库</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysql <span class="comment">--local-infile -u root -p</span></span><br><span class="line"><span class="keyword">set</span> <span class="keyword">global</span> local_infile <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">load data <span class="keyword">local</span> infile <span class="string">&#x27;*.log&#x27;</span> <span class="keyword">into</span> <span class="keyword">table</span> `tb_user` fields terminated <span class="keyword">by</span> <span class="string">&#x27;,&#x27;</span> terminated <span class="keyword">by</span> <span class="string">&#x27;\n&#x27;</span>;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="主键优化"><a href="#主键优化" class="headerlink" title="主键优化"></a>主键优化</h3><ul>
+<li><p>页分裂<br><img data-src="/2024/1016215805/primary-key-opt.png"></p>
+</li>
+<li><p>页合并<br>删除一行记录时，实际上记录没有被物理删除，只是被标记为删除，当页中删除记录达到阈值(MERGE_THERSHOLD)，InnoDB会试图合并两个页以节省空间</p>
+</li>
+<li><p>主键设计原则<br>满足业务需求情况下，尽量降低主键长度<br>插入数据时，尽量选择顺序插入，选择使用AUTO_INCREMENT自增主键<br>尽量不使用UUID或其他自然主键(比如身份证号)</p>
+</li>
+</ul>
+<h3 id="order-by优化"><a href="#order-by优化" class="headerlink" title="order by优化"></a>order by优化</h3><p>using filesort: 在排序缓冲区sort buffer中完成排序操作，未通过索引直接返回排序结果<br>using index: 通过有序索引顺序扫描直接返回的，这种无需额外排序，效率较高</p>
+<p>例: 没有建立索引，排序查询走Using filesort.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select id, age, phone from tb_user order by age;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+----------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra          |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+----------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |   100.00 | Using filesort |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+----------------+</span><br></pre></td></tr></table></figure>
+<p>例：建立索引，排序查询走Using index</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create index idx_user_age_phone on tb_user(age,phone);</span><br><span class="line">mysql&gt; explain select id, age, phone from tb_user order by age,phone;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key                | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | NULL          | idx_user_age_phone | 47      | NULL | 271498 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-------------+</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select id, age, phone from tb_user order by age desc ,phone desc;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+----------------------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key                | key_len | ref  | rows   | filtered | Extra                            |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+----------------------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | NULL          | idx_user_age_phone | 47      | NULL | 271498 |   100.00 | Backward index scan; Using index |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+----------------------------------+</span><br><span class="line"></span><br><span class="line">mysql&gt; explain select id, age, phone from tb_user order by age asc ,phone desc;</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-----------------------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys | key                | key_len | ref  | rows   | filtered | Extra                       |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-----------------------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | NULL          | idx_user_age_phone | 47      | NULL | 271498 |   100.00 | Using index; Using filesort |</span><br><span class="line">+----+-------------+---------+------------+-------+---------------+--------------------+---------+------+--------+----------+-----------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>注:</p>
+<ul>
+<li>使用排序字段建立合适索引，多字段排序时也遵循最左前缀法则</li>
+<li>尽量使用覆盖索引</li>
+<li>多字段排序，一个升序一个降序，需指定联合索引创建的规则(ASC&#x2F;DESC)</li>
+<li>如果不可避免出现filesort，大数量排序时可适当增加排序缓冲区大小sort_buffer_size(默认256k)<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;sort_buffer_size&#x27;;</span><br><span class="line">+------------------+--------+</span><br><span class="line">| Variable_name    | Value  |</span><br><span class="line">+------------------+--------+</span><br><span class="line">| sort_buffer_size | 262144 |</span><br><span class="line">+------------------+--------+</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="group-by优化"><a href="#group-by优化" class="headerlink" title="group by优化"></a>group by优化</h3><p>先删除所有索引，测试group by查询结果为Using temporary(效率很低)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; explain select profession,count(*) from tb_user group by profession;</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-----------------+</span><br><span class="line">| id | select_type | table   | partitions | type | possible_keys | key  | key_len | ref  | rows   | filtered | Extra           |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-----------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 271498 |   100.00 | Using temporary |</span><br><span class="line">+----+-------------+---------+------------+------+---------------+------+---------+------+--------+----------+-----------------+</span><br></pre></td></tr></table></figure>
+<p>创建索引后，测试group by查询结果为Using index</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create index idx_pro_age_sta on tb_user(profession,age,status);</span><br><span class="line">mysql&gt; explain select profession,count(*) from tb_user group by profession;</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br><span class="line">| id | select_type | table   | partitions | type  | possible_keys   | key             | key_len | ref  | rows   | filtered | Extra       |</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br><span class="line">|  1 | SIMPLE      | tb_user | NULL       | index | idx_pro_age_sta | idx_pro_age_sta | 154     | NULL | 271498 |   100.00 | Using index |</span><br><span class="line">+----+-------------+---------+------------+-------+-----------------+-----------------+---------+------+--------+----------+-------------+</span><br></pre></td></tr></table></figure>
+
+<h3 id="limit优化"><a href="#limit优化" class="headerlink" title="limit优化"></a>limit优化</h3><p>分页的记录越靠后，查询耗时越大。<br>优化思路：一般分页查询时，通过创建覆盖索引+子查询形式优化。</p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select * from tb_sku order by id limit 9000000,10;</span><br><span class="line">select s.* from tb_sku s, (select id from tb_sku order by id limit 900000,10) a where s.id = a.id;</span><br></pre></td></tr></table></figure>
+
+<h3 id="count优化"><a href="#count优化" class="headerlink" title="count优化"></a>count优化</h3><p>表数据量大时, count(*)执行耗时较多</p>
+<ul>
+<li>count(主键)<br>遍历整张表，把每一行主键id取出来返回给服务层。服务层直接按行累加(无需判断null)。</li>
+<li>count(字段)<br>如果没有not null约束，需要把每一行字段值取出来返回给服务层，服务层需判断是否为null，不为null才累加。</li>
+<li>count(1)<br>遍历整张表，但不取值。服务层对于返回的每一行，放一个数字’1’进去，直接按行进行累加。</li>
+<li>count(*)<br>不会把全部字段取出来，而是专门做了优化，不取值，服务层直接按行累加。</li>
+</ul>
+<p>总结: count(*)效率最高</p>
+<h3 id="update优化"><a href="#update优化" class="headerlink" title="update优化"></a>update优化</h3><p>更新数据时，一定要根据索引更新，否则会出现锁表的现象。</p>
+<p>例: 没有对name建立索引的条件下，以下update语句会锁住整张表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update student set no = &#x27;123&#x27; where name = &#x27;haha&#x27;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h2><p>视图(View)是一种虚拟存在的表，视图仅保存查询的SQL逻辑，不保存查询结果。</p>
+<p>创建视图</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create view tb_user_v1 as select id, name from tb_user where id &lt;= 10;</span><br></pre></td></tr></table></figure>
+<p>查询视图</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from tb_user_v1;</span><br></pre></td></tr></table></figure>
+<p>修改视图</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter view tb_user_v1 as select id from tb_user where id &lt;= 10;</span><br></pre></td></tr></table></figure>
+<p>删除</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">drop view tb_user_v1;</span><br></pre></td></tr></table></figure>
+
+<h3 id="检查选项cascade"><a href="#检查选项cascade" class="headerlink" title="检查选项cascade"></a>检查选项cascade</h3><p>视图可以插入数据，通过视图插入的数据不一定能在视图中查询到(比如插入id&gt;10的记录)</p>
+<p>例: 创建视图时指定with cascaded check option，可以阻止通过视图插入查不到的数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create or replace view tb_user_v1 as select id, name from tb_user where id &lt;= 10 with cascaded check option;</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into tb_user_v1(id,name) values(100,&#x27;hello&#x27;);</span><br><span class="line">ERROR 1369 (HY000): CHECK OPTION failed &#x27;pc.tb_user_v1&#x27;</span><br></pre></td></tr></table></figure>
+
+<h2 id="存储过程"><a href="#存储过程" class="headerlink" title="存储过程"></a>存储过程</h2><h3 id="创建过程"><a href="#创建过程" class="headerlink" title="创建过程"></a>创建过程</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">delimiter $$</span><br><span class="line">create procedure p1()</span><br><span class="line">begin</span><br><span class="line">	select count(*) from tb_user;</span><br><span class="line">end$$</span><br><span class="line"></span><br><span class="line">delimiter ;</span><br><span class="line">mysql&gt; call p1();</span><br><span class="line">+----------+</span><br><span class="line">| count(*) |</span><br><span class="line">+----------+</span><br><span class="line">|   272633 |</span><br><span class="line">+----------+</span><br><span class="line">1 row in set (0.02 sec)</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看过程"><a href="#查看过程" class="headerlink" title="查看过程"></a>查看过程</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select * from information_schema.ROUTINES where ROUTINE_SCHEMA = &#x27;itcast&#x27;;</span><br><span class="line">show create procedure 存储过程名称;</span><br></pre></td></tr></table></figure>
+
+<h3 id="删除过程"><a href="#删除过程" class="headerlink" title="删除过程"></a>删除过程</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">drop procedure if exists p1;</span><br></pre></td></tr></table></figure>
+
+<h3 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h3><ul>
+<li>全局变量(GLOBAL)</li>
+<li>会话变量(SESSION)</li>
+</ul>
+<h3 id="查看系统变量"><a href="#查看系统变量" class="headerlink" title="查看系统变量"></a>查看系统变量</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">show [session|global] variables;</span><br><span class="line">show [session|global] variables like &#x27;...&#x27;;</span><br><span class="line">select @@[session|global].变量;</span><br></pre></td></tr></table></figure>
+
+<h3 id="设置系统变量"><a href="#设置系统变量" class="headerlink" title="设置系统变量"></a>设置系统变量</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set [session|global] 系统变量名=值;</span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li>未指定session或global时，默认为session,会话级变量</li>
+<li>mysql重启后，所设置全局参数会失效，要想不失效，可以在&#x2F;etc&#x2F;my.cnf中配置。</li>
+</ul>
+<h3 id="用户定义和使用变量"><a href="#用户定义和使用变量" class="headerlink" title="用户定义和使用变量"></a>用户定义和使用变量</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set @var_name := expr [, @var_name = expr]; -- 定义变量</span><br><span class="line">select @var_name; -- 使用变量</span><br></pre></td></tr></table></figure>
+<p>注：用户定义变量无需对其进行声明或初始化，只不过获取到的值为NULL</p>
+<h3 id="if语句"><a href="#if语句" class="headerlink" title="if语句"></a>if语句</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">create procedure p3()</span><br><span class="line">begin</span><br><span class="line">	declare score int default 58;</span><br><span class="line">	declare result varchar(10);</span><br><span class="line">	</span><br><span class="line">	if score &gt;= 85 then</span><br><span class="line">		set result := &#x27;优秀&#x27;;</span><br><span class="line">	elseif score &gt;= 60 then</span><br><span class="line">		set result := &#x27;及格&#x27;;</span><br><span class="line">	else</span><br><span class="line">		set result := &#x27;不及格&#x27;;</span><br><span class="line">	end if</span><br><span class="line">	select result;</span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">call p3();</span><br></pre></td></tr></table></figure>
+
+<h3 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h3><p>例：入参为分数，出参为(优秀，及格，不及格)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">create procedure p4(in score int, out result varchar(10))</span><br><span class="line">begin</span><br><span class="line">	if score &gt;= 85 then</span><br><span class="line">		set result := &#x27;优秀&#x27;;</span><br><span class="line">	elseif score &gt;= 60 then</span><br><span class="line">		set result := &#x27;及格&#x27;;</span><br><span class="line">	else</span><br><span class="line">		set result := &#x27;不及格&#x27;;</span><br><span class="line">	end if</span><br><span class="line">	select result;</span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">call p4(68, @result);</span><br></pre></td></tr></table></figure>
+
+<h3 id="case"><a href="#case" class="headerlink" title="case"></a>case</h3><p>例：求月份所属季度</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">create procedure p6(in month int)</span><br><span class="line">begin</span><br><span class="line">	declare result varchar(10);</span><br><span class="line">	</span><br><span class="line">	case</span><br><span class="line">		when month &gt;= 1 and month &lt;= 3 then</span><br><span class="line">			set result := &#x27;第一季度&#x27;;</span><br><span class="line">		when month &gt;= 4 and month &lt;= 6 then</span><br><span class="line">			set result := &#x27;第二季度&#x27;;</span><br><span class="line">		when month &gt;= 7 and month &lt;= 9 then</span><br><span class="line">			set result := &#x27;第三季度&#x27;;</span><br><span class="line">		when month &gt;= 10 and month &lt;= 12 then</span><br><span class="line">			set result := &#x27;第四季度&#x27;;</span><br><span class="line">		else</span><br><span class="line">			set result := &#x27;非法参数&#x27;;</span><br><span class="line">	end case;</span><br><span class="line">	</span><br><span class="line">	select concat(&#x27;输入月份为: &#x27;, month, &#x27;, 所属季度为: &#x27;, result);</span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">call p6(4);</span><br></pre></td></tr></table></figure>
+
+<h3 id="while"><a href="#while" class="headerlink" title="while"></a>while</h3><p>例: 计算从1累加到n的和</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">create procedure p7(in n int)</span><br><span class="line">begin</span><br><span class="line">	declare total int default 0;</span><br><span class="line">	while n&gt;0 do</span><br><span class="line">		set total := total + n;</span><br><span class="line">		set n := n + 1;</span><br><span class="line">	end while;</span><br><span class="line">	select total;</span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">call p7(10);</span><br></pre></td></tr></table></figure>
+
+<h3 id="repeat"><a href="#repeat" class="headerlink" title="repeat"></a>repeat</h3><p>例：计算从1累加到n的和</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">create procedure p8(in n int)</span><br><span class="line">begin</span><br><span class="line">	declare total int default 0;</span><br><span class="line">	repeat</span><br><span class="line">		set total := total + n;</span><br><span class="line">		set n := n - 1;</span><br><span class="line">	until n &lt;= 0</span><br><span class="line">	end repeat;</span><br><span class="line">	</span><br><span class="line">	select total;</span><br><span class="line">end;</span><br></pre></td></tr></table></figure>
+
+<h3 id="游标-cursor"><a href="#游标-cursor" class="headerlink" title="游标(cursor)"></a>游标(cursor)</h3><p>用来存储查询结果集的数据类型</p>
+<p>例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">create procedure p11(in uage int)</span><br><span class="line">begin</span><br><span class="line">	declare u_cursor cursor for select name,profession from tb_user where age &lt;= uage;</span><br><span class="line">	declare uname varchar(100);</span><br><span class="line">	declare upro varchar(100);</span><br><span class="line">	declare exit handler for SQLSTATE &#x27;02000&#x27;;</span><br><span class="line">	</span><br><span class="line">	drop table if exists tb_user_pro;</span><br><span class="line">	create table if not exists tb_user_pro(</span><br><span class="line">		id int primary key auto_increment,</span><br><span class="line">		name varchar(100),</span><br><span class="line">		profession varchar(100)</span><br><span class="line">	);</span><br><span class="line">	open u_cursor;</span><br><span class="line">	while true do</span><br><span class="line">		fetch u_cursor into uname,upro;</span><br><span class="line">		insert into tb_user_pro values(null,uname,upro);</span><br><span class="line">	end while;</span><br><span class="line">	close u_cursor;</span><br><span class="line">end;</span><br><span class="line"></span><br><span class="line">call p11(40);</span><br></pre></td></tr></table></figure>
+<h3 id="存储函数"><a href="#存储函数" class="headerlink" title="存储函数"></a>存储函数</h3><p>存储函数是有返回值的存储过程，参数只能是IN类型。</p>
+<p>例：从1到n累加</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">create function fun1(n int)</span><br><span class="line">returns int</span><br><span class="line">begin</span><br><span class="line">	declare total int default 0;</span><br><span class="line">	while n&gt;0 do</span><br><span class="line">		set total := total + n;</span><br><span class="line">		set n := n - 1;</span><br><span class="line">	end while;</span><br><span class="line">	</span><br><span class="line">	return total;</span><br><span class="line">end;</span><br></pre></td></tr></table></figure>
+
+<h2 id="锁-重点"><a href="#锁-重点" class="headerlink" title="锁(重点)"></a>锁(重点)</h2><p>锁是计算机协调多个进程或线程并发访问某一资源的机制</p>
+<ul>
+<li>全局锁: 锁定数据库中的所有表</li>
+<li>表级锁: 每次操作锁住整张表</li>
+<li>行级锁: 每次操作锁住对应的行数据</li>
+</ul>
+<h3 id="全局锁"><a href="#全局锁" class="headerlink" title="全局锁"></a>全局锁</h3><p>对整个数据库实例加锁，加锁后整个实例处于只读状态，后续的DML写语句，DDL语句都被阻塞。<br>典型的使用场景是做全库的逻辑备份，对所有的表进行锁定，从而获取一致性视图，保证数据的完整性。</p>
+<p><strong>全局锁实例</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 加全局锁</span></span><br><span class="line">flush <span class="keyword">table</span> <span class="keyword">with</span> read lock;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 加了全局锁后，可以读</span></span><br><span class="line"><span class="keyword">update</span> tb_user <span class="keyword">set</span> name <span class="operator">=</span> <span class="string">&#x27;XXX&#x27;</span> <span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line">ERROR <span class="number">1223</span> (HY000): Can<span class="string">&#x27;t execute the query because you have a conflicting read lock</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">-- 但是不能写</span></span><br><span class="line"><span class="string">update tb_user set name = &#x27;</span>XXX<span class="string">&#x27; where id = 1;</span></span><br><span class="line"><span class="string">ERROR 1223 (HY000): Can&#x27;</span>t <span class="keyword">execute</span> the query because you have a conflicting read lock</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 释放锁</span></span><br><span class="line">unlock tables;</span><br></pre></td></tr></table></figure>
+<p>注：数据库中加全局锁，是一个比较重的操作，存在以下问题:</p>
+<ul>
+<li>如果在主库上备份，那么在备份期间都不能更新</li>
+<li>如果在从库上备份，那么备份期间从库不能执行主库同步来的二进制日志(binlog)，会导致主从延迟</li>
+<li>备份数据库的工具是 mysqldump，加上 –single-transaction 参数，完成不加锁的备份。<br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/xiaolincoding/p/16820726.html">https://www.cnblogs.com/xiaolincoding/p/16820726.html</a></li>
+</ul>
+<h3 id="表级锁"><a href="#表级锁" class="headerlink" title="表级锁"></a>表级锁</h3><p>表级锁分为如下三类</p>
+<ul>
+<li>表锁</li>
+<li>元数据锁 (meta data lock, MDL)</li>
+<li>意向锁</li>
+</ul>
+<h4 id="表锁"><a href="#表锁" class="headerlink" title="表锁"></a>表锁</h4><ul>
+<li>表共享读锁(read lock)</li>
+<li>表独占写锁(write lock)</li>
+</ul>
+<p><strong>语法</strong><br>加锁: lock tables 表名… read&#x2F;write<br>释放锁: unlock tables (或客户端断开连接时释放锁)</p>
+<p><strong>读锁的特点</strong><br>a) 客户端c1加了读锁后，c1和c2都能读，但c1和c2都不能写。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; lock tables tb_user read;</span><br><span class="line">mysql&gt; select * from tb_user where id = 1;</span><br><span class="line">+----+-------+-------------+---------------+</span><br><span class="line">| id | name  | phone       | email         |</span><br><span class="line">+----+-------+-------------+---------------+</span><br><span class="line">|  1 | uXrBh | 15847705582 | YYdRR@163.com |</span><br><span class="line">+----+-------+-------------+---------------+</span><br><span class="line"></span><br><span class="line">mysql&gt; update tb_user set name = &#x27;XXX&#x27; where id = 1;</span><br><span class="line">ERROR 1099 (HY000): Table &#x27;tb_user&#x27; was locked with a READ lock and can&#x27;t be updated</span><br><span class="line"></span><br><span class="line">mysql&gt; unlock tables </span><br></pre></td></tr></table></figure>
+<p>b) 客户端c1加了写锁后, c1能读也能写，但c2不能读也不能写。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">-- 客户端c1</span><br><span class="line">mysql&gt; lock table tb_user write;</span><br><span class="line"></span><br><span class="line">mysql&gt; update tb_user set name = &#x27;XXXXX&#x27; where id = 1;</span><br><span class="line">Query OK, 1 row affected (0.01 sec)</span><br><span class="line">Rows matched: 1  Changed: 1  Warnings: 0</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from tb_user where id = 1;</span><br><span class="line">+----+-------+-------------+---------------+------------+------+--------+--------+---------------------+</span><br><span class="line">| id | name  | phone       | email         | profession | age  | gender | status | createtime          |</span><br><span class="line">+----+-------+-------------+---------------+------------+------+--------+--------+---------------------+</span><br><span class="line">|  1 | XXXXX | 15847705582 | YYdRR@163.com | OPS        |   81 | F      |      0 | 2024-08-22 00:00:00 |</span><br><span class="line">+----+-------+-------------+---------------+------------+------+--------+--------+---------------------+</span><br><span class="line"></span><br><span class="line">-- 客户端c2</span><br><span class="line">-- 不能读，被阻塞</span><br><span class="line">mysql&gt; select * from tb_user limit 1;</span><br><span class="line">^C^C -- query aborted</span><br><span class="line">ERROR 1317 (70100): Query execution was interrupted</span><br><span class="line"></span><br><span class="line">-- 不能写，直接报错</span><br><span class="line">mysql&gt; mysql&gt; update tb_user set name = &#x27;XXX&#x27; where id = 1;</span><br><span class="line">ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near &#x27;mysql&gt; update tb_user set name = &#x27;XXX&#x27; where id = 1&#x27; at line 1</span><br></pre></td></tr></table></figure>
+
+<h4 id="元数据锁-meta-data-lock-MDL"><a href="#元数据锁-meta-data-lock-MDL" class="headerlink" title="元数据锁(meta data lock, MDL)"></a>元数据锁(meta data lock, MDL)</h4><ul>
+<li>MDL加锁是系统自动控制，无需显式使用，访问一张表时会自动加上。</li>
+<li>MDL锁作用是维护表元数据的一致性，表上有活动事务时，不可以对元数据进行写入操作。</li>
+<li>MySQL5.5中引入MDL，对一张表进行增删改查时，加MDL读锁(共享), 对表结构进行变更时，加MDL写锁(排他)。避免了DML与DDL的冲突，保证读写正确性。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>对应SQL</th>
+<th>锁类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>lock tables xxx read&#x2F;write</td>
+<td>SHARED_READ_ONLY&#x2F;SHARED_NO_READ_WRITE</td>
+<td></td>
+</tr>
+<tr>
+<td>select, select … lock in share mode</td>
+<td>SHARED_READ</td>
+<td>与SHARED_READ, SHARED_WRITE兼容, 与EXCLUSIVE互斥</td>
+</tr>
+<tr>
+<td>insert, update, delete, select … for update</td>
+<td>SHARED_WRITE</td>
+<td>与SHARD_READ, SHARED_WRITE兼容, 与EXCLUSIVE互斥</td>
+</tr>
+<tr>
+<td>alter table …</td>
+<td>EXCLUSIVE</td>
+<td>与其他MDL互斥</td>
+</tr>
+</tbody></table>
+<p><strong>元数据锁的特点</strong><br>客户端c1开启事务，执行select操作, 客户端c2开启事务，执行alter table操作会阻塞</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">-- 客户端c1手动开启事务，执行select操作, 不提交</span><br><span class="line">mysql&gt; begin;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; select * from demo;</span><br><span class="line">Empty set (0.00 sec)</span><br><span class="line"></span><br><span class="line">-- 客户端c2开启事务，执行alter table，发现被阻塞 (EXCLUSIVE与SHARED_READ互斥)</span><br><span class="line">mysql&gt; begin;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; alter table demo add column1 int;</span><br><span class="line">b^</span><br></pre></td></tr></table></figure>
+
+<p>查看元数据锁的指令:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select object_type,object_schema,object_name,lock_type,lock_duration from performance_schema.metadata_locks;</span><br></pre></td></tr></table></figure>
+
+<h4 id="意向锁"><a href="#意向锁" class="headerlink" title="意向锁"></a>意向锁</h4><p>为了避免DML执行时，加的行锁与表锁冲突，InnoDB引入意向锁，使得表锁不用检查每行数据是否有锁，使用意向锁减少表锁的检查。</p>
+<p>意向锁有两种：</p>
+<ul>
+<li>意向共享锁(IS): 由语句select … lock in share mode添加</li>
+<li>意向排他锁(IX): 由insert,update,delete,select … for update添加</li>
+</ul>
+<p>意向锁兼容性：</p>
+<ul>
+<li>意向共享锁(IS): 与表锁共享锁兼容，与其他表锁互斥。</li>
+<li>意向排他锁(IX): 与表锁共享锁及排它锁都互斥，意向锁之间不会互斥。</li>
+</ul>
+<p>可以通过以下SQL，查看意向锁及行锁的加锁情况：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select object_schema,object_name,index_name,lock_type,lock_mode,lock_data from performance_schema.data_locks;</span><br></pre></td></tr></table></figure>
+
+<p>意向锁1实例:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">-- 客户端c1开启事务，加IS锁+行锁</span><br><span class="line">mysql&gt;begin;</span><br><span class="line"></span><br><span class="line">mysql&gt;select * from demo where id = 1 lock in share mode;</span><br><span class="line"></span><br><span class="line">mysql&gt; select object_schema,object_name,index_name,lock_type,lock_mode,lock_data from performance_schema.data_locks;</span><br><span class="line">+---------------+-------------+-----------------+-----------+-----------+------------------------+</span><br><span class="line">| object_schema | object_name | index_name      | lock_type | lock_mode | lock_data              |</span><br><span class="line">+---------------+-------------+-----------------+-----------+-----------+------------------------+</span><br><span class="line">| pc            | demo        | NULL            | TABLE     | IS        | NULL                   |</span><br><span class="line">| pc            | demo        | GEN_CLUST_INDEX | RECORD    | S         | supremum pseudo-record |</span><br><span class="line">| pc            | demo        | GEN_CLUST_INDEX | RECORD    | S         | 0x000000000300         |</span><br><span class="line">+---------------+-------------+-----------------+-----------+-----------+------------------------+</span><br><span class="line"></span><br><span class="line">-- 此时,客户端c2可以加表共享读锁，但不能加表排他写锁。</span><br><span class="line">mysql&gt; lock tables demo read;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; unlock tables;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; lock tables demo write;</span><br><span class="line">^C^C -- query aborted</span><br><span class="line">ERROR 1317 (70100): Query execution was interrupted</span><br></pre></td></tr></table></figure>
+
+<h4 id="行级锁"><a href="#行级锁" class="headerlink" title="行级锁"></a>行级锁</h4><p>行级锁，每次操作锁住对应的行数据，锁定粒度最小，发生锁冲突概率最低，并发度最高。应用在InnoDB存储引擎中。<br>行级锁是通过对索引加锁来实现的，不是对记录加锁。行级锁分如下三类：</p>
+<ul>
+<li>行锁(Record Lock)</li>
+<li>间隙锁(Gap Lock)	RR隔离级别下支持</li>
+<li>临键锁(Next-Key Lock)</li>
+</ul>
+<h5 id="行锁"><a href="#行锁" class="headerlink" title="行锁"></a>行锁</h5><ul>
+<li>共享锁(S):允许一个事务读一行，阻止其他事务获得排它锁。</li>
+<li>排它锁(X):允许获取排它锁事务更新数据，阻止其他事务获得相同数据集的共享锁和排他锁。<table>
+<thead>
+<tr>
+<th>SQL</th>
+<th>行锁类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>insert</td>
+<td>排他锁</td>
+<td>自动加锁</td>
+</tr>
+<tr>
+<td>update</td>
+<td>排他锁</td>
+<td>自动加锁</td>
+</tr>
+<tr>
+<td>delete</td>
+<td>排他锁</td>
+<td>自动加锁</td>
+</tr>
+<tr>
+<td>select</td>
+<td>不加锁</td>
+<td></td>
+</tr>
+<tr>
+<td>select … lock in share mode</td>
+<td>共享锁</td>
+<td>需手动在select之后加lock in share mode</td>
+</tr>
+<tr>
+<td>select … for update</td>
+<td>排它锁</td>
+<td>需要手动在select之后加for update</td>
+</tr>
+</tbody></table>
+</li>
+</ul>
+<p>行锁示例：<br>默认情况, InnoDB在Repeatable Read事务隔离级别运行，使用next-key lock进行搜索和索引扫描，防止幻读</p>
+<ul>
+<li>针对唯一索引进行检索时，对已存在记录进行等值匹配时，自动优化为行锁。</li>
+<li>不通过索引条件检索数据，InnoDB将对表中所有记录加锁，此时升级为表锁。</li>
+</ul>
+<h2 id="触发器"><a href="#触发器" class="headerlink" title="触发器"></a>触发器</h2><p>触发器是与表有关的数据库对象，指在insert&#x2F;update&#x2F;delete之前或之后，触发并执行触发器中定义的SQL语句集合。</p>
+<table>
+<thead>
+<tr>
+<th>触发器类型</th>
+<th>NEW和OLD</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INSERT型触发器</td>
+<td>NEW表示将要或者已经新增的数据</td>
+</tr>
+<tr>
+<td>UPDATE型触发器</td>
+<td>OLD表示修改之前的数据，NEW表示将要或已经修改后的数据</td>
+</tr>
+<tr>
+<td>DELETE型触发器</td>
+<td>OLD表示将要或者已经删除的数据</td>
+</tr>
+</tbody></table>
+<p>– TODO –</p>
+<h2 id="InnoDB引擎"><a href="#InnoDB引擎" class="headerlink" title="InnoDB引擎"></a>InnoDB引擎</h2><h3 id="逻辑存储结构"><a href="#逻辑存储结构" class="headerlink" title="逻辑存储结构"></a>逻辑存储结构</h3><p>Tablespace(表空间) -&gt; Segment(段) -&gt; Extent(区) -&gt; Row(行) -&gt; Page(页)</p>
+<p>表空间(ibd文件), 一个MySQL示例可对应多个表空间，用于存储记录，索引等数据。<br>段, 分为数据段, 索引段, 回滚段, InnoDB是索引组织表，数据段就是B+树的叶子节点，索引段是B+树的非叶子节点,<br>区，表空间的单元结构，每个区大小为1M, 默认情况，InnoDB页大小为16K, 一个区中有64个连续的页<br>页, InnoDB磁盘管理的最小单元，每个页默认16KB，为保证页连续性，InnoDB每次从磁盘申请4到5个区<br>行, InnoDB数据按行存放。</p>
+<p>表空间</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># ls /var/lib/mysql/*.ibd</span><br><span class="line">/var/lib/mysql/mysql.ibd</span><br><span class="line"># ls /var/lib/mysql/pc/</span><br><span class="line">demo.ibd  tb_user.ibd</span><br></pre></td></tr></table></figure>
+
+<h3 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h3><h4 id="Buffer-Pool"><a href="#Buffer-Pool" class="headerlink" title="Buffer Pool"></a>Buffer Pool</h4><p>缓冲池: 缓存磁盘上经常操作的数据，执行增删改查操作时，先操作Buffer Pool数据(如Buffer Pool没有数据，就从磁盘加载并缓存)，再以一定频率刷到磁盘，从而减少磁盘IO，加快处理速度<br>以页为单位, 底层采用链表管理Page, 根据状态，将Page分为三类：</p>
+<ul>
+<li>free page 空闲页，未被使用</li>
+<li>clean page 被使用页，数据没有被修改过</li>
+<li>dirty page 被使用页，数据与磁盘中不一致</li>
+</ul>
+<h4 id="Change-Buffer"><a href="#Change-Buffer" class="headerlink" title="Change Buffer"></a>Change Buffer</h4><p>更改缓冲区，执行DML语句时，如果这些数据Page没有在Buffer Pool中，不会直接操作磁盘，而是将数据变更存到Change Buffer，<br>未来数据被读取时，再将数据合并恢复到Buffer Pool中，再将合并后数据刷新到磁盘中。</p>
+<h4 id="Adaptive-Hash-Index-自适应哈希索引"><a href="#Adaptive-Hash-Index-自适应哈希索引" class="headerlink" title="Adaptive Hash Index (自适应哈希索引)"></a>Adaptive Hash Index (自适应哈希索引)</h4><ul>
+<li>自适应哈希索引，用于优化对Buffer Pool数据查询。InnoDB会监控对表上各索引页查询，如观察到hash索引可以提升速度，<br>则建立hash索引，称之为自适应hash索引</li>
+<li>自适应哈希索引，无需人工干预，是系统根据情况自动完成的<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%hash_index%&#x27;;</span><br><span class="line">+----------------------------------+-------+</span><br><span class="line">| Variable_name                    | Value |</span><br><span class="line">+----------------------------------+-------+</span><br><span class="line">| innodb_adaptive_hash_index       | ON    |</span><br><span class="line">| innodb_adaptive_hash_index_parts | 8     |</span><br><span class="line">+----------------------------------+-------+</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h4 id="Log-Buffer"><a href="#Log-Buffer" class="headerlink" title="Log Buffer"></a>Log Buffer</h4><p>用于保存要写入到磁盘中的log(redo log, undo log), 默认大小16MB，参数：</p>
+<ul>
+<li>innodb_log_buffer_size 			缓冲区大小</li>
+<li>innodb_flush_log_at_trx_commit	日志刷新到磁盘时机</li>
+</ul>
+<h4 id="磁盘结构"><a href="#磁盘结构" class="headerlink" title="磁盘结构"></a>磁盘结构</h4><ul>
+<li><p>System Tablespace: 系统表空间是更改缓冲区的存储区域，如果表是在系统表空间而不是每个表文件或通用表空间中创建的，也可能含表和索引数据</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%data_file_path%&#x27;;</span><br><span class="line">+----------------------------+------------------------+</span><br><span class="line">| Variable_name              | Value                  |</span><br><span class="line">+----------------------------+------------------------+</span><br><span class="line">| innodb_data_file_path      | ibdata1:12M:autoextend |</span><br><span class="line">+----------------------------+------------------------+</span><br></pre></td></tr></table></figure></li>
+<li><p>File-Per-Table Tablespaces: 每个表的文件表空间包含单个InnoDB表数据和索引，并存储在文件系统的单个数据文件中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%innodb_file_per_table%&#x27;;</span><br><span class="line">+-----------------------+-------+</span><br><span class="line">| Variable_name         | Value |</span><br><span class="line">+-----------------------+-------+</span><br><span class="line">| innodb_file_per_table | ON    |</span><br><span class="line">+-----------------------+-------+</span><br></pre></td></tr></table></figure></li>
+<li><p>Gerneral Tablespaces: 通用表空间，需通过craete tablespace语法创建通用表空间，创建表时可以指定该表空间</p>
+</li>
+<li><p>Undo Tablespaces: 撤销表空间，MySQL实例在初始化时会自动创建两个默认undo表空间，用于存储undo log</p>
+</li>
+<li><p>Doublewrite Buffer Files: 双写缓冲区，innoDB将数据页从Buffer Pool刷新到磁盘前，先将数据页写入双写缓冲区文件中，便于系统异常时恢复数据。<br>(#ib_16384_0.dblwr, #ib_16384_1.dblwr)</p>
+</li>
+<li><p>Redo Log: 重做日志，两部分组成(redo log buffer, redo log)，当事务提交后会把所有修改信息存到日志中，用于刷新脏页到磁盘发生错误时，进行数据恢复<br>文件(ib_logfile0, ib_logfile1)</p>
+</li>
+</ul>
+<h4 id="后台线程"><a href="#后台线程" class="headerlink" title="后台线程"></a>后台线程</h4><ul>
+<li>Master Thread 核心线程，负责调度其他线程，将缓冲池中数据异步刷新到磁盘，包括脏页刷新，合并插入缓存，undo页回收</li>
+<li>IO Thread InnoDB使用AIO处理IO请求<table>
+<thead>
+<tr>
+<th>线程类型</th>
+<th>默认个数</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Read Thread</td>
+<td>4</td>
+<td>负责读操作</td>
+</tr>
+<tr>
+<td>Write Thread</td>
+<td>4 负责写操作</td>
+<td></td>
+</tr>
+<tr>
+<td>Log Thread</td>
+<td>1</td>
+<td>负责将日志缓冲区刷新到磁盘</td>
+</tr>
+<tr>
+<td>Insert Buffer Thread</td>
+<td>1</td>
+<td>负责将缓冲区内容刷新到磁盘</td>
+</tr>
+</tbody></table>
+</li>
+</ul>
+<h3 id="事务原理"><a href="#事务原理" class="headerlink" title="事务原理"></a>事务原理</h3><h4 id="redo-log"><a href="#redo-log" class="headerlink" title="redo log"></a>redo log</h4><p>重做日志，记录事务提交时数据页的物理修改，用来实现事务的持久性，由两部分组成</p>
+<ul>
+<li>redo log buffer(内存)</li>
+<li>redo log file(磁盘)<br>事务提交后会把所有修改信息都存到日志文件中，用于刷新脏页到磁盘发生错误时，进行数据恢复使用。</li>
+</ul>
+<h4 id="undo-log"><a href="#undo-log" class="headerlink" title="undo log"></a>undo log</h4><p>回滚日志，记录数据被修改前的信息，作用：提供回滚, MVCC<br>undo log 记录逻辑日志(01:05)<br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&vd_source=d8559c2d87607be86810cd806158bb86&p=140">https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&amp;vd_source=d8559c2d87607be86810cd806158bb86&amp;p=140</a></p>
+<h3 id="MVCC"><a href="#MVCC" class="headerlink" title="MVCC"></a>MVCC</h3><p>MVCC的几个重要概念：</p>
+<p><strong>当前读</strong><br>读取记录的最新版本，读取时要保证其他并发事务不能修改当前记录，会对读取记录加锁。比如:<br>select … lock in share mode, select … for update, insert, delete都是一种当前读</p>
+<p>例: 先在客户端c1开启事务, 再从客户端c2更新tb_user表id&#x3D;1记录并提交，此时c1不能查到c2修改的记录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">-- 客户端c1开启事务</span><br><span class="line">mysql&gt; begin;</span><br><span class="line">mysql&gt; select * from tb_user;</span><br><span class="line">+----+-------+</span><br><span class="line">| id | value |</span><br><span class="line">+----+-------+</span><br><span class="line">|  1 |     1 |</span><br><span class="line">+----+-------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">-- 客户端c2更新tb_user表id=1记录，并提交事务</span><br><span class="line">mysql&gt; begin;</span><br><span class="line">mysql&gt; update tb_user set value = 2 where id = 1;</span><br><span class="line">mysql&gt; commit;</span><br><span class="line"></span><br><span class="line">-- 切到客户端c1，此时c1中查不到c2修改的记录, 即可重复读</span><br><span class="line">mysql&gt; select * from tb_user;</span><br><span class="line">+----+-------+</span><br><span class="line">| id | value |</span><br><span class="line">+----+-------+</span><br><span class="line">|  1 |     1 |</span><br><span class="line">+----+-------+</span><br><span class="line"></span><br><span class="line">-- 如果通过select * lock in share mode 使用当前读，就可以查到c2修改的记录</span><br><span class="line">mysql&gt; select * from tb_user lock in share mode;</span><br><span class="line">+----+-------+</span><br><span class="line">| id | value |</span><br><span class="line">+----+-------+</span><br><span class="line">|  1 |     2 |</span><br><span class="line">+----+-------+</span><br></pre></td></tr></table></figure>
+<p><strong>快照读</strong><br>简单的select就是快照读，读取的是记录数据的可见版本，有可能是历史数据，不加锁，是非阻塞读</p>
+<ul>
+<li>read committed: 每次select都生成一个快照读</li>
+<li>Repeatable Read: 开启事务后第一个select语句才是快照读</li>
+<li>Serializable: 快照读退化为当前读</li>
+</ul>
+<p><strong>MVCC</strong><br>全称 Multi-Version Concurrency Control 多版本并发控制。指维护一个数据的多个版本，使读写操作无冲突<br>快照读为MySQL实现MVCC提供了一个非阻塞读的功能，MVCC的实现依赖数据库记录中三个隐式字段、undo log日志、readView</p>
+<h4 id="MVCC实现原理"><a href="#MVCC实现原理" class="headerlink" title="MVCC实现原理"></a>MVCC实现原理</h4><p><strong>记录中的隐藏字段</strong><br>隐式增加了两个字段DB_TRX_ID, DB_ROLL_PTR</p>
+<table>
+<thead>
+<tr>
+<th>隐藏字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DB_TRX_ID</td>
+<td>最近修改事务ID，记录插入这条记录或最后一次修改改记录的事务ID</td>
+</tr>
+<tr>
+<td>DB_ROLL_PTR</td>
+<td>回滚指针, 指向这条记录的上一个版本，用于配合undo log, 指向上一个版本</td>
+</tr>
+<tr>
+<td>DB_ROW_ID</td>
+<td>隐藏主键, 如果表结构没有指定主键。将会生成该隐藏字段</td>
+</tr>
+</tbody></table>
+<p>查看隐藏字段</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ibd2sdi /var/lib/mysql/pc/tb_user.ibd</span><br></pre></td></tr></table></figure>
+
+<p><strong>undo log</strong><br>回滚日志, 在insert, update, delete时产生的，便于数据回滚的日志。</p>
+<ul>
+<li>当insert时候，产生的undo log只在回滚时需要，事务提交后可被立即删除。</li>
+<li>而update,delete时候，产生的undo log不仅在回滚时需要，在快照读时也需要，不会被立即删除。</li>
+</ul>
+<p><strong>undo log版本链</strong><br>不同事务或相同事务对同一条记录进行修改，<br>会导致该记录undolog生成一条记录版本链表，链表头部是最新的旧记录，链表尾部是最早的旧记录</p>
+<p>** readview **<br>readview (读视图)是快照读SQL执行时MVCC提取数据的依据，记录并维护系统当前活跃的事务id<br>readview 包括四个核心字段</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>m_ids</td>
+<td>当前活跃的事务ID集合</td>
+</tr>
+<tr>
+<td>min_trx_id</td>
+<td>最小活跃事务ID</td>
+</tr>
+<tr>
+<td>max_trx_id</td>
+<td>预分配事务ID, 当前最大事务ID+1</td>
+</tr>
+<tr>
+<td>creator_trx_id</td>
+<td>ReadView创建者的事务ID</td>
+</tr>
+</tbody></table>
+<ul>
+<li>trx_id &#x3D;&#x3D; creator_trx_id 可以访问该版本, 说明数据是当前这个事务更改的</li>
+<li>trx_id &lt; min_trx_id 可以访问该版本, 说明数据已经提交了</li>
+<li>trx_id &gt; max_trx_id 不可以访问该版本, 说明该事务在ReadView生成后才开启</li>
+<li>min_trx_id &lt;&#x3D; trx_id &lt;&#x3D; max_trx_id 如果trx_id不在m_ids中是可以访问该版本的</li>
+</ul>
+<p>不同的隔离级别，生成readview的时机不同：</p>
+<ul>
+<li>READ COMMITTED: 在事务中每一次执行快照读时生成Read View</li>
+<li>REPEATABLE READ: 仅在事务中第一次执行快照读时生成ReadView, 后续复用该ReadView (可重复读)</li>
+</ul>
+<h2 id="MySQL管理"><a href="#MySQL管理" class="headerlink" title="MySQL管理"></a>MySQL管理</h2><h3 id="系统数据库"><a href="#系统数据库" class="headerlink" title="系统数据库"></a>系统数据库</h3><ul>
+<li>mysql 存储MySQL正常运行所需各种信息(时区、主从、用户、权限) </li>
+<li>information_schema 提供了访问数据库元数据的各种表和视图，包含数据库，表，字段类型以及访问权限</li>
+<li>performance_schema 为MySQL运行时状态提供了一个底层监控功能，主要用于收集数据库服务器性能参数</li>
+<li>sys 包含一系列方便DBA和开发人员利用performance_schema性能数据库进行性能调优和诊断的视图</li>
+</ul>
+<h3 id="常用工具"><a href="#常用工具" class="headerlink" title="常用工具"></a>常用工具</h3><h4 id="mysql"><a href="#mysql" class="headerlink" title="mysql"></a>mysql</h4><p>例: 通过mysql -e直接执行语句，无需进入交互式命令行 (用户名root,密码123,数据库名称pc)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -uroot -p123 pc -e &quot;select * from tb_user&quot;</span><br></pre></td></tr></table></figure>
+<h4 id="mysqladmin"><a href="#mysqladmin" class="headerlink" title="mysqladmin"></a>mysqladmin</h4><p>一个执行管理操作的客户端程序，可以用它检查服务器配置和当前状态，创建并删除数据库等。</p>
+<h4 id="mysqlbinlog"><a href="#mysqlbinlog" class="headerlink" title="mysqlbinlog"></a>mysqlbinlog</h4><p>检查二进制日志</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqlbinlog -s binlog.000006 /var/lib/mysql/binlog.000006</span><br></pre></td></tr></table></figure>
+
+<h4 id="mysqlshow"><a href="#mysqlshow" class="headerlink" title="mysqlshow"></a>mysqlshow</h4><p>mysqlshow客户端对象查找工具，用来很快查找存在哪些数据库，数据库中的表，表中的列或者索引。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># mysqlshow -uroot -pXXXXXX --count</span><br><span class="line">mysqlshow: [Warning] Using a password on the command line interface can be insecure.</span><br><span class="line">+--------------------+--------+--------------+</span><br><span class="line">|     Databases      | Tables |  Total Rows  |</span><br><span class="line">+--------------------+--------+--------------+</span><br><span class="line">| gx_day15           |     12 |           70 |</span><br><span class="line">| gx_day16           |     14 |           75 |</span><br><span class="line">| information_schema |     79 |        29745 |</span><br><span class="line">| mysql              |     37 |         4090 |</span><br><span class="line">| pc                 |      3 |            2 |</span><br><span class="line">| performance_schema |    111 |       295786 |</span><br><span class="line">| sys                |    101 |         6398 |</span><br><span class="line">+--------------------+--------+--------------+</span><br></pre></td></tr></table></figure>
+
+<h4 id="mysqldump"><a href="#mysqldump" class="headerlink" title="mysqldump"></a>mysqldump</h4><p>mysqldump用于备份数据库和在不同数据库间作数据迁移。备份内容包含创建表，以及插入表的SQL语句</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqldump -uroot -ppassword dbname &gt; output.sql</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+<h2 id="查看MySQL版本"><a href="#查看MySQL版本" class="headerlink" title="查看MySQL版本"></a>查看MySQL版本</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36">https://github.com/mysql/mysql-server/releases/tag/mysql-8.0.36</a></p>
+<h2 id="进程模型"><a href="#进程模型" class="headerlink" title="进程模型"></a>进程模型</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl cat mysqld | grep ExecStart=</span><br><span class="line">ExecStart=/usr/libexec/mysqld --basedir=/usr</span><br></pre></td></tr></table></figure>
+<p>单进程多线程模型</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ps axf | grep mysqld</span><br><span class="line">  16273 ?        Ssl    0:33 /usr/libexec/mysqld --basedir=/usr</span><br><span class="line">ps -T 16273</span><br><span class="line">    PID    SPID TTY      STAT   TIME COMMAND</span><br><span class="line">  16273   16273 ?        Ssl    0:00 /usr/libexec/mysqld --basedir=/usr</span><br><span class="line">  16273   16276 ?        Ssl    0:00 /usr/libexec/mysqld --basedir=/usr</span><br><span class="line">  16273   16277 ?        Ssl    0:00 /usr/libexec/mysqld --basedir=/usr</span><br><span class="line">	....</span><br></pre></td></tr></table></figure>
+<p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.jcwlyf.com/newsContent-id-18272.html">https://www.jcwlyf.com/newsContent-id-18272.html</a></p>
+<p>mysqld进程</p>
+<ul>
+<li>监听线程，接受客户端连接请求；</li>
+<li>查询线程，处理客户端发来的SQL查询；</li>
+<li>复制线程，处理主从复制相关操作；</li>
+<li>后台线程，执行定期任务如日志清理、缓存刷新等。</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -662,101 +1455,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0916170317.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/0916170317.html" class="post-title-link" itemprop="url">Rocky Linux 9安装mysqlclient库报错的解决方法</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-09-16 17:03:17" itemprop="dateCreated datePublished" datetime="2024-09-16T17:03:17+08:00">2024-09-16</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Django/" itemprop="url" rel="index"><span itemprop="name">Django</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>1.2k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
-<h2 id="安装mysqlclient报错"><a href="#安装mysqlclient报错" class="headerlink" title="安装mysqlclient报错"></a>安装mysqlclient报错</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
-<p>报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/0916170317.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/25/">25</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/">26</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -824,7 +1526,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">150</span>
+          <span class="site-state-item-count">151</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -883,12 +1585,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">488k</span>
+    <span title="站点总字数">493k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:24</span>
+    <span title="站点阅读时长">7:28</span>
 </div>
 
 <!--
