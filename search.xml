@@ -13,29 +13,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Linux下生成core dump文件</title>
-    <url>/2020/0228210741.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
-<span id="more"></span>
-
-<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
-<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
-<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
-<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
-</ol>
-<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
-<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
-<p><strong>指定core文件的输出格式和路径</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/0322220956.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -81,6 +58,29 @@
 <p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
 <p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
 <h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux下生成core dump文件</title>
+    <url>/2020/0228210741.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
+<span id="more"></span>
+
+<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
+<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
+<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
+<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
+</ol>
+<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
+<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
+<p><strong>指定core文件的输出格式和路径</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -657,24 +657,6 @@
       </tags>
   </entry>
   <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/0726174432.html</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>CSAPP 缓冲区溢出实验</title>
     <url>/2020/0802174715.html</url>
     <content><![CDATA[<h3 id="实验介绍"><a href="#实验介绍" class="headerlink" title="实验介绍"></a>实验介绍</h3><p>本实验中，我们需要利用缓冲区溢出漏洞，来修改一个二进制可执行文件的运行时行为。</p>
@@ -865,6 +847,24 @@
       </categories>
       <tags>
         <tag>CSAPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/0726174432.html</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -2447,6 +2447,26 @@
       </tags>
   </entry>
   <entry>
+    <title>使用wget批量下载指定类型文件</title>
+    <url>/2021/1016200952.html</url>
+    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
+
+<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
+
+
+]]></content>
+      <categories>
+        <category>wget</category>
+      </categories>
+      <tags>
+        <tag>wget</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用GDB修改二进制文件</title>
     <url>/2021/1016201159.html</url>
     <content><![CDATA[<h3 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h3><p>GDB不仅可以用来调试程序，还可以直接修改被调试程序的二进制文件。这种方式相比于改源码重新编译、<code>gdb attach</code>有什么优势呢？考虑以下企业生产环境中的几个调试场景：</p>
@@ -2494,100 +2514,6 @@
       </categories>
       <tags>
         <tag>GDB</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用wget批量下载指定类型文件</title>
-    <url>/2021/1016200952.html</url>
-    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
-
-<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
-<span id="more"></span>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
-
-
-]]></content>
-      <categories>
-        <category>wget</category>
-      </categories>
-      <tags>
-        <tag>wget</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis抓包分析案例</title>
-    <url>/2021/1106201429.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
-<p><strong>问题：</strong> 仿真设备启动中，<strong>概率出现Redis的某个字符串键被不符合预期地改写成空串</strong>，导致客户端Docker从Redis获取的数据有问题。<strong>需要定位是哪个Docker上的哪个进程改写了Redis数据库。</strong></p>
-<span id="more"></span>
-
-<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><ul>
-<li>先尝试排查客户端代码。但此案例中涉及业务代码过多(200w+行代码)，且Redis客户端的形式也很多（有<code>goredis</code>, <code>redis-py</code>, <code>hiredis</code>, <code>redis-cli</code>等）。看来肉眼扫描代码的笨方法不靠谱，而且这种<strong>寄希望于碰运气蒙混过关</strong>的思考方式实在不像是一个程序员。</li>
-</ul>
-<p>那么既然排查客户端有困难，能不能换个角度思考，比如说从服务端入手？以下给出第二种思路：</p>
-<ul>
-<li><strong>通过在服务端抓包，得到所有对这个字符串键做set操作的报文，再根据报文中的IP和端口号得到进程ID</strong>。听起来可行，下面举一个简化的案例介绍具体的操作方法。</li>
-</ul>
-<h2 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h2><p>利用tcpdump，在Redis服务端后台抓取对这个字符串键做set操作的报文，再根据报文中的IP和端口号确认进程即可。</p>
-<p>如下图所示，使用命令<code>tcpdump -i any port 6379 | grep set | grep [key]</code> ，得到客户端IP是localhost,端口号是44880。 </p>
-<p><img data-src="/2021/1106201429/image1.png"></p>
-<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img data-src="/2021/1106201429/image2.png"></p>
-<h4 id="思考："><a href="#思考：" class="headerlink" title="思考："></a>思考：</h4><p>如果我只需要抓取将某个特定字符串键（比如”hello”）写成<strong>某个特定值</strong>（比如写成空串）的报文，怎么做？</p>
-<p>除了<code>grep</code>，下面再给出一种方法，利用<strong>tcpdump的根据报文特征过滤</strong>的技巧：</p>
-<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img data-src="/2021/1106201429/image3.png"></p>
-<p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
-
-<p>协议内容的解析参考<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
-<ul>
-<li>*3 表示数组长度为3， 数组元素依次为 [“set” “hello” “world”]</li>
-<li>$3 表示字符串 “set” 的长度</li>
-<li>第一个 $5 表示字符串 “hello” 的长度。</li>
-<li>第二个 $5 表示字符串 “world” 的长度。</li>
-</ul>
-<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img data-src="/2021/1106201429/image4.png"></p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
-<p>【2】<a href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>如何查看Redis订阅的模式字符串</title>
-    <url>/2021/1121201745.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><code>pubsub channels</code>可以查看Redis中被订阅的频道(<strong>channel</strong>)：</p>
-<span id="more"></span>
-<p><img data-src="/2021/1121201745/image1.png"></p>
-<p><code>pubsub numpat</code>可以查看被订阅的模式(<strong>pattern</strong>)数量：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># redis-cli pubsub numpat</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
-
-<p><strong>问题：</strong></p>
-<p>除了查看被订阅模式的数量，我还需要<font color = 'red'><strong>获取每个订阅模式字符串的内容</strong></font>，怎么做 ?</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>google没搜到现成的命令，决定自己修改<code>redis-server</code>源码，打印模式链表的内容，用时3~5分钟，需要了解：</p>
-<ul>
-<li><p>Redis源码编译方法，参考<a href="https://github.com/redis/redis">官网</a>或本人的<a href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
-</li>
-<li><p>Redis服务器将所有模式的订阅信息保存在服务器状态的<code>pubsub_patterns</code>链表中。</p>
-</li>
-</ul>
-<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// pubsub.c</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">myPubsubPatternsPrint</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">list</span> *l = server.pubsub_patterns;</span><br><span class="line">    listNode *cur = l-&gt;head;</span><br><span class="line">    serverLog(LL_NOTICE, <span class="string">&quot;[DEBUG] ALL PUBSUB PATTERNS: &quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        pubsubPattern *pp = (pubsubPattern *)(cur-&gt;value);</span><br><span class="line">        robj *obj = pp-&gt;pattern;</span><br><span class="line">        <span class="type">char</span> *pattern = (<span class="type">char</span> *)obj-&gt;ptr;</span><br><span class="line">        serverLog(LL_NOTICE, <span class="string">&quot;%s&quot;</span>, pattern);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>2、重新编译并安装redis-server，后台gdb call一下自定义的打印函数<code>myPubsubPatternsPrint</code>得到模式链表的内容，如下图所示：<br><img data-src="/2021/1121201745/image2.png"></p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第18章 发布与订阅</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -2751,6 +2677,80 @@
       <tags>
         <tag>troubleshooting</tag>
         <tag>Assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis抓包分析案例</title>
+    <url>/2021/1106201429.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
+<p><strong>问题：</strong> 仿真设备启动中，<strong>概率出现Redis的某个字符串键被不符合预期地改写成空串</strong>，导致客户端Docker从Redis获取的数据有问题。<strong>需要定位是哪个Docker上的哪个进程改写了Redis数据库。</strong></p>
+<span id="more"></span>
+
+<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><ul>
+<li>先尝试排查客户端代码。但此案例中涉及业务代码过多(200w+行代码)，且Redis客户端的形式也很多（有<code>goredis</code>, <code>redis-py</code>, <code>hiredis</code>, <code>redis-cli</code>等）。看来肉眼扫描代码的笨方法不靠谱，而且这种<strong>寄希望于碰运气蒙混过关</strong>的思考方式实在不像是一个程序员。</li>
+</ul>
+<p>那么既然排查客户端有困难，能不能换个角度思考，比如说从服务端入手？以下给出第二种思路：</p>
+<ul>
+<li><strong>通过在服务端抓包，得到所有对这个字符串键做set操作的报文，再根据报文中的IP和端口号得到进程ID</strong>。听起来可行，下面举一个简化的案例介绍具体的操作方法。</li>
+</ul>
+<h2 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h2><p>利用tcpdump，在Redis服务端后台抓取对这个字符串键做set操作的报文，再根据报文中的IP和端口号确认进程即可。</p>
+<p>如下图所示，使用命令<code>tcpdump -i any port 6379 | grep set | grep [key]</code> ，得到客户端IP是localhost,端口号是44880。 </p>
+<p><img data-src="/2021/1106201429/image1.png"></p>
+<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img data-src="/2021/1106201429/image2.png"></p>
+<h4 id="思考："><a href="#思考：" class="headerlink" title="思考："></a>思考：</h4><p>如果我只需要抓取将某个特定字符串键（比如”hello”）写成<strong>某个特定值</strong>（比如写成空串）的报文，怎么做？</p>
+<p>除了<code>grep</code>，下面再给出一种方法，利用<strong>tcpdump的根据报文特征过滤</strong>的技巧：</p>
+<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img data-src="/2021/1106201429/image3.png"></p>
+<p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
+
+<p>协议内容的解析参考<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
+<ul>
+<li>*3 表示数组长度为3， 数组元素依次为 [“set” “hello” “world”]</li>
+<li>$3 表示字符串 “set” 的长度</li>
+<li>第一个 $5 表示字符串 “hello” 的长度。</li>
+<li>第二个 $5 表示字符串 “world” 的长度。</li>
+</ul>
+<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img data-src="/2021/1106201429/image4.png"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
+<p>【2】<a href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何查看Redis订阅的模式字符串</title>
+    <url>/2021/1121201745.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><code>pubsub channels</code>可以查看Redis中被订阅的频道(<strong>channel</strong>)：</p>
+<span id="more"></span>
+<p><img data-src="/2021/1121201745/image1.png"></p>
+<p><code>pubsub numpat</code>可以查看被订阅的模式(<strong>pattern</strong>)数量：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># redis-cli pubsub numpat</span><br><span class="line">(integer) 3</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题：</strong></p>
+<p>除了查看被订阅模式的数量，我还需要<font color = 'red'><strong>获取每个订阅模式字符串的内容</strong></font>，怎么做 ?</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>google没搜到现成的命令，决定自己修改<code>redis-server</code>源码，打印模式链表的内容，用时3~5分钟，需要了解：</p>
+<ul>
+<li><p>Redis源码编译方法，参考<a href="https://github.com/redis/redis">官网</a>或本人的<a href="https://blog.csdn.net/pcj_888/article/details/106483567">博客</a></p>
+</li>
+<li><p>Redis服务器将所有模式的订阅信息保存在服务器状态的<code>pubsub_patterns</code>链表中。</p>
+</li>
+</ul>
+<h4 id="具体操作"><a href="#具体操作" class="headerlink" title="具体操作"></a>具体操作</h4><p>1、下载Redis源码（这里用的是6.0.9版本的源码，<a href="https://github.com/redis/redis/releases/tag/6.0.9">下载链接</a>），修改<code>pubsub.c</code>，自定义一个模式链表打印函数<code>myPubsubPatternsPrint</code>，实现参考如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// pubsub.c</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">myPubsubPatternsPrint</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">list</span> *l = server.pubsub_patterns;</span><br><span class="line">    listNode *cur = l-&gt;head;</span><br><span class="line">    serverLog(LL_NOTICE, <span class="string">&quot;[DEBUG] ALL PUBSUB PATTERNS: &quot;</span>);</span><br><span class="line">    <span class="keyword">while</span> (cur != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        pubsubPattern *pp = (pubsubPattern *)(cur-&gt;value);</span><br><span class="line">        robj *obj = pp-&gt;pattern;</span><br><span class="line">        <span class="type">char</span> *pattern = (<span class="type">char</span> *)obj-&gt;ptr;</span><br><span class="line">        serverLog(LL_NOTICE, <span class="string">&quot;%s&quot;</span>, pattern);</span><br><span class="line">        cur = cur-&gt;next;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>2、重新编译并安装redis-server，后台gdb call一下自定义的打印函数<code>myPubsubPatternsPrint</code>得到模式链表的内容，如下图所示：<br><img data-src="/2021/1121201745/image2.png"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第18章 发布与订阅</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -3850,6 +3850,147 @@
       </tags>
   </entry>
   <entry>
+    <title>2022 Trend Micro 社招面经</title>
+    <url>/2022/0320205239.html</url>
+    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
+<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
+<li>2022-02-25 官网投递简历，职位：Linux开发</li>
+</ul>
+<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
+
+<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
+<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
+<ul>
+<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
+</li>
+<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
+</li>
+</ul>
+<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
+<p>线上面试，用的微软Teams，二对一，80min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>问项目（30min）</p>
+<ul>
+<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
+<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
+<li>举一个项目中你遇到的难题，如何解决的</li>
+<li>你的项目中为什么用Redis，不用MySQL</li>
+<li>……</li>
+</ul>
+</li>
+<li><p>1道编程题 （15min）</p>
+<ul>
+<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
+</ul>
+</li>
+<li><p>技术问题（25min）</p>
+<ul>
+<li>给每个中国人分一个IP地址，够分吗</li>
+<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
+<li>后台服务变慢，谈谈你的定位思路</li>
+<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
+<li>Redis过期键的实现原理，过期时间怎么存储的</li>
+<li>Redis缓存逐出策略</li>
+<li>全中国人的数据能放到一张MySQL表里吗</li>
+<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
+<li>Linux下如何定时备份一个文件</li>
+</ul>
+</li>
+<li><p>其它问题（10min）</p>
+<ul>
+<li>同事对你的评价</li>
+<li>你的缺点是什么</li>
+<li>同事觉得你有什么阴暗面</li>
+<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
+</ul>
+</li>
+</ul>
+<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
+<p>现场面试，二对一，50min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>简单问项目（10min）</p>
+</li>
+<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
+</li>
+<li><p>你在项目组里还负责了哪些项目和工作</p>
+</li>
+<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
+</li>
+<li><p>你平时用到的开发工具和编程语言</p>
+</li>
+<li><p>说下你的团队成员组成</p>
+</li>
+<li><p>说说你最近在看的书</p>
+</li>
+<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
+<ul>
+<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
+</ul>
+</li>
+<li><p>项目中遇到别人不配合你的工作怎么办</p>
+</li>
+<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
+</li>
+<li><p>评价你同事的水平</p>
+</li>
+<li><p>有没有感觉有技术能力比较弱的同事</p>
+</li>
+<li><p>你还有什么问题（问团队成员组成）</p>
+</li>
+</ul>
+<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
+<p>现场面试，一对一，30min</p>
+<ul>
+<li><p>自我介绍</p>
+</li>
+<li><p>为什么选择我们公司，选择这个职位</p>
+</li>
+<li><p>你为什么离职</p>
+</li>
+<li><p>你当初考虑XX公司的原因是什么</p>
+</li>
+<li><p>你有考虑过内部转岗吗</p>
+</li>
+<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
+</li>
+<li><p>你同事对你的评价</p>
+</li>
+<li><p>说说你的优点</p>
+</li>
+<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
+</li>
+</ul>
+<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
+<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
+<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
+<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
+<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
+<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
+<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
+<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
+<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
+<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
+<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
+<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
+<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
+<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
+<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
+<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/0129204852.html</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -4105,147 +4246,6 @@
       </tags>
   </entry>
   <entry>
-    <title>2022 Trend Micro 社招面经</title>
-    <url>/2022/0320205239.html</url>
-    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
-<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
-<li>2022-02-25 官网投递简历，职位：Linux开发</li>
-</ul>
-<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
-
-<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
-<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
-<ul>
-<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
-</li>
-<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
-</li>
-</ul>
-<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
-<p>线上面试，用的微软Teams，二对一，80min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>问项目（30min）</p>
-<ul>
-<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
-<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
-<li>举一个项目中你遇到的难题，如何解决的</li>
-<li>你的项目中为什么用Redis，不用MySQL</li>
-<li>……</li>
-</ul>
-</li>
-<li><p>1道编程题 （15min）</p>
-<ul>
-<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
-</ul>
-</li>
-<li><p>技术问题（25min）</p>
-<ul>
-<li>给每个中国人分一个IP地址，够分吗</li>
-<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
-<li>后台服务变慢，谈谈你的定位思路</li>
-<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
-<li>Redis过期键的实现原理，过期时间怎么存储的</li>
-<li>Redis缓存逐出策略</li>
-<li>全中国人的数据能放到一张MySQL表里吗</li>
-<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
-<li>Linux下如何定时备份一个文件</li>
-</ul>
-</li>
-<li><p>其它问题（10min）</p>
-<ul>
-<li>同事对你的评价</li>
-<li>你的缺点是什么</li>
-<li>同事觉得你有什么阴暗面</li>
-<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
-</ul>
-</li>
-</ul>
-<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
-<p>现场面试，二对一，50min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>简单问项目（10min）</p>
-</li>
-<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
-</li>
-<li><p>你在项目组里还负责了哪些项目和工作</p>
-</li>
-<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
-</li>
-<li><p>你平时用到的开发工具和编程语言</p>
-</li>
-<li><p>说下你的团队成员组成</p>
-</li>
-<li><p>说说你最近在看的书</p>
-</li>
-<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
-<ul>
-<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
-</ul>
-</li>
-<li><p>项目中遇到别人不配合你的工作怎么办</p>
-</li>
-<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
-</li>
-<li><p>评价你同事的水平</p>
-</li>
-<li><p>有没有感觉有技术能力比较弱的同事</p>
-</li>
-<li><p>你还有什么问题（问团队成员组成）</p>
-</li>
-</ul>
-<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
-<p>现场面试，一对一，30min</p>
-<ul>
-<li><p>自我介绍</p>
-</li>
-<li><p>为什么选择我们公司，选择这个职位</p>
-</li>
-<li><p>你为什么离职</p>
-</li>
-<li><p>你当初考虑XX公司的原因是什么</p>
-</li>
-<li><p>你有考虑过内部转岗吗</p>
-</li>
-<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
-</li>
-<li><p>你同事对你的评价</p>
-</li>
-<li><p>说说你的优点</p>
-</li>
-<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
-</li>
-</ul>
-<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
-<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
-<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
-<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
-<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
-<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
-<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
-<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
-<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
-<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
-<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
-<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
-<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
-<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
-<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
-<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>tar打包时去掉目录前缀的方法</title>
     <url>/2022/0604205633.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
@@ -4369,21 +4369,6 @@
       </tags>
   </entry>
   <entry>
-    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
-    <url>/2023/0301211739.html</url>
-    <content><![CDATA[<p>Add following line to spec file</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
-<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
-]]></content>
-      <categories>
-        <category>RPM</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何查看Microk8s的apiserver证书过期时间</title>
     <url>/2023/0330211939.html</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
@@ -4435,54 +4420,18 @@
       </tags>
   </entry>
   <entry>
-    <title>如何在Centos7上安装Microk8s</title>
-    <url>/2023/0331212225.html</url>
-    <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
-<li><p>安装snap</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>安装microk8s</p>
-</li>
-</ol>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic --channel=1.23/stable</span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<ol start="3">
-<li>安装microk8s插件(addons)<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure></li>
-</ol>
-<p>成功安装后，通过kubectl查看Pod和Image</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">docker.io/calico/cni:v3.19.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.17.3</span><br><span class="line">docker.io/calico/node:v3.19.1</span><br><span class="line">docker.io/calico/pod2daemon-flexvol:v3.19.1</span><br><span class="line">docker.io/coredns/coredns:1.8.0</span><br><span class="line">k8s.gcr.io/ingress-nginx/controller:v1.5.1</span><br><span class="line">k8s.gcr.io/metrics-server/metrics-server:v0.5.2</span><br><span class="line">k8s.gcr.io/pause:3.1</span><br></pre></td></tr></table></figure>
-
-<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><ol>
-<li><p>在可联网的环境下载Microk8s的snap安装包</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap download microk8s --channel=1.23/stable <span class="comment"># 下载指定版本1.23</span></span><br></pre></td></tr></table></figure>
-</li>
-<li><p>将下载好的snap包传输到目标机器上，安装microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap ack microk8s_&lt;版本号&gt;.assert</span><br><span class="line">snap install microk8s_&lt;版本号&gt;.snap --classic</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>启动Microk8s服务</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>启动microk8s插件(可选)</p>
-</li>
-</ol>
-<p>在可联网的环境下载Microk8s插件的Image并导出</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">docker.io/calico/cni:v3.19.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.17.3</span><br><span class="line">docker.io/calico/node:v3.19.1</span><br><span class="line">docker.io/calico/pod2daemon-flexvol:v3.19.1</span><br><span class="line">docker.io/coredns/coredns:1.8.0</span><br><span class="line">k8s.gcr.io/ingress-nginx/controller:v1.5.1</span><br><span class="line">k8s.gcr.io/metrics-server/metrics-server:v0.5.2</span><br><span class="line">k8s.gcr.io/pause:3.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> cni.tar docker.io/calico/cni:v3.19.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> kube-controllers.tar docker.io/calico/kube-controllers:v3.17.3</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> .....</span><br></pre></td></tr></table></figure>
-<p>将image传到目标机器上并导入</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr image import *.tar</span><br></pre></td></tr></table></figure>
-<p>启动microk8s插件</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br><span class="line">microk8s status --wait-ready</span><br></pre></td></tr></table></figure>
-
-<p>配置kubectl访问Microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
-
-<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
+    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
+    <url>/2023/0301211739.html</url>
+    <content><![CDATA[<p>Add following line to spec file</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
+<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
 ]]></content>
       <categories>
-        <category>k8s</category>
+        <category>RPM</category>
       </categories>
       <tags>
-        <tag>k8s</tag>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -4602,6 +4551,24 @@
       </tags>
   </entry>
   <entry>
+    <title>在Docker中使用GDB调试的方法</title>
+    <url>/2023/0509214229.html</url>
+    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
+<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
+<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何设置systemd服务自动重启</title>
     <url>/2023/0509213506.html</url>
     <content><![CDATA[<h2 id="设置systemd服务自动重启的方法"><a href="#设置systemd服务自动重启的方法" class="headerlink" title="设置systemd服务自动重启的方法"></a>设置systemd服务自动重启的方法</h2><p>service文件里添加如下配置：</p>
@@ -4619,24 +4586,6 @@
       </categories>
       <tags>
         <tag>systemd</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在Docker中使用GDB调试的方法</title>
-    <url>/2023/0509214229.html</url>
-    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
-<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
-<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>GDB</category>
-      </categories>
-      <tags>
-        <tag>GDB</tag>
-        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -4745,23 +4694,6 @@
         <category>Python</category>
       </categories>
       <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Windows上通过git bash执行python卡住的解决方法</title>
-    <url>/2023/0626214641.html</url>
-    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img data-src="/2023/0626214641/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
-<span id="more"></span>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
-        <tag>Win</tag>
         <tag>Python</tag>
       </tags>
   </entry>
@@ -4978,6 +4910,23 @@
         <category>Python</category>
       </categories>
       <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Windows上通过git bash执行python卡住的解决方法</title>
+    <url>/2023/0626214641.html</url>
+    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img data-src="/2023/0626214641/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
+<span id="more"></span>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+        <tag>Win</tag>
         <tag>Python</tag>
       </tags>
   </entry>
@@ -6077,6 +6026,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>质疑标普，理解标普，加入标普</title>
+    <url>/2024/0616212811.html</url>
+    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
+<span id="more"></span>
+<p><img data-src="/2024/0616212811/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
+<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/0616212811/image2.png"><br><img data-src="/2024/0616212811/image3.png"></p>
+<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>k8s中的pod域名解析失败问题定位</title>
     <url>/2024/0612205430.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在k8s中启动了一个Host网络模式的pod，这个pod的域名解析失败了。</p>
@@ -6096,22 +6061,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>质疑标普，理解标普，加入标普</title>
-    <url>/2024/0616212811.html</url>
-    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
-<span id="more"></span>
-<p><img data-src="/2024/0616212811/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
-<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/0616212811/image2.png"><br><img data-src="/2024/0616212811/image3.png"></p>
-<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -6186,31 +6135,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>RHEL9中找不到/var/log/dmesg日志文件问题</title>
-    <url>/2024/0703220018.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>在Rocky Linux 9 服务器上查看启动日志，发现没有<code>/var/log/dmesg</code>文件。</p>
-<h2 id="dmesg是什么？"><a href="#dmesg是什么？" class="headerlink" title="dmesg是什么？"></a>dmesg是什么？</h2><p><code>dmesg</code>(diagnostic messages)用于打印<code>kernel ring buffer</code>的所有消息。 kernel会将开机信息存储在ring buffer中，如果开机时来不及查看启动信息，可以通过<code>dmesg</code>命令查看。</p>
-<p><code>Kernel ring buffer</code>（内核环形缓冲区）是一种在Linux内核中使用的数据结构，用于在生产者（如硬件设备、驱动程序或内核线程）和消费者（如用户空间应用程序）之间传输数据。 这种缓冲区通常用于日志记录、性能监控、事件跟踪等场景。</p>
-<span id="more"></span>
-
-<h2 id="RHEL9找不到-var-log-dmesg日志文件的原因"><a href="#RHEL9找不到-var-log-dmesg日志文件的原因" class="headerlink" title="RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因"></a>RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因</h2><p>参考：<a href="https://access.redhat.com/solutions/3748981">https://access.redhat.com/solutions/3748981</a>，这里摘录如下：</p>
-<p>By design, the &#x2F;var&#x2F;log&#x2F;dmesg file is not generated during boot. The kernel ring buffer is captured within the systemd-journal as well as &#x2F;var&#x2F;log&#x2F;messages, via the imjournal rsyslog plugin.</p>
-<p>翻译一下： 根据设计，在RHEL8&#x2F;RHEL9中，启动期间不会自动生成<code>/var/log/dmesg</code>文件。 内核环形缓冲区(kernel ring buffer)的消息通常会被systemd-journa捕获，存储在<code>/var/log/messages</code>或<code>journalctl</code>中。这种设计可以提供更现代化的日志管理方式，支持更好的搜索和过滤功能</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>手动执行<code>dmesg</code>生成日志文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dmesg &gt; /var/log/dmesg</span><br></pre></td></tr></table></figure>
-<p>或者使用 <code>journalctl</code>命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">journalctl -k | tee /var/log/dmesg</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://en.wikipedia.org/wiki/Dmesg">https://en.wikipedia.org/wiki/Dmesg</a><br>【2】<a href="https://www.getpagespeed.com/solutions/the-var-log-dmesg-file-is-not-created-during-boot-for-rocky-linux-8">https://www.getpagespeed.com/solutions/the-var-log-dmesg-file-is-not-created-during-boot-for-rocky-linux-8</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Squid配置用户名密码的方法</title>
     <url>/2024/0703220137.html</url>
     <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>Centos7.9 Squid 3.5.20</p>
@@ -6236,6 +6160,31 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RHEL9中找不到/var/log/dmesg日志文件问题</title>
+    <url>/2024/0703220018.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>在Rocky Linux 9 服务器上查看启动日志，发现没有<code>/var/log/dmesg</code>文件。</p>
+<h2 id="dmesg是什么？"><a href="#dmesg是什么？" class="headerlink" title="dmesg是什么？"></a>dmesg是什么？</h2><p><code>dmesg</code>(diagnostic messages)用于打印<code>kernel ring buffer</code>的所有消息。 kernel会将开机信息存储在ring buffer中，如果开机时来不及查看启动信息，可以通过<code>dmesg</code>命令查看。</p>
+<p><code>Kernel ring buffer</code>（内核环形缓冲区）是一种在Linux内核中使用的数据结构，用于在生产者（如硬件设备、驱动程序或内核线程）和消费者（如用户空间应用程序）之间传输数据。 这种缓冲区通常用于日志记录、性能监控、事件跟踪等场景。</p>
+<span id="more"></span>
+
+<h2 id="RHEL9找不到-var-log-dmesg日志文件的原因"><a href="#RHEL9找不到-var-log-dmesg日志文件的原因" class="headerlink" title="RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因"></a>RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因</h2><p>参考：<a href="https://access.redhat.com/solutions/3748981">https://access.redhat.com/solutions/3748981</a>，这里摘录如下：</p>
+<p>By design, the &#x2F;var&#x2F;log&#x2F;dmesg file is not generated during boot. The kernel ring buffer is captured within the systemd-journal as well as &#x2F;var&#x2F;log&#x2F;messages, via the imjournal rsyslog plugin.</p>
+<p>翻译一下： 根据设计，在RHEL8&#x2F;RHEL9中，启动期间不会自动生成<code>/var/log/dmesg</code>文件。 内核环形缓冲区(kernel ring buffer)的消息通常会被systemd-journa捕获，存储在<code>/var/log/messages</code>或<code>journalctl</code>中。这种设计可以提供更现代化的日志管理方式，支持更好的搜索和过滤功能</p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>手动执行<code>dmesg</code>生成日志文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dmesg &gt; /var/log/dmesg</span><br></pre></td></tr></table></figure>
+<p>或者使用 <code>journalctl</code>命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">journalctl -k | tee /var/log/dmesg</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://en.wikipedia.org/wiki/Dmesg">https://en.wikipedia.org/wiki/Dmesg</a><br>【2】<a href="https://www.getpagespeed.com/solutions/the-var-log-dmesg-file-is-not-created-during-boot-for-rocky-linux-8">https://www.getpagespeed.com/solutions/the-var-log-dmesg-file-is-not-created-during-boot-for-rocky-linux-8</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -6424,6 +6373,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>可转债违约是实体经济高质量发展的一大步？</title>
+    <url>/2024/0818223104.html</url>
+    <content><![CDATA[<p>8月14日，岭南股份公告其发行的可转债无法按期兑付，出现实质违约。8月16日，证券时报发表了一篇“雄文”《国企可转债的刚兑信仰该放下了》，引爆了舆论。</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0818223104/image1.png"></p>
+<p>文章内容总结下，就是对投资者一顿批评教育，批评投资者惰性思维，执迷于国资背景的刚性兑付。结尾直接称转债违约是可转债市场的一小步，经济高质量发展的一大步，TM脸都不要了。</p>
+<p>诚然，作为投资者，需要考察企业的财务状况和偿债能力，打破”下有保底上不封顶”的思维惯性。但是作为一家权威的证券媒体，搞丧事喜办，公然对违约行为唱赞歌，去鼓励上市公司逃废债，这样的行为缺乏对投资者基本的尊重，简直是令人作呕。</p>
+<p>原文百度搜不到了，我找了个截图，大家感受下这篇文章什么水平。</p>
+<p><img data-src="/2024/0818223104/image2.png"></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>CLISH logout后没有执行自定义脚本问题的解决方法</title>
     <url>/2024/0819223418.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我有一个On-Premises Appliance使用了<a href="https://clish.sourceforge.net/">CLISH</a>(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。</p>
@@ -6489,25 +6457,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>可转债违约是实体经济高质量发展的一大步？</title>
-    <url>/2024/0818223104.html</url>
-    <content><![CDATA[<p>8月14日，岭南股份公告其发行的可转债无法按期兑付，出现实质违约。8月16日，证券时报发表了一篇“雄文”《国企可转债的刚兑信仰该放下了》，引爆了舆论。</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0818223104/image1.png"></p>
-<p>文章内容总结下，就是对投资者一顿批评教育，批评投资者惰性思维，执迷于国资背景的刚性兑付。结尾直接称转债违约是可转债市场的一小步，经济高质量发展的一大步，TM脸都不要了。</p>
-<p>诚然，作为投资者，需要考察企业的财务状况和偿债能力，打破”下有保底上不封顶”的思维惯性。但是作为一家权威的证券媒体，搞丧事喜办，公然对违约行为唱赞歌，去鼓励上市公司逃废债，这样的行为缺乏对投资者基本的尊重，简直是令人作呕。</p>
-<p>原文百度搜不到了，我找了个截图，大家感受下这篇文章什么水平。</p>
-<p><img data-src="/2024/0818223104/image2.png"></p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -6915,27 +6864,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>在RHEL9上安装MySQL</title>
-    <url>/2024/0916144756.html</url>
-    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
-
-<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
-<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
-<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
-<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
-<p>再输入你之前设置的root用户密码即可。</p>
-<span id="more"></span>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Django基础</title>
     <url>/2024/0915151753.html</url>
     <content><![CDATA[<h2 id="Django快速上手"><a href="#Django快速上手" class="headerlink" title="Django快速上手"></a>Django快速上手</h2><p>参考: <a href="https://pcj600.github.io/2024/0823230254.html">Django快速上手</a></p>
@@ -7269,6 +7197,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>在RHEL9上安装MySQL</title>
+    <url>/2024/0916144756.html</url>
+    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
+
+<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
+<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
+<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
+<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
+<p>再输入你之前设置的root用户密码即可。</p>
+<span id="more"></span>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
     <url>/2024/0916170317.html</url>
     <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
@@ -7361,6 +7310,36 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>systemd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux中定时删除10天前的日志文件</title>
+    <url>/2024/1009194730.html</url>
+    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>只查看要删除的文件有哪些，不真正删除文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
+<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>再配置crontab</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
+<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -8326,36 +8305,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux中定时删除10天前的日志文件</title>
-    <url>/2024/1009194730.html</url>
-    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>只查看要删除的文件有哪些，不真正删除文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
-<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<p>再配置crontab</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
-<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Docker安装教程</title>
     <url>/2024/1017195632.html</url>
     <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
@@ -8386,70 +8335,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL8.0如何重置密码</title>
-    <url>/2024/1017202436.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
-<li>VMware Rocky Linux 9.4</li>
-<li>MySQL 8.0.36</li>
-</ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
-
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
-<p>连接成功后，执行如下sql命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在Docker中运行Squid</title>
-    <url>/2024/1017195435.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
-<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p>写一个Dockerfile构建Squid镜像; 再写一个启动脚本start_squid.sh，在启动脚本中配置并运行Squid。</p>
-<span id="more"></span>
-
-<h2 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h2><p>以rockylinux9.3做基础镜像，通过yum安装Squid, 拷贝squid.conf</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">WORKDIR /</span><br><span class="line">RUN yum -y install procps net-tools squid</span><br><span class="line">COPY squid.conf /etc/squid/squid.conf</span><br><span class="line">COPY start_squid.sh /start_squid.sh</span><br><span class="line">RUN chmod +x start_squid.sh</span><br><span class="line"></span><br><span class="line">CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;/start_squid.sh&quot;]</span><br></pre></td></tr></table></figure>
-
-<p>squid.conf可以在容器里装一个squid，再把<code>/etc/squid/squid.conf</code>拷出来，需要额外添加如下配置，从而以squid普通用户启动，否则启动会报错</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
-
-<h2 id="编写启动脚本start-squid-sh"><a href="#编写启动脚本start-squid-sh" class="headerlink" title="编写启动脚本start_squid.sh"></a>编写启动脚本start_squid.sh</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span> ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 60</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
-<p>注：</p>
-<ul>
-<li>添加squid用户，创建squid日志目录并通过chown正确设置属主属组</li>
-<li>脚本结尾通过while死循环，防止容器退出</li>
-</ul>
-<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -f Dockerfile -t squid:1.0 .</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动容器"><a href="#启动容器" class="headerlink" title="启动容器"></a>启动容器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cid=$(docker run -d --privileged=true --net=host --ulimit nofile=65535:65535 squid:1.0)</span><br><span class="line">docker exec -it $&#123;cid&#125; /bin/bash</span><br></pre></td></tr></table></figure>
-
-<p>可能会遇到报错: Squid启动失败 <code>FATAL: xcalloc: Unable to allocate 1073741816 blocks of 432 bytes!</code></p>
-<p>解决方法：容器内查看ulimit -n的值为1073741816，这个值太大了，导致Squid分配内存失败。 可以调成65535, 具体做法是给docker run添加参数 –ulimit nofile&#x3D;65535:65535</p>
-<p>具体参考: <a href="https://github.com/langgenius/dify/issues/4371">https://github.com/langgenius/dify/issues/4371</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-        <tag>Squid</tag>
       </tags>
   </entry>
   <entry>
@@ -9174,6 +9059,70 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL8.0如何重置密码</title>
+    <url>/2024/1017202436.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
+
+<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<p>连接成功后，执行如下sql命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在Docker中运行Squid</title>
+    <url>/2024/1017195435.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.4</p>
+<h2 id="实现步骤"><a href="#实现步骤" class="headerlink" title="实现步骤"></a>实现步骤</h2><p>写一个Dockerfile构建Squid镜像; 再写一个启动脚本start_squid.sh，在启动脚本中配置并运行Squid。</p>
+<span id="more"></span>
+
+<h2 id="编写Dockerfile"><a href="#编写Dockerfile" class="headerlink" title="编写Dockerfile"></a>编写Dockerfile</h2><p>以rockylinux9.3做基础镜像，通过yum安装Squid, 拷贝squid.conf</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">WORKDIR /</span><br><span class="line">RUN yum -y install procps net-tools squid</span><br><span class="line">COPY squid.conf /etc/squid/squid.conf</span><br><span class="line">COPY start_squid.sh /start_squid.sh</span><br><span class="line">RUN chmod +x start_squid.sh</span><br><span class="line"></span><br><span class="line">CMD [&quot;sh&quot;, &quot;-c&quot;, &quot;/start_squid.sh&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>squid.conf可以在容器里装一个squid，再把<code>/etc/squid/squid.conf</code>拷出来，需要额外添加如下配置，从而以squid普通用户启动，否则启动会报错</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
+
+<h2 id="编写启动脚本start-squid-sh"><a href="#编写启动脚本start-squid-sh" class="headerlink" title="编写启动脚本start_squid.sh"></a>编写启动脚本start_squid.sh</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line"><span class="keyword">while</span> <span class="literal">true</span> ; <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">sleep</span> 60</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li>添加squid用户，创建squid日志目录并通过chown正确设置属主属组</li>
+<li>脚本结尾通过while死循环，防止容器退出</li>
+</ul>
+<h2 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -f Dockerfile -t squid:1.0 .</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动容器"><a href="#启动容器" class="headerlink" title="启动容器"></a>启动容器</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cid=$(docker run -d --privileged=true --net=host --ulimit nofile=65535:65535 squid:1.0)</span><br><span class="line">docker exec -it $&#123;cid&#125; /bin/bash</span><br></pre></td></tr></table></figure>
+
+<p>可能会遇到报错: Squid启动失败 <code>FATAL: xcalloc: Unable to allocate 1073741816 blocks of 432 bytes!</code></p>
+<p>解决方法：容器内查看ulimit -n的值为1073741816，这个值太大了，导致Squid分配内存失败。 可以调成65535, 具体做法是给docker run添加参数 –ulimit nofile&#x3D;65535:65535</p>
+<p>具体参考: <a href="https://github.com/langgenius/dify/issues/4371">https://github.com/langgenius/dify/issues/4371</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+        <tag>Squid</tag>
       </tags>
   </entry>
   <entry>
@@ -10010,17 +9959,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>更简单的更新管理。使用Dockerfile，只需小的配置修改，就能替代以往大量更新工作</li>
 </ul>
 <span id="more"></span>
-<h1 id="Docker应用场景"><a href="#Docker应用场景" class="headerlink" title="Docker应用场景"></a>Docker应用场景</h1><p>自动化测试和CI&#x2F;CD(持续集成&#x2F;发布)</p>
 <h1 id="Docker和虚拟机比较"><a href="#Docker和虚拟机比较" class="headerlink" title="Docker和虚拟机比较"></a>Docker和虚拟机比较</h1><p>Docker作为一种轻量级的虚拟化方式，与传统的虚拟机相比具有显著优势:</p>
 <ul>
 <li>Docker容器很快，启动和停止在秒级实现</li>
 <li>Docker容器对系统资源需求更少，一台主机可运行数千Docker容器</li>
 <li>多个容器之间共享OS</li>
 </ul>
-<h1 id="Docker安装"><a href="#Docker安装" class="headerlink" title="Docker安装"></a>Docker安装</h1><p><a href="https://pcj600.github.io/2024/1017195632.html">https://pcj600.github.io/2024/1017195632.html</a></p>
-<h1 id="Docker应用场景-1"><a href="#Docker应用场景-1" class="headerlink" title="Docker应用场景"></a>Docker应用场景</h1><ul>
+<h1 id="Docker应用场景"><a href="#Docker应用场景" class="headerlink" title="Docker应用场景"></a>Docker应用场景</h1><ul>
 <li>CI&#x2F;CD (持续集成&#x2F;持续部署)</li>
 </ul>
+<h1 id="Docker安装"><a href="#Docker安装" class="headerlink" title="Docker安装"></a>Docker安装</h1><p><a href="https://pcj600.github.io/2024/1017195632.html">https://pcj600.github.io/2024/1017195632.html</a></p>
+<h1 id="Docker配置国内源加速"><a href="#Docker配置国内源加速" class="headerlink" title="Docker配置国内源加速"></a>Docker配置国内源加速</h1><p><a href="https://pcj600.github.io/2024/1031225813.html">https://pcj600.github.io/2024/1031225813.html</a></p>
+<h1 id="修改Docker容器存储路径"><a href="#修改Docker容器存储路径" class="headerlink" title="修改Docker容器存储路径"></a>修改Docker容器存储路径</h1><p><a href="https://pcj600.github.io/2021/1016200721.html">https://pcj600.github.io/2021/1016200721.html</a></p>
 <h1 id="Docker三个核心概念"><a href="#Docker三个核心概念" class="headerlink" title="Docker三个核心概念"></a>Docker三个核心概念</h1><p>镜像，容器，仓库</p>
 <h2 id="镜像"><a href="#镜像" class="headerlink" title="镜像"></a>镜像</h2><p>Docker镜像是一个特殊的文件系统,提供容器运行所需程序，库，资源，配置<br>Docker运行容器前需要本地存在对应的镜像。如果本地找不到镜像，Docker会尝试从镜像仓库下载</p>
 <h3 id="获取镜像"><a href="#获取镜像" class="headerlink" title="获取镜像"></a>获取镜像</h3><p>下载最新的ubuntu镜像</p>
@@ -10075,7 +10025,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 启动一个ubuntu容器</span><br><span class="line">docker run -d -it ubuntu:14.04 /bin/bash</span><br><span class="line">ef452d2e0c579a7f3636f7a2b6ac4740a5eff0f33cee0bbfbf876632748905e3</span><br><span class="line"></span><br><span class="line"># 查看容器进程ID</span><br><span class="line">PID=$(docker inspect --format &quot;&#123;&#123; .State.Pid &#125;&#125;&quot; ef452d2e0c579a7f3636f7a2b6ac4740a5eff0f33cee0bbfbf876632748905e3)</span><br><span class="line">[root@iZuf65qw76eb18m9yp8b38Z ~]# echo $PID</span><br><span class="line">2931665</span><br><span class="line"></span><br><span class="line"># 进入容器的网络命名空间</span><br><span class="line">nsenter -n --target 2931665</span><br><span class="line">ip addr</span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000</span><br><span class="line">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span><br><span class="line">    inet 127.0.0.1/8 scope host lo</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 ::1/128 scope host</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">14: eth0@if15: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default</span><br><span class="line">    link/ether 02:42:ac:11:00:02 brd ff:ff:ff:ff:ff:ff link-netnsid 0</span><br><span class="line">    inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br></pre></td></tr></table></figure>
 <h3 id="删除容器"><a href="#删除容器" class="headerlink" title="删除容器"></a>删除容器</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker rm [CONTAINER ID]</span><br></pre></td></tr></table></figure>
 
-<h2 id="仓库"><a href="#仓库" class="headerlink" title="仓库"></a>仓库</h2><h3 id="什么是仓库"><a href="#什么是仓库" class="headerlink" title="什么是仓库"></a>什么是仓库</h3><p>存放镜像的地方, 比如DockerHub，可以上传自己的镜像；主机也可以从仓库下载镜像。</p>
+<h2 id="仓库"><a href="#仓库" class="headerlink" title="仓库"></a>仓库</h2><p>存放镜像的地方, 比如DockerHub，可以上传自己的镜像；主机也可以从仓库下载镜像。</p>
 <h1 id="数据卷"><a href="#数据卷" class="headerlink" title="数据卷"></a>数据卷</h1><p>使用Docker过程中，需要查看容器内应用生产的数据，或者对数据备份，或者多个容器间进行数据共享，这些涉及到容器的数据管理操作</p>
 <ul>
 <li>数据卷(Data Volumes)</li>
@@ -10326,6 +10276,196 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Nginx</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>k8s学习笔记</title>
+    <url>/2024/1127213752.html</url>
+    <content><![CDATA[<h1 id="几个概念"><a href="#几个概念" class="headerlink" title="几个概念"></a>几个概念</h1><p>Infrastructure as a Service 基础设施即服务<br>platform as a Service 平台即服务<br>Software as a Service 软件即服务</p>
+<h1 id="搭建k8s集群"><a href="#搭建k8s集群" class="headerlink" title="搭建k8s集群"></a>搭建k8s集群</h1><ul>
+<li>minikube(学习用)</li>
+<li>二进制安装</li>
+<li>kubeadm</li>
+<li>命令行工具</li>
+</ul>
+<p>搭建k8s集群 </p>
+<ul>
+<li>kubectl</li>
+<li>API<br>Pod</li>
+<li>探针</li>
+<li>生命周期<br>Label和selector<br>Deployment<br>StatefulSet<br>DaemonSet</li>
+</ul>
+<p>HPA<br>Service</p>
+<ul>
+<li>ClusterIP, ExternalName, NodePort, LoadBalancer</li>
+<li>Ingress</li>
+</ul>
+<p>配置和存储</p>
+<ul>
+<li>配置管理</li>
+<li>持久化存储</li>
+</ul>
+<p>运维管理</p>
+<ul>
+<li>Promethous</li>
+<li>ELK日志</li>
+<li>可视化界面</li>
+</ul>
+<p>目标:</p>
+<ul>
+<li>k8s各资源对象及实践</li>
+<li>运用k8s各项调度策略</li>
+<li>掌握k8s网络原理及应用</li>
+<li>掌握pod控制器及运用</li>
+<li>掌握k8s微服务DevOps实践</li>
+</ul>
+<h1 id="k8s是什么"><a href="#k8s是什么" class="headerlink" title="k8s是什么"></a>k8s是什么</h1><p>一个开源的，用于管理云平台中多主机上的容器化的应用。目标是让部署容器化应用简单且高效</p>
+<h1 id="为什么需要k8s"><a href="#为什么需要k8s" class="headerlink" title="为什么需要k8s"></a>为什么需要k8s</h1><p><strong>传统部署</strong><br>war包 -&gt; 上传服务器 -&gt; 放到Tomcat服务器路径，重启<br>存在的问题: </p>
+<ul>
+<li>人工部署太繁琐</li>
+<li>多个服务间资源竞争，没有做资源隔离</li>
+</ul>
+<p><strong>容器化部署</strong><br>实现资源隔离: 文件系统，网络，CPU，内存，磁盘，进程隔离</p>
+<h1 id="竞品"><a href="#竞品" class="headerlink" title="竞品"></a>竞品</h1><ul>
+<li>Apache Mesos</li>
+<li>Docker Swarm</li>
+<li>Google kubernetes (最主流)</li>
+</ul>
+<h1 id="集群架构和组件"><a href="#集群架构和组件" class="headerlink" title="集群架构和组件"></a>集群架构和组件</h1><h2 id="控制面板组件"><a href="#控制面板组件" class="headerlink" title="控制面板组件"></a>控制面板组件</h2><ul>
+<li>etcd(基于键值的分布式数据库，提供了基于Raft算法实现自主的集群高可用，持久化存储)</li>
+<li>kube-apiserver (接口服务，基于REST风格开发k8s接口的服务)</li>
+<li>kube-controller-manager (控制器管理器，管理各个类型控制器，针对k8s中各种资源进行管理)</li>
+<li>cloud-controller-manager (云控制器管理器，第三方云平台提供的控制器)</li>
+<li>kube-scheduler (调度器, 负责将Pod基于一定算法，调用到更合适的节点上)</li>
+</ul>
+<h2 id="节点组件"><a href="#节点组件" class="headerlink" title="节点组件"></a>节点组件</h2><ul>
+<li>kubelet (负责POD生命周期、存储)</li>
+<li>kube-proxy(负责服务发现，负载均衡)</li>
+<li>container runtime(容器运行时环境, docker, containerd, CRI-O)</li>
+</ul>
+<h2 id="附加组件"><a href="#附加组件" class="headerlink" title="附加组件"></a>附加组件</h2><ul>
+<li>kube-dns(为整个集群提供DNS服务)</li>
+<li>ingress controller(外部访问服务)</li>
+<li>Prometheus(资源监控)</li>
+<li>dashboard(控制台)</li>
+<li>federation</li>
+<li>fluentd-elasticsearch(日志收集)</li>
+</ul>
+<p><strong>Master节点</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">                    api-server</span><br><span class="line">kube-controller-manager cloud-controller-manager</span><br><span class="line">                  kube-scheduler</span><br><span class="line">                       etcd</span><br></pre></td></tr></table></figure>
+<p><strong>普通节点</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubelet              kube-proxy</span><br><span class="line">pod1        pod2           pod3</span><br><span class="line">container-runtime 容器运行时环境</span><br></pre></td></tr></table></figure>
+
+<h1 id="服务分类"><a href="#服务分类" class="headerlink" title="服务分类"></a>服务分类</h1><ul>
+<li>无状态应用：不会对本地环境产生依赖，例如不会存储数据到本地磁盘 (例: client -&gt; Nginx -&gt; Web)</li>
+<li>有状态应用：会对本地环境产生依赖，例如会存储数据到本地磁盘(例: client -&gt; Web -&gt; Redis<br>有状态应用的扩容，还需要考虑到数据同步，备份</li>
+</ul>
+<h1 id="资源的分类"><a href="#资源的分类" class="headerlink" title="资源的分类"></a>资源的分类</h1><ul>
+<li>元数据型<ul>
+<li>HPA (Pod自动扩容)</li>
+<li>PodTemplate</li>
+<li>LimitRange</li>
+</ul>
+</li>
+<li>集群型<ul>
+<li>Node</li>
+<li>ClusterRole</li>
+<li>ClusterRoleBinding</li>
+</ul>
+</li>
+<li>命名空间型<ul>
+<li>无状态服务<ul>
+<li>ReplicationController (RC) 动态更新Pod副本数</li>
+<li>ReplicaSet (RS) 动态更新Pod副本数, 通过selector选择对哪些pod生效</li>
+<li>Deployment 提供更丰富的部署功能，针对RS的更高层级封装 (主流用这个, RC&#x2F;RS不用)</li>
+</ul>
+</li>
+<li>有状态服务<ul>
+<li>StatefulSet (网络问题，数据持久化)<ul>
+<li>Headless Service (对于有状态服务的DNS管理)</li>
+<li>volumeClaimTemplate (用于创建持久化卷的模板)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>守护进程<ul>
+<li>DaemonSet</li>
+</ul>
+</li>
+<li>任务&#x2F;定时任务<ul>
+<li>Job</li>
+<li>Cronjob</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="滚动升级-回滚"><a href="#滚动升级-回滚" class="headerlink" title="滚动升级&#x2F;回滚"></a>滚动升级&#x2F;回滚</h1><h1 id="Service和ingress控制器"><a href="#Service和ingress控制器" class="headerlink" title="Service和ingress控制器"></a>Service和ingress控制器</h1><h1 id="其他资源"><a href="#其他资源" class="headerlink" title="其他资源"></a>其他资源</h1><p>Volume, configmap(解决配置文件在容器里固定死的问题), secret, downwardAPI</p>
+<!--   实战部分  -->
+
+<h1 id="k8s安装"><a href="#k8s安装" class="headerlink" title="k8s安装"></a>k8s安装</h1><h2 id="minikube"><a href="#minikube" class="headerlink" title="minikube"></a>minikube</h2><p>个人学习安装，不适用于生产环境<br><a href="https://minikube.sigs.k8s.io/docs/start/?arch=/linux/x86-64/stable/binary+download">https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download</a></p>
+<h2 id="kubeadm"><a href="#kubeadm" class="headerlink" title="kubeadm"></a>kubeadm</h2><p>环境：<br>k8s-master 192.168.113.120<br>k8s-node1 192.168.113.121<br>k8s-node2 192.168.113.122<br>2核 2G内存 20G硬盘<br>k8s 1.23.6</p>
+<p><a href="https://www.zhaowenyu.com/kubernetes-doc/brief-intro/k8s-history.html">https://www.zhaowenyu.com/kubernetes-doc/brief-intro/k8s-history.html</a><br><a href="https://www.cnblogs.com/joexu01/p/16722936.html">https://www.cnblogs.com/joexu01/p/16722936.html</a></p>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在RockyLinux9.4上安装Microk8s</title>
+    <url>/2024/1201142626.html</url>
+    <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><p>1、安装snap</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
+
+<p>2、安装microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic <span class="comment"># 在RockyLinux9.4上, 默认下载Microk8s 1.31版本</span></span><br><span class="line">snap install microk8s --classic --channel=1.31/stable <span class="comment"># --channnel参数可以指定Microk8s的版本</span></span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>3、安装microk8s插件(addons)</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure>
+
+<p>成功安装后，通过kubectl查看Pod和Image</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">coredns/coredns:1.10.1</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">registry.k8s.io/pause:3.7</span><br></pre></td></tr></table></figure>
+
+<h2 id="在线安装可能遇到的问题"><a href="#在线安装可能遇到的问题" class="headerlink" title="在线安装可能遇到的问题"></a>在线安装可能遇到的问题</h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+<p>从国内源下载镜像，再给镜像打tag</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7  registry.k8s.io/pause:3.7</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1  docker.io/calico/cni:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1  docker.io/calico/node:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1  docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1  docker.io/coredns/coredns:1.10.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2  registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3  registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
+
+<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
+
+<p>2、将下载好的snap包传输到目标机器上，安装microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap ack microk8s_&lt;版本号&gt;.assert</span><br><span class="line">snap install microk8s_&lt;版本号&gt;.snap --classic</span><br></pre></td></tr></table></figure>
+
+<p>3、启动Microk8s服务</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
+
+<p>4、在可联网的环境下载Microk8s插件的Image并导出</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line"></span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> cni.tar docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> kube-controllers.tar docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> .....</span><br></pre></td></tr></table></figure>
+
+<p>5、将image传到目标机器上并导入</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr image import *.tar</span><br></pre></td></tr></table></figure>
+
+<p>6、启动microk8s插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br><span class="line">microk8s status --wait-ready</span><br></pre></td></tr></table></figure>
+
+<p>7、配置kubectl访问Microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
+
+<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
       </tags>
   </entry>
 </search>
