@@ -134,7 +134,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">156</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">157</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -193,6 +193,97 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1202222352.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/1202222352.html" class="post-title-link" itemprop="url">kubeadm安装kubernetes集群</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-12-02 22:23:52" itemprop="dateCreated datePublished" datetime="2024-12-02T22:23:52+08:00">2024-12-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>9.6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="环境要求"><a href="#环境要求" class="headerlink" title="环境要求"></a>环境要求</h1><p>Linux虚拟机3台, 能联网, 我使用的发行版是Rocky Linux 9.4<br>最低配置: 2CPU, 2G内存, 20G硬盘<br>3台虚拟机的IP和域名设置如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">k8s-master 192.168.52.200 (k8s主节点)</span><br><span class="line">k8s-node1 192.168.52.201 (k8s从节点1)</span><br><span class="line">k8s-node2 192.168.52.202 (k8s从节点2)</span><br></pre></td></tr></table></figure>
+
+<h1 id="准备操作"><a href="#准备操作" class="headerlink" title="准备操作"></a>准备操作</h1>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/1202222352.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -425,7 +516,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.1k</span>
+              <span>2k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -566,9 +657,8 @@
 <h1 id="滚动升级-回滚"><a href="#滚动升级-回滚" class="headerlink" title="滚动升级&#x2F;回滚"></a>滚动升级&#x2F;回滚</h1><h1 id="Service和ingress控制器"><a href="#Service和ingress控制器" class="headerlink" title="Service和ingress控制器"></a>Service和ingress控制器</h1><h1 id="其他资源"><a href="#其他资源" class="headerlink" title="其他资源"></a>其他资源</h1><p>Volume, configmap(解决配置文件在容器里固定死的问题), secret, downwardAPI</p>
 <!--   实战部分  -->
 
-<h1 id="k8s安装"><a href="#k8s安装" class="headerlink" title="k8s安装"></a>k8s安装</h1><h2 id="minikube"><a href="#minikube" class="headerlink" title="minikube"></a>minikube</h2><p>个人学习安装，不适用于生产环境<br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://minikube.sigs.k8s.io/docs/start/?arch=/linux/x86-64/stable/binary+download">https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download</a></p>
-<h2 id="kubeadm"><a href="#kubeadm" class="headerlink" title="kubeadm"></a>kubeadm</h2><p>环境：<br>k8s-master 192.168.113.120<br>k8s-node1 192.168.113.121<br>k8s-node2 192.168.113.122<br>2核 2G内存 20G硬盘<br>k8s 1.23.6</p>
-<p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.zhaowenyu.com/kubernetes-doc/brief-intro/k8s-history.html">https://www.zhaowenyu.com/kubernetes-doc/brief-intro/k8s-history.html</a><br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/joexu01/p/16722936.html">https://www.cnblogs.com/joexu01/p/16722936.html</a></p>
+<h1 id="k8s安装"><a href="#k8s安装" class="headerlink" title="k8s安装"></a>k8s安装</h1><h2 id="Microk8s-Done"><a href="#Microk8s-Done" class="headerlink" title="Microk8s (Done)"></a>Microk8s (Done)</h2><h2 id="minikube-TODO"><a href="#minikube-TODO" class="headerlink" title="minikube (TODO?)"></a>minikube (TODO?)</h2><p>个人学习安装，不适用于生产环境<br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://minikube.sigs.k8s.io/docs/start/?arch=/linux/x86-64/stable/binary+download">https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download</a></p>
+<h2 id="kubeadm-DOING"><a href="#kubeadm-DOING" class="headerlink" title="kubeadm (DOING)"></a>kubeadm (DOING)</h2><h1 id="创建Pod和Service-第一个Nginx-Pod"><a href="#创建Pod和Service-第一个Nginx-Pod" class="headerlink" title="创建Pod和Service(第一个Nginx Pod)"></a>创建Pod和Service(第一个Nginx Pod)</h1><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.zhaowenyu.com/kubernetes-doc/brief-intro/k8s-history.html">https://www.zhaowenyu.com/kubernetes-doc/brief-intro/k8s-history.html</a><br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/joexu01/p/16722936.html">https://www.cnblogs.com/joexu01/p/16722936.html</a></p>
 
       
     </div>
@@ -780,94 +870,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1123135607.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/1123135607.html" class="post-title-link" itemprop="url">keepalived双机热备方案实现Nginx高可用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-11-23 13:56:07" itemprop="dateCreated datePublished" datetime="2024-11-23T13:56:07+08:00">2024-11-23</time>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>3.5k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>3 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>只用一台Nginx做反向代理，如果这台Nginx出现故障(比如宕机)，则服务不可用。<br/></p>
-<p>以下给出keepalived双机热备方案实现Nginx高可用的方法。先介绍几个概念： <br/></p>
-<h2 id="高可用"><a href="#高可用" class="headerlink" title="高可用"></a>高可用</h2><p>高可用（High Availability）是指系统或服务能够在面对硬件故障、软件崩溃、网络问题等各种故障情况下，仍然保持正常运行或快速恢复的能力，以减少服务中断时间，确保业务连续性和数据完整性。</p>
-<h2 id="双机热备"><a href="#双机热备" class="headerlink" title="双机热备"></a>双机热备</h2><p>指一台服务器提供服务，另一台作为备用。当一台服务器不可用时另一台就自动顶上去。</p>
-<h2 id="keepalived"><a href="#keepalived" class="headerlink" title="keepalived"></a>keepalived</h2><p>一个开源的高可用解决方案，通过VRRP协议实现故障转移，避免单点故障导致的服务中断。</p>
-<h2 id="keepalived双机热备方案实现Nginx高可用的步骤"><a href="#keepalived双机热备方案实现Nginx高可用的步骤" class="headerlink" title="keepalived双机热备方案实现Nginx高可用的步骤"></a>keepalived双机热备方案实现Nginx高可用的步骤</h2>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/1123135607.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/">26</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/27/">27</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -935,7 +941,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">156</span>
+          <span class="site-state-item-count">157</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -994,12 +1000,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">514k</span>
+    <span title="站点总字数">524k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:47</span>
+    <span title="站点阅读时长">7:56</span>
 </div>
 
 <!--
