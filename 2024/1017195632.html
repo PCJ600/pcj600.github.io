@@ -24,15 +24,15 @@
     var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="在Rocky Linux 9上安装Docker添加docker repo, 更新源, 安装docker-ce123dnf config-manager --add-repo&#x3D;https:&#x2F;&#x2F;download.docker.com&#x2F;linux&#x2F;centos&#x2F;docker-ce.repodnf updatednf install -y docker-ce  启动docker12systemctl da">
+  <meta name="description" content="在Rocky Linux 9上安装Docker添加docker repo, 更新源, 安装docker-ce1234dnf config-manager --add-repo&#x3D;https:&#x2F;&#x2F;download.docker.com&#x2F;linux&#x2F;centos&#x2F;docker-ce.reposed -i &#x27;s+https:&#x2F;&#x2F;download.docker.com+https:&#x2F;&#x2F;mirror">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Docker安装教程">
 <meta property="og:url" content="https://pcj600.github.io/2024/1017195632.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
-<meta property="og:description" content="在Rocky Linux 9上安装Docker添加docker repo, 更新源, 安装docker-ce123dnf config-manager --add-repo&#x3D;https:&#x2F;&#x2F;download.docker.com&#x2F;linux&#x2F;centos&#x2F;docker-ce.repodnf updatednf install -y docker-ce  启动docker12systemctl da">
+<meta property="og:description" content="在Rocky Linux 9上安装Docker添加docker repo, 更新源, 安装docker-ce1234dnf config-manager --add-repo&#x3D;https:&#x2F;&#x2F;download.docker.com&#x2F;linux&#x2F;centos&#x2F;docker-ce.reposed -i &#x27;s+https:&#x2F;&#x2F;download.docker.com+https:&#x2F;&#x2F;mirror">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-10-17T11:56:32.000Z">
-<meta property="article:modified_time" content="2024-10-31T14:56:08.031Z">
+<meta property="article:modified_time" content="2024-12-01T07:26:05.791Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="Docker">
 <meta name="twitter:card" content="summary">
@@ -136,7 +136,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">155</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">156</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -248,7 +248,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>854</span>
+              <span>986</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -267,7 +267,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+        <h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
 
 <h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
 
@@ -425,7 +425,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">155</span>
+          <span class="site-state-item-count">156</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -484,12 +484,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">511k</span>
+    <span title="站点总字数">514k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">7:45</span>
+    <span title="站点阅读时长">7:47</span>
 </div>
 
 <!--

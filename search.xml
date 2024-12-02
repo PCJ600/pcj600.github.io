@@ -13,6 +13,29 @@
       </tags>
   </entry>
   <entry>
+    <title>Linux下生成core dump文件</title>
+    <url>/2020/0228210741.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
+<span id="more"></span>
+
+<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
+<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
+<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
+<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
+</ol>
+<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
+<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
+<p><strong>指定core文件的输出格式和路径</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/0322220956.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -58,29 +81,6 @@
 <p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
 <p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
 <h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Linux下生成core dump文件</title>
-    <url>/2020/0228210741.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
-<span id="more"></span>
-
-<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
-<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
-<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
-<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
-</ol>
-<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
-<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
-<p><strong>指定core文件的输出格式和路径</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -268,6 +268,29 @@
       </tags>
   </entry>
   <entry>
+    <title>64位Linux机器上使用gcc编译32位程序</title>
+    <url>/2020/0531172553.html</url>
+    <content><![CDATA[<h2 id="Ubuntu"><a href="#Ubuntu" class="headerlink" title="Ubuntu"></a>Ubuntu</h2><p>安装以下软件包</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt-get install build-essential module-assistant gcc-multilib g++-multilib</span><br></pre></td></tr></table></figure>
+<h2 id="Centos"><a href="#Centos" class="headerlink" title="Centos"></a>Centos</h2><p>安装以下软件包</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">yum install glibc-devel.i686 libstdc++-devel.i686</span><br></pre></td></tr></table></figure>
+
+<p>gcc编译添加-m32参数，如</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">gcc -m32 main.c</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/">http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>gcc</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用git rebase合并多条commit记录</title>
     <url>/2020/0504171429.html</url>
     <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
@@ -294,29 +317,6 @@
       </categories>
       <tags>
         <tag>Git</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>64位Linux机器上使用gcc编译32位程序</title>
-    <url>/2020/0531172553.html</url>
-    <content><![CDATA[<h2 id="Ubuntu"><a href="#Ubuntu" class="headerlink" title="Ubuntu"></a>Ubuntu</h2><p>安装以下软件包</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt-get install build-essential module-assistant gcc-multilib g++-multilib</span><br></pre></td></tr></table></figure>
-<h2 id="Centos"><a href="#Centos" class="headerlink" title="Centos"></a>Centos</h2><p>安装以下软件包</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">yum install glibc-devel.i686 libstdc++-devel.i686</span><br></pre></td></tr></table></figure>
-
-<p>gcc编译添加-m32参数，如</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">gcc -m32 main.c</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/">http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -400,6 +400,24 @@
       </categories>
       <tags>
         <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/0726174432.html</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -850,24 +868,6 @@
       </tags>
   </entry>
   <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/0726174432.html</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>内核延时函数msleep和mdelay区别</title>
     <url>/2020/0815181004.html</url>
     <content><![CDATA[<p><code>msleep</code>和<code>mdelay</code>都是内核的延时函数，原型如下：</p>
@@ -1272,37 +1272,6 @@
       </tags>
   </entry>
   <entry>
-    <title>sem_open打开信号量失败案例分析</title>
-    <url>/2020/1114192034.html</url>
-    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
-<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
-<p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
-<span id="more"></span>
-
-<h4 id="为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？"><a href="#为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？" class="headerlink" title="为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？"></a>为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
-<ul>
-<li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
-<li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
-</ul>
-<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
-<p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
-
-<p>写法参考如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>设计跳表, C语言实现</title>
     <url>/2020/1205192333.html</url>
     <content><![CDATA[<h3 id="跳跃表简介"><a href="#跳跃表简介" class="headerlink" title="跳跃表简介"></a>跳跃表简介</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。其性能和红黑树相当，且跳跃表实现更为简单。</p>
@@ -1391,6 +1360,37 @@
       <tags>
         <tag>C</tag>
         <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>sem_open打开信号量失败案例分析</title>
+    <url>/2020/1114192034.html</url>
+    <content><![CDATA[<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
+<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
+<p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
+<span id="more"></span>
+
+<h4 id="为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？"><a href="#为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？" class="headerlink" title="为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？"></a>为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
+<ul>
+<li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
+<li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
+</ul>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
+<p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
+
+<p>写法参考如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -2447,26 +2447,6 @@
       </tags>
   </entry>
   <entry>
-    <title>使用wget批量下载指定类型文件</title>
-    <url>/2021/1016200952.html</url>
-    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
-
-<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
-<span id="more"></span>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
-
-
-]]></content>
-      <categories>
-        <category>wget</category>
-      </categories>
-      <tags>
-        <tag>wget</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>使用GDB修改二进制文件</title>
     <url>/2021/1016201159.html</url>
     <content><![CDATA[<h3 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h3><p>GDB不仅可以用来调试程序，还可以直接修改被调试程序的二进制文件。这种方式相比于改源码重新编译、<code>gdb attach</code>有什么优势呢？考虑以下企业生产环境中的几个调试场景：</p>
@@ -2514,6 +2494,69 @@
       </categories>
       <tags>
         <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用wget批量下载指定类型文件</title>
+    <url>/2021/1016200952.html</url>
+    <content><![CDATA[<p>举例：下载所有的RPM包(文件的扩展名为rpm)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -c -r -np -k -L -p -A rpm http:XXX/</span><br></pre></td></tr></table></figure>
+
+<p>其中各参数意义可通过<code>wget -h</code>查看，如下：</p>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wget -h</span><br><span class="line">...</span><br><span class="line">-c,  --continue                  resume getting a partially-downloaded file</span><br><span class="line">-r,  --recursive                 specify recursive download</span><br><span class="line">-np, --no-parent                 don&#x27;t ascend to the parent directory</span><br><span class="line">-k,  --convert-links             make links in downloaded HTML or CSS point to local files</span><br><span class="line">-L,  --relative                  follow relative links only</span><br><span class="line">-p,  --page-requisites           get all images, etc. needed to display HTML page</span><br><span class="line">-A,  --accept=LIST               comma-separated list of accepted extensions</span><br></pre></td></tr></table></figure>
+
+
+]]></content>
+      <categories>
+        <category>wget</category>
+      </categories>
+      <tags>
+        <tag>wget</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis抓包分析案例</title>
+    <url>/2021/1106201429.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
+<p><strong>问题：</strong> 仿真设备启动中，<strong>概率出现Redis的某个字符串键被不符合预期地改写成空串</strong>，导致客户端Docker从Redis获取的数据有问题。<strong>需要定位是哪个Docker上的哪个进程改写了Redis数据库。</strong></p>
+<span id="more"></span>
+
+<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><ul>
+<li>先尝试排查客户端代码。但此案例中涉及业务代码过多(200w+行代码)，且Redis客户端的形式也很多（有<code>goredis</code>, <code>redis-py</code>, <code>hiredis</code>, <code>redis-cli</code>等）。看来肉眼扫描代码的笨方法不靠谱，而且这种<strong>寄希望于碰运气蒙混过关</strong>的思考方式实在不像是一个程序员。</li>
+</ul>
+<p>那么既然排查客户端有困难，能不能换个角度思考，比如说从服务端入手？以下给出第二种思路：</p>
+<ul>
+<li><strong>通过在服务端抓包，得到所有对这个字符串键做set操作的报文，再根据报文中的IP和端口号得到进程ID</strong>。听起来可行，下面举一个简化的案例介绍具体的操作方法。</li>
+</ul>
+<h2 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h2><p>利用tcpdump，在Redis服务端后台抓取对这个字符串键做set操作的报文，再根据报文中的IP和端口号确认进程即可。</p>
+<p>如下图所示，使用命令<code>tcpdump -i any port 6379 | grep set | grep [key]</code> ，得到客户端IP是localhost,端口号是44880。 </p>
+<p><img data-src="/2021/1106201429/image1.png"></p>
+<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img data-src="/2021/1106201429/image2.png"></p>
+<h4 id="思考："><a href="#思考：" class="headerlink" title="思考："></a>思考：</h4><p>如果我只需要抓取将某个特定字符串键（比如”hello”）写成<strong>某个特定值</strong>（比如写成空串）的报文，怎么做？</p>
+<p>除了<code>grep</code>，下面再给出一种方法，利用<strong>tcpdump的根据报文特征过滤</strong>的技巧：</p>
+<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img data-src="/2021/1106201429/image3.png"></p>
+<p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
+
+<p>协议内容的解析参考<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
+<ul>
+<li>*3 表示数组长度为3， 数组元素依次为 [“set” “hello” “world”]</li>
+<li>$3 表示字符串 “set” 的长度</li>
+<li>第一个 $5 表示字符串 “hello” 的长度。</li>
+<li>第二个 $5 表示字符串 “world” 的长度。</li>
+</ul>
+<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img data-src="/2021/1106201429/image4.png"></p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
+<p>【2】<a href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -2677,49 +2720,6 @@
       <tags>
         <tag>troubleshooting</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis抓包分析案例</title>
-    <url>/2021/1106201429.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>业务背景：</strong> 有一台由多个Docker容器组成的仿真设备环境，1个Docker部署Redis服务端，剩余每个Docker都作为Redis客户端，用于模拟一块单板。</p>
-<p><strong>问题：</strong> 仿真设备启动中，<strong>概率出现Redis的某个字符串键被不符合预期地改写成空串</strong>，导致客户端Docker从Redis获取的数据有问题。<strong>需要定位是哪个Docker上的哪个进程改写了Redis数据库。</strong></p>
-<span id="more"></span>
-
-<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><ul>
-<li>先尝试排查客户端代码。但此案例中涉及业务代码过多(200w+行代码)，且Redis客户端的形式也很多（有<code>goredis</code>, <code>redis-py</code>, <code>hiredis</code>, <code>redis-cli</code>等）。看来肉眼扫描代码的笨方法不靠谱，而且这种<strong>寄希望于碰运气蒙混过关</strong>的思考方式实在不像是一个程序员。</li>
-</ul>
-<p>那么既然排查客户端有困难，能不能换个角度思考，比如说从服务端入手？以下给出第二种思路：</p>
-<ul>
-<li><strong>通过在服务端抓包，得到所有对这个字符串键做set操作的报文，再根据报文中的IP和端口号得到进程ID</strong>。听起来可行，下面举一个简化的案例介绍具体的操作方法。</li>
-</ul>
-<h2 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h2><p>利用tcpdump，在Redis服务端后台抓取对这个字符串键做set操作的报文，再根据报文中的IP和端口号确认进程即可。</p>
-<p>如下图所示，使用命令<code>tcpdump -i any port 6379 | grep set | grep [key]</code> ，得到客户端IP是localhost,端口号是44880。 </p>
-<p><img data-src="/2021/1106201429/image1.png"></p>
-<p>再根据报文中的IP和端口号确认进程号，可以用<code>netstat</code>, <code>ss</code>, <code>lsof</code>等实现。以下仅给出<code>netstat</code>方式，命令：<code>netstat -anltp | grep 端口号</code>，得到进程ID为6748，如下图所示：<br><img data-src="/2021/1106201429/image2.png"></p>
-<h4 id="思考："><a href="#思考：" class="headerlink" title="思考："></a>思考：</h4><p>如果我只需要抓取将某个特定字符串键（比如”hello”）写成<strong>某个特定值</strong>（比如写成空串）的报文，怎么做？</p>
-<p>除了<code>grep</code>，下面再给出一种方法，利用<strong>tcpdump的根据报文特征过滤</strong>的技巧：</p>
-<p>1、使用tcpdump的-X选项查看报文详细内容，重点看Redis请求在TCP报文中是如何存储的：<br><img data-src="/2021/1106201429/image3.png"></p>
-<p>可以看出, <code>set hello &quot;world&quot;</code>命令在报文中存储的协议内容如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*3 $3 set $5 hello $5 world</span><br></pre></td></tr></table></figure>
-
-<p>协议内容的解析参考<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a> ， 以下只做简单的解释：</p>
-<ul>
-<li>*3 表示数组长度为3， 数组元素依次为 [“set” “hello” “world”]</li>
-<li>$3 表示字符串 “set” 的长度</li>
-<li>第一个 $5 表示字符串 “hello” 的长度。</li>
-<li>第二个 $5 表示字符串 “world” 的长度。</li>
-</ul>
-<p>2、再根据TCP报文内容的特征过滤。此案例中，筛选条件可以是同时匹配 “set” “hello” “$0”(<strong>0匹配键值的长度，用来匹配空串</strong>），可以使用命令<code>tcpdump -i any port 6379 -X and &#39;ip[60:2] == 0x7365&#39; and &#39;ip[69:4] == 0x68656c6c&#39; and &#39;ip[76:2] == 0x2430&#39;</code> 抓取所有将字符串键”hello”写为空串的报文，参考下图：<br><img data-src="/2021/1106201429/image4.png"></p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://redis.io/topics/protocol">Redis协议规范（RESP）</a></p>
-<p>【2】<a href="https://wizardforcel.gitbooks.io/network-basic/content/17.html">网络基本功（十八）：细说tcpdump的妙用（下）</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -4369,6 +4369,21 @@
       </tags>
   </entry>
   <entry>
+    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
+    <url>/2023/0301211739.html</url>
+    <content><![CDATA[<p>Add following line to spec file</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
+<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
+]]></content>
+      <categories>
+        <category>RPM</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何查看Microk8s的apiserver证书过期时间</title>
     <url>/2023/0330211939.html</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
@@ -4417,21 +4432,6 @@
       </categories>
       <tags>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
-    <url>/2023/0301211739.html</url>
-    <content><![CDATA[<p>Add following line to spec file</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
-<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
-]]></content>
-      <categories>
-        <category>RPM</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -4551,24 +4551,6 @@
       </tags>
   </entry>
   <entry>
-    <title>在Docker中使用GDB调试的方法</title>
-    <url>/2023/0509214229.html</url>
-    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
-<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
-<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
-</ol>
-]]></content>
-      <categories>
-        <category>GDB</category>
-      </categories>
-      <tags>
-        <tag>GDB</tag>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何设置systemd服务自动重启</title>
     <url>/2023/0509213506.html</url>
     <content><![CDATA[<h2 id="设置systemd服务自动重启的方法"><a href="#设置systemd服务自动重启的方法" class="headerlink" title="设置systemd服务自动重启的方法"></a>设置systemd服务自动重启的方法</h2><p>service文件里添加如下配置：</p>
@@ -4586,6 +4568,24 @@
       </categories>
       <tags>
         <tag>systemd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在Docker中使用GDB调试的方法</title>
+    <url>/2023/0509214229.html</url>
+    <content><![CDATA[<h2 id="Docker中使用GDB调试的方法"><a href="#Docker中使用GDB调试的方法" class="headerlink" title="Docker中使用GDB调试的方法"></a>Docker中使用GDB调试的方法</h2><ol>
+<li>首先在docker中安装<code>gdb</code>， 以centos为例，可以用<code>yum install gdb</code>安装</li>
+<li>启动docker容器命令时，需要添加<code>--privileged</code>, <code>--cap-add=SYS_PTRACE</code>, <code>--security-opt seccomp=unconfined</code>参数， 如下<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --privileged -d -it  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined [your_container_id]  bash</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+添加这些参数的原因参考： <a href="https://developer.aliyun.com/article/674757">为什么在Docker里使用gdb调试器会报错</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
+        <tag>Docker</tag>
       </tags>
   </entry>
   <entry>
@@ -4694,6 +4694,23 @@
         <category>Python</category>
       </categories>
       <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Windows上通过git bash执行python卡住的解决方法</title>
+    <url>/2023/0626214641.html</url>
+    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img data-src="/2023/0626214641/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
+<span id="more"></span>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+        <tag>Win</tag>
         <tag>Python</tag>
       </tags>
   </entry>
@@ -4910,23 +4927,6 @@
         <category>Python</category>
       </categories>
       <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Windows上通过git bash执行python卡住的解决方法</title>
-    <url>/2023/0626214641.html</url>
-    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img data-src="/2023/0626214641/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
-<span id="more"></span>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
-        <tag>Win</tag>
         <tag>Python</tag>
       </tags>
   </entry>
@@ -5310,30 +5310,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>印度基金低风险套利回顾</title>
-    <url>/2024/0217194406.html</url>
-    <content><![CDATA[<p>2024年1月19日当天，印度基金(164824)开放申购，限额申购100元，当天溢价率13%左右，这个溢价率已经非常可观了，当然要祭出一拖七大法搞它一把！</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0217194406/image1.png"></p>
-<h2 id="一拖七套利原理简介"><a href="#一拖七套利原理简介" class="headerlink" title="一拖七套利原理简介"></a>一拖七套利原理简介</h2><p>详细的原理和方法可自行在雪球搜索，这里只做简单表述：</p>
-<ul>
-<li>印度基金(164824)是一个LOF基金，既可以在场内申赎，也可以在场内买卖</li>
-<li>当LOF基金的价格高于净值时，可以通过先申购再卖出的方式进行溢价套利</li>
-<li>印度基金T日在场内申购,  T+2日晚到账, T+3日可卖出；场外申购转托管在T+5日可卖出</li>
-<li>对于深市的印度基金，可以用3个深市股东账户+3个深市封闭基金账户+1个TA账户进行申购，这样单身份证可以申购700元，这就是一拖七</li>
-<li>必须有场内一折申购+免5的券商渠道，否则交易成本高达6%</li>
-</ul>
-<h2 id="操作记录"><a href="#操作记录" class="headerlink" title="操作记录"></a>操作记录</h2><p>从1月19日(周五)开始每天使用一拖七大法申购, 从1月24日开始每天早盘卖出，场外转托管, 直到2月8日(节前最后一个交易日)结束，每个身份证获利708元：<br><img data-src="/2024/0217194406/image2.png"><br>如果下次遇到同样的机会，就继续薅羊毛吧 ~</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Python cookbook 笔记</title>
     <url>/2023/1216193917.html</url>
     <content><![CDATA[<h2 id="一、数据结构和算法"><a href="#一、数据结构和算法" class="headerlink" title="一、数据结构和算法"></a>一、数据结构和算法</h2><h3 id="1-解压序列赋值给多个变量"><a href="#1-解压序列赋值给多个变量" class="headerlink" title="1. 解压序列赋值给多个变量"></a>1. 解压序列赋值给多个变量</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>year, month, day = [<span class="number">2002</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(year, month, day)</span><br><span class="line"><span class="number">2002</span> <span class="number">6</span> <span class="number">10</span></span><br></pre></td></tr></table></figure>
@@ -5544,6 +5520,30 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>印度基金低风险套利回顾</title>
+    <url>/2024/0217194406.html</url>
+    <content><![CDATA[<p>2024年1月19日当天，印度基金(164824)开放申购，限额申购100元，当天溢价率13%左右，这个溢价率已经非常可观了，当然要祭出一拖七大法搞它一把！</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0217194406/image1.png"></p>
+<h2 id="一拖七套利原理简介"><a href="#一拖七套利原理简介" class="headerlink" title="一拖七套利原理简介"></a>一拖七套利原理简介</h2><p>详细的原理和方法可自行在雪球搜索，这里只做简单表述：</p>
+<ul>
+<li>印度基金(164824)是一个LOF基金，既可以在场内申赎，也可以在场内买卖</li>
+<li>当LOF基金的价格高于净值时，可以通过先申购再卖出的方式进行溢价套利</li>
+<li>印度基金T日在场内申购,  T+2日晚到账, T+3日可卖出；场外申购转托管在T+5日可卖出</li>
+<li>对于深市的印度基金，可以用3个深市股东账户+3个深市封闭基金账户+1个TA账户进行申购，这样单身份证可以申购700元，这就是一拖七</li>
+<li>必须有场内一折申购+免5的券商渠道，否则交易成本高达6%</li>
+</ul>
+<h2 id="操作记录"><a href="#操作记录" class="headerlink" title="操作记录"></a>操作记录</h2><p>从1月19日(周五)开始每天使用一拖七大法申购, 从1月24日开始每天早盘卖出，场外转托管, 直到2月8日(节前最后一个交易日)结束，每个身份证获利708元：<br><img data-src="/2024/0217194406/image2.png"><br>如果下次遇到同样的机会，就继续薅羊毛吧 ~</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>全球芯片LOF大幅溢价，痛失巨肉我拍断大腿！</title>
     <url>/2024/0310224202.html</url>
     <content><![CDATA[<p>3月8号当天，全球芯片LOF(501225)出现15%的大幅溢价。这只基每个身份证限额申购1万，这意味着如果你在3月5号申购，在3月8号收盘前卖出，一户收益高达1500元，3天收益率15%，简直是抢钱！在如此恐怖的收益率面前，高利贷都只能算个弟弟！</p>
@@ -5585,6 +5585,26 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>如何自定义Squid日志格式, 添加请求方法等参数</title>
+    <url>/2024/0321195713.html</url>
+    <content><![CDATA[<p>查<a href="http://www.squid-cache.org/Doc/config/logformat/">Squid手册</a>，找到你需要添加的参数：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Field name syntax keys:</span><br><span class="line">	...</span><br><span class="line">	%rm</span><br><span class="line">	Request method</span><br><span class="line">	%ru</span><br><span class="line">	Request URL, without the query string</span><br><span class="line">	...</span><br></pre></td></tr></table></figure>
+
+<p>修改Squid配置文件<code>/etc/squid/squid.conf</code>，在<code>logformat</code>开头的这一行中添加<code>%rm %ru</code>参数，如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">logformat customized  %tl %ts %6tr %&gt;a %Ss %03&gt;Hs %&gt;st %&lt;st %[un %Sh %&lt;A %mt <span class="string">&quot;%&#123;User-Agent&#125;&gt;h&quot;</span> %03&lt;Hs <span class="string">&quot;%rm %ru HTTP/%rv&quot;</span> %err_code</span><br><span class="line">access_log  /var/log/squid/access.log customized</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>重启Squid, 查看<code>access.log</code>, 发现日志格式已成功修改<br><img data-src="/2024/0321195713/image1.png"></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="http://www.squid-cache.org/Doc/config/logformat/">http://www.squid-cache.org/Doc/config/logformat/</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>GRUB菜单不显示问题定位</title>
     <url>/2024/0321195218.html</url>
     <content><![CDATA[<h1 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h1><p>Rocky Linux 9.2环境，手工配置了<code>GRUB_TIMEOUT</code>为30秒，但重启后发现没有显示菜单，未出现30秒倒计时。</p>
@@ -5615,26 +5635,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>Linux</tag>
         <tag>troubleshooting</tag>
         <tag>GRUB</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>如何自定义Squid日志格式, 添加请求方法等参数</title>
-    <url>/2024/0321195713.html</url>
-    <content><![CDATA[<p>查<a href="http://www.squid-cache.org/Doc/config/logformat/">Squid手册</a>，找到你需要添加的参数：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Field name syntax keys:</span><br><span class="line">	...</span><br><span class="line">	%rm</span><br><span class="line">	Request method</span><br><span class="line">	%ru</span><br><span class="line">	Request URL, without the query string</span><br><span class="line">	...</span><br></pre></td></tr></table></figure>
-
-<p>修改Squid配置文件<code>/etc/squid/squid.conf</code>，在<code>logformat</code>开头的这一行中添加<code>%rm %ru</code>参数，如下所示：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">logformat customized  %tl %ts %6tr %&gt;a %Ss %03&gt;Hs %&gt;st %&lt;st %[un %Sh %&lt;A %mt <span class="string">&quot;%&#123;User-Agent&#125;&gt;h&quot;</span> %03&lt;Hs <span class="string">&quot;%rm %ru HTTP/%rv&quot;</span> %err_code</span><br><span class="line">access_log  /var/log/squid/access.log customized</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>重启Squid, 查看<code>access.log</code>, 发现日志格式已成功修改<br><img data-src="/2024/0321195713/image1.png"></p>
-<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="http://www.squid-cache.org/Doc/config/logformat/">http://www.squid-cache.org/Doc/config/logformat/</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Squid</tag>
       </tags>
   </entry>
   <entry>
@@ -6014,34 +6014,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Notepad++不显示CRLF的方法</title>
-    <url>/2024/0528205224.html</url>
-    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
-]]></content>
-      <categories>
-        <category>other</category>
-      </categories>
-      <tags>
-        <tag>other</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>质疑标普，理解标普，加入标普</title>
-    <url>/2024/0616212811.html</url>
-    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
-<span id="more"></span>
-<p><img data-src="/2024/0616212811/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
-<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/0616212811/image2.png"><br><img data-src="/2024/0616212811/image3.png"></p>
-<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>k8s中的pod域名解析失败问题定位</title>
     <url>/2024/0612205430.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在k8s中启动了一个Host网络模式的pod，这个pod的域名解析失败了。</p>
@@ -6061,6 +6033,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/0528205224.html</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
       </tags>
   </entry>
   <entry>
@@ -6099,6 +6083,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>质疑标普，理解标普，加入标普</title>
+    <url>/2024/0616212811.html</url>
+    <content><![CDATA[<p>上周我在文章里提到过，标普信息科技LOF(161128)出现套利机会。每天申购卖出，到现在一个账户56*6&#x3D;336润。</p>
+<span id="more"></span>
+<p><img data-src="/2024/0616212811/image1.png"><br>得益于美股七巨头轮流领涨，161128依旧坚挺，每天溢价都是10%，成交量1个多亿，场内新增份额才400万份，根本砸不动。</p>
+<p>再看看咱们村儿，马上打响第58次3000点保卫战，每天400家上涨，仅0.5万家下跌，在全球大涨时逆势走出了独立行情！我不多说，放两张图大家一看就明白：<br><img data-src="/2024/0616212811/image2.png"><br><img data-src="/2024/0616212811/image3.png"></p>
+<p>161128最新的收盘价5.168，溢价依然有10%+，我会继续申购，一个账户700*10%&#x3D;70润，简直白捡钱。我相信，之前没敢参与申购的朋友，在经历了质疑标普，理解标普的过程之后，一定会选择加入标普。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Linux双网卡默认路由metric不正确，导致SSH连接失败问题定位</title>
     <url>/2024/0627215122.html</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware虚拟机 RockyLinux 9 x86_64</p>
@@ -6120,46 +6120,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Linux</tag>
         <tag>troubleshooting</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用qemu-img把vmdk转成qcow2</title>
-    <url>/2024/0628215859.html</url>
-    <content><![CDATA[<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">qemu-img convert -c -f vmdk -O qcow2 vm.vmdk vm.qcow2</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>VMware</category>
-      </categories>
-      <tags>
-        <tag>VMware</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Squid配置用户名密码的方法</title>
-    <url>/2024/0703220137.html</url>
-    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>Centos7.9 Squid 3.5.20</p>
-<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">htpasswd -c /etc/squid/squid_user peter</span><br><span class="line">New password: 123</span><br><span class="line">Re-type new password: 123</span><br><span class="line">Adding password for user peter</span><br></pre></td></tr></table></figure>
-<p>检查密码文件<code>/etc/squid/squid_user</code>，可以找到刚才添加的用户<code>peter</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/squid/squid_user</span><br><span class="line">peter:$XXXXXXXXXXXXXXXXXXX</span><br></pre></td></tr></table></figure>
-<p>对密码文件设置适当权限</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chown squid /etc/squid/squid_user</span><br></pre></td></tr></table></figure>
-<p>验证用户名和密码是否正确, 执行<code>basic_ncsa_auth</code>程序，输入<code>peter 123</code>，显示OK说明正确。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">peter 123</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>2 修改squid配置文件<code>/etc/squid/squid.conf</code>，添加认证相关的配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Insert your own rules here to allow access from your clients</span><br><span class="line"></span><br><span class="line"># http_access allow localhost 加注释，表示localhost也需要认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Proxy Authentication Required</span><br><span class="line">auth_param basic credentialsttl 2 hours</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line"></span><br><span class="line">acl authUsers proxy_auth REQUIRED</span><br><span class="line">http_access allow authUsers</span><br><span class="line"></span><br><span class="line">http_access deny all</span><br></pre></td></tr></table></figure>
-
-<p>修改配置完成后，重启Squid (<code>systemctl restart squid</code>)</p>
-<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>使用<code>curl</code>测试Squid用户名密码认证配置<br>不使用用户名密码认证，访问失败，返回407<br><img data-src="/2024/0703220137/image1.png"><br>使用正确的用户名密码认证，访问成功<br><img data-src="/2024/0703220137/image2.png"></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://www.cnblogs.com/blxt/p/14501176.html">Squid设置用户名密码</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Squid</tag>
       </tags>
   </entry>
   <entry>
@@ -6188,6 +6148,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>使用qemu-img把vmdk转成qcow2</title>
+    <url>/2024/0628215859.html</url>
+    <content><![CDATA[<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">qemu-img convert -c -f vmdk -O qcow2 vm.vmdk vm.qcow2</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>VMware</category>
+      </categories>
+      <tags>
+        <tag>VMware</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>curl代理用户名或密码出现特殊字符时需要转义</title>
     <url>/2024/0704220405.html</url>
     <content><![CDATA[<p>举例：使用代理<code>127.0.0.1:3128</code>访问百度, 用户名<code>peter</code>, 密码<code>123!</code></p>
@@ -6201,6 +6173,34 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>curl</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Squid配置用户名密码的方法</title>
+    <url>/2024/0703220137.html</url>
+    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>Centos7.9 Squid 3.5.20</p>
+<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">htpasswd -c /etc/squid/squid_user peter</span><br><span class="line">New password: 123</span><br><span class="line">Re-type new password: 123</span><br><span class="line">Adding password for user peter</span><br></pre></td></tr></table></figure>
+<p>检查密码文件<code>/etc/squid/squid_user</code>，可以找到刚才添加的用户<code>peter</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/squid/squid_user</span><br><span class="line">peter:$XXXXXXXXXXXXXXXXXXX</span><br></pre></td></tr></table></figure>
+<p>对密码文件设置适当权限</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chown squid /etc/squid/squid_user</span><br></pre></td></tr></table></figure>
+<p>验证用户名和密码是否正确, 执行<code>basic_ncsa_auth</code>程序，输入<code>peter 123</code>，显示OK说明正确。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">peter 123</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>2 修改squid配置文件<code>/etc/squid/squid.conf</code>，添加认证相关的配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Insert your own rules here to allow access from your clients</span><br><span class="line"></span><br><span class="line"># http_access allow localhost 加注释，表示localhost也需要认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Proxy Authentication Required</span><br><span class="line">auth_param basic credentialsttl 2 hours</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line"></span><br><span class="line">acl authUsers proxy_auth REQUIRED</span><br><span class="line">http_access allow authUsers</span><br><span class="line"></span><br><span class="line">http_access deny all</span><br></pre></td></tr></table></figure>
+
+<p>修改配置完成后，重启Squid (<code>systemctl restart squid</code>)</p>
+<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>使用<code>curl</code>测试Squid用户名密码认证配置<br>不使用用户名密码认证，访问失败，返回407<br><img data-src="/2024/0703220137/image1.png"><br>使用正确的用户名密码认证，访问成功<br><img data-src="/2024/0703220137/image2.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://www.cnblogs.com/blxt/p/14501176.html">Squid设置用户名密码</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
       </tags>
   </entry>
   <entry>
@@ -7313,36 +7313,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux中定时删除10天前的日志文件</title>
-    <url>/2024/1009194730.html</url>
-    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>只查看要删除的文件有哪些，不真正删除文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
-<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<p>再配置crontab</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
-<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL基础</title>
     <url>/2024/1003155441.html</url>
     <content><![CDATA[<h2 id="数据库相关概念"><a href="#数据库相关概念" class="headerlink" title="数据库相关概念"></a>数据库相关概念</h2><ul>
@@ -8305,36 +8275,33 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Docker安装教程</title>
-    <url>/2024/1017195632.html</url>
-    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+    <title>Linux中定时删除10天前的日志文件</title>
+    <url>/2024/1009194730.html</url>
+    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
 
-<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
+<p>只查看要删除的文件有哪些，不真正删除文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
 
-<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
+<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>再配置crontab</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
 
-<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
+<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
 
-<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
-
-<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
-
-<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
-<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
 ]]></content>
       <categories>
-        <category>Docker</category>
+        <category>Linux</category>
       </categories>
       <tags>
-        <tag>Docker</tag>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -9062,6 +9029,39 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Docker安装教程</title>
+    <url>/2024/1017195632.html</url>
+    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+
+<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+
+<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL8.0如何重置密码</title>
     <url>/2024/1017202436.html</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
@@ -9333,7 +9333,12 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
     <url>/2024/1031225813.html</url>
     <content><![CDATA[<h2 id="配置国内源加速"><a href="#配置国内源加速" class="headerlink" title="配置国内源加速"></a>配置国内源加速</h2><p>添加配置文件<code>/etc/docker/daemon.json</code>, 内容如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  &quot;registry-mirrors&quot;: [&quot;https://6kx4zyno.mirror.aliyuncs.com&quot;]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>本人使用的是阿里云服务器，所以配了个阿里云的</p>
+<p>本人使用的是阿里云服务器，所以配了个阿里云的。每个阿里云账号都可以通过以下步骤获取一个镜像加速地址</p>
+<ul>
+<li>访问阿里云网站(<a href="https://www.aliyun.com),登录账号/">https://www.aliyun.com)，登录账号</a></li>
+<li>产品栏搜索(容器镜像服务)ACR</li>
+<li>镜像工具 -&gt; 镜像加速器 -&gt; 获取镜像加速地址</li>
+</ul>
 <h2 id="使配置生效"><a href="#使配置生效" class="headerlink" title="使配置生效"></a>使配置生效</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart docker</span><br></pre></td></tr></table></figure>
 
 <h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull busybox</span><br></pre></td></tr></table></figure>
@@ -10279,6 +10284,60 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>在RockyLinux9.4上安装Microk8s</title>
+    <url>/2024/1201142626.html</url>
+    <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><p>1、安装snap</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
+
+<p>2、安装microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic <span class="comment"># 在RockyLinux9.4上, 默认下载Microk8s 1.31版本</span></span><br><span class="line">snap install microk8s --classic --channel=1.31/stable <span class="comment"># --channnel参数可以指定Microk8s的版本</span></span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>3、安装microk8s插件(addons)</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure>
+
+<p>成功安装后，通过kubectl查看Pod和Image</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">coredns/coredns:1.10.1</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">registry.k8s.io/pause:3.7</span><br></pre></td></tr></table></figure>
+
+<h2 id="在线安装可能遇到的问题"><a href="#在线安装可能遇到的问题" class="headerlink" title="在线安装可能遇到的问题"></a>在线安装可能遇到的问题</h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+<p>从国内源下载镜像，再给镜像打tag</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7  registry.k8s.io/pause:3.7</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1  docker.io/calico/cni:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1  docker.io/calico/node:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1  docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1  docker.io/coredns/coredns:1.10.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2  registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3  registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
+
+<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
+
+<p>2、将下载好的snap包传输到目标机器上，安装microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap ack microk8s_&lt;版本号&gt;.assert</span><br><span class="line">snap install microk8s_&lt;版本号&gt;.snap --classic</span><br></pre></td></tr></table></figure>
+
+<p>3、启动Microk8s服务</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
+
+<p>4、在可联网的环境下载Microk8s插件的Image并导出</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line"></span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> cni.tar docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> kube-controllers.tar docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> .....</span><br></pre></td></tr></table></figure>
+
+<p>5、将image传到目标机器上并导入</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr image import *.tar</span><br></pre></td></tr></table></figure>
+
+<p>6、启动microk8s插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br><span class="line">microk8s status --wait-ready</span><br></pre></td></tr></table></figure>
+
+<p>7、配置kubectl访问Microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
+
+<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>k8s学习笔记</title>
     <url>/2024/1127213752.html</url>
     <content><![CDATA[<h1 id="几个概念"><a href="#几个概念" class="headerlink" title="几个概念"></a>几个概念</h1><p>Infrastructure as a Service 基础设施即服务<br>platform as a Service 平台即服务<br>Software as a Service 软件即服务</p>
@@ -10415,51 +10474,55 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>在RockyLinux9.4上安装Microk8s</title>
-    <url>/2024/1201142626.html</url>
-    <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><p>1、安装snap</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
+    <title>在k8s上创建第一个Pod</title>
+    <url>/2024/1202220520.html</url>
+    <content><![CDATA[<h1 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h1><ul>
+<li>Rocky Linux9.4 x86_64 VM </li>
+<li>安装了Microk8s (参考:<a href="https://pcj600.github.io/2024/1201142626.html">Microk8s安装方法</a>)</li>
+</ul>
+<p>说明: 其他k8s(例如: k3s, kubernetes)创建Pod的方法和Microk8s没啥区别，可以参考本文</p>
+<h1 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h1><p>创建一个Nginx的Pod，映射宿主机30000端口到Pod容器的80端口；客户端能通过宿主机30000端口访问Pod容器中的Nginx服务</p>
+<h1 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h1><span id="more"></span>
 
-<p>2、安装microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic <span class="comment"># 在RockyLinux9.4上, 默认下载Microk8s 1.31版本</span></span><br><span class="line">snap install microk8s --classic --channel=1.31/stable <span class="comment"># --channnel参数可以指定Microk8s的版本</span></span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
+<h2 id="从国内源下载nginx-1-27-3镜像-再导入镜像"><a href="#从国内源下载nginx-1-27-3镜像-再导入镜像" class="headerlink" title="从国内源下载nginx:1.27.3镜像, 再导入镜像"></a>从国内源下载nginx:1.27.3镜像, 再导入镜像</h2><p>Microk8s执行如下命令:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.27.3</span><br><span class="line">microk8s.ctr images tag swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.27.3 docker.io/library/nginx:1.27.3</span><br></pre></td></tr></table></figure>
+<p>如果是Kubernetes环境，执行如下命令: (和Microk8s大同小异)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ctr -n k8s.io images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.27.3</span><br><span class="line">ctr -n k8s.io images tag swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.27.3 docker.io/library/nginx:1.27.3</span><br></pre></td></tr></table></figure>
 
-<p>3、安装microk8s插件(addons)</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure>
+<h2 id="创建nginx的namespace"><a href="#创建nginx的namespace" class="headerlink" title="创建nginx的namespace"></a>创建nginx的namespace</h2><p>创建一个新的namespace，名称为nginx，后续在这个namespace下创建Pod</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl create ns nginx</span><br></pre></td></tr></table></figure>
 
-<p>成功安装后，通过kubectl查看Pod和Image</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">coredns/coredns:1.10.1</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">registry.k8s.io/pause:3.7</span><br></pre></td></tr></table></figure>
+<h2 id="创建并应用deployment"><a href="#创建并应用deployment" class="headerlink" title="创建并应用deployment"></a>创建并应用deployment</h2><p>创建nginx-deployment.yaml文件，内容如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Deployment #指定资源类型</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-deployment #指定deployment名称</span><br><span class="line">  namespace: nginx #指定pod运行的namespace</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: nginx</span><br><span class="line">  replicas: 1 # 指定副本数(nginx pod个数)</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: nginx:1.27.3 #(指定镜像)</span><br><span class="line">        imagePullPolicy: IfNotPresent #(指定镜像拉取策略, IfNotPresent表示如果本地有就取本地镜像，否则从网络拉取镜像</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80 # 容器内暴露的端口</span><br></pre></td></tr></table></figure>
+<p>这个yaml文件参考了官方文档： <a href="https://kubernetes.io/zh-cn/docs/tasks/run-application/run-stateless-application-deployment/">https://kubernetes.io/zh-cn/docs/tasks/run-application/run-stateless-application-deployment/</a><br>再应用这个deployment</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl create ns nginx</span><br><span class="line">kubectl apply -f nginx-deployment.yaml</span><br><span class="line">deployment.apps/nginx-deployment created</span><br></pre></td></tr></table></figure>
+<p>deployment创建成功后，查看Nginx pod状态如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n nginx get pods</span><br><span class="line">NAME                                READY   STATUS    RESTARTS   AGE</span><br><span class="line">nginx-deployment-5c7dff4cf7-gbtsr   1/1     Running   0          2m55s</span><br></pre></td></tr></table></figure>
+<p>查看当前Nginx deployment的内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n nginx get deploy nginx-deployment -o yaml</span><br></pre></td></tr></table></figure>
 
-<h2 id="在线安装可能遇到的问题"><a href="#在线安装可能遇到的问题" class="headerlink" title="在线安装可能遇到的问题"></a>在线安装可能遇到的问题</h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
-<p>从国内源下载镜像，再给镜像打tag</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7  registry.k8s.io/pause:3.7</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1  docker.io/calico/cni:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1  docker.io/calico/node:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1  docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1  docker.io/coredns/coredns:1.10.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2  registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3  registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+<h2 id="创建并应用service-将宿主机端口-例如30000端口-映射到Pod的80端口"><a href="#创建并应用service-将宿主机端口-例如30000端口-映射到Pod的80端口" class="headerlink" title="创建并应用service, 将宿主机端口(例如30000端口)映射到Pod的80端口"></a>创建并应用service, 将宿主机端口(例如30000端口)映射到Pod的80端口</h2><p>创建nginx-service.yaml文件，主要字段的说明参考注释，文件内容如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Service #指定资源类型</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-service #指定service的名称</span><br><span class="line">  namespace: nginx #指定pod运行的namespace</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: nginx</span><br><span class="line">  type: NodePort</span><br><span class="line">  ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      targetPort: 80 # Pod容器中的端口，是Nginx程序实际监听的端口</span><br><span class="line">      port: 80 # 暴露在cluster IP上的端口，提供集群内部访问service的入口, 即clusterIP:port</span><br><span class="line">      nodePort: 30000 # 指定宿主机的端口, nodePort提供集群外部访问Service的能力</span><br></pre></td></tr></table></figure>
+<p>面试题: 说说看Service中port, targetPort, nodePort的作用，有什么区别?</p>
+<ul>
+<li>port: 暴露在cluster IP上的端口，提供集群内部访问service的入口，即clusterIP:port</li>
+<li>nodePort: 宿主机端口, 提供集群外部访问Service的能力</li>
+<li>targetPort: Pod内部端口，是实际应用程序监听的端口</li>
+</ul>
+<p>再应用这个service</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl apply -f nginx-service.yaml</span><br><span class="line">service/nginx-service created</span><br></pre></td></tr></table></figure>
+<p>执行成功后，查看service</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n nginx get svc</span><br><span class="line">NAME            TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE</span><br><span class="line">nginx-service   NodePort   10.152.183.248   &lt;none&gt;        80:30000/TCP   2m32s</span><br></pre></td></tr></table></figure>
+<p>可以看出NodePort端口是30000，clusterIp:port为10.152.183.248:80</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>通过NodePort方式可以访问Nginx</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl localhost:30000</span><br><span class="line">...</span><br><span class="line">&lt;title&gt;Welcome to nginx!&lt;/title&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>通过clusterIp:port方式也可以访问Nginx</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl 10.152.183.248:80</span><br><span class="line">...</span><br><span class="line">&lt;title&gt;Welcome to nginx!&lt;/title&gt;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 
-<p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
+<h1 id="删除Nginx-Pod"><a href="#删除Nginx-Pod" class="headerlink" title="删除Nginx Pod"></a>删除Nginx Pod</h1><p>删除之前创建的deployment和service资源即可，方法如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n nginx delete deploy nginx-deployment</span><br><span class="line">kubectl -n nginx delete svc nginx-service</span><br></pre></td></tr></table></figure>
 
-<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
-
-<p>2、将下载好的snap包传输到目标机器上，安装microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap ack microk8s_&lt;版本号&gt;.assert</span><br><span class="line">snap install microk8s_&lt;版本号&gt;.snap --classic</span><br></pre></td></tr></table></figure>
-
-<p>3、启动Microk8s服务</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
-
-<p>4、在可联网的环境下载Microk8s插件的Image并导出</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line"></span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> cni.tar docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> kube-controllers.tar docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> .....</span><br></pre></td></tr></table></figure>
-
-<p>5、将image传到目标机器上并导入</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr image import *.tar</span><br></pre></td></tr></table></figure>
-
-<p>6、启动microk8s插件</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br><span class="line">microk8s status --wait-ready</span><br></pre></td></tr></table></figure>
-
-<p>7、配置kubectl访问Microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
-
-<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://kubernetes.io/zh-cn/docs/tasks/run-application/run-stateless-application-deployment/">https://kubernetes.io/zh-cn/docs/tasks/run-application/run-stateless-application-deployment/</a></p>
 ]]></content>
       <categories>
         <category>k8s</category>
