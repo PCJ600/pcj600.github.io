@@ -2791,136 +2791,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Redis学习笔记(二)——链表</title>
-    <url>/2021/1212203239.html</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>链表在Redis中的应用非常广泛，链表是列表键的底层实现之一，发布订阅，慢查询，监视器等功能也用到了链表。</p>
-<p>以下给出Redis中链表相关的一些思考问题，通过源码分析，给出问题的答案，掌握链表的底层实现原理和设计思路。</p>
-<p>源码版本：<a href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
-<span id="more"></span>
-
-<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>C语言中如何设计一个通用的泛型链表？</p>
-<ul>
-<li><p><a href="#jump1">Redis中的链表和链表节点的实现</a></p>
-<ul>
-<li><a href="#jump2">节点值的类型是void *，这样设计有什么好处？</a></li>
-<li><a href="#jump3">仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表？</a></li>
-<li><a href="#jump4">为什么用双向链表，不用单链表？</a></li>
-</ul>
-</li>
-<li><p><a href="#jump5">双向链表API实现分析</a></p>
-<ul>
-<li><a href="#jump6">链表创建</a></li>
-<li><a href="#jump7">链表销毁</a></li>
-<li><a href="#jump8">头部插入节点</a></li>
-<li><a href="#jump9">尾部插入节点</a></li>
-<li><a href="#jump10">指定位置前后插入节点</a></li>
-<li><a href="#jump11">删除指定节点</a></li>
-<li><a href="#jump12">链表迭代器的设计实现</a></li>
-<li><a href="#jump13">查找指定节点</a></li>
-<li><a href="#jump14">复制链表</a></li>
-<li><a href="#jump15">表头节点移动到表尾</a></li>
-</ul>
-</li>
-</ul>
-<h3 id="链表和链表节点的实现"><a href="#链表和链表节点的实现" class="headerlink" title="链表和链表节点的实现"></a>链表和链表节点的实现<span id="jump1"></span></h3><p>以REDIS 6.0.10源码为例，链表的实现参考<code>adlist.h</code>, <code>adlist.c</code></p>
-<p>链表节点通过listNode结构体实现，定义如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">void</span> *value;</span><br><span class="line">&#125; listNode;</span><br></pre></td></tr></table></figure>
-
-<p>可以看出这是一个双向链表，value存储节点值，其类型为void *</p>
-<h4 id="节点值的类型为void-，这样设计有什么好处？"><a href="#节点值的类型为void-，这样设计有什么好处？" class="headerlink" title="节点值的类型为void *，这样设计有什么好处？"></a>节点值的类型为void *，这样设计有什么好处？<span id="jump2"></span></h4><p>节点值设置void *类型，目的是实现一个通用的泛型链表，提高代码复用性。（类似C++的STL容器，多态思想）</p>
-<p>考虑实际应用场景中，链表节点值的类型可以是int, float, double等基本类型, 或者是自定义结构体类型，如果简单将value定义为某个具体类型，就只能为每个节点类型定义一个listNodeXX的结构体，同时需额外为每个节点类型新增一套增、删、改、查的API，实现非常繁琐，如下所示：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeInt</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">int</span> value;</span><br><span class="line">&#125; listNodeInt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeDouble</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">double</span> value;</span><br><span class="line">&#125; listNodeDouble;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 增加一个节点到链表头部</span></span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadInt</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> value)</span>;</span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadDouble</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">double</span> value)</span>;</span><br></pre></td></tr></table></figure>
-
-<p>可以看出，这种实现方式的问题在于<strong>代码重复度过高，难以维护，且扩展性差，每支持一个新的节点类型都要新增代码</strong>，这显然是不能接受的。所以节点值类型要设计为void *</p>
-<h4 id="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？"><a href="#仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？" class="headerlink" title="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？"></a>仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？<span id="jump3"></span></h4><p>Redis中额外使用list结构，用于持有链表，简化操作。list结构体定义如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">list</span> &#123;</span></span><br><span class="line">    listNode *head;</span><br><span class="line">    listNode *tail;</span><br><span class="line">    <span class="type">void</span> *(*dup)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">void</span> (*<span class="built_in">free</span>)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">int</span> (*match)(<span class="type">void</span> *ptr, <span class="type">void</span> *key);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">&#125; <span class="built_in">list</span>;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>head, tail用于记录表头指针和表尾指针，好处是获取表头节点或表尾节点的时间复杂度为O(1)</p>
-</li>
-<li><p>len类型用于记录链表长度， 好处是获取链表节点总数的时间复杂度为O(1)</p>
-</li>
-<li><p>dup, free, match成员用于实现多态链表，对于不同类型的节点，挂接不同的函数钩子，设置特定的复制、释放、比较操作。</p>
-<ul>
-<li>dup函数用于复制节点值</li>
-<li>free函数用于释放节点值</li>
-<li>match函数用于比较两个节点值是否相等</li>
-</ul>
-</li>
-</ul>
-<p><strong>举例</strong>：一个长度为2的双向链表示意图：<br><img data-src="/2021/1212203239/image1.png"></p>
-<h3 id="为什么用双向链表，不用单链表？"><a href="#为什么用双向链表，不用单链表？" class="headerlink" title="为什么用双向链表，不用单链表？"></a>为什么用双向链表，不用单链表？<span id="jump4"></span></h3><p>双向链表相较于单链表，有如下优点：</p>
-<ul>
-<li>支持双向查找节点，且查找给定节点的前驱节点的时间复杂度为O(1)</li>
-<li>尾部插入节点快，时间复杂度为O(1)</li>
-</ul>
-<h3 id="双向链表API实现分析"><a href="#双向链表API实现分析" class="headerlink" title="双向链表API实现分析"></a>双向链表API实现分析<span id="jump5"></span></h3><h4 id="链表创建"><a href="#链表创建" class="headerlink" title="链表创建"></a>链表创建<span id="jump6"></span></h4><p>调用<code>listCreate</code>，创建一个空的双向链表，时间复杂度O(1)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listCreate</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list</span> *<span class="title">list</span>;</span></span><br><span class="line">    <span class="keyword">if</span> ((<span class="built_in">list</span> = zmalloc(<span class="keyword">sizeof</span>(*<span class="built_in">list</span>))) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;dup = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;<span class="built_in">free</span> = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;match = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">list</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="链表销毁"><a href="#链表销毁" class="headerlink" title="链表销毁"></a>链表销毁<span id="jump7"></span></h4><p>调用<code>listRelease</code>，释放链表，时间复杂度O(N)，N为链表长度</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRelease</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    listEmpty(<span class="built_in">list</span>);</span><br><span class="line">    zfree(<span class="built_in">list</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listEmpty</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">    listNode *current, *next;</span><br><span class="line"></span><br><span class="line">    current = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    len = <span class="built_in">list</span>-&gt;len;</span><br><span class="line">    <span class="keyword">while</span>(len--) &#123;</span><br><span class="line">        next = current-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">list</span>-&gt;<span class="built_in">free</span>) <span class="built_in">list</span>-&gt;<span class="built_in">free</span>(current-&gt;value);	<span class="comment">// 不同的节点类型，挂接不同的free函数钩子，实现多态链表的释放操作。</span></span><br><span class="line">        zfree(current);</span><br><span class="line">        current = next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="头部插入节点"><a href="#头部插入节点" class="headerlink" title="头部插入节点"></a>头部插入节点<span id="jump8"></span></h4><p>调用<code>listAddNodeHead</code>，在链表头部插入节点，时间复杂度O(1)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeHead(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = NULL;</span><br><span class="line">        node-&gt;next = list-&gt;head;</span><br><span class="line">        list-&gt;head-&gt;prev = node;</span><br><span class="line">        list-&gt;head = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="尾部插入节点"><a href="#尾部插入节点" class="headerlink" title="尾部插入节点"></a>尾部插入节点<span id="jump9"></span></h4><p>调用<code>listAddNodeTail</code>, 在链表尾部插入节点，时间复杂度O(1)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeTail(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = list-&gt;tail;</span><br><span class="line">        node-&gt;next = NULL;</span><br><span class="line">        list-&gt;tail-&gt;next = node;</span><br><span class="line">        list-&gt;tail = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="指定位置前后插入节点"><a href="#指定位置前后插入节点" class="headerlink" title="指定位置前后插入节点"></a>指定位置前后插入节点<span id="jump10"></span></h4><p>调用<code>listInsertNode</code>，在指定位置之前或之后插入节点，时间复杂度O(1)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listInsertNode(list *list, listNode *old_node, void *value, int after) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (after) &#123;</span><br><span class="line">        node-&gt;prev = old_node;</span><br><span class="line">        node-&gt;next = old_node-&gt;next;</span><br><span class="line">        if (list-&gt;tail == old_node) &#123;</span><br><span class="line">            list-&gt;tail = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;next = old_node;</span><br><span class="line">        node-&gt;prev = old_node-&gt;prev;</span><br><span class="line">        if (list-&gt;head == old_node) &#123;</span><br><span class="line">            list-&gt;head = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;prev != NULL) &#123;</span><br><span class="line">        node-&gt;prev-&gt;next = node;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;next != NULL) &#123;</span><br><span class="line">        node-&gt;next-&gt;prev = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>after等于1时，在给定old_node节点之后插入，否则在给定节点前插入。</p>
-<h4 id="删除指定节点"><a href="#删除指定节点" class="headerlink" title="删除指定节点"></a>删除指定节点<span id="jump11"></span></h4><p>调用<code>listDelNode</code>， 删除指定节点，时间复杂度为O(1)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">void listDelNode(list *list, listNode *node) &#123;</span><br><span class="line">    if (node-&gt;prev)</span><br><span class="line">        node-&gt;prev-&gt;next = node-&gt;next;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;head = node-&gt;next;</span><br><span class="line">    if (node-&gt;next)</span><br><span class="line">        node-&gt;next-&gt;prev = node-&gt;prev;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;tail = node-&gt;prev;</span><br><span class="line">    if (list-&gt;free) list-&gt;free(node-&gt;value);</span><br><span class="line">    zfree(node);</span><br><span class="line">    list-&gt;len--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="链表迭代器的设计实现"><a href="#链表迭代器的设计实现" class="headerlink" title="链表迭代器的设计实现"></a>链表迭代器的设计实现<span id="jump12"></span></h4><p>定义<code>struct listIter</code>结构体实现链表的迭代器，支持双向迭代。(类似C++容器的begin()和rbegin()操作)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Directions for iterators */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_HEAD 0			<span class="comment">// 正向迭代, head -&gt; tail</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_TAIL 1			<span class="comment">// 反向迭代，tail -&gt; head</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listIter</span> &#123;</span></span><br><span class="line">    listNode *next;</span><br><span class="line">    <span class="type">int</span> direction;	<span class="comment">// 取值有两种，AL_START_HEAD或AL_START_TAIL，支持双向迭代。</span></span><br><span class="line">&#125; listIter;</span><br></pre></td></tr></table></figure>
-
-<p>通过<code>listGetIterator</code>，创建一个正向&#x2F;反向迭代器：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listIter *<span class="title function_">listGetIterator</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> direction)</span> &#123;</span><br><span class="line">    listIter *iter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((iter = zmalloc(<span class="keyword">sizeof</span>(*iter))) == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (direction == AL_START_HEAD)		<span class="comment">// 正向迭代器</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;tail;		<span class="comment">// 反向迭代器</span></span><br><span class="line">    iter-&gt;direction = direction;</span><br><span class="line">    <span class="keyword">return</span> iter;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>重置迭代器, 通过<code>listRewind</code>和<code>listRewindTail</code>方法：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRewind</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    li-&gt;direction = AL_START_HEAD;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listRewindTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    li-&gt;direction = AL_START_TAIL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>通过<code>listNext</code>，访问迭代器中的下一个元素：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listNode *<span class="title function_">listNext</span><span class="params">(listIter *iter)</span> &#123;</span><br><span class="line">    listNode *current = iter-&gt;next;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (current != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (iter-&gt;direction == AL_START_HEAD)</span><br><span class="line">            iter-&gt;next = current-&gt;next;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            iter-&gt;next = current-&gt;prev;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> current;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump13"></span></h4><p>调用<code>listSearchKey</code>，查找指定节点，平均时间复杂度O(N)，N为链表长度。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">listNode *listSearchKey(list *list, void *key) &#123;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    listRewind(list, &amp;iter);</span><br><span class="line">    while((node = listNext(&amp;iter)) != NULL) &#123;</span><br><span class="line">        if (list-&gt;match) &#123;</span><br><span class="line">            if (list-&gt;match(node-&gt;value, key)) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if (key == node-&gt;value) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return NULL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-<h4 id="复制链表"><a href="#复制链表" class="headerlink" title="复制链表"></a>复制链表<span id="jump14"></span></h4><p>调用<code>listDup</code>，复制链表，时间复杂度O(N)，N为链表长度。</p>
-<p><strong>实现技巧分析</strong>：通过迭代器隐藏链表内部实现，简化链表遍历操作；通过dup函数指针，统一了不同类型链表节点的复制流程，实现简洁优雅，值得一学。</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listDup</span><span class="params">(<span class="built_in">list</span> *orig)</span> &#123;</span><br><span class="line">    <span class="built_in">list</span> *copy;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((copy = listCreate()) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    copy-&gt;dup = orig-&gt;dup;</span><br><span class="line">    copy-&gt;<span class="built_in">free</span> = orig-&gt;<span class="built_in">free</span>;</span><br><span class="line">    copy-&gt;match = orig-&gt;match;</span><br><span class="line">    listRewind(orig, &amp;iter);</span><br><span class="line">    <span class="keyword">while</span>((node = listNext(&amp;iter)) != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="type">void</span> *value;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (copy-&gt;dup) &#123;</span><br><span class="line">            value = copy-&gt;dup(node-&gt;value);</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                listRelease(copy);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span></span><br><span class="line">            value = node-&gt;value;</span><br><span class="line">        <span class="keyword">if</span> (listAddNodeTail(copy, value) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            listRelease(copy);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4 id="表头节点移动到表尾"><a href="#表头节点移动到表尾" class="headerlink" title="表头节点移动到表尾"></a>表头节点移动到表尾<span id="jump15"></span></h4><p>通过<code>listRotateHeadToTail</code>，实现表头节点移动到表尾，时间复杂度为O(1)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateHeadToTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    listNode *head = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="comment">/* Detach current head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head = head-&gt;next;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as tail */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = head;</span><br><span class="line">    head-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    head-&gt;prev = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>通过<code>listRotateTailToHead</code>，实现表尾节点移动到表头，时间复杂度为O(1)</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateTailToHead</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Detach current tail */</span></span><br><span class="line">    listNode *tail = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = tail-&gt;prev;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = tail;</span><br><span class="line">    tail-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    tail-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = tail;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第3章 链表</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis学习笔记(一)——简单动态字符串</title>
     <url>/2021/1211202806.html</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Redis是用C语言开发的，但并没有直接使用C语言数组去表示字符串，而是使用简单动态字符串(Simple dynamic String，简称SDS)作为字符串的底层实现。</p>
@@ -3270,6 +3140,136 @@
 <p>【2】<a href="https://blog.huangz.me/diary/2014/how-to-read-redis-source-code.html">如何阅读Redis源码</a></p>
 <p>【3】<a href="https://segmentfault.com/a/1190000017450295">【Redis源码分析】一个对SDSHDR5是否使用的疑问</a></p>
 <p>【4】<a href="https://www.cnblogs.com/davygeek/p/5748852.html">柔性数组</a></p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis学习笔记(二)——链表</title>
+    <url>/2021/1212203239.html</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>链表在Redis中的应用非常广泛，链表是列表键的底层实现之一，发布订阅，慢查询，监视器等功能也用到了链表。</p>
+<p>以下给出Redis中链表相关的一些思考问题，通过源码分析，给出问题的答案，掌握链表的底层实现原理和设计思路。</p>
+<p>源码版本：<a href="https://github.com/redis/redis/releases/tag/6.0.10">Redis 6.0.10</a></p>
+<span id="more"></span>
+
+<h2 id="问题思考"><a href="#问题思考" class="headerlink" title="问题思考"></a>问题思考</h2><p>C语言中如何设计一个通用的泛型链表？</p>
+<ul>
+<li><p><a href="#jump1">Redis中的链表和链表节点的实现</a></p>
+<ul>
+<li><a href="#jump2">节点值的类型是void *，这样设计有什么好处？</a></li>
+<li><a href="#jump3">仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表？</a></li>
+<li><a href="#jump4">为什么用双向链表，不用单链表？</a></li>
+</ul>
+</li>
+<li><p><a href="#jump5">双向链表API实现分析</a></p>
+<ul>
+<li><a href="#jump6">链表创建</a></li>
+<li><a href="#jump7">链表销毁</a></li>
+<li><a href="#jump8">头部插入节点</a></li>
+<li><a href="#jump9">尾部插入节点</a></li>
+<li><a href="#jump10">指定位置前后插入节点</a></li>
+<li><a href="#jump11">删除指定节点</a></li>
+<li><a href="#jump12">链表迭代器的设计实现</a></li>
+<li><a href="#jump13">查找指定节点</a></li>
+<li><a href="#jump14">复制链表</a></li>
+<li><a href="#jump15">表头节点移动到表尾</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="链表和链表节点的实现"><a href="#链表和链表节点的实现" class="headerlink" title="链表和链表节点的实现"></a>链表和链表节点的实现<span id="jump1"></span></h3><p>以REDIS 6.0.10源码为例，链表的实现参考<code>adlist.h</code>, <code>adlist.c</code></p>
+<p>链表节点通过listNode结构体实现，定义如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">void</span> *value;</span><br><span class="line">&#125; listNode;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出这是一个双向链表，value存储节点值，其类型为void *</p>
+<h4 id="节点值的类型为void-，这样设计有什么好处？"><a href="#节点值的类型为void-，这样设计有什么好处？" class="headerlink" title="节点值的类型为void *，这样设计有什么好处？"></a>节点值的类型为void *，这样设计有什么好处？<span id="jump2"></span></h4><p>节点值设置void *类型，目的是实现一个通用的泛型链表，提高代码复用性。（类似C++的STL容器，多态思想）</p>
+<p>考虑实际应用场景中，链表节点值的类型可以是int, float, double等基本类型, 或者是自定义结构体类型，如果简单将value定义为某个具体类型，就只能为每个节点类型定义一个listNodeXX的结构体，同时需额外为每个节点类型新增一套增、删、改、查的API，实现非常繁琐，如下所示：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeInt</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">int</span> value;</span><br><span class="line">&#125; listNodeInt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listNodeDouble</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">listNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="type">double</span> value;</span><br><span class="line">&#125; listNodeDouble;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 增加一个节点到链表头部</span></span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadInt</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> value)</span>;</span><br><span class="line"><span class="built_in">list</span> *<span class="title function_">listAddNodeHeadDouble</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">double</span> value)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>可以看出，这种实现方式的问题在于<strong>代码重复度过高，难以维护，且扩展性差，每支持一个新的节点类型都要新增代码</strong>，这显然是不能接受的。所以节点值类型要设计为void *</p>
+<h4 id="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？"><a href="#仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表-这样设计有什么好处？" class="headerlink" title="仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？"></a>仅使用多个listNode也能组成链表，为什么还要额外用一个list结构去持有链表, 这样设计有什么好处？<span id="jump3"></span></h4><p>Redis中额外使用list结构，用于持有链表，简化操作。list结构体定义如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">list</span> &#123;</span></span><br><span class="line">    listNode *head;</span><br><span class="line">    listNode *tail;</span><br><span class="line">    <span class="type">void</span> *(*dup)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">void</span> (*<span class="built_in">free</span>)(<span class="type">void</span> *ptr);</span><br><span class="line">    <span class="type">int</span> (*match)(<span class="type">void</span> *ptr, <span class="type">void</span> *key);</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">&#125; <span class="built_in">list</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>head, tail用于记录表头指针和表尾指针，好处是获取表头节点或表尾节点的时间复杂度为O(1)</p>
+</li>
+<li><p>len类型用于记录链表长度， 好处是获取链表节点总数的时间复杂度为O(1)</p>
+</li>
+<li><p>dup, free, match成员用于实现多态链表，对于不同类型的节点，挂接不同的函数钩子，设置特定的复制、释放、比较操作。</p>
+<ul>
+<li>dup函数用于复制节点值</li>
+<li>free函数用于释放节点值</li>
+<li>match函数用于比较两个节点值是否相等</li>
+</ul>
+</li>
+</ul>
+<p><strong>举例</strong>：一个长度为2的双向链表示意图：<br><img data-src="/2021/1212203239/image1.png"></p>
+<h3 id="为什么用双向链表，不用单链表？"><a href="#为什么用双向链表，不用单链表？" class="headerlink" title="为什么用双向链表，不用单链表？"></a>为什么用双向链表，不用单链表？<span id="jump4"></span></h3><p>双向链表相较于单链表，有如下优点：</p>
+<ul>
+<li>支持双向查找节点，且查找给定节点的前驱节点的时间复杂度为O(1)</li>
+<li>尾部插入节点快，时间复杂度为O(1)</li>
+</ul>
+<h3 id="双向链表API实现分析"><a href="#双向链表API实现分析" class="headerlink" title="双向链表API实现分析"></a>双向链表API实现分析<span id="jump5"></span></h3><h4 id="链表创建"><a href="#链表创建" class="headerlink" title="链表创建"></a>链表创建<span id="jump6"></span></h4><p>调用<code>listCreate</code>，创建一个空的双向链表，时间复杂度O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listCreate</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">list</span> *<span class="title">list</span>;</span></span><br><span class="line">    <span class="keyword">if</span> ((<span class="built_in">list</span> = zmalloc(<span class="keyword">sizeof</span>(*<span class="built_in">list</span>))) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;dup = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;<span class="built_in">free</span> = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;match = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">list</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="链表销毁"><a href="#链表销毁" class="headerlink" title="链表销毁"></a>链表销毁<span id="jump7"></span></h4><p>调用<code>listRelease</code>，释放链表，时间复杂度O(N)，N为链表长度</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRelease</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    listEmpty(<span class="built_in">list</span>);</span><br><span class="line">    zfree(<span class="built_in">list</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listEmpty</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">long</span> len;</span><br><span class="line">    listNode *current, *next;</span><br><span class="line"></span><br><span class="line">    current = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    len = <span class="built_in">list</span>-&gt;len;</span><br><span class="line">    <span class="keyword">while</span>(len--) &#123;</span><br><span class="line">        next = current-&gt;next;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">list</span>-&gt;<span class="built_in">free</span>) <span class="built_in">list</span>-&gt;<span class="built_in">free</span>(current-&gt;value);	<span class="comment">// 不同的节点类型，挂接不同的free函数钩子，实现多态链表的释放操作。</span></span><br><span class="line">        zfree(current);</span><br><span class="line">        current = next;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = <span class="built_in">list</span>-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="built_in">list</span>-&gt;len = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="头部插入节点"><a href="#头部插入节点" class="headerlink" title="头部插入节点"></a>头部插入节点<span id="jump8"></span></h4><p>调用<code>listAddNodeHead</code>，在链表头部插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeHead(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = NULL;</span><br><span class="line">        node-&gt;next = list-&gt;head;</span><br><span class="line">        list-&gt;head-&gt;prev = node;</span><br><span class="line">        list-&gt;head = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="尾部插入节点"><a href="#尾部插入节点" class="headerlink" title="尾部插入节点"></a>尾部插入节点<span id="jump9"></span></h4><p>调用<code>listAddNodeTail</code>, 在链表尾部插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listAddNodeTail(list *list, void *value) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (list-&gt;len == 0) &#123;</span><br><span class="line">        list-&gt;head = list-&gt;tail = node;</span><br><span class="line">        node-&gt;prev = node-&gt;next = NULL;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;prev = list-&gt;tail;</span><br><span class="line">        node-&gt;next = NULL;</span><br><span class="line">        list-&gt;tail-&gt;next = node;</span><br><span class="line">        list-&gt;tail = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="指定位置前后插入节点"><a href="#指定位置前后插入节点" class="headerlink" title="指定位置前后插入节点"></a>指定位置前后插入节点<span id="jump10"></span></h4><p>调用<code>listInsertNode</code>，在指定位置之前或之后插入节点，时间复杂度O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">list *listInsertNode(list *list, listNode *old_node, void *value, int after) &#123;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    if ((node = zmalloc(sizeof(*node))) == NULL)</span><br><span class="line">        return NULL;</span><br><span class="line">    node-&gt;value = value;</span><br><span class="line">    if (after) &#123;</span><br><span class="line">        node-&gt;prev = old_node;</span><br><span class="line">        node-&gt;next = old_node-&gt;next;</span><br><span class="line">        if (list-&gt;tail == old_node) &#123;</span><br><span class="line">            list-&gt;tail = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        node-&gt;next = old_node;</span><br><span class="line">        node-&gt;prev = old_node-&gt;prev;</span><br><span class="line">        if (list-&gt;head == old_node) &#123;</span><br><span class="line">            list-&gt;head = node;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;prev != NULL) &#123;</span><br><span class="line">        node-&gt;prev-&gt;next = node;</span><br><span class="line">    &#125;</span><br><span class="line">    if (node-&gt;next != NULL) &#123;</span><br><span class="line">        node-&gt;next-&gt;prev = node;</span><br><span class="line">    &#125;</span><br><span class="line">    list-&gt;len++;</span><br><span class="line">    return list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>after等于1时，在给定old_node节点之后插入，否则在给定节点前插入。</p>
+<h4 id="删除指定节点"><a href="#删除指定节点" class="headerlink" title="删除指定节点"></a>删除指定节点<span id="jump11"></span></h4><p>调用<code>listDelNode</code>， 删除指定节点，时间复杂度为O(1)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">void listDelNode(list *list, listNode *node) &#123;</span><br><span class="line">    if (node-&gt;prev)</span><br><span class="line">        node-&gt;prev-&gt;next = node-&gt;next;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;head = node-&gt;next;</span><br><span class="line">    if (node-&gt;next)</span><br><span class="line">        node-&gt;next-&gt;prev = node-&gt;prev;</span><br><span class="line">    else</span><br><span class="line">        list-&gt;tail = node-&gt;prev;</span><br><span class="line">    if (list-&gt;free) list-&gt;free(node-&gt;value);</span><br><span class="line">    zfree(node);</span><br><span class="line">    list-&gt;len--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="链表迭代器的设计实现"><a href="#链表迭代器的设计实现" class="headerlink" title="链表迭代器的设计实现"></a>链表迭代器的设计实现<span id="jump12"></span></h4><p>定义<code>struct listIter</code>结构体实现链表的迭代器，支持双向迭代。(类似C++容器的begin()和rbegin()操作)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/* Directions for iterators */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_HEAD 0			<span class="comment">// 正向迭代, head -&gt; tail</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> AL_START_TAIL 1			<span class="comment">// 反向迭代，tail -&gt; head</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">listIter</span> &#123;</span></span><br><span class="line">    listNode *next;</span><br><span class="line">    <span class="type">int</span> direction;	<span class="comment">// 取值有两种，AL_START_HEAD或AL_START_TAIL，支持双向迭代。</span></span><br><span class="line">&#125; listIter;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listGetIterator</code>，创建一个正向&#x2F;反向迭代器：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listIter *<span class="title function_">listGetIterator</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, <span class="type">int</span> direction)</span> &#123;</span><br><span class="line">    listIter *iter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((iter = zmalloc(<span class="keyword">sizeof</span>(*iter))) == <span class="literal">NULL</span>) <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span> (direction == AL_START_HEAD)		<span class="comment">// 正向迭代器</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        iter-&gt;next = <span class="built_in">list</span>-&gt;tail;		<span class="comment">// 反向迭代器</span></span><br><span class="line">    iter-&gt;direction = direction;</span><br><span class="line">    <span class="keyword">return</span> iter;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>重置迭代器, 通过<code>listRewind</code>和<code>listRewindTail</code>方法：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRewind</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    li-&gt;direction = AL_START_HEAD;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">listRewindTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>, listIter *li)</span> &#123;</span><br><span class="line">    li-&gt;next = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    li-&gt;direction = AL_START_TAIL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listNext</code>，访问迭代器中的下一个元素：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">listNode *<span class="title function_">listNext</span><span class="params">(listIter *iter)</span> &#123;</span><br><span class="line">    listNode *current = iter-&gt;next;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (current != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (iter-&gt;direction == AL_START_HEAD)</span><br><span class="line">            iter-&gt;next = current-&gt;next;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            iter-&gt;next = current-&gt;prev;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> current;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="查找指定节点"><a href="#查找指定节点" class="headerlink" title="查找指定节点"></a>查找指定节点<span id="jump13"></span></h4><p>调用<code>listSearchKey</code>，查找指定节点，平均时间复杂度O(N)，N为链表长度。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">listNode *listSearchKey(list *list, void *key) &#123;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    listRewind(list, &amp;iter);</span><br><span class="line">    while((node = listNext(&amp;iter)) != NULL) &#123;</span><br><span class="line">        if (list-&gt;match) &#123;</span><br><span class="line">            if (list-&gt;match(node-&gt;value, key)) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            if (key == node-&gt;value) &#123;</span><br><span class="line">                return node;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return NULL;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="复制链表"><a href="#复制链表" class="headerlink" title="复制链表"></a>复制链表<span id="jump14"></span></h4><p>调用<code>listDup</code>，复制链表，时间复杂度O(N)，N为链表长度。</p>
+<p><strong>实现技巧分析</strong>：通过迭代器隐藏链表内部实现，简化链表遍历操作；通过dup函数指针，统一了不同类型链表节点的复制流程，实现简洁优雅，值得一学。</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="built_in">list</span> *<span class="title function_">listDup</span><span class="params">(<span class="built_in">list</span> *orig)</span> &#123;</span><br><span class="line">    <span class="built_in">list</span> *copy;</span><br><span class="line">    listIter iter;</span><br><span class="line">    listNode *node;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((copy = listCreate()) == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    copy-&gt;dup = orig-&gt;dup;</span><br><span class="line">    copy-&gt;<span class="built_in">free</span> = orig-&gt;<span class="built_in">free</span>;</span><br><span class="line">    copy-&gt;match = orig-&gt;match;</span><br><span class="line">    listRewind(orig, &amp;iter);</span><br><span class="line">    <span class="keyword">while</span>((node = listNext(&amp;iter)) != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="type">void</span> *value;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (copy-&gt;dup) &#123;</span><br><span class="line">            value = copy-&gt;dup(node-&gt;value);</span><br><span class="line">            <span class="keyword">if</span> (value == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                listRelease(copy);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span></span><br><span class="line">            value = node-&gt;value;</span><br><span class="line">        <span class="keyword">if</span> (listAddNodeTail(copy, value) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            listRelease(copy);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="表头节点移动到表尾"><a href="#表头节点移动到表尾" class="headerlink" title="表头节点移动到表尾"></a>表头节点移动到表尾<span id="jump15"></span></h4><p>通过<code>listRotateHeadToTail</code>，实现表头节点移动到表尾，时间复杂度为O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateHeadToTail</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    listNode *head = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="comment">/* Detach current head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head = head-&gt;next;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as tail */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = head;</span><br><span class="line">    head-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    head-&gt;prev = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = head;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>listRotateTailToHead</code>，实现表尾节点移动到表头，时间复杂度为O(1)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">listRotateTailToHead</span><span class="params">(<span class="built_in">list</span> *<span class="built_in">list</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (listLength(<span class="built_in">list</span>) &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Detach current tail */</span></span><br><span class="line">    listNode *tail = <span class="built_in">list</span>-&gt;tail;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail = tail-&gt;prev;</span><br><span class="line">    <span class="built_in">list</span>-&gt;tail-&gt;next = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* Move it as head */</span></span><br><span class="line">    <span class="built_in">list</span>-&gt;head-&gt;prev = tail;</span><br><span class="line">    tail-&gt;prev = <span class="literal">NULL</span>;</span><br><span class="line">    tail-&gt;next = <span class="built_in">list</span>-&gt;head;</span><br><span class="line">    <span class="built_in">list</span>-&gt;head = tail;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】《Redis设计与实现》 第3章 链表</p>
 ]]></content>
       <categories>
         <category>Redis</category>
@@ -5862,6 +5862,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/0421203823.html</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
+<span id="more"></span>
+<p><img data-src="/2024/0421203823/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img data-src="/2024/0421203823/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>投资组合中是否应该包括黄金</title>
     <url>/2024/0413202714.html</url>
     <content><![CDATA[<p>最近有朋友问我，你对黄金怎么看？现在可以买黄金吗？</p>
@@ -5892,25 +5911,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>如何设置止损和止盈？</li>
 </ul>
 <p>只有事先想清楚这些问题，谋定而后动，才能做出理性的投资决策。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
-    <url>/2024/0421203823.html</url>
-    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
-<span id="more"></span>
-<p><img data-src="/2024/0421203823/image1.png"></p>
-<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
-<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
-<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
-<p><img data-src="/2024/0421203823/image2.png"></p>
-<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
 ]]></content>
       <categories>
         <category>investment</category>
@@ -6425,22 +6425,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>awk 删除第一行并提取第一列</title>
-    <url>/2024/0820194607.html</url>
-    <content><![CDATA[<p>例：用kubectl获取某个namespace下的所有pod</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod</span><br><span class="line">NAME                                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-64c6478b6c-wz58l                   1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-node-xq2hw                          1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2   1/1     Running   1 (32h ago)   15d</span><br><span class="line">metrics-server-679c5f986d-p5pcc            1/1     Running   0             32h</span><br></pre></td></tr></table></figure>
-
-<p>使用awk删除第一行并提取第一列，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod | awk &#x27;NR &gt; 1 &#123;print $1&#125;&#x27;</span><br><span class="line">coredns-64c6478b6c-wz58l</span><br><span class="line">calico-node-xq2hw</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2</span><br><span class="line">metrics-server-679c5f986d-p5pcc</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>awk</category>
-      </categories>
-      <tags>
-        <tag>awk</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何查看Squid的DNS缓存</title>
     <url>/2024/0820194846.html</url>
     <content><![CDATA[<p>使用<code>squidclient mgr:ipcache</code>命令查看Squid的DNS缓存记录<br>如果squid端口不是3128, 需要指定端口号, <code>squidclient -p &#123;port&#125; mgr:ipcache</code></p>
@@ -6457,6 +6441,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>awk 删除第一行并提取第一列</title>
+    <url>/2024/0820194607.html</url>
+    <content><![CDATA[<p>例：用kubectl获取某个namespace下的所有pod</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod</span><br><span class="line">NAME                                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-64c6478b6c-wz58l                   1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-node-xq2hw                          1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2   1/1     Running   1 (32h ago)   15d</span><br><span class="line">metrics-server-679c5f986d-p5pcc            1/1     Running   0             32h</span><br></pre></td></tr></table></figure>
+
+<p>使用awk删除第一行并提取第一列，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod | awk &#x27;NR &gt; 1 &#123;print $1&#125;&#x27;</span><br><span class="line">coredns-64c6478b6c-wz58l</span><br><span class="line">calico-node-xq2hw</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2</span><br><span class="line">metrics-server-679c5f986d-p5pcc</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>awk</category>
+      </categories>
+      <tags>
+        <tag>awk</tag>
       </tags>
   </entry>
   <entry>
@@ -8305,39 +8305,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Docker安装教程</title>
-    <url>/2024/1017195632.html</url>
-    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
-
-<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
-
-<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
-
-<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
-
-<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
-<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
-
-<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -9062,6 +9029,56 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Docker安装教程</title>
+    <url>/2024/1017195632.html</url>
+    <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动docker"><a href="#启动docker" class="headerlink" title="启动docker"></a>启动docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="查看docker版本"><a href="#查看docker版本" class="headerlink" title="查看docker版本"></a>查看docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+
+<h2 id="下载镜像"><a href="#下载镜像" class="headerlink" title="下载镜像"></a>下载镜像</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+
+<h1 id="在Centos7上安装Docker"><a href="#在Centos7上安装Docker" class="headerlink" title="在Centos7上安装Docker"></a>在Centos7上安装Docker</h1><h2 id="移除旧版本Docker"><a href="#移除旧版本Docker" class="headerlink" title="移除旧版本Docker"></a>移除旧版本Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+
+<h2 id="添加Docker存储库"><a href="#添加Docker存储库" class="headerlink" title="添加Docker存储库"></a>添加Docker存储库</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动Docker服务"><a href="#启动Docker服务" class="headerlink" title="启动Docker服务"></a>启动Docker服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="查看Docker版本"><a href="#查看Docker版本" class="headerlink" title="查看Docker版本"></a>查看Docker版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>华宝添益(511990)折价套利记录</title>
+    <url>/2024/1026131638.html</url>
+    <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
+<h2 id="折价套利流程"><a href="#折价套利流程" class="headerlink" title="折价套利流程"></a>折价套利流程</h2><p>T日买入 -&gt; T日享有收益 -&gt; T日赎回 -&gt; T+1日无收益 -&gt; T+2日资金可用<br>例如：在周五买入华宝添益再立即赎回，可以获得周五，周六，周日共三天利息，下周二资金可用。</p>
+<span id="more"></span>
+
+<h2 id="实战记录"><a href="#实战记录" class="headerlink" title="实战记录"></a>实战记录</h2><p>9月30号当天A股疯涨，一些资金卖出华宝添益去追涨股票，导致华宝添益以99.920的价格低开，当天最低价居然只有99.72<br><img data-src="/2024/1026131638/image1.png"><br>假设9月30号以99.72价格买入再立即赎回，10月9号资金可用，资金占用9天，计8天利息，万元收益0.37, 折价套利的年化收益率：(100+0.0037*8-99.72)&#x2F;99.72&#x2F;9*365 &#x3D; 12.5%</p>
+<p>这个收益率还是很诱人的，自然是要搞它一把。不过30号开盘那会我正巧有事处理，没能抄到最低，最终以99.899的价格成交了7手。<br><img data-src="/2024/1026131638/image2.png"><br>计算一下9天收益约(100.0296-99.899)*700&#x3D;91.42，相当于年化5.3%，还可以。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL8.0如何重置密码</title>
     <url>/2024/1017202436.html</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
@@ -9088,23 +9105,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>华宝添益(511990)折价套利记录</title>
-    <url>/2024/1026131638.html</url>
-    <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
-<h2 id="折价套利流程"><a href="#折价套利流程" class="headerlink" title="折价套利流程"></a>折价套利流程</h2><p>T日买入 -&gt; T日享有收益 -&gt; T日赎回 -&gt; T+1日无收益 -&gt; T+2日资金可用<br>例如：在周五买入华宝添益再立即赎回，可以获得周五，周六，周日共三天利息，下周二资金可用。</p>
-<span id="more"></span>
-
-<h2 id="实战记录"><a href="#实战记录" class="headerlink" title="实战记录"></a>实战记录</h2><p>9月30号当天A股疯涨，一些资金卖出华宝添益去追涨股票，导致华宝添益以99.920的价格低开，当天最低价居然只有99.72<br><img data-src="/2024/1026131638/image1.png"><br>假设9月30号以99.72价格买入再立即赎回，10月9号资金可用，资金占用9天，计8天利息，万元收益0.37, 折价套利的年化收益率：(100+0.0037*8-99.72)&#x2F;99.72&#x2F;9*365 &#x3D; 12.5%</p>
-<p>这个收益率还是很诱人的，自然是要搞它一把。不过30号开盘那会我正巧有事处理，没能抄到最低，最终以99.899的价格成交了7手。<br><img data-src="/2024/1026131638/image2.png"><br>计算一下9天收益约(100.0296-99.899)*700&#x3D;91.42，相当于年化5.3%，还可以。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -9398,34 +9398,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>快速安装Nginx</title>
-    <url>/2024/1109163902.html</url>
-    <content><![CDATA[<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><p>OS: RockyLinux 9.4</p>
-<h2 id="查看Nginx版本"><a href="#查看Nginx版本" class="headerlink" title="查看Nginx版本"></a>查看Nginx版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># yum list | grep nginx</span><br><span class="line">nginx.x86_64                                         1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-all-modules.noarch                             1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-core.x86_64                                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-filesystem.noarch                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-image-filter.x86_64                   1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-perl.x86_64                           1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-xslt-filter.x86_64                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-mail.x86_64                                1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-stream.x86_64                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">pcp-pmda-nginx.x86_64                                6.2.0-5.el9_4                       appstream</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="通过yum安装Nginx"><a href="#通过yum安装Nginx" class="headerlink" title="通过yum安装Nginx"></a>通过yum安装Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y nginx</span><br></pre></td></tr></table></figure>
-<p>安装成功后，查看Nginx版本信息</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nginx -v</span><br><span class="line">nginx version: nginx/1.20.1</span><br></pre></td></tr></table></figure>
-<h2 id="查看Nginx的安装路径-主程序，配置文件的路径"><a href="#查看Nginx的安装路径-主程序，配置文件的路径" class="headerlink" title="查看Nginx的安装路径(主程序，配置文件的路径)"></a>查看Nginx的安装路径(主程序，配置文件的路径)</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rpm -qpl nginx</span><br><span class="line">/usr/bin/nginx-upgrade</span><br><span class="line">/usr/lib/systemd/system/nginx.service</span><br><span class="line">/usr/share/man/man8/nginx.8.gz</span><br><span class="line">/usr/share/nginx/html/index.html</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line"># rpm -ql nginx-core</span><br><span class="line">/etc/logrotate.d/nginx</span><br><span class="line">/etc/nginx/nginx.conf</span><br><span class="line">/usr/lib64/nginx/modules</span><br><span class="line">/usr/sbin/nginx</span><br><span class="line">/var/lib/nginx</span><br><span class="line">/var/log/nginx</span><br><span class="line">/var/log/nginx/access.log</span><br><span class="line">/var/log/nginx/error.log</span><br><span class="line">.....</span><br></pre></td></tr></table></figure>
-<p>注:</p>
-<ul>
-<li>&#x2F;etc&#x2F;nginx&#x2F; Nginx配置文件路径</li>
-<li>&#x2F;usr&#x2F;share&#x2F;nginx&#x2F;html&#x2F; 通常把静态文件放这里</li>
-</ul>
-<h2 id="运行Nginx"><a href="#运行Nginx" class="headerlink" title="运行Nginx"></a>运行Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl stop firewalld 	# 先关闭防火墙</span><br><span class="line">systemctl start nginx		# 启动Nginx</span><br><span class="line"></span><br><span class="line">ss -antp | grep nginx		# 查看80端口已经LISTEN</span><br><span class="line">LISTEN    0      511           0.0.0.0:80           0.0.0.0:*</span><br><span class="line">LISTEN    0      511              [::]:80              [::]:*</span><br></pre></td></tr></table></figure>
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p><code>curl http://&#123;your_ip&#125;:80</code> 返回200 OK, 或者你在浏览器里访问IP能看到Nginx页面说明成功</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.nginx.org.cn/article/detail/545">https://www.nginx.org.cn/article/detail/545</a></p>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-      <tags>
-        <tag>Nginx</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Nginx入门</title>
     <url>/2024/1109151034.html</url>
     <content><![CDATA[<h1 id="Nginx简介"><a href="#Nginx简介" class="headerlink" title="Nginx简介"></a>Nginx简介</h1><p>高性能的web服务器, 反向代理服务器, 负载均衡器, HTTP缓存</p>
@@ -9499,6 +9471,34 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>tcp_max_tw_buckets: 表示OS允许TIME_WAIT套接字数量的最大值, 如果超过这个数字, TIME_WAIT被立刻清除并打印告警, 过多的TIME_WAIT会导致Web服务器变慢</li>
 <li>tcp_syncookies: 解决TCP的SYN攻击<br><a href="https://juejin.cn/post/6844904144235413512">https://juejin.cn/post/6844904144235413512</a></li>
 </ul>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>快速安装Nginx</title>
+    <url>/2024/1109163902.html</url>
+    <content><![CDATA[<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><p>OS: RockyLinux 9.4</p>
+<h2 id="查看Nginx版本"><a href="#查看Nginx版本" class="headerlink" title="查看Nginx版本"></a>查看Nginx版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># yum list | grep nginx</span><br><span class="line">nginx.x86_64                                         1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-all-modules.noarch                             1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-core.x86_64                                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-filesystem.noarch                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-image-filter.x86_64                   1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-perl.x86_64                           1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-xslt-filter.x86_64                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-mail.x86_64                                1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-stream.x86_64                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">pcp-pmda-nginx.x86_64                                6.2.0-5.el9_4                       appstream</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="通过yum安装Nginx"><a href="#通过yum安装Nginx" class="headerlink" title="通过yum安装Nginx"></a>通过yum安装Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y nginx</span><br></pre></td></tr></table></figure>
+<p>安装成功后，查看Nginx版本信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nginx -v</span><br><span class="line">nginx version: nginx/1.20.1</span><br></pre></td></tr></table></figure>
+<h2 id="查看Nginx的安装路径-主程序，配置文件的路径"><a href="#查看Nginx的安装路径-主程序，配置文件的路径" class="headerlink" title="查看Nginx的安装路径(主程序，配置文件的路径)"></a>查看Nginx的安装路径(主程序，配置文件的路径)</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rpm -qpl nginx</span><br><span class="line">/usr/bin/nginx-upgrade</span><br><span class="line">/usr/lib/systemd/system/nginx.service</span><br><span class="line">/usr/share/man/man8/nginx.8.gz</span><br><span class="line">/usr/share/nginx/html/index.html</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line"># rpm -ql nginx-core</span><br><span class="line">/etc/logrotate.d/nginx</span><br><span class="line">/etc/nginx/nginx.conf</span><br><span class="line">/usr/lib64/nginx/modules</span><br><span class="line">/usr/sbin/nginx</span><br><span class="line">/var/lib/nginx</span><br><span class="line">/var/log/nginx</span><br><span class="line">/var/log/nginx/access.log</span><br><span class="line">/var/log/nginx/error.log</span><br><span class="line">.....</span><br></pre></td></tr></table></figure>
+<p>注:</p>
+<ul>
+<li>&#x2F;etc&#x2F;nginx&#x2F; Nginx配置文件路径</li>
+<li>&#x2F;usr&#x2F;share&#x2F;nginx&#x2F;html&#x2F; 通常把静态文件放这里</li>
+</ul>
+<h2 id="运行Nginx"><a href="#运行Nginx" class="headerlink" title="运行Nginx"></a>运行Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl stop firewalld 	# 先关闭防火墙</span><br><span class="line">systemctl start nginx		# 启动Nginx</span><br><span class="line"></span><br><span class="line">ss -antp | grep nginx		# 查看80端口已经LISTEN</span><br><span class="line">LISTEN    0      511           0.0.0.0:80           0.0.0.0:*</span><br><span class="line">LISTEN    0      511              [::]:80              [::]:*</span><br></pre></td></tr></table></figure>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p><code>curl http://&#123;your_ip&#125;:80</code> 返回200 OK, 或者你在浏览器里访问IP能看到Nginx页面说明成功</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.nginx.org.cn/article/detail/545">https://www.nginx.org.cn/article/detail/545</a></p>
 ]]></content>
       <categories>
         <category>Nginx</category>
@@ -9656,6 +9656,32 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Nginx文件下载服务器搭建</title>
+    <url>/2024/1117153133.html</url>
+    <content><![CDATA[<h1 id="Nginx文件下载服务器搭建"><a href="#Nginx文件下载服务器搭建" class="headerlink" title="Nginx文件下载服务器搭建"></a>Nginx文件下载服务器搭建</h1><p>80端口启动下载服务器, 下载<code>/var/www/downloads</code>目录下的文件，<code>nginx.conf</code>如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    location /downloads/ &#123;</span><br><span class="line">        root /var/www/downloads;</span><br><span class="line">        autoindex on; # 显示目录</span><br><span class="line">        autoindex_localtime on;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>浏览器中访问，可以查到文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://192.168.52.200/</span><br><span class="line">Index of /</span><br><span class="line">../</span><br><span class="line">1.txt     17-Nov-2024 14:52      0</span><br><span class="line">2.txt     13-Nov-2024 21:44      0</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h2 id="添加登录认证"><a href="#添加登录认证" class="headerlink" title="添加登录认证"></a>添加登录认证</h2><p>有时我们需要对用户身份进行认证。这里采用basic认证, 方法如下:<br/><br>先生成密码文件，用户名admin, 密码123456</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo -n &quot;admin:&quot; &gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">openssl passwd &gt;&gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line"># 输入密码123456</span><br></pre></td></tr></table></figure>
+<p>查看密码文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">admin:$1$6ptGV8Fm$781jZKRgxV8wB.HtyTSdk.</span><br></pre></td></tr></table></figure>
+<p>修改nginx.conf，添加auth配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line"></span><br><span class="line">    auth_basic &quot;Restricted site&quot;;</span><br><span class="line">    auth_basic_user_file /etc/nginx/conf.d/.nginx_http_passwd;</span><br><span class="line">    # ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重启Nginx，通过浏览器测试，此时会要求用户输入用户名和密码。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html">https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Nginx负载均衡示例</title>
     <url>/2024/1117165553.html</url>
     <content><![CDATA[<h1 id="什么是负载均衡"><a href="#什么是负载均衡" class="headerlink" title="什么是负载均衡"></a>什么是负载均衡</h1><p>负载均衡是一种网络流量分配技术, 其核心目的是将大量网络请求均匀分配到多个服务器，提高网络服务的可靠性。有如下作用：</p>
@@ -9752,32 +9778,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>fair根据后端服务器响应时间选择, 会造成网络倾斜，单纯用fair也不多见</li>
 <li>url_hash也不常用，不能做到维持会话。比如客户注册和客户登录的URL是不同的，通过哈希算法会转发到不同的服务器</li>
 </ul>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-      <tags>
-        <tag>Nginx</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Nginx文件下载服务器搭建</title>
-    <url>/2024/1117153133.html</url>
-    <content><![CDATA[<h1 id="Nginx文件下载服务器搭建"><a href="#Nginx文件下载服务器搭建" class="headerlink" title="Nginx文件下载服务器搭建"></a>Nginx文件下载服务器搭建</h1><p>80端口启动下载服务器, 下载<code>/var/www/downloads</code>目录下的文件，<code>nginx.conf</code>如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    location /downloads/ &#123;</span><br><span class="line">        root /var/www/downloads;</span><br><span class="line">        autoindex on; # 显示目录</span><br><span class="line">        autoindex_localtime on;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>浏览器中访问，可以查到文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://192.168.52.200/</span><br><span class="line">Index of /</span><br><span class="line">../</span><br><span class="line">1.txt     17-Nov-2024 14:52      0</span><br><span class="line">2.txt     13-Nov-2024 21:44      0</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<h2 id="添加登录认证"><a href="#添加登录认证" class="headerlink" title="添加登录认证"></a>添加登录认证</h2><p>有时我们需要对用户身份进行认证。这里采用basic认证, 方法如下:<br/><br>先生成密码文件，用户名admin, 密码123456</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo -n &quot;admin:&quot; &gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">openssl passwd &gt;&gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line"># 输入密码123456</span><br></pre></td></tr></table></figure>
-<p>查看密码文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">admin:$1$6ptGV8Fm$781jZKRgxV8wB.HtyTSdk.</span><br></pre></td></tr></table></figure>
-<p>修改nginx.conf，添加auth配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line"></span><br><span class="line">    auth_basic &quot;Restricted site&quot;;</span><br><span class="line">    auth_basic_user_file /etc/nginx/conf.d/.nginx_http_passwd;</span><br><span class="line">    # ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>重启Nginx，通过浏览器测试，此时会要求用户输入用户名和密码。</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html">https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html</a></p>
 ]]></content>
       <categories>
         <category>Nginx</category>
@@ -10831,8 +10831,9 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>一台RockyLinux 9, 用于运行k8s, 部署Squid</li>
 </ul>
 <h1 id="1-在Docker环境中运行Squid-准备Squid镜像"><a href="#1-在Docker环境中运行Squid-准备Squid镜像" class="headerlink" title="1. 在Docker环境中运行Squid, 准备Squid镜像"></a>1. 在Docker环境中运行Squid, 准备Squid镜像</h1><h2 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h2><p>参考: <a href="https://blog.csdn.net/pcj_888/article/details/143018460">安装Docker</a></p>
-<h2 id="准备Squid主配置文件squid-conf"><a href="#准备Squid主配置文件squid-conf" class="headerlink" title="准备Squid主配置文件squid.conf"></a>准备Squid主配置文件squid.conf</h2><p>我是基于rocky9.3的镜像, 通过yum install方式安装Squid, 默认主配置文件路径在容器中的<code>/etc/squid/squid.conf</code><br>使用默认的squid.conf, 无法在容器中正常启动Squid。 需要额外添加如下配置，从而以squid普通用户启动</p>
 <span id="more"></span>
+
+<h2 id="准备Squid主配置文件squid-conf"><a href="#准备Squid主配置文件squid-conf" class="headerlink" title="准备Squid主配置文件squid.conf"></a>准备Squid主配置文件squid.conf</h2><p>我是基于rocky9.3的镜像, 通过yum install方式安装Squid, 默认主配置文件路径在容器中的<code>/etc/squid/squid.conf</code><br>使用默认的squid.conf, 无法在容器中正常启动Squid。 需要额外添加如下配置，从而以squid普通用户启动</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
 <p>你可以在rocky9.3的容器里装一个squid，把<code>/etc/squid/squid.conf</code>拷出来，再添加以上配置即可; 或者直接使用如下的squid.conf</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#</span><br><span class="line"># Recommended minimum configuration:</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line"># Example rule allowing access from your local networks.</span><br><span class="line"># Adapt to list your (internal) IP networks from where browsing</span><br><span class="line"># should be allowed</span><br><span class="line">acl localnet src 0.0.0.1-0.255.255.255  # RFC 1122 &quot;this&quot; network (LAN)</span><br><span class="line">acl localnet src 10.0.0.0/8     # RFC 1918 local private network (LAN)</span><br><span class="line">acl localnet src 100.64.0.0/10      # RFC 6598 shared address space (CGN)</span><br><span class="line">acl localnet src 169.254.0.0/16     # RFC 3927 link-local (directly plugged) machines</span><br><span class="line">acl localnet src 172.16.0.0/12      # RFC 1918 local private network (LAN)</span><br><span class="line">acl localnet src 192.168.0.0/16     # RFC 1918 local private network (LAN)</span><br><span class="line">acl localnet src fc00::/7           # RFC 4193 local private network range</span><br><span class="line">acl localnet src fe80::/10          # RFC 4291 link-local (directly plugged) machines</span><br><span class="line"></span><br><span class="line">acl SSL_ports port 443</span><br><span class="line">acl Safe_ports port 80      # http</span><br><span class="line">acl Safe_ports port 21      # ftp</span><br><span class="line">acl Safe_ports port 443     # https</span><br><span class="line">acl Safe_ports port 70      # gopher</span><br><span class="line">acl Safe_ports port 210     # wais</span><br><span class="line">acl Safe_ports port 1025-65535  # unregistered ports</span><br><span class="line">acl Safe_ports port 280     # http-mgmt</span><br><span class="line">acl Safe_ports port 488     # gss-http</span><br><span class="line">acl Safe_ports port 591     # filemaker</span><br><span class="line">acl Safe_ports port 777     # multiling http</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Recommended minimum Access Permission configuration:</span><br><span class="line">#</span><br><span class="line"># Deny requests to certain unsafe ports</span><br><span class="line">http_access deny !Safe_ports</span><br><span class="line"></span><br><span class="line"># Deny CONNECT to other than secure SSL ports</span><br><span class="line">http_access deny CONNECT !SSL_ports</span><br><span class="line"></span><br><span class="line"># Only allow cachemgr access from localhost</span><br><span class="line">http_access allow localhost manager</span><br><span class="line">http_access deny manager</span><br><span class="line"></span><br><span class="line"># We strongly recommend the following be uncommented to protect innocent</span><br><span class="line"># web applications running on the proxy server who think the only</span><br><span class="line"># one who can access services on &quot;localhost&quot; is a local user</span><br><span class="line">#http_access deny to_localhost</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># INSERT YOUR OWN RULE(S) HERE TO ALLOW ACCESS FROM YOUR CLIENTS</span><br><span class="line">#</span><br><span class="line"></span><br><span class="line"># Example rule allowing access from your local networks.</span><br><span class="line"># Adapt localnet in the ACL section to list your (internal) IP networks</span><br><span class="line"># from where browsing should be allowed</span><br><span class="line">http_access allow localnet</span><br><span class="line">http_access allow localhost</span><br><span class="line"></span><br><span class="line"># And finally deny all other access to this proxy</span><br><span class="line">http_access deny all</span><br><span class="line"></span><br><span class="line"># Squid normally listens to port 3128</span><br><span class="line">http_port 3128</span><br><span class="line"></span><br><span class="line"># Uncomment and adjust the following to add a disk cache directory.</span><br><span class="line">#cache_dir ufs /var/spool/squid 100 16 256</span><br><span class="line"></span><br><span class="line"># Leave coredumps in the first cache dir</span><br><span class="line">coredump_dir /var/spool/squid</span><br><span class="line"></span><br><span class="line">#</span><br><span class="line"># Add any of your own refresh_pattern entries above these.</span><br><span class="line">#</span><br><span class="line">refresh_pattern ^ftp:       1440    20% 10080</span><br><span class="line">refresh_pattern -i (/cgi-bin/|\?) 0 0%  0</span><br><span class="line">refresh_pattern .       0   20% 4320</span><br><span class="line"></span><br><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
@@ -11080,5 +11081,53 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>troubleshooting</tag>
         <tag>SSH</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>如何给Squid配置父代理，访问外部网络</title>
+    <url>/2024/1211211031.html</url>
+    <content><![CDATA[<h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>在公司局域网部署的Squid代理服务器，和局域网中其他电脑一样无法访问外网。 需要给Squid配置一个父级的HTTP代理，这个父代理能访问外网，这样Squid就具备了访问外网的能力。</p>
+<h2 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h2><p>Squid提供了<code>cache_peer</code>指令, 以定义邻居cache, 并告知Squid如何与邻居通信。<br>邻居cache有两种关系: 父子或姐妹</p>
+<ul>
+<li>父子cache, 可用于配置父代理来请求内容。 </li>
+<li>邻居cache, 用于提供额外的cache命中，提升性能。 例如某些请求cache丢失，在邻居cache有可能命中，这样比从原始服务器请求速度要快。</li>
+</ul>
+<span id="more"></span>
+<p><img data-src="/2024/1211211031/image1.png" alt="image1.png"></p>
+<h2 id="给Squid配置父代理的实例"><a href="#给Squid配置父代理的实例" class="headerlink" title="给Squid配置父代理的实例"></a>给Squid配置父代理的实例</h2><p>创建两台Linux虚拟机, 每台机器部署Squid, 我使用的发行版是Rocky Linux 9.4</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">10.206.216.96 Squid服务器</span><br><span class="line">10.206.216.93 父代理(可以任意搭, 我这里也用的Squid)</span><br></pre></td></tr></table></figure>
+<p>部署Squid方法参考: <a href="https://blog.csdn.net/pcj_888/article/details/143024481">https://blog.csdn.net/pcj_888&#x2F;article&#x2F;details&#x2F;143024481</a></p>
+<p>要求:</p>
+<ul>
+<li>所有对内网的请求（10.206.216.0&#x2F;24)直接走原始服务器，不经过父代理。</li>
+<li>其他所有HTTP请求都必须转发到父代理，不允许Squid与原始服务器直接会话。</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">client -&gt; Squid(10.206.216.96) -&gt; 父代理(10.206.216.93) -&gt; Internet</span><br><span class="line"></span><br><span class="line">client -&gt; Squid(10.206.216.96) -&gt; LAN(10.206.216.0/24)</span><br></pre></td></tr></table></figure>
+
+<p>修改Squid服务器的主配置文件<code>squid.conf</code>, 添加如下内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http_access allow localhost</span><br><span class="line">http_access allow localnet</span><br><span class="line"></span><br><span class="line">acl direct-out-servers dst 10.206.216.0/24</span><br><span class="line"></span><br><span class="line">cache_peer 10.206.216.93 parent 3128 0 no-query default</span><br><span class="line">cache_peer_access 10.206.216.93 allow !direct-out-servers</span><br><span class="line">cache_peer_access 10.206.216.93 deny all</span><br><span class="line"></span><br><span class="line">never_direct allow all</span><br></pre></td></tr></table></figure>
+
+<p>解释:</p>
+<ul>
+<li>cache_peer定义邻居cache, 这里需要指定父代理的HOST和PORT</li>
+<li>cache_peer_access定义邻居cache的访问列表, 决定哪些请求允许或不允许发送到邻居cache.</li>
+<li>never_direct定义不需要直接发送到原始服务器的访问列表，当请求匹配该列表时，必须被发送到邻居cache</li>
+</ul>
+<p>更详细的配置说明参考这篇: <a href="http://blog.zyan.cc/book/squid/chap10.html#a0">Squid中文权威指南</a></p>
+<p>如果父代理需要basic认证, 可以修改cache_peer配置项, 添加认证信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cache_peer 10.206.216.93 parent 3128 0 no-query default login=peter:123 # 例如，父代理user为peter, password为123</span><br></pre></td></tr></table></figure>
+
+<p>如果父代理挂了，允许Squid直接与原始服务器会话，去掉<code>never_direct allow all</code>这行配置即可。</p>
+<p>校验并重新加载配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">squid -k parse</span><br><span class="line">squid -k reconfigure</span><br></pre></td></tr></table></figure>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>1、请求外网时,返回200 OK，且走了父代理</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x 10.206.216.96:3128 https://www.baidu.com </span><br><span class="line">返回200 OK, 且父代理access.log有记录</span><br></pre></td></tr></table></figure>
+<p>2、请求内网(10.206.216.0&#x2F;24)，返回200 OK, 且不走父代理</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x 10.206.216.96:3128 https://10.206.216.99</span><br><span class="line">返回200 OK, 且父代理access.log有记录</span><br></pre></td></tr></table></figure>
+
+<p>3、stop父代理，再请求外网, 此时预期的结果是超时，返回503，即Squid不会与原始服务器建立连接。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x 10.206.216.96:3128 https://www.baidu.com </span><br><span class="line">...</span><br><span class="line">超时, 返回503</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】 <a href="https://www.cmdschool.org/archives/4673">https://www.cmdschool.org/archives/4673</a><br>【2】 <a href="https://cloud-atlas.readthedocs.io/zh-cn/latest/web/proxy/squid/squid_socks_peer.html">https://cloud-atlas.readthedocs.io/zh-cn/latest/web/proxy/squid/squid_socks_peer.html</a></p>
+]]></content>
   </entry>
 </search>
