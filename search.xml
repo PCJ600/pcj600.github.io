@@ -13,29 +13,6 @@
       </tags>
   </entry>
   <entry>
-    <title>Linux下生成core dump文件</title>
-    <url>/2020/0228210741.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
-<span id="more"></span>
-
-<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
-<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
-<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
-<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
-</ol>
-<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
-<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
-<p><strong>指定core文件的输出格式和路径</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/0322220956.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -81,6 +58,29 @@
 <p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
 <p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
 <h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux下生成core dump文件</title>
+    <url>/2020/0228210741.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
+<span id="more"></span>
+
+<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
+<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
+<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
+<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
+</ol>
+<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
+<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
+<p><strong>指定core文件的输出格式和路径</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -1303,6 +1303,75 @@
       </tags>
   </entry>
   <entry>
+    <title>Redis学习笔记(五)——整数集合</title>
+    <url>/2020/1206192958.html</url>
+    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
+<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
+<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3><span id="more"></span>
+
+<h4 id="1-1-数据结构设计"><a href="#1-1-数据结构设计" class="headerlink" title="1.1 数据结构设计"></a>1.1 数据结构设计</h4><p>以Redis6.0源码为例，整数集合由<code>intset.c/intset</code>结构定义，数据结构设计如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> encoding;			<span class="comment">// 编码方式</span></span><br><span class="line">    <span class="type">uint32_t</span> length;			<span class="comment">// 集合中的元素个数</span></span><br><span class="line">    <span class="type">int8_t</span> contents[];			<span class="comment">// 用于保存集合中的元素</span></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>length属性表示整数集合中元素的个数。</li>
+<li>集合中所有元素以<strong>有序、无重复</strong>的方式保存在contents数组。</li>
+<li><strong>虽然contents是int8_t类型，但它本身不保存int8_t类型的元素</strong>。实际上，contents数组保存的元素类型由encoding属性决定，encoding属性有以下3种取值：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// intset.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
+
+<p>举例，如encoding取值为<code>INTSET_ENC_INT32</code>，表示contents数组保存的每个元素都是int32_t类型的整数。</p>
+<p>下图表示一个包含3个类型为uint16_t的元素的整数集合：<br><img data-src="/2020/1206192958/image1.png"></p>
+<p>当创建空的整数集合时，为了节约内存，默认的encoding取值为<code>INTSET_ENC_INT16</code>(参考<code>intset.c/intsetNew</code>的实现)</p>
+<h4 id="1-2-升级操作"><a href="#1-2-升级操作" class="headerlink" title="1.2 升级操作"></a>1.2 升级操作</h4><p>考虑插入新元素a到整数集合S的场景：如果新元素所占字节大小大于整数集合中现有的任意一个元素所占字节大小(即<code>sizeof(a) &gt; S.encoding</code>），就需要先对整数集合执行<strong>升级</strong>操作后，再执行插入操作。</p>
+<p>升级操作的要点如下：</p>
+<ul>
+<li>根据新元素类型，计算扩展后的整数集合需要分配的空间大小，并调用realloc分配空间。</li>
+<li>将原整数集合中所有元素类型转换为和新元素相同，并将所有转化后的元素有序地放到正确的位置上。</li>
+<li>将新元素添加到整数集合。<strong>升级后新元素放置的位置要么在最开头，要么在最结尾</strong>，其原因在于：<strong>能引发升级的新元素，它的值要么小于先前整数集合中的所有元素，要么大于所有元素。</strong></li>
+</ul>
+<p>升级操作的源码实现参考<code>intset.c/intsetUpgradeAndAdd</code>, 如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> intset *<span class="title function_">intsetUpgradeAndAdd</span><span class="params">(intset *is, <span class="type">int64_t</span> value)</span> &#123;</span><br><span class="line">    <span class="type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);</span><br><span class="line">    <span class="type">uint8_t</span> newenc = _intsetValueEncoding(value);</span><br><span class="line">    <span class="type">int</span> length = intrev32ifbe(is-&gt;length);</span><br><span class="line">    <span class="type">int</span> prepend = value &lt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* First set new encoding and resize */</span></span><br><span class="line">    is-&gt;encoding = intrev32ifbe(newenc);</span><br><span class="line">    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span></span><br><span class="line"><span class="comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span></span><br><span class="line"><span class="comment">     * space at either the beginning or the end of the intset. */</span></span><br><span class="line">    <span class="keyword">while</span>(length--)</span><br><span class="line">        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the value at the beginning or the end. */</span></span><br><span class="line">    <span class="keyword">if</span> (prepend)</span><br><span class="line">        _intsetSet(is,<span class="number">0</span>,value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        _intsetSet(is,intrev32ifbe(is-&gt;length),value);</span><br><span class="line">    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> is;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>另外，Redis中的整数集合不支持降级操作。</p>
+<h3 id="2-整数集合的API"><a href="#2-整数集合的API" class="headerlink" title="2. 整数集合的API"></a>2. 整数集合的API</h3><table>
+<thead>
+<tr>
+<th align="left">API</th>
+<th align="left">功能</th>
+<th align="left">复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">intset *intsetNew(void);</td>
+<td align="left">创建空的整数集合</td>
+<td align="left">O(1)</td>
+</tr>
+<tr>
+<td align="left">intset *intsetAdd(intset *is, int64_t value, uint8_t *success);</td>
+<td align="left">插入新元素到整数集合</td>
+<td align="left">O(N)</td>
+</tr>
+<tr>
+<td align="left">intset *intsetRemove(intset *is, int64_t value, int *success);</td>
+<td align="left">删除整数集合中的指定元素</td>
+<td align="left">O(N)</td>
+</tr>
+<tr>
+<td align="left">uint8_t intsetFind(intset *is, int64_t value);</td>
+<td align="left">查询元素是否在整数集合中。用二分查找法实现</td>
+<td align="left">O(logN)</td>
+</tr>
+</tbody></table>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》 —— 第6章 整数集合</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>设计跳表, C语言实现</title>
     <url>/2020/1205192333.html</url>
     <content><![CDATA[<h3 id="跳跃表简介"><a href="#跳跃表简介" class="headerlink" title="跳跃表简介"></a>跳跃表简介</h3><p>跳跃表是<strong>一种以O(log N)期望时间支持查找、插入、删除操作的、有序的</strong>数据结构。其性能和红黑树相当，且跳跃表实现更为简单。</p>
@@ -1391,75 +1460,6 @@
       <tags>
         <tag>C</tag>
         <tag>LeetCode</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis学习笔记(五)——整数集合</title>
-    <url>/2020/1206192958.html</url>
-    <content><![CDATA[<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Redis中，整数集合是集合键的底层之一。</p>
-<p>当一个集合只包含整数元素，且这个集合中元素个数不多的情况下，Redis就会使用整数集合作为集合键的底层实现。</p>
-<h3 id="1-整数集合的实现"><a href="#1-整数集合的实现" class="headerlink" title="1. 整数集合的实现"></a>1. 整数集合的实现</h3><span id="more"></span>
-
-<h4 id="1-1-数据结构设计"><a href="#1-1-数据结构设计" class="headerlink" title="1.1 数据结构设计"></a>1.1 数据结构设计</h4><p>以Redis6.0源码为例，整数集合由<code>intset.c/intset</code>结构定义，数据结构设计如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">intset</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span> encoding;			<span class="comment">// 编码方式</span></span><br><span class="line">    <span class="type">uint32_t</span> length;			<span class="comment">// 集合中的元素个数</span></span><br><span class="line">    <span class="type">int8_t</span> contents[];			<span class="comment">// 用于保存集合中的元素</span></span><br><span class="line">&#125; intset;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>length属性表示整数集合中元素的个数。</li>
-<li>集合中所有元素以<strong>有序、无重复</strong>的方式保存在contents数组。</li>
-<li><strong>虽然contents是int8_t类型，但它本身不保存int8_t类型的元素</strong>。实际上，contents数组保存的元素类型由encoding属性决定，encoding属性有以下3种取值：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// intset.c</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT16 (sizeof(int16_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT32 (sizeof(int32_t))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INTSET_ENC_INT64 (sizeof(int64_t))</span></span><br></pre></td></tr></table></figure>
-
-<p>举例，如encoding取值为<code>INTSET_ENC_INT32</code>，表示contents数组保存的每个元素都是int32_t类型的整数。</p>
-<p>下图表示一个包含3个类型为uint16_t的元素的整数集合：<br><img data-src="/2020/1206192958/image1.png"></p>
-<p>当创建空的整数集合时，为了节约内存，默认的encoding取值为<code>INTSET_ENC_INT16</code>(参考<code>intset.c/intsetNew</code>的实现)</p>
-<h4 id="1-2-升级操作"><a href="#1-2-升级操作" class="headerlink" title="1.2 升级操作"></a>1.2 升级操作</h4><p>考虑插入新元素a到整数集合S的场景：如果新元素所占字节大小大于整数集合中现有的任意一个元素所占字节大小(即<code>sizeof(a) &gt; S.encoding</code>），就需要先对整数集合执行<strong>升级</strong>操作后，再执行插入操作。</p>
-<p>升级操作的要点如下：</p>
-<ul>
-<li>根据新元素类型，计算扩展后的整数集合需要分配的空间大小，并调用realloc分配空间。</li>
-<li>将原整数集合中所有元素类型转换为和新元素相同，并将所有转化后的元素有序地放到正确的位置上。</li>
-<li>将新元素添加到整数集合。<strong>升级后新元素放置的位置要么在最开头，要么在最结尾</strong>，其原因在于：<strong>能引发升级的新元素，它的值要么小于先前整数集合中的所有元素，要么大于所有元素。</strong></li>
-</ul>
-<p>升级操作的源码实现参考<code>intset.c/intsetUpgradeAndAdd</code>, 如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">static</span> intset *<span class="title function_">intsetUpgradeAndAdd</span><span class="params">(intset *is, <span class="type">int64_t</span> value)</span> &#123;</span><br><span class="line">    <span class="type">uint8_t</span> curenc = intrev32ifbe(is-&gt;encoding);</span><br><span class="line">    <span class="type">uint8_t</span> newenc = _intsetValueEncoding(value);</span><br><span class="line">    <span class="type">int</span> length = intrev32ifbe(is-&gt;length);</span><br><span class="line">    <span class="type">int</span> prepend = value &lt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* First set new encoding and resize */</span></span><br><span class="line">    is-&gt;encoding = intrev32ifbe(newenc);</span><br><span class="line">    is = intsetResize(is,intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Upgrade back-to-front so we don&#x27;t overwrite values.</span></span><br><span class="line"><span class="comment">     * Note that the &quot;prepend&quot; variable is used to make sure we have an empty</span></span><br><span class="line"><span class="comment">     * space at either the beginning or the end of the intset. */</span></span><br><span class="line">    <span class="keyword">while</span>(length--)</span><br><span class="line">        _intsetSet(is,length+prepend,_intsetGetEncoded(is,length,curenc));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the value at the beginning or the end. */</span></span><br><span class="line">    <span class="keyword">if</span> (prepend)</span><br><span class="line">        _intsetSet(is,<span class="number">0</span>,value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        _intsetSet(is,intrev32ifbe(is-&gt;length),value);</span><br><span class="line">    is-&gt;length = intrev32ifbe(intrev32ifbe(is-&gt;length)+<span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> is;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>另外，Redis中的整数集合不支持降级操作。</p>
-<h3 id="2-整数集合的API"><a href="#2-整数集合的API" class="headerlink" title="2. 整数集合的API"></a>2. 整数集合的API</h3><table>
-<thead>
-<tr>
-<th align="left">API</th>
-<th align="left">功能</th>
-<th align="left">复杂度</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">intset *intsetNew(void);</td>
-<td align="left">创建空的整数集合</td>
-<td align="left">O(1)</td>
-</tr>
-<tr>
-<td align="left">intset *intsetAdd(intset *is, int64_t value, uint8_t *success);</td>
-<td align="left">插入新元素到整数集合</td>
-<td align="left">O(N)</td>
-</tr>
-<tr>
-<td align="left">intset *intsetRemove(intset *is, int64_t value, int *success);</td>
-<td align="left">删除整数集合中的指定元素</td>
-<td align="left">O(N)</td>
-</tr>
-<tr>
-<td align="left">uint8_t intsetFind(intset *is, int64_t value);</td>
-<td align="left">查询元素是否在整数集合中。用二分查找法实现</td>
-<td align="left">O(logN)</td>
-</tr>
-</tbody></table>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》 —— 第6章 整数集合</p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -3850,6 +3850,147 @@
       </tags>
   </entry>
   <entry>
+    <title>2022 Trend Micro 社招面经</title>
+    <url>/2022/0320205239.html</url>
+    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
+<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
+<li>2022-02-25 官网投递简历，职位：Linux开发</li>
+</ul>
+<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
+
+<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
+<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
+<ul>
+<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
+</li>
+<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
+</li>
+</ul>
+<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
+<p>线上面试，用的微软Teams，二对一，80min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>问项目（30min）</p>
+<ul>
+<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
+<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
+<li>举一个项目中你遇到的难题，如何解决的</li>
+<li>你的项目中为什么用Redis，不用MySQL</li>
+<li>……</li>
+</ul>
+</li>
+<li><p>1道编程题 （15min）</p>
+<ul>
+<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
+</ul>
+</li>
+<li><p>技术问题（25min）</p>
+<ul>
+<li>给每个中国人分一个IP地址，够分吗</li>
+<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
+<li>后台服务变慢，谈谈你的定位思路</li>
+<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
+<li>Redis过期键的实现原理，过期时间怎么存储的</li>
+<li>Redis缓存逐出策略</li>
+<li>全中国人的数据能放到一张MySQL表里吗</li>
+<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
+<li>Linux下如何定时备份一个文件</li>
+</ul>
+</li>
+<li><p>其它问题（10min）</p>
+<ul>
+<li>同事对你的评价</li>
+<li>你的缺点是什么</li>
+<li>同事觉得你有什么阴暗面</li>
+<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
+</ul>
+</li>
+</ul>
+<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
+<p>现场面试，二对一，50min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>简单问项目（10min）</p>
+</li>
+<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
+</li>
+<li><p>你在项目组里还负责了哪些项目和工作</p>
+</li>
+<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
+</li>
+<li><p>你平时用到的开发工具和编程语言</p>
+</li>
+<li><p>说下你的团队成员组成</p>
+</li>
+<li><p>说说你最近在看的书</p>
+</li>
+<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
+<ul>
+<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
+</ul>
+</li>
+<li><p>项目中遇到别人不配合你的工作怎么办</p>
+</li>
+<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
+</li>
+<li><p>评价你同事的水平</p>
+</li>
+<li><p>有没有感觉有技术能力比较弱的同事</p>
+</li>
+<li><p>你还有什么问题（问团队成员组成）</p>
+</li>
+</ul>
+<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
+<p>现场面试，一对一，30min</p>
+<ul>
+<li><p>自我介绍</p>
+</li>
+<li><p>为什么选择我们公司，选择这个职位</p>
+</li>
+<li><p>你为什么离职</p>
+</li>
+<li><p>你当初考虑XX公司的原因是什么</p>
+</li>
+<li><p>你有考虑过内部转岗吗</p>
+</li>
+<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
+</li>
+<li><p>你同事对你的评价</p>
+</li>
+<li><p>说说你的优点</p>
+</li>
+<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
+</li>
+</ul>
+<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
+<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
+<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
+<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
+<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
+<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
+<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
+</ul>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
+<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
+<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
+<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
+<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
+<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
+<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
+<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
+<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
+<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/0129204852.html</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -4105,168 +4246,6 @@
       </tags>
   </entry>
   <entry>
-    <title>2022 Trend Micro 社招面经</title>
-    <url>/2022/0320205239.html</url>
-    <content><![CDATA[<h2 id="个人信息"><a href="#个人信息" class="headerlink" title="个人信息"></a>个人信息</h2><ul>
-<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
-<li>2022-02-25 官网投递简历，职位：Linux开发</li>
-</ul>
-<h2 id="面试流程"><a href="#面试流程" class="headerlink" title="面试流程"></a>面试流程</h2><span id="more"></span>
-
-<h3 id="机试"><a href="#机试" class="headerlink" title="机试"></a>机试</h3><p>时间：2022-02-27 19:00:00</p>
-<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
-<ul>
-<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
-</li>
-<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
-</li>
-</ul>
-<h3 id="技术一面"><a href="#技术一面" class="headerlink" title="技术一面"></a>技术一面</h3><p>时间：2022-03-03 12:00:00</p>
-<p>线上面试，用的微软Teams，二对一，80min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>问项目（30min）</p>
-<ul>
-<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
-<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
-<li>举一个项目中你遇到的难题，如何解决的</li>
-<li>你的项目中为什么用Redis，不用MySQL</li>
-<li>……</li>
-</ul>
-</li>
-<li><p>1道编程题 （15min）</p>
-<ul>
-<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
-</ul>
-</li>
-<li><p>技术问题（25min）</p>
-<ul>
-<li>给每个中国人分一个IP地址，够分吗</li>
-<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
-<li>后台服务变慢，谈谈你的定位思路</li>
-<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
-<li>Redis过期键的实现原理，过期时间怎么存储的</li>
-<li>Redis缓存逐出策略</li>
-<li>全中国人的数据能放到一张MySQL表里吗</li>
-<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
-<li>Linux下如何定时备份一个文件</li>
-</ul>
-</li>
-<li><p>其它问题（10min）</p>
-<ul>
-<li>同事对你的评价</li>
-<li>你的缺点是什么</li>
-<li>同事觉得你有什么阴暗面</li>
-<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
-</ul>
-</li>
-</ul>
-<h3 id="技术二面"><a href="#技术二面" class="headerlink" title="技术二面"></a>技术二面</h3><p>时间：2022-03-04 12:15:00</p>
-<p>现场面试，二对一，50min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>简单问项目（10min）</p>
-</li>
-<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
-</li>
-<li><p>你在项目组里还负责了哪些项目和工作</p>
-</li>
-<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
-</li>
-<li><p>你平时用到的开发工具和编程语言</p>
-</li>
-<li><p>说下你的团队成员组成</p>
-</li>
-<li><p>说说你最近在看的书</p>
-</li>
-<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
-<ul>
-<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
-</ul>
-</li>
-<li><p>项目中遇到别人不配合你的工作怎么办</p>
-</li>
-<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
-</li>
-<li><p>评价你同事的水平</p>
-</li>
-<li><p>有没有感觉有技术能力比较弱的同事</p>
-</li>
-<li><p>你还有什么问题（问团队成员组成）</p>
-</li>
-</ul>
-<h3 id="HR面"><a href="#HR面" class="headerlink" title="HR面"></a>HR面</h3><p>时间：2022-03-04 13:30:00</p>
-<p>现场面试，一对一，30min</p>
-<ul>
-<li><p>自我介绍</p>
-</li>
-<li><p>为什么选择我们公司，选择这个职位</p>
-</li>
-<li><p>你为什么离职</p>
-</li>
-<li><p>你当初考虑XX公司的原因是什么</p>
-</li>
-<li><p>你有考虑过内部转岗吗</p>
-</li>
-<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
-</li>
-<li><p>你同事对你的评价</p>
-</li>
-<li><p>说说你的优点</p>
-</li>
-<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
-</li>
-</ul>
-<h2 id="面试感受"><a href="#面试感受" class="headerlink" title="面试感受"></a>面试感受</h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
-<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
-<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><ul>
-<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
-<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
-<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
-<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
-</ul>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>以下是准备面试过程中的一些参考资料：</p>
-<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
-<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
-<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
-<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
-<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
-<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
-<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
-<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
-<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>tar打包时去掉目录前缀的方法</title>
-    <url>/2022/0604205633.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
-<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
-
-<p>利用-C参数，方法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
-
-<p>tar用法参考手册：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>tar</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>k8s删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/1116205828.html</url>
     <content><![CDATA[<h2 id="先尝试强制删除deployment和pod等资源"><a href="#先尝试强制删除deployment和pod等资源" class="headerlink" title="先尝试强制删除deployment和pod等资源"></a>先尝试强制删除deployment和pod等资源</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n $&#123;ns&#125; delete deployment --all --force</span><br><span class="line">kubectl -n $&#123;ns&#125; delete pod --all --force</span><br></pre></td></tr></table></figure>
@@ -4293,23 +4272,24 @@
       </tags>
   </entry>
   <entry>
-    <title>Centos7中修改hostname的方法</title>
-    <url>/2023/0213210415.html</url>
-    <content><![CDATA[<h2 id="hostname临时修改主机名"><a href="#hostname临时修改主机名" class="headerlink" title="hostname临时修改主机名"></a>hostname临时修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostname XXX</span><br></pre></td></tr></table></figure>
-<h2 id="hostnamectl永久修改主机名"><a href="#hostnamectl永久修改主机名" class="headerlink" title="hostnamectl永久修改主机名"></a>hostnamectl永久修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostnamectl XXX</span><br></pre></td></tr></table></figure>
-<p>修改的内容实际是文件<code>/etc/hostname</code></p>
-<h2 id="三种主机名的区别"><a href="#三种主机名的区别" class="headerlink" title="三种主机名的区别"></a>三种主机名的区别</h2><span id="more"></span>
+    <title>tar打包时去掉目录前缀的方法</title>
+    <url>/2022/0604205633.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
+<h2 id="如果我打包时不想带上文件路径，怎么操作？"><a href="#如果我打包时不想带上文件路径，怎么操作？" class="headerlink" title="如果我打包时不想带上文件路径，怎么操作？"></a>如果我打包时不想带上文件路径，怎么操作？</h2><span id="more"></span>
 
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">man hostnamectl</span><br><span class="line">This tool distinguishes three different hostnames: </span><br><span class="line">the high-level <span class="string">&quot;pretty&quot;</span> hostname <span class="built_in">which</span> might include all kinds of special characters (e.g. <span class="string">&quot;Lennart&#x27;s Laptop&quot;</span>), </span><br><span class="line">the static hostname <span class="built_in">which</span> is used to initialize the kernel hostname at boot (e.g. <span class="string">&quot;lennarts-laptop&quot;</span>), </span><br><span class="line">and the transient hostname <span class="built_in">which</span> is a default received from network configuration. If a static hostname is <span class="built_in">set</span>, and is valid (something other than localhost), <span class="keyword">then</span> the transient hostname is not used.</span><br></pre></td></tr></table></figure>
-<h2 id="Centos7中，hostnamectl-–static命令读取的实际是-etc-hostname文件的内容"><a href="#Centos7中，hostnamectl-–static命令读取的实际是-etc-hostname文件的内容" class="headerlink" title="Centos7中，hostnamectl –static命令读取的实际是&#x2F;etc&#x2F;hostname文件的内容"></a>Centos7中，hostnamectl –static命令读取的实际是&#x2F;etc&#x2F;hostname文件的内容</h2><p><code>hostnamectl</code>源码参考：<a href="https://github.com/systemd/systemd">https://github.com/systemd/systemd</a><br><code>hostnamectl --static</code>函数调用梳理如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">DEFINE_MAIN_FUNCTION(run);</span><br><span class="line">hostnamectl_main func table</span><br><span class="line">get_or_set_hostname</span><br><span class="line">get_hostname_based_on_flag</span><br><span class="line"><span class="title function_">get_one_name</span><span class="params">(bus, <span class="string">&quot;StaticHostname&quot;</span>, <span class="literal">NULL</span>)</span>;</span><br><span class="line">sd_bus_get_property</span><br><span class="line">sd_bus_call_method</span><br><span class="line"><span class="title function_">sd_bus_call_methodv</span><span class="params">()</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">const</span> BusObjectImplementation manager_object = &#123;</span><br><span class="line">        <span class="string">&quot;/org/freedesktop/hostname1&quot;</span>,</span><br><span class="line">        <span class="string">&quot;org.freedesktop.hostname1&quot;</span>,</span><br><span class="line">        .vtables = BUS_VTABLES(hostname_vtable),</span><br><span class="line">&#125;;</span><br><span class="line">hostname_vtable</span><br><span class="line"><span class="title function_">SD_BUS_PROPERTY</span><span class="params">(<span class="string">&quot;StaticHostname&quot;</span>, <span class="string">&quot;s&quot;</span>, property_get_static_hostname, <span class="number">0</span>, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE)</span></span><br><span class="line">property_get_static_hostname </span><br><span class="line">context_read_etc_hostname</span><br><span class="line">read_etc_hostname</span><br><span class="line"><span class="type">int</span> <span class="title function_">read_etc_hostname</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *path, <span class="type">char</span> **ret)</span> &#123;</span><br><span class="line">        _cleanup_fclose_ FILE *f = <span class="literal">NULL</span>;</span><br><span class="line">        assert(ret);</span><br><span class="line">        <span class="keyword">if</span> (!path)</span><br><span class="line">                path = <span class="string">&quot;/etc/hostname&quot;</span>;</span><br><span class="line">        f = fopen(path, <span class="string">&quot;re&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (!f)</span><br><span class="line">                <span class="keyword">return</span> -errno;</span><br><span class="line">        <span class="keyword">return</span> read_etc_hostname_stream(f, ret);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看出，最终调用<code>read_etc_hostname</code>读取<code>/etc/hostname</code>的内容</p>
+<p>利用-C参数，方法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
+
+<p>tar用法参考手册：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Linux</category>
       </categories>
       <tags>
         <tag>Linux</tag>
+        <tag>tar</tag>
       </tags>
   </entry>
   <entry>
@@ -4329,6 +4309,26 @@
       <tags>
         <tag>Linux</tag>
         <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Centos7中修改hostname的方法</title>
+    <url>/2023/0213210415.html</url>
+    <content><![CDATA[<h2 id="hostname临时修改主机名"><a href="#hostname临时修改主机名" class="headerlink" title="hostname临时修改主机名"></a>hostname临时修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostname XXX</span><br></pre></td></tr></table></figure>
+<h2 id="hostnamectl永久修改主机名"><a href="#hostnamectl永久修改主机名" class="headerlink" title="hostnamectl永久修改主机名"></a>hostnamectl永久修改主机名</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">hostnamectl XXX</span><br></pre></td></tr></table></figure>
+<p>修改的内容实际是文件<code>/etc/hostname</code></p>
+<h2 id="三种主机名的区别"><a href="#三种主机名的区别" class="headerlink" title="三种主机名的区别"></a>三种主机名的区别</h2><span id="more"></span>
+
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">man hostnamectl</span><br><span class="line">This tool distinguishes three different hostnames: </span><br><span class="line">the high-level <span class="string">&quot;pretty&quot;</span> hostname <span class="built_in">which</span> might include all kinds of special characters (e.g. <span class="string">&quot;Lennart&#x27;s Laptop&quot;</span>), </span><br><span class="line">the static hostname <span class="built_in">which</span> is used to initialize the kernel hostname at boot (e.g. <span class="string">&quot;lennarts-laptop&quot;</span>), </span><br><span class="line">and the transient hostname <span class="built_in">which</span> is a default received from network configuration. If a static hostname is <span class="built_in">set</span>, and is valid (something other than localhost), <span class="keyword">then</span> the transient hostname is not used.</span><br></pre></td></tr></table></figure>
+<h2 id="Centos7中，hostnamectl-–static命令读取的实际是-etc-hostname文件的内容"><a href="#Centos7中，hostnamectl-–static命令读取的实际是-etc-hostname文件的内容" class="headerlink" title="Centos7中，hostnamectl –static命令读取的实际是&#x2F;etc&#x2F;hostname文件的内容"></a>Centos7中，hostnamectl –static命令读取的实际是&#x2F;etc&#x2F;hostname文件的内容</h2><p><code>hostnamectl</code>源码参考：<a href="https://github.com/systemd/systemd">https://github.com/systemd/systemd</a><br><code>hostnamectl --static</code>函数调用梳理如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">DEFINE_MAIN_FUNCTION(run);</span><br><span class="line">hostnamectl_main func table</span><br><span class="line">get_or_set_hostname</span><br><span class="line">get_hostname_based_on_flag</span><br><span class="line"><span class="title function_">get_one_name</span><span class="params">(bus, <span class="string">&quot;StaticHostname&quot;</span>, <span class="literal">NULL</span>)</span>;</span><br><span class="line">sd_bus_get_property</span><br><span class="line">sd_bus_call_method</span><br><span class="line"><span class="title function_">sd_bus_call_methodv</span><span class="params">()</span>;</span><br><span class="line"><span class="type">static</span> <span class="type">const</span> BusObjectImplementation manager_object = &#123;</span><br><span class="line">        <span class="string">&quot;/org/freedesktop/hostname1&quot;</span>,</span><br><span class="line">        <span class="string">&quot;org.freedesktop.hostname1&quot;</span>,</span><br><span class="line">        .vtables = BUS_VTABLES(hostname_vtable),</span><br><span class="line">&#125;;</span><br><span class="line">hostname_vtable</span><br><span class="line"><span class="title function_">SD_BUS_PROPERTY</span><span class="params">(<span class="string">&quot;StaticHostname&quot;</span>, <span class="string">&quot;s&quot;</span>, property_get_static_hostname, <span class="number">0</span>, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE)</span></span><br><span class="line">property_get_static_hostname </span><br><span class="line">context_read_etc_hostname</span><br><span class="line">read_etc_hostname</span><br><span class="line"><span class="type">int</span> <span class="title function_">read_etc_hostname</span><span class="params">(<span class="type">const</span> <span class="type">char</span> *path, <span class="type">char</span> **ret)</span> &#123;</span><br><span class="line">        _cleanup_fclose_ FILE *f = <span class="literal">NULL</span>;</span><br><span class="line">        assert(ret);</span><br><span class="line">        <span class="keyword">if</span> (!path)</span><br><span class="line">                path = <span class="string">&quot;/etc/hostname&quot;</span>;</span><br><span class="line">        f = fopen(path, <span class="string">&quot;re&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (!f)</span><br><span class="line">                <span class="keyword">return</span> -errno;</span><br><span class="line">        <span class="keyword">return</span> read_etc_hostname_stream(f, ret);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出，最终调用<code>read_etc_hostname</code>读取<code>/etc/hostname</code>的内容</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -4589,6 +4589,19 @@
       </tags>
   </entry>
   <entry>
+    <title>RPM中的config和config(noreplace)</title>
+    <url>/2023/0509213628.html</url>
+    <content><![CDATA[<p>参考：<a href="https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html">https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>LeetCode 常用数据结构和算法(C++)</title>
     <url>/2023/0509214116.html</url>
     <content><![CDATA[<h2 id="list"><a href="#list" class="headerlink" title="list"></a>list</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">list&lt;<span class="type">int</span>&gt; list;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs )</span></span>;				<span class="comment">// 全部移动</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs, iterator ix )</span></span>;	<span class="comment">// 移一个</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">list::splice</span><span class="params">( iterator pos, list rhs, iterator first, iterator last )</span></span>;	<span class="comment">// 移一组</span></span><br></pre></td></tr></table></figure>
@@ -4615,19 +4628,6 @@
       </categories>
       <tags>
         <tag>LeetCode</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RPM中的config和config(noreplace)</title>
-    <url>/2023/0509213628.html</url>
-    <content><![CDATA[<p>参考：<a href="https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html">https://pureage.info/2014/04/30/noreplace-in-rpm-spec-file.html</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -5252,12 +5252,12 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python给切片命名，增强可读性</title>
-    <url>/2023/0829193419.html</url>
-    <content><![CDATA[<p>使用内置的<code>slice</code>函数创建切片，而不是硬编码下标，从而增强代码可读性，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip=<span class="string">&quot;&lt;127.0.0.1&gt;&quot;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>GET_IP = <span class="built_in">slice</span>(<span class="number">1</span>,-<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip[GET_IP]</span><br><span class="line"><span class="string">&#x27;127.0.0.1&#x27;</span></span><br></pre></td></tr></table></figure>
+    <title>Python保留最后N个元素</title>
+    <url>/2023/0829215654.html</url>
+    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p11_naming_slice.html">https://python3-cookbook.readthedocs.io/zh_CN&#x2F;latest&#x2F;c01&#x2F;p11_naming_slice.html</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5267,12 +5267,12 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Python保留最后N个元素</title>
-    <url>/2023/0829215654.html</url>
-    <content><![CDATA[<p>使用<code>deque</code>，指定<code>maxlen</code>参数的值为N，例如：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">from</span> collections <span class="keyword">import</span> deque</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq = deque(maxlen=<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">2</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">3</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">4</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>dq.append(<span class="number">5</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(dq)</span><br><span class="line">deque([<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>], maxlen=<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+    <title>Python给切片命名，增强可读性</title>
+    <url>/2023/0829193419.html</url>
+    <content><![CDATA[<p>使用内置的<code>slice</code>函数创建切片，而不是硬编码下标，从而增强代码可读性，例如：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip=<span class="string">&quot;&lt;127.0.0.1&gt;&quot;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>GET_IP = <span class="built_in">slice</span>(<span class="number">1</span>,-<span class="number">1</span>)</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>ip[GET_IP]</span><br><span class="line"><span class="string">&#x27;127.0.0.1&#x27;</span></span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p03_keep_last_n_items.html">Python Cookbook 1.3</a></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://python3-cookbook.readthedocs.io/zh_CN/latest/c01/p11_naming_slice.html">https://python3-cookbook.readthedocs.io/zh_CN&#x2F;latest&#x2F;c01&#x2F;p11_naming_slice.html</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5292,21 +5292,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>VMware</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RHEL9 Fatal glibc error, CPU does not support x86-64-v2 解决方法</title>
-    <url>/2023/1213193745.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL 9要求x86_64的CPU支持x86-64-v2，x86-64-v2需要处理器支持 CMPXCHG16B、LAHF-SAHF、POPCNT、SSE3、SSE4.1、SSE4.2、SSSE3 等现代指令集</p>
-<h2 id="检查CPU是否支持x86-64-v2的方法"><a href="#检查CPU是否支持x86-64-v2的方法" class="headerlink" title="检查CPU是否支持x86-64-v2的方法"></a>检查CPU是否支持x86-64-v2的方法</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">flags=$(<span class="built_in">cat</span> /proc/cpuinfo | grep flags | <span class="built_in">head</span> -n 1 | <span class="built_in">cut</span> -d: -f2)</span><br><span class="line">supports_v2=<span class="string">&#x27;awk &quot;/cx16/&amp;&amp;/lahf/&amp;&amp;/popcnt/&amp;&amp;/sse4_1/&amp;&amp;/sse4_2/&amp;&amp;/ssse3/ &#123;found=1&#125; END &#123;exit !found&#125;&quot;&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$flags</span>&quot;</span> | <span class="built_in">eval</span> <span class="variable">$supports_v2</span></span><br><span class="line"><span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU supports x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU doesn&#x27;t support x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/9.0_release_notes/architectures">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;9.0_release_notes&#x2F;architectures</a><br>【2】<a href="https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2">https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -5520,6 +5505,21 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>RHEL9 Fatal glibc error, CPU does not support x86-64-v2 解决方法</title>
+    <url>/2023/1213193745.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL 9要求x86_64的CPU支持x86-64-v2，x86-64-v2需要处理器支持 CMPXCHG16B、LAHF-SAHF、POPCNT、SSE3、SSE4.1、SSE4.2、SSSE3 等现代指令集</p>
+<h2 id="检查CPU是否支持x86-64-v2的方法"><a href="#检查CPU是否支持x86-64-v2的方法" class="headerlink" title="检查CPU是否支持x86-64-v2的方法"></a>检查CPU是否支持x86-64-v2的方法</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/sh</span></span><br><span class="line">flags=$(<span class="built_in">cat</span> /proc/cpuinfo | grep flags | <span class="built_in">head</span> -n 1 | <span class="built_in">cut</span> -d: -f2)</span><br><span class="line">supports_v2=<span class="string">&#x27;awk &quot;/cx16/&amp;&amp;/lahf/&amp;&amp;/popcnt/&amp;&amp;/sse4_1/&amp;&amp;/sse4_2/&amp;&amp;/ssse3/ &#123;found=1&#125; END &#123;exit !found&#125;&quot;&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$flags</span>&quot;</span> | <span class="built_in">eval</span> <span class="variable">$supports_v2</span></span><br><span class="line"><span class="keyword">if</span> [ $? -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU supports x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&quot;CPU doesn&#x27;t support x86-64-v2&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/9.0_release_notes/architectures">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;9.0_release_notes&#x2F;architectures</a><br>【2】<a href="https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2">https://unix.stackexchange.com/questions/631217/how-do-i-check-if-my-cpu-supports-x86-64-v2</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>印度基金低风险套利回顾</title>
     <url>/2024/0217194406.html</url>
     <content><![CDATA[<p>2024年1月19日当天，印度基金(164824)开放申购，限额申购100元，当天溢价率13%左右，这个溢价率已经非常可观了，当然要祭出一拖七大法搞它一把！</p>
@@ -5638,25 +5638,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>购买基金前应阅读基金招募说明书</title>
-    <url>/2024/0322200035.html</url>
-    <content><![CDATA[<p>3月8号，华泰天金ETF(511670)离奇暴涨6.17%, 收盘价106.17元。作为一个净值100元的货币基金，正常收益一年也就2%，单日6%的溢价相当于用1天时间提前兑现3年的收益，一个货币基金也可以玩这么嗨，我实在是无法理解！</p>
-<span id="more"></span>
-<p><img data-src="/2024/0322200035/image1.png"></p>
-<p>据传言，是因为大爷大妈们看到基金的名字中带有黄金，误以为是投资黄金的ETF，所以一通乱买把价格炒上去了。3月12日，华泰天金ETF以100.999元收盘，单日暴跌7%，高溢价买入的”投资者”们损失惨重，着实当了一回韭菜。</p>
-<p>从韭菜们的经历中，我们可以吸取教训：<strong>在购买一个基金前，我们需要知道这个基金的底层资产是什么</strong>，了解这个基金的投资范围，投资策略，基金费用，交易规则，这些信息可以在基金招募说明书里找到。</p>
-<p>以华泰天金ETF为例，可以从华泰官网上找到基金招募说明书。查看“基金的投资”部分，可以看出这是货币基金。<br><img data-src="/2024/0322200035/image2.png"></p>
-<p>查看基金说明书中“基金份额的申购与赎回”部分，发现华泰天金ETF的净值始终为100元，无申购赎回费，T日申购T+2日到账。<br><img data-src="/2024/0322200035/image3.png"><br><img data-src="/2024/0322200035/image4.png"></p>
-<p>这意味着，如果你在3月8号以净值100元申购，3月12日以开盘价102元卖出，4天收益率2%，年化收益高达182%！<strong>韭菜们的钱，挺容易赚的</strong> ^_^</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标普500LOF又来送钱，一拖七拖拉机开起来！</title>
     <url>/2024/0322200351.html</url>
     <content><![CDATA[<p>标普500LOF(161125)公告，3月22日开放申购，限额申购100元，溢价率达到了离谱的40%！！！为了平抑这不合理的溢价，我决定用一拖七拖拉机狠狠拖它一把！</p>
@@ -5674,6 +5655,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>没有开满6个深市股东&#x2F;基金号的，可以在银河增开。可以在公众号”中国结算营业厅”里查询自己所有的股东号。</li>
 <li>增开可以在非交易时间进行。每次增开时，勾选1个深a加1个深基金，需上传身份证照片和视频，做电话回访，开满6个深市股东&#x2F;基金号需要最多3天时间。</li>
 </ul>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>购买基金前应阅读基金招募说明书</title>
+    <url>/2024/0322200035.html</url>
+    <content><![CDATA[<p>3月8号，华泰天金ETF(511670)离奇暴涨6.17%, 收盘价106.17元。作为一个净值100元的货币基金，正常收益一年也就2%，单日6%的溢价相当于用1天时间提前兑现3年的收益，一个货币基金也可以玩这么嗨，我实在是无法理解！</p>
+<span id="more"></span>
+<p><img data-src="/2024/0322200035/image1.png"></p>
+<p>据传言，是因为大爷大妈们看到基金的名字中带有黄金，误以为是投资黄金的ETF，所以一通乱买把价格炒上去了。3月12日，华泰天金ETF以100.999元收盘，单日暴跌7%，高溢价买入的”投资者”们损失惨重，着实当了一回韭菜。</p>
+<p>从韭菜们的经历中，我们可以吸取教训：<strong>在购买一个基金前，我们需要知道这个基金的底层资产是什么</strong>，了解这个基金的投资范围，投资策略，基金费用，交易规则，这些信息可以在基金招募说明书里找到。</p>
+<p>以华泰天金ETF为例，可以从华泰官网上找到基金招募说明书。查看“基金的投资”部分，可以看出这是货币基金。<br><img data-src="/2024/0322200035/image2.png"></p>
+<p>查看基金说明书中“基金份额的申购与赎回”部分，发现华泰天金ETF的净值始终为100元，无申购赎回费，T日申购T+2日到账。<br><img data-src="/2024/0322200035/image3.png"><br><img data-src="/2024/0322200035/image4.png"></p>
+<p>这意味着，如果你在3月8号以净值100元申购，3月12日以开盘价102元卖出，4天收益率2%，年化收益高达182%！<strong>韭菜们的钱，挺容易赚的</strong> ^_^</p>
 ]]></content>
       <categories>
         <category>investment</category>
@@ -5773,32 +5773,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux双网卡默认路由优先级不正确，导致网络不通问题定位</title>
-    <url>/2024/0410202218.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 双网卡环境，两个网卡配置如下：(<strong>eth0 走内网，eth1 走外网</strong>)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0  192.168.10.20/24     网关: 192.168.10.254</span><br><span class="line">eth1  10.206.216.92/24     网关: 10.206.216.254</span><br></pre></td></tr></table></figure>
-<p>配置完成后，<code>curl https://www.baidu.com</code>访问百度失败，发现网络不通。</p>
-<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><span id="more"></span>
-<p>使用<code>route</code>命令查路由表，发现eth0的默认路由Metric值为100，小于eth1的Metric(101)，这说明eth0默认路由优先级更高，**<code>curl https://www.baidu.com</code> 匹配的是eth0的默认路由，但我们需要通过eth1访问外网**，所以网络不通。<br><img data-src="/2024/0410202218/image1.png"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>有两种方法，任选其一即可</p>
-<h3 id="方法1-手动修改eth0默认路由的metric值，需大于eth1"><a href="#方法1-手动修改eth0默认路由的metric值，需大于eth1" class="headerlink" title="方法1: 手动修改eth0默认路由的metric值，需大于eth1"></a>方法1: 手动修改eth0默认路由的metric值，需大于eth1</h3><p>以下命令设置eth0的默认路由metric值为200，大于eth1的默认路由metric(101)</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 ipv4.route-metric 200</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
-<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
-<h3 id="方法2：删除eth0的默认路由，只保留eth1的默认路由"><a href="#方法2：删除eth0的默认路由，只保留eth1的默认路由" class="headerlink" title="方法2：删除eth0的默认路由，只保留eth1的默认路由"></a>方法2：删除eth0的默认路由，只保留eth1的默认路由</h3><p>通过配置<code>ipv4.never-default=no</code>，删除eth0网卡的默认路由，参考如下命令：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli c mod eth0 ipv4.never-default no gw4 192.168.10.254</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
-<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/managing-the-default-gateway-setting_configuring-and-managing-networking">Red Hat Customer Portal – Chapter 23. Managing the default gateway setting</a></p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>Network</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>股票账户除了炒股还能做什么?</title>
     <url>/2024/0331201904.html</url>
     <content><![CDATA[<p>除了炒股，股票账户还有哪些功能？开股票账户是不是和去赌场赌博是一回事？股票账户有靠谱的赚钱手艺吗？</p>
@@ -5838,6 +5812,32 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux双网卡默认路由优先级不正确，导致网络不通问题定位</title>
+    <url>/2024/0410202218.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 双网卡环境，两个网卡配置如下：(<strong>eth0 走内网，eth1 走外网</strong>)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">eth0  192.168.10.20/24     网关: 192.168.10.254</span><br><span class="line">eth1  10.206.216.92/24     网关: 10.206.216.254</span><br></pre></td></tr></table></figure>
+<p>配置完成后，<code>curl https://www.baidu.com</code>访问百度失败，发现网络不通。</p>
+<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><span id="more"></span>
+<p>使用<code>route</code>命令查路由表，发现eth0的默认路由Metric值为100，小于eth1的Metric(101)，这说明eth0默认路由优先级更高，**<code>curl https://www.baidu.com</code> 匹配的是eth0的默认路由，但我们需要通过eth1访问外网**，所以网络不通。<br><img data-src="/2024/0410202218/image1.png"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>有两种方法，任选其一即可</p>
+<h3 id="方法1-手动修改eth0默认路由的metric值，需大于eth1"><a href="#方法1-手动修改eth0默认路由的metric值，需大于eth1" class="headerlink" title="方法1: 手动修改eth0默认路由的metric值，需大于eth1"></a>方法1: 手动修改eth0默认路由的metric值，需大于eth1</h3><p>以下命令设置eth0的默认路由metric值为200，大于eth1的默认路由metric(101)</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli connection modify eth0 ipv4.route-metric 200</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
+<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
+<h3 id="方法2：删除eth0的默认路由，只保留eth1的默认路由"><a href="#方法2：删除eth0的默认路由，只保留eth1的默认路由" class="headerlink" title="方法2：删除eth0的默认路由，只保留eth1的默认路由"></a>方法2：删除eth0的默认路由，只保留eth1的默认路由</h3><p>通过配置<code>ipv4.never-default=no</code>，删除eth0网卡的默认路由，参考如下命令：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nmcli c mod eth0 ipv4.never-default no gw4 192.168.10.254</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
+<p>修改重启后仍有效 (配置写在<code>/etc/NetworkManager/system-connections/eth0.nmconnection</code>)</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/managing-the-default-gateway-setting_configuring-and-managing-networking">Red Hat Customer Portal – Chapter 23. Managing the default gateway setting</a></p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -5901,22 +5901,24 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
-    <url>/2024/0421203823.html</url>
-    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
+    <title>iptables规则转换为nftables的方法</title>
+    <url>/2024/0521205000.html</url>
+    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
-<p><img data-src="/2024/0421203823/image1.png"></p>
-<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
-<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
-<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
-<p><img data-src="/2024/0421203823/image2.png"></p>
-<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
+
+<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
+<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
+</ul>
 ]]></content>
       <categories>
-        <category>investment</category>
+        <category>iptables</category>
       </categories>
       <tags>
-        <tag>investment</tag>
+        <tag>iptables</tag>
       </tags>
   </entry>
   <entry>
@@ -5949,24 +5951,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>iptables规则转换为nftables的方法</title>
-    <url>/2024/0521205000.html</url>
-    <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># iptables-translate -A INPUT -p icmp --icmp-type time-exceeded -j ACCEPT</span></span><br><span class="line">nft add rule ip filter INPUT icmp <span class="built_in">type</span> time-exceeded counter accept</span><br></pre></td></tr></table></figure>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/0421203823.html</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
 <span id="more"></span>
-
-<p><code>nftables</code>默认没有内置的链，可以自己新增</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nft flush ruleset</span><br><span class="line">nft add table ip filter</span><br><span class="line">nft flush chain ip filter INPUT</span><br><span class="line">nft add chain ip filter INPUT <span class="string">&quot;&#123;type filter hook input priority 0; policy drop; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter OUTPUT <span class="string">&quot;&#123;type filter hook output priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft add chain ip filter FORWARD <span class="string">&quot;&#123;type filter hook forward priority 0; policy accept; &#125;&quot;</span></span><br><span class="line">nft list ruleset</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters">https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters</a></li>
-<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/configuring_firewalls_and_packet_filters/getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts">https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;configuring_firewalls_and_packet_filters&#x2F;getting-started-with-nftables_firewall-packet-filters#supported-nftables-script-formats_writing-and-executing-nftables-scripts</a></li>
-</ul>
+<p><img data-src="/2024/0421203823/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img data-src="/2024/0421203823/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
 ]]></content>
       <categories>
-        <category>iptables</category>
+        <category>investment</category>
       </categories>
       <tags>
-        <tag>iptables</tag>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -6392,22 +6392,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>awk 删除第一行并提取第一列</title>
-    <url>/2024/0820194607.html</url>
-    <content><![CDATA[<p>例：用kubectl获取某个namespace下的所有pod</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod</span><br><span class="line">NAME                                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-64c6478b6c-wz58l                   1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-node-xq2hw                          1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2   1/1     Running   1 (32h ago)   15d</span><br><span class="line">metrics-server-679c5f986d-p5pcc            1/1     Running   0             32h</span><br></pre></td></tr></table></figure>
-
-<p>使用awk删除第一行并提取第一列，如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod | awk &#x27;NR &gt; 1 &#123;print $1&#125;&#x27;</span><br><span class="line">coredns-64c6478b6c-wz58l</span><br><span class="line">calico-node-xq2hw</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2</span><br><span class="line">metrics-server-679c5f986d-p5pcc</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>awk</category>
-      </categories>
-      <tags>
-        <tag>awk</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>CLISH logout后没有执行自定义脚本问题的解决方法</title>
     <url>/2024/0819223418.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我有一个On-Premises Appliance使用了<a href="https://clish.sourceforge.net/">CLISH</a>(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。</p>
@@ -6438,6 +6422,22 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>CLISH</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>awk 删除第一行并提取第一列</title>
+    <url>/2024/0820194607.html</url>
+    <content><![CDATA[<p>例：用kubectl获取某个namespace下的所有pod</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod</span><br><span class="line">NAME                                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-64c6478b6c-wz58l                   1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-node-xq2hw                          1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2   1/1     Running   1 (32h ago)   15d</span><br><span class="line">metrics-server-679c5f986d-p5pcc            1/1     Running   0             32h</span><br></pre></td></tr></table></figure>
+
+<p>使用awk删除第一行并提取第一列，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get pod | awk &#x27;NR &gt; 1 &#123;print $1&#125;&#x27;</span><br><span class="line">coredns-64c6478b6c-wz58l</span><br><span class="line">calico-node-xq2hw</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2</span><br><span class="line">metrics-server-679c5f986d-p5pcc</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>awk</category>
+      </categories>
+      <tags>
+        <tag>awk</tag>
       </tags>
   </entry>
   <entry>
@@ -7310,6 +7310,36 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>systemd</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux中定时删除10天前的日志文件</title>
+    <url>/2024/1009194730.html</url>
+    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>只查看要删除的文件有哪些，不真正删除文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
+<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>再配置crontab</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
+<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -8275,36 +8305,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux中定时删除10天前的日志文件</title>
-    <url>/2024/1009194730.html</url>
-    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>只查看要删除的文件有哪些，不真正删除文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
-<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<p>再配置crontab</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
-<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -9062,6 +9062,23 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>华宝添益(511990)折价套利记录</title>
+    <url>/2024/1026131638.html</url>
+    <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
+<h2 id="折价套利流程"><a href="#折价套利流程" class="headerlink" title="折价套利流程"></a>折价套利流程</h2><p>T日买入 -&gt; T日享有收益 -&gt; T日赎回 -&gt; T+1日无收益 -&gt; T+2日资金可用<br>例如：在周五买入华宝添益再立即赎回，可以获得周五，周六，周日共三天利息，下周二资金可用。</p>
+<span id="more"></span>
+
+<h2 id="实战记录"><a href="#实战记录" class="headerlink" title="实战记录"></a>实战记录</h2><p>9月30号当天A股疯涨，一些资金卖出华宝添益去追涨股票，导致华宝添益以99.920的价格低开，当天最低价居然只有99.72<br><img data-src="/2024/1026131638/image1.png"><br>假设9月30号以99.72价格买入再立即赎回，10月9号资金可用，资金占用9天，计8天利息，万元收益0.37, 折价套利的年化收益率：(100+0.0037*8-99.72)&#x2F;99.72&#x2F;9*365 &#x3D; 12.5%</p>
+<p>这个收益率还是很诱人的，自然是要搞它一把。不过30号开盘那会我正巧有事处理，没能抄到最低，最终以99.899的价格成交了7手。<br><img data-src="/2024/1026131638/image2.png"><br>计算一下9天收益约(100.0296-99.899)*700&#x3D;91.42，相当于年化5.3%，还可以。</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL8.0如何重置密码</title>
     <url>/2024/1017202436.html</url>
     <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
@@ -9088,23 +9105,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>华宝添益(511990)折价套利记录</title>
-    <url>/2024/1026131638.html</url>
-    <content><![CDATA[<h2 id="套利原理介绍"><a href="#套利原理介绍" class="headerlink" title="套利原理介绍"></a>套利原理介绍</h2><p>华宝添益(511990)是一个货币基金，年化利息1.4%左右。支持场内T+0交易，既可以买卖也可以申赎，场外价格固定是100元。<br>当场内的价格低于100元时，可以先买入511990再立刻赎回，赚取差价+利息，完成折价套利；如果买入后价格回升，也可选择当天直接卖出赚取差价。<br>同理，场内价格高于100元时，可以先卖出511990再立刻申购等量份额，完成溢价套利。溢价套利要求事先有底仓，实际操作中很少用到，不做赘述。</p>
-<h2 id="折价套利流程"><a href="#折价套利流程" class="headerlink" title="折价套利流程"></a>折价套利流程</h2><p>T日买入 -&gt; T日享有收益 -&gt; T日赎回 -&gt; T+1日无收益 -&gt; T+2日资金可用<br>例如：在周五买入华宝添益再立即赎回，可以获得周五，周六，周日共三天利息，下周二资金可用。</p>
-<span id="more"></span>
-
-<h2 id="实战记录"><a href="#实战记录" class="headerlink" title="实战记录"></a>实战记录</h2><p>9月30号当天A股疯涨，一些资金卖出华宝添益去追涨股票，导致华宝添益以99.920的价格低开，当天最低价居然只有99.72<br><img data-src="/2024/1026131638/image1.png"><br>假设9月30号以99.72价格买入再立即赎回，10月9号资金可用，资金占用9天，计8天利息，万元收益0.37, 折价套利的年化收益率：(100+0.0037*8-99.72)&#x2F;99.72&#x2F;9*365 &#x3D; 12.5%</p>
-<p>这个收益率还是很诱人的，自然是要搞它一把。不过30号开盘那会我正巧有事处理，没能抄到最低，最终以99.899的价格成交了7手。<br><img data-src="/2024/1026131638/image2.png"><br>计算一下9天收益约(100.0296-99.899)*700&#x3D;91.42，相当于年化5.3%，还可以。</p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -9319,34 +9319,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>快速安装Nginx</title>
-    <url>/2024/1109163902.html</url>
-    <content><![CDATA[<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><p>OS: RockyLinux 9.4</p>
-<h2 id="查看Nginx版本"><a href="#查看Nginx版本" class="headerlink" title="查看Nginx版本"></a>查看Nginx版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># yum list | grep nginx</span><br><span class="line">nginx.x86_64                                         1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-all-modules.noarch                             1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-core.x86_64                                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-filesystem.noarch                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-image-filter.x86_64                   1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-perl.x86_64                           1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-xslt-filter.x86_64                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-mail.x86_64                                1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-stream.x86_64                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">pcp-pmda-nginx.x86_64                                6.2.0-5.el9_4                       appstream</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="通过yum安装Nginx"><a href="#通过yum安装Nginx" class="headerlink" title="通过yum安装Nginx"></a>通过yum安装Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y nginx</span><br></pre></td></tr></table></figure>
-<p>安装成功后，查看Nginx版本信息</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nginx -v</span><br><span class="line">nginx version: nginx/1.20.1</span><br></pre></td></tr></table></figure>
-<h2 id="查看Nginx的安装路径-主程序，配置文件的路径"><a href="#查看Nginx的安装路径-主程序，配置文件的路径" class="headerlink" title="查看Nginx的安装路径(主程序，配置文件的路径)"></a>查看Nginx的安装路径(主程序，配置文件的路径)</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rpm -qpl nginx</span><br><span class="line">/usr/bin/nginx-upgrade</span><br><span class="line">/usr/lib/systemd/system/nginx.service</span><br><span class="line">/usr/share/man/man8/nginx.8.gz</span><br><span class="line">/usr/share/nginx/html/index.html</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line"># rpm -ql nginx-core</span><br><span class="line">/etc/logrotate.d/nginx</span><br><span class="line">/etc/nginx/nginx.conf</span><br><span class="line">/usr/lib64/nginx/modules</span><br><span class="line">/usr/sbin/nginx</span><br><span class="line">/var/lib/nginx</span><br><span class="line">/var/log/nginx</span><br><span class="line">/var/log/nginx/access.log</span><br><span class="line">/var/log/nginx/error.log</span><br><span class="line">.....</span><br></pre></td></tr></table></figure>
-<p>注:</p>
-<ul>
-<li>&#x2F;etc&#x2F;nginx&#x2F; Nginx配置文件路径</li>
-<li>&#x2F;usr&#x2F;share&#x2F;nginx&#x2F;html&#x2F; 通常把静态文件放这里</li>
-</ul>
-<h2 id="运行Nginx"><a href="#运行Nginx" class="headerlink" title="运行Nginx"></a>运行Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl stop firewalld 	# 先关闭防火墙</span><br><span class="line">systemctl start nginx		# 启动Nginx</span><br><span class="line"></span><br><span class="line">ss -antp | grep nginx		# 查看80端口已经LISTEN</span><br><span class="line">LISTEN    0      511           0.0.0.0:80           0.0.0.0:*</span><br><span class="line">LISTEN    0      511              [::]:80              [::]:*</span><br></pre></td></tr></table></figure>
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p><code>curl http://&#123;your_ip&#125;:80</code> 返回200 OK, 或者你在浏览器里访问IP能看到Nginx页面说明成功</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.nginx.org.cn/article/detail/545">https://www.nginx.org.cn/article/detail/545</a></p>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-      <tags>
-        <tag>Nginx</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何定制RockyLinux ISO</title>
     <url>/2024/1105202802.html</url>
     <content><![CDATA[<h1 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h1><p>基于Rocky9官方ISO做定制，构建自己的ISO</p>
@@ -9423,6 +9395,34 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>快速安装Nginx</title>
+    <url>/2024/1109163902.html</url>
+    <content><![CDATA[<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><p>OS: RockyLinux 9.4</p>
+<h2 id="查看Nginx版本"><a href="#查看Nginx版本" class="headerlink" title="查看Nginx版本"></a>查看Nginx版本</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># yum list | grep nginx</span><br><span class="line">nginx.x86_64                                         1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-all-modules.noarch                             1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-core.x86_64                                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-filesystem.noarch                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-image-filter.x86_64                   1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-perl.x86_64                           1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-http-xslt-filter.x86_64                    1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-mail.x86_64                                1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">nginx-mod-stream.x86_64                              1:1.20.1-16.el9_4.1                 appstream</span><br><span class="line">pcp-pmda-nginx.x86_64                                6.2.0-5.el9_4                       appstream</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="通过yum安装Nginx"><a href="#通过yum安装Nginx" class="headerlink" title="通过yum安装Nginx"></a>通过yum安装Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y nginx</span><br></pre></td></tr></table></figure>
+<p>安装成功后，查看Nginx版本信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nginx -v</span><br><span class="line">nginx version: nginx/1.20.1</span><br></pre></td></tr></table></figure>
+<h2 id="查看Nginx的安装路径-主程序，配置文件的路径"><a href="#查看Nginx的安装路径-主程序，配置文件的路径" class="headerlink" title="查看Nginx的安装路径(主程序，配置文件的路径)"></a>查看Nginx的安装路径(主程序，配置文件的路径)</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># rpm -qpl nginx</span><br><span class="line">/usr/bin/nginx-upgrade</span><br><span class="line">/usr/lib/systemd/system/nginx.service</span><br><span class="line">/usr/share/man/man8/nginx.8.gz</span><br><span class="line">/usr/share/nginx/html/index.html</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line"># rpm -ql nginx-core</span><br><span class="line">/etc/logrotate.d/nginx</span><br><span class="line">/etc/nginx/nginx.conf</span><br><span class="line">/usr/lib64/nginx/modules</span><br><span class="line">/usr/sbin/nginx</span><br><span class="line">/var/lib/nginx</span><br><span class="line">/var/log/nginx</span><br><span class="line">/var/log/nginx/access.log</span><br><span class="line">/var/log/nginx/error.log</span><br><span class="line">.....</span><br></pre></td></tr></table></figure>
+<p>注:</p>
+<ul>
+<li>&#x2F;etc&#x2F;nginx&#x2F; Nginx配置文件路径</li>
+<li>&#x2F;usr&#x2F;share&#x2F;nginx&#x2F;html&#x2F; 通常把静态文件放这里</li>
+</ul>
+<h2 id="运行Nginx"><a href="#运行Nginx" class="headerlink" title="运行Nginx"></a>运行Nginx</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl stop firewalld 	# 先关闭防火墙</span><br><span class="line">systemctl start nginx		# 启动Nginx</span><br><span class="line"></span><br><span class="line">ss -antp | grep nginx		# 查看80端口已经LISTEN</span><br><span class="line">LISTEN    0      511           0.0.0.0:80           0.0.0.0:*</span><br><span class="line">LISTEN    0      511              [::]:80              [::]:*</span><br></pre></td></tr></table></figure>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p><code>curl http://&#123;your_ip&#125;:80</code> 返回200 OK, 或者你在浏览器里访问IP能看到Nginx页面说明成功</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.nginx.org.cn/article/detail/545">https://www.nginx.org.cn/article/detail/545</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
       </tags>
   </entry>
   <entry>
@@ -9508,32 +9508,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Nginx bind() to 0.0.0.0:88 failed (13: Permission denied)解决方法</title>
-    <url>/2024/1110141108.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在Nginx上添加一个端口号为88的虚拟主机， 重新启动Nginx报错：<code> bind() to 0.0.0.0:88 failed (13: Permission denied)</code></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>查阅资料，发现这类bind无权限问题，大多由SElinux引起。SELinux有三种模式，如下：</p>
-<span id="more"></span>
-<ul>
-<li>enforcing：强制模式，此时SELinux 运行中</li>
-<li>permissive：宽容模式，此时SELinux运行中，会像 enforcing 模式一样加载安全策略，但不会拒绝任何操作。</li>
-<li>disabled：关闭，SELinux 没有运行。</li>
-</ul>
-<p>查看当前SELinux状态，为enforcing</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getenforce</span><br><span class="line">Enforcing</span><br></pre></td></tr></table></figure>
-<p>这里需要使用<code>setenforce</code>把SELinux模式改成Permissive</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">setenforce 0</span><br><span class="line">getenforce</span><br><span class="line">Permissive</span><br></pre></td></tr></table></figure>
-<p>再重启Nginx, 问题解决</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://docs.redhat.com/zh_hans/documentation/red_hat_enterprise_linux/7/html/selinux_users_and_administrators_guide/sect-security-enhanced_linux-introduction-selinux_modes">https://docs.redhat.com/zh_hans&#x2F;documentation&#x2F;red_hat_enterprise_linux&#x2F;7&#x2F;html&#x2F;selinux_users_and_administrators_guide&#x2F;sect-security-enhanced_linux-introduction-selinux_modes</a><br>【2】<a href="https://blog.csdn.net/qq_45663927/article/details/134857385">https://blog.csdn.net/qq_45663927&#x2F;article&#x2F;details&#x2F;134857385</a></p>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-      <tags>
-        <tag>Nginx</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Nginx源码解读</title>
     <url>/2024/1114195846.html</url>
     <content><![CDATA[<p>Nginx 1.20.1</p>
@@ -9575,6 +9549,32 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>draft</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Nginx bind() to 0.0.0.0:88 failed (13: Permission denied)解决方法</title>
+    <url>/2024/1110141108.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在Nginx上添加一个端口号为88的虚拟主机， 重新启动Nginx报错：<code> bind() to 0.0.0.0:88 failed (13: Permission denied)</code></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>查阅资料，发现这类bind无权限问题，大多由SElinux引起。SELinux有三种模式，如下：</p>
+<span id="more"></span>
+<ul>
+<li>enforcing：强制模式，此时SELinux 运行中</li>
+<li>permissive：宽容模式，此时SELinux运行中，会像 enforcing 模式一样加载安全策略，但不会拒绝任何操作。</li>
+<li>disabled：关闭，SELinux 没有运行。</li>
+</ul>
+<p>查看当前SELinux状态，为enforcing</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">getenforce</span><br><span class="line">Enforcing</span><br></pre></td></tr></table></figure>
+<p>这里需要使用<code>setenforce</code>把SELinux模式改成Permissive</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">setenforce 0</span><br><span class="line">getenforce</span><br><span class="line">Permissive</span><br></pre></td></tr></table></figure>
+<p>再重启Nginx, 问题解决</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://docs.redhat.com/zh_hans/documentation/red_hat_enterprise_linux/7/html/selinux_users_and_administrators_guide/sect-security-enhanced_linux-introduction-selinux_modes">https://docs.redhat.com/zh_hans&#x2F;documentation&#x2F;red_hat_enterprise_linux&#x2F;7&#x2F;html&#x2F;selinux_users_and_administrators_guide&#x2F;sect-security-enhanced_linux-introduction-selinux_modes</a><br>【2】<a href="https://blog.csdn.net/qq_45663927/article/details/134857385">https://blog.csdn.net/qq_45663927&#x2F;article&#x2F;details&#x2F;134857385</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
       </tags>
   </entry>
   <entry>
@@ -10571,6 +10571,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>k8s 标签和标签选择器有什么用?</li>
 <li>etcd特点和应用场景</li>
 </ul>
+<p>实践<br>service和ingress(nodePort和ingress, iptables,网络是怎么走的)<br>k8s configmap</p>
 ]]></content>
       <categories>
         <category>k8s</category>
@@ -11163,6 +11164,48 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Nginx</tag>
         <tag>HTTP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>k8s的ConfigMap是什么, 为什么设计ConfigMap, 如何使用ConfigMap</title>
+    <url>/2024/1214161118.html</url>
+    <content><![CDATA[<h2 id="ConfigMap简介-为什么设计ConfigMap"><a href="#ConfigMap简介-为什么设计ConfigMap" class="headerlink" title="ConfigMap简介, 为什么设计ConfigMap"></a>ConfigMap简介, 为什么设计ConfigMap</h2><p>在k8s中, ConfigMap是一种API对象, 用于将非机密的配置数据存储到键值对中。<br>Configmap作用是, 把配置数据从应用代码中分隔开, 让镜像和配置文件解耦，实现了镜像的可移植性。</p>
+<p>举个例子:<br>我有一个Squid(正向代理)的Pod, 需要获取用户配置的白名单做访问控制。 每个用户设置的白名单都不一样, 而且用户可以随时对白名单做增、删、改，所以这个白名单的配置不能写死在代码里。<br>我们可以把白名单配置存储到k8s的ConfigMap, 这样配置数据和镜像就实现了解耦，Pod中可以动态地获取白名单的配置。 </p>
+<h2 id="如何使用ConfigMap"><a href="#如何使用ConfigMap" class="headerlink" title="如何使用ConfigMap"></a>如何使用ConfigMap</h2><p>使用ConfigMap时, Pod可以将其用作环境变量、命令行参数或存储卷中的配置文件。<br>下面给出一个具体的案例，将ConfigMap用作存储卷中的配置文件，Pod中通过读取配置文件的内容，就获取到了配置信息。</p>
+<span id="more"></span>
+
+<h2 id="ConfigMap示例"><a href="#ConfigMap示例" class="headerlink" title="ConfigMap示例"></a>ConfigMap示例</h2><p>需求描述: 我有一个Squid的Pod, 用户可以修改一些配置信息，例如：白名单, 父级代理。 要求创建一个ConfigMap存储这些配置，并且将ConfigMap用作存储卷中的配置文件.<br>配置信息如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">whitelist: www.baidu.com:443,www.google.com:443 # 白名单</span><br><span class="line">customerProxy: 192.168.52.204:3128 # Squid的父级代理</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤</strong><br>首先创建一个Squid Pod, 可以参考<a href="https://pcj600.github.io/2024/1208145435.html">Squid Pod部署</a></p>
+<p>再创建ConfigMap, 新建文件<code>squid-configmap.yaml</code>, 内容如下:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">squid-configmap</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">squid</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">whitelist:</span> <span class="string">&quot;www.baidu.com,www.google.com&quot;</span></span><br><span class="line">  <span class="attr">parentProxy:</span> <span class="string">&quot;192.168.52.204:3128&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>修改Deployment, 将ConfigMap映射到Pod的&#x2F;etc&#x2F;squid-config目录下。 具体做法是编辑<code>squid-deployment.yaml</code>, 添加如下内容:</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">squid-config-volume</span></span><br><span class="line">    <span class="attr">configMap:</span></span><br><span class="line">      <span class="attr">name:</span> <span class="string">squid-configmap</span></span><br><span class="line"><span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">squid</span></span><br><span class="line">    <span class="attr">volumeMounts:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">mountPath:</span> <span class="string">/etc/squid-config</span></span><br><span class="line">        <span class="attr">name:</span> <span class="string">squid-config-volume</span></span><br></pre></td></tr></table></figure>
+<p>完整的<code>squid-deployment.yaml</code>如下</p>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">squid</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">squid</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">squid</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">1</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">app:</span> <span class="string">squid</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">app:</span> <span class="string">squid</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">volumes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">squid-volume</span></span><br><span class="line">          <span class="attr">persistentVolumeClaim:</span></span><br><span class="line">            <span class="attr">claimName:</span> <span class="string">squid-claim</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">squid-config-volume</span></span><br><span class="line">          <span class="attr">configMap:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">squid-configmap</span></span><br><span class="line">      <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br><span class="line">      <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">squid</span></span><br><span class="line">          <span class="attr">image:</span> <span class="string">squid:IMAGE_PLACEHOLDER</span></span><br><span class="line">          <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">          <span class="attr">livenessProbe:</span></span><br><span class="line">            <span class="attr">httpGet:</span></span><br><span class="line">              <span class="attr">path:</span> <span class="string">/healthz</span></span><br><span class="line">              <span class="attr">port:</span> <span class="number">5000</span></span><br><span class="line">            <span class="attr">initialDelaySeconds:</span> <span class="number">5</span></span><br><span class="line">            <span class="attr">periodSeconds:</span> <span class="number">10</span></span><br><span class="line">            <span class="attr">failureThreshold:</span> <span class="number">3</span></span><br><span class="line">          <span class="attr">resources:</span></span><br><span class="line">            <span class="attr">limits:</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">&quot;4Gi&quot;</span></span><br><span class="line">          <span class="attr">volumeMounts:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="attr">mountPath:</span> <span class="string">/var/log/squid</span></span><br><span class="line">              <span class="attr">name:</span> <span class="string">squid-volume</span></span><br><span class="line">            <span class="bullet">-</span> <span class="attr">mountPath:</span> <span class="string">/etc/squid-config</span></span><br><span class="line">              <span class="attr">name:</span> <span class="string">squid-config-volume</span></span><br></pre></td></tr></table></figure>
+
+<p>应用configmap, deployment, 等待Pod Ready </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl create -f squid-configmap.yaml</span><br><span class="line">kubectl -n squid delete deploy squid</span><br><span class="line">kubectl create -f squid-deployment.yaml</span><br></pre></td></tr></table></figure>
+
+<p><strong>测试</strong><br>先确认ConfigMap内容包含了配置信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n squid get cm squid-configmap -o yaml</span><br><span class="line">apiVersion: v1</span><br><span class="line">data:</span><br><span class="line">  customerProxy: 192.168.52.204:3128</span><br><span class="line">  whitelist: www.baidu.com,www.google.com</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  ...</span><br></pre></td></tr></table></figure>
+
+<p>再进入Pod，确认<code>/etc/squid-config</code>目录下的文件内容 </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n squid exec -it squid-64bbc7d8f5-dqklp -- /bin/bash</span><br><span class="line">cat /etc/squid-config/customerProxy</span><br><span class="line">192.168.52.204:3128</span><br><span class="line"># cat /etc/squid-config/whitelist</span><br><span class="line">www.baidu.com,www.google.com</span><br></pre></td></tr></table></figure>
+
+<p>编辑configmap中的配置，等待一段时间后进入容器确认<code>/etc/squid-config/</code>的文件内容也随之更新</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n squid edit cm squid-congfimap</span><br><span class="line">把whitelist的值设置为www.4399.com, 等待一段时间后进入容器中，查看`/etc/squid-config/whitelist`的内容更新为www.4399.com</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】 <a href="https://kubernetes.io/docs/concepts/configuration/configmap/">Kubernetes Documentation - ConfigMaps</a><br>【2】 <a href="https://juejin.cn/post/7416195017084125236">kubernetes核心技术-ConfigMap</a></p>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+        <tag>Squid</tag>
       </tags>
   </entry>
   <entry>
