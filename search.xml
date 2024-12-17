@@ -4369,21 +4369,6 @@
       </tags>
   </entry>
   <entry>
-    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
-    <url>/2023/0301211739.html</url>
-    <content><![CDATA[<p>Add following line to spec file</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
-<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
-]]></content>
-      <categories>
-        <category>RPM</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何查看Microk8s的apiserver证书过期时间</title>
     <url>/2023/0330211939.html</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
@@ -4432,6 +4417,21 @@
       </categories>
       <tags>
         <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
+    <url>/2023/0301211739.html</url>
+    <content><![CDATA[<p>Add following line to spec file</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
+<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
+]]></content>
+      <categories>
+        <category>RPM</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -7249,6 +7249,36 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Linux中定时删除10天前的日志文件</title>
+    <url>/2024/1009194730.html</url>
+    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>只查看要删除的文件有哪些，不真正删除文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
+<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>再配置crontab</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
+<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL基础</title>
     <url>/2024/1003155441.html</url>
     <content><![CDATA[<h2 id="数据库相关概念"><a href="#数据库相关概念" class="headerlink" title="数据库相关概念"></a>数据库相关概念</h2><ul>
@@ -8211,36 +8241,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux中定时删除10天前的日志文件</title>
-    <url>/2024/1009194730.html</url>
-    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>只查看要删除的文件有哪些，不真正删除文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
-<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<p>再配置crontab</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
-<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -8965,35 +8965,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>MySQL8.0如何重置密码</title>
-    <url>/2024/1017202436.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
-<li>VMware Rocky Linux 9.4</li>
-<li>MySQL 8.0.36</li>
-</ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
-
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
-<p>连接成功后，执行如下sql命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Docker安装教程</title>
     <url>/2024/1017195632.html</url>
     <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
@@ -9024,6 +8995,35 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL8.0如何重置密码</title>
+    <url>/2024/1017202436.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
+
+<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<p>连接成功后，执行如下sql命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -10921,49 +10921,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>SSH连接报错, Corrupted MAC on input解决方法</title>
-    <url>/2024/1210195732.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户在windows CMD中SSH连接失败，报错:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Corrupted MAC on input</span><br><span class="line">ssh_dispatch_run_fatal: Connection to x.x.x.x port 22: message authentication code incorrect</span><br></pre></td></tr></table></figure>
-<p>值得注意的是，客户通过别的机器做SSH连接可以成功，使用putty, mobaxterm连接也可以成功</p>
-<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>通过别的机器能做SSH连接，说明SSH服务端本身没有问题，网络连接也正常。<br>这个原因一般是SSH客户端和服务器的配置不匹配，使用了不同的MAC(消息认证码)或cipher(加密算法)，导致协商失败。</p>
-<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><p>分别查看SSH客户端和服务端支持的MAC和cipher列表，先确认配置是否匹配。</p>
-<span id="more"></span>
-
-<p>查看SSH客户端支持的MAC和cipher的方法如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -Q mac</span><br><span class="line">hmac-sha1</span><br><span class="line">hmac-sha1-96</span><br><span class="line">hmac-sha2-256</span><br><span class="line">hmac-sha2-512</span><br><span class="line">hmac-md5</span><br><span class="line">hmac-md5-96</span><br><span class="line">umac-64@openssh.com</span><br><span class="line">umac-128@openssh.com</span><br><span class="line">hmac-sha1-etm@openssh.com</span><br><span class="line">hmac-sha1-96-etm@openssh.com</span><br><span class="line">hmac-sha2-256-etm@openssh.com</span><br><span class="line">hmac-sha2-512-etm@openssh.com</span><br><span class="line">hmac-md5-etm@openssh.com</span><br><span class="line">hmac-md5-96-etm@openssh.com</span><br><span class="line">umac-64-etm@openssh.com</span><br><span class="line">umac-128-etm@openssh.com</span><br><span class="line"></span><br><span class="line">ssh -Q cipher</span><br><span class="line">3des-cbc</span><br><span class="line">aes128-cbc</span><br><span class="line">aes192-cbc</span><br><span class="line">aes256-cbc</span><br><span class="line">aes128-ctr</span><br><span class="line">aes192-ctr</span><br><span class="line">aes256-ctr</span><br><span class="line">aes128-gcm@openssh.com</span><br><span class="line">aes256-gcm@openssh.com</span><br><span class="line">chacha20-poly1305@openssh.com</span><br></pre></td></tr></table></figure>
-
-<p>再查看SSH服务端支持的MAC和cipher，有两种方法（无需登录服务端后台)</p>
-<p>方法1: 客户端使用nmap测试</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nmap --script ssh2-enum-algos -sV -p 22 10.206.216.97</span><br><span class="line"></span><br><span class="line">Starting Nmap 6.40 ( http://nmap.org ) at 2024-12-09 22:00 EST</span><br><span class="line">Nmap scan report for 10.206.216.97</span><br><span class="line">Host is up (0.00035s latency).</span><br><span class="line">PORT   STATE SERVICE VERSION</span><br><span class="line">22/tcp open  ssh     OpenSSH 8.7 (protocol 2.0)</span><br><span class="line">| ssh2-enum-algos:</span><br><span class="line">|   kex_algorithms (10)</span><br><span class="line">|       curve25519-sha256</span><br><span class="line">|       curve25519-sha256@libssh.org</span><br><span class="line">|       ecdh-sha2-nistp256</span><br><span class="line">|       ecdh-sha2-nistp384</span><br><span class="line">|       ecdh-sha2-nistp521</span><br><span class="line">|       diffie-hellman-group-exchange-sha256</span><br><span class="line">|       diffie-hellman-group14-sha256</span><br><span class="line">|       diffie-hellman-group16-sha512</span><br><span class="line">|       diffie-hellman-group18-sha512</span><br><span class="line">|       kex-strict-s-v00@openssh.com</span><br><span class="line">|   server_host_key_algorithms (4)</span><br><span class="line">|       rsa-sha2-512</span><br><span class="line">|       rsa-sha2-256</span><br><span class="line">|       ecdsa-sha2-nistp256</span><br><span class="line">|       ssh-ed25519</span><br><span class="line">|   encryption_algorithms (4)</span><br><span class="line">|       aes256-gcm@openssh.com</span><br><span class="line">|       aes256-ctr</span><br><span class="line">|       aes128-gcm@openssh.com</span><br><span class="line">|       aes128-ctr</span><br><span class="line">|   mac_algorithms (6)</span><br><span class="line">|       hmac-sha2-256-etm@openssh.com</span><br><span class="line">|       umac-128-etm@openssh.com</span><br><span class="line">|       hmac-sha2-512-etm@openssh.com</span><br><span class="line">|       hmac-sha2-256</span><br><span class="line">|       umac-128@openssh.com</span><br><span class="line">|       hmac-sha2-512</span><br><span class="line">|   compression_algorithms (2)</span><br><span class="line">|       none</span><br><span class="line">|_      zlib@openssh.com</span><br><span class="line">MAC Address: 00:0C:29:8F:61:C4 (VMware)</span><br></pre></td></tr></table></figure>
-<p>重点关注MAC和cipher, 是否和客户端支持的匹配：</p>
-<ul>
-<li>encryption_algorithms（加密算法）： 加密算法用于加密通信双方之间的数据，确保数据的机密性。这些算法可以是对称的（使用相同的密钥加密和解密）或非对称的（使用公钥加密，私钥解密）。SSH中常用的对称加密算法包括aes128-ctr、aes256-ctr等。</li>
-<li>mac_algorithms（消息认证码算法）： 消息认证码（MAC）算法用于确保数据的完整性和真实性，即确保数据在传输过程中没有被篡改，并且确实来自声称的发送者。这些算法通常与加密算法一起使用，为加密的数据提供额外的保护层。常见的MAC算法包括hmac-sha2-256、hmac-sha1等。</li>
-</ul>
-<p>其他算法说明：</p>
-<ul>
-<li>kex_algorithms（密钥交换算法）： 密钥交换算法用于在客户端和服务器之间安全地交换加密密钥。这是建立安全会话的第一步，确保后续通信的机密性和完整性。常见的密钥交换算法包括diffie-hellman-group14-sha256、diffie-hellman-group-exchange-sha256等。</li>
-<li>server_host_key_algorithms（服务器主机密钥算法）： 服务器主机密钥算法用于服务器身份验证。服务器使用这些算法生成公钥和私钥对，公钥公开给客户端，私钥用于签名消息以证明服务器的身份。常见的服务器主机密钥算法包括ssh-rsa、ecdsa-sha2-nistp256等。</li>
-<li>compression_algorithms（压缩算法）： 压缩算法用于减少传输数据的大小，从而加快数据传输速度并减少带宽使用。虽然压缩可以提高性能，但它也可能增加CPU的使用率。SSH中常用的压缩算法包括none（不压缩）、zlib等。</li>
-</ul>
-<p>方法2: 客户端使用<code>ssh -vv</code>, 再根据输出查看MAC和cipher的协商过程</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -vv root@10.206.216.97</span><br><span class="line"></span><br><span class="line">OpenSSH_for_Windows_9.5p1, LibreSSL 3.8.2</span><br><span class="line">debug2: resolve_canonicalize: hostname 10.206.216.97 is address</span><br><span class="line">debug1: Connecting to 10.206.216.97 [10.206.216.97] port 22.</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">debug2: KEX algorithms: curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,ext-info-c,kex-strict-c-v00@openssh.com</span><br><span class="line">debug2: host key algorithms: ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256</span><br><span class="line">debug2: ciphers ctos: chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com</span><br><span class="line">debug2: ciphers stoc: chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com</span><br><span class="line">debug2: MACs ctos: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512</span><br><span class="line">debug2: MACs stoc: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512</span><br><span class="line">debug2: compression ctos: none,zlib@openssh.com,zlib</span><br><span class="line">debug2: compression stoc: none,zlib@openssh.com,zlib</span><br><span class="line">debug2: languages ctos: </span><br><span class="line">debug2: languages stoc: </span><br><span class="line">debug2: first_kex_follows 0 </span><br><span class="line">debug2: reserved 0 </span><br><span class="line">debug2: peer server KEXINIT proposal</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">debug2: KEX algorithms: curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,kex-strict-s-v00@openssh.com</span><br><span class="line">debug2: host key algorithms: rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256,ssh-ed25519</span><br><span class="line">debug2: ciphers ctos: aes256-gcm@openssh.com,aes256-ctr,aes128-gcm@openssh.com,aes128-ctr</span><br><span class="line">debug2: ciphers stoc: aes256-gcm@openssh.com,aes256-ctr,aes128-gcm@openssh.com,aes128-ctr</span><br><span class="line">debug2: MACs ctos: hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,umac-128@openssh.com,hmac-sha2-512</span><br><span class="line">debug2: MACs stoc: hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,umac-128@openssh.com,hmac-sha2-512</span><br><span class="line">debug2: compression ctos: none,zlib@openssh.com</span><br><span class="line">debug2: compression stoc: none,zlib@openssh.com</span><br><span class="line">debug2: languages ctos: </span><br><span class="line">debug2: languages stoc: </span><br><span class="line">debug2: first_kex_follows 0 </span><br><span class="line">debug2: reserved 0 </span><br><span class="line"></span><br><span class="line">debug1: kex: algorithm: curve25519-sha256</span><br><span class="line">debug1: kex: host key algorithm: ssh-ed25519</span><br><span class="line">debug1: kex: server-&gt;client cipher: aes128-ctr MAC: umac-128-etm@openssh.com compression: none</span><br><span class="line">debug1: kex: client-&gt;server cipher: aes128-ctr MAC: umac-128-etm@openssh.com compression: none</span><br><span class="line">debug1: expecting SSH2_MSG_KEX_ECDH_REPLY</span><br><span class="line">debug1: SSH2_MSG_KEX_ECDH_REPLY received</span><br><span class="line">debug1: Server host key: ssh-ed25519 SHA256:kQPh28MT+40A8EpxJOcmt+lHMS5QlF1YN/lv05KM+Yg</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>在客户端做ssh连接时, 手动指定服务端支持的MAC或cipher，例如:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -m hmac-sha2-512 -c aes128-ctr root@10.206.216.97 # -m指定MAC, -c指定cipher</span><br></pre></td></tr></table></figure>
-<p>或者修改服务端配置，添加任一个客户端支持的MAC或cipher。在Rocky Linux 9上，可以修改配置文件<code>/etc/crypto-policies/back-ends/opensshserver.config</code></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://www.h3c.com/cn/d_200805/606213_30003_0.htm">SSH技术白皮书</a></p>
-]]></content>
-      <categories>
-        <category>SSH</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>SSH</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Squid ACL访问控制实践</title>
     <url>/2024/1210195948.html</url>
     <content><![CDATA[<h2 id="ACL简介"><a href="#ACL简介" class="headerlink" title="ACL简介"></a>ACL简介</h2><p>Squid ACL（Access Control List，访问控制列表）提供了代理控制的功能。<br>通过设置ACL，Squid可以针对源地址、目标地址、访问的URL路径、访问的时间等各种条件进行过滤，从而实现对网络流量的精细控制。</p>
@@ -11020,35 +10977,46 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>配置Nginx自签名SSL证书，支持HTTPS</title>
-    <url>/2024/1211220649.html</url>
-    <content><![CDATA[<h2 id="配置Nginx自签名SSL证书的流程"><a href="#配置Nginx自签名SSL证书的流程" class="headerlink" title="配置Nginx自签名SSL证书的流程"></a>配置Nginx自签名SSL证书的流程</h2><ul>
-<li>生成一个SSL自签名证书</li>
-<li>客户端机器信任这个自签名证书</li>
-<li>修改RHEL服务器的Nginx配置</li>
-<li>在客户机用curl测试HTTPS</li>
-</ul>
-<h2 id="生成一个SSL自签名证书"><a href="#生成一个SSL自签名证书" class="headerlink" title="生成一个SSL自签名证书"></a>生成一个SSL自签名证书</h2><p>在RHEL服务器上, 用openssl命令生成一个自签名证书</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out server.key 2048 #生成一个2048位的RSA私钥,保存到server.key</span><br><span class="line">openssl req -x509 -new -nodes -key server.key -sha256 -days 3650 -out server.crt -subj &quot;/C=CN/CN=www.petertest.com/O=MyRootCA&quot; # 使用私钥server.key, 生成一个自签名的根证书server.crt, 有效期10年</span><br></pre></td></tr></table></figure>
-<p>注: <code>CN=www.petertest.com</code>需要换成你的服务器域名, 否则curl测试会报错</p>
+    <title>SSH连接报错, Corrupted MAC on input解决方法</title>
+    <url>/2024/1210195732.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户在windows CMD中SSH连接失败，报错:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Corrupted MAC on input</span><br><span class="line">ssh_dispatch_run_fatal: Connection to x.x.x.x port 22: message authentication code incorrect</span><br></pre></td></tr></table></figure>
+<p>值得注意的是，客户通过别的机器做SSH连接可以成功，使用putty, mobaxterm连接也可以成功</p>
+<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>通过别的机器能做SSH连接，说明SSH服务端本身没有问题，网络连接也正常。<br>这个原因一般是SSH客户端和服务器的配置不匹配，使用了不同的MAC(消息认证码)或cipher(加密算法)，导致协商失败。</p>
+<h2 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h2><p>分别查看SSH客户端和服务端支持的MAC和cipher列表，先确认配置是否匹配。</p>
 <span id="more"></span>
 
-<h2 id="客户端机器信任这个自签名证书"><a href="#客户端机器信任这个自签名证书" class="headerlink" title="客户端机器信任这个自签名证书"></a>客户端机器信任这个自签名证书</h2><p>将server.crt传到客户端Linux机器上。 在RHEL&#x2F;Centos机器上, 需要把证书传到目录<code>/etc/pki/ca-trust/source/anchors/</code>，再用如下命令更新系统信任的CA证书列表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">update-ca-trust</span><br></pre></td></tr></table></figure>
-<h2 id="修改RHEL服务器的Nginx配置"><a href="#修改RHEL服务器的Nginx配置" class="headerlink" title="修改RHEL服务器的Nginx配置"></a>修改RHEL服务器的Nginx配置</h2><p>修改<code>nginx.conf</code>, 如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    server_name www.peter.com; # 设置域名</span><br><span class="line"></span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    ssl_certificate /server.crt; # 指定证书的绝对路径</span><br><span class="line">    ssl_certificate_key /server.key; # 指定私钥的绝对路径</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;Welcome to Nginx&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>再把证书文件server.crt和私钥文件server.key拷到服务器的根目录下</p>
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>在客户机用curl测试, 返回200 OK</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl https://www.petertest.com:443 -i</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Server: nginx/1.20.1</span><br><span class="line">Date: Wed, 11 Dec 2024 14:02:13 GMT</span><br><span class="line">Content-Type: text/html</span><br><span class="line">Content-Length: 25</span><br><span class="line">Connection: keep-alive</span><br><span class="line"></span><br><span class="line">&lt;h1&gt;Welcome to Nginx&lt;/h1&gt;</span><br></pre></td></tr></table></figure>
+<p>查看SSH客户端支持的MAC和cipher的方法如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -Q mac</span><br><span class="line">hmac-sha1</span><br><span class="line">hmac-sha1-96</span><br><span class="line">hmac-sha2-256</span><br><span class="line">hmac-sha2-512</span><br><span class="line">hmac-md5</span><br><span class="line">hmac-md5-96</span><br><span class="line">umac-64@openssh.com</span><br><span class="line">umac-128@openssh.com</span><br><span class="line">hmac-sha1-etm@openssh.com</span><br><span class="line">hmac-sha1-96-etm@openssh.com</span><br><span class="line">hmac-sha2-256-etm@openssh.com</span><br><span class="line">hmac-sha2-512-etm@openssh.com</span><br><span class="line">hmac-md5-etm@openssh.com</span><br><span class="line">hmac-md5-96-etm@openssh.com</span><br><span class="line">umac-64-etm@openssh.com</span><br><span class="line">umac-128-etm@openssh.com</span><br><span class="line"></span><br><span class="line">ssh -Q cipher</span><br><span class="line">3des-cbc</span><br><span class="line">aes128-cbc</span><br><span class="line">aes192-cbc</span><br><span class="line">aes256-cbc</span><br><span class="line">aes128-ctr</span><br><span class="line">aes192-ctr</span><br><span class="line">aes256-ctr</span><br><span class="line">aes128-gcm@openssh.com</span><br><span class="line">aes256-gcm@openssh.com</span><br><span class="line">chacha20-poly1305@openssh.com</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://cloud.tencent.com/developer/article/1743989">https://cloud.tencent.com/developer/article/1743989</a></p>
+<p>再查看SSH服务端支持的MAC和cipher，有两种方法（无需登录服务端后台)</p>
+<p>方法1: 客户端使用nmap测试</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nmap --script ssh2-enum-algos -sV -p 22 10.206.216.97</span><br><span class="line"></span><br><span class="line">Starting Nmap 6.40 ( http://nmap.org ) at 2024-12-09 22:00 EST</span><br><span class="line">Nmap scan report for 10.206.216.97</span><br><span class="line">Host is up (0.00035s latency).</span><br><span class="line">PORT   STATE SERVICE VERSION</span><br><span class="line">22/tcp open  ssh     OpenSSH 8.7 (protocol 2.0)</span><br><span class="line">| ssh2-enum-algos:</span><br><span class="line">|   kex_algorithms (10)</span><br><span class="line">|       curve25519-sha256</span><br><span class="line">|       curve25519-sha256@libssh.org</span><br><span class="line">|       ecdh-sha2-nistp256</span><br><span class="line">|       ecdh-sha2-nistp384</span><br><span class="line">|       ecdh-sha2-nistp521</span><br><span class="line">|       diffie-hellman-group-exchange-sha256</span><br><span class="line">|       diffie-hellman-group14-sha256</span><br><span class="line">|       diffie-hellman-group16-sha512</span><br><span class="line">|       diffie-hellman-group18-sha512</span><br><span class="line">|       kex-strict-s-v00@openssh.com</span><br><span class="line">|   server_host_key_algorithms (4)</span><br><span class="line">|       rsa-sha2-512</span><br><span class="line">|       rsa-sha2-256</span><br><span class="line">|       ecdsa-sha2-nistp256</span><br><span class="line">|       ssh-ed25519</span><br><span class="line">|   encryption_algorithms (4)</span><br><span class="line">|       aes256-gcm@openssh.com</span><br><span class="line">|       aes256-ctr</span><br><span class="line">|       aes128-gcm@openssh.com</span><br><span class="line">|       aes128-ctr</span><br><span class="line">|   mac_algorithms (6)</span><br><span class="line">|       hmac-sha2-256-etm@openssh.com</span><br><span class="line">|       umac-128-etm@openssh.com</span><br><span class="line">|       hmac-sha2-512-etm@openssh.com</span><br><span class="line">|       hmac-sha2-256</span><br><span class="line">|       umac-128@openssh.com</span><br><span class="line">|       hmac-sha2-512</span><br><span class="line">|   compression_algorithms (2)</span><br><span class="line">|       none</span><br><span class="line">|_      zlib@openssh.com</span><br><span class="line">MAC Address: 00:0C:29:8F:61:C4 (VMware)</span><br></pre></td></tr></table></figure>
+<p>重点关注MAC和cipher, 是否和客户端支持的匹配：</p>
+<ul>
+<li>encryption_algorithms（加密算法）： 加密算法用于加密通信双方之间的数据，确保数据的机密性。这些算法可以是对称的（使用相同的密钥加密和解密）或非对称的（使用公钥加密，私钥解密）。SSH中常用的对称加密算法包括aes128-ctr、aes256-ctr等。</li>
+<li>mac_algorithms（消息认证码算法）： 消息认证码（MAC）算法用于确保数据的完整性和真实性，即确保数据在传输过程中没有被篡改，并且确实来自声称的发送者。这些算法通常与加密算法一起使用，为加密的数据提供额外的保护层。常见的MAC算法包括hmac-sha2-256、hmac-sha1等。</li>
+</ul>
+<p>其他算法说明：</p>
+<ul>
+<li>kex_algorithms（密钥交换算法）： 密钥交换算法用于在客户端和服务器之间安全地交换加密密钥。这是建立安全会话的第一步，确保后续通信的机密性和完整性。常见的密钥交换算法包括diffie-hellman-group14-sha256、diffie-hellman-group-exchange-sha256等。</li>
+<li>server_host_key_algorithms（服务器主机密钥算法）： 服务器主机密钥算法用于服务器身份验证。服务器使用这些算法生成公钥和私钥对，公钥公开给客户端，私钥用于签名消息以证明服务器的身份。常见的服务器主机密钥算法包括ssh-rsa、ecdsa-sha2-nistp256等。</li>
+<li>compression_algorithms（压缩算法）： 压缩算法用于减少传输数据的大小，从而加快数据传输速度并减少带宽使用。虽然压缩可以提高性能，但它也可能增加CPU的使用率。SSH中常用的压缩算法包括none（不压缩）、zlib等。</li>
+</ul>
+<p>方法2: 客户端使用<code>ssh -vv</code>, 再根据输出查看MAC和cipher的协商过程</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -vv root@10.206.216.97</span><br><span class="line"></span><br><span class="line">OpenSSH_for_Windows_9.5p1, LibreSSL 3.8.2</span><br><span class="line">debug2: resolve_canonicalize: hostname 10.206.216.97 is address</span><br><span class="line">debug1: Connecting to 10.206.216.97 [10.206.216.97] port 22.</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">debug2: KEX algorithms: curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,ext-info-c,kex-strict-c-v00@openssh.com</span><br><span class="line">debug2: host key algorithms: ssh-ed25519-cert-v01@openssh.com,ecdsa-sha2-nistp256-cert-v01@openssh.com,ecdsa-sha2-nistp384-cert-v01@openssh.com,ecdsa-sha2-nistp521-cert-v01@openssh.com,sk-ssh-ed25519-cert-v01@openssh.com,sk-ecdsa-sha2-nistp256-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com,rsa-sha2-256-cert-v01@openssh.com,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,sk-ssh-ed25519@openssh.com,sk-ecdsa-sha2-nistp256@openssh.com,rsa-sha2-512,rsa-sha2-256</span><br><span class="line">debug2: ciphers ctos: chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com</span><br><span class="line">debug2: ciphers stoc: chacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com</span><br><span class="line">debug2: MACs ctos: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512</span><br><span class="line">debug2: MACs stoc: umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512</span><br><span class="line">debug2: compression ctos: none,zlib@openssh.com,zlib</span><br><span class="line">debug2: compression stoc: none,zlib@openssh.com,zlib</span><br><span class="line">debug2: languages ctos: </span><br><span class="line">debug2: languages stoc: </span><br><span class="line">debug2: first_kex_follows 0 </span><br><span class="line">debug2: reserved 0 </span><br><span class="line">debug2: peer server KEXINIT proposal</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">debug2: KEX algorithms: curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group14-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,kex-strict-s-v00@openssh.com</span><br><span class="line">debug2: host key algorithms: rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256,ssh-ed25519</span><br><span class="line">debug2: ciphers ctos: aes256-gcm@openssh.com,aes256-ctr,aes128-gcm@openssh.com,aes128-ctr</span><br><span class="line">debug2: ciphers stoc: aes256-gcm@openssh.com,aes256-ctr,aes128-gcm@openssh.com,aes128-ctr</span><br><span class="line">debug2: MACs ctos: hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,umac-128@openssh.com,hmac-sha2-512</span><br><span class="line">debug2: MACs stoc: hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,umac-128@openssh.com,hmac-sha2-512</span><br><span class="line">debug2: compression ctos: none,zlib@openssh.com</span><br><span class="line">debug2: compression stoc: none,zlib@openssh.com</span><br><span class="line">debug2: languages ctos: </span><br><span class="line">debug2: languages stoc: </span><br><span class="line">debug2: first_kex_follows 0 </span><br><span class="line">debug2: reserved 0 </span><br><span class="line"></span><br><span class="line">debug1: kex: algorithm: curve25519-sha256</span><br><span class="line">debug1: kex: host key algorithm: ssh-ed25519</span><br><span class="line">debug1: kex: server-&gt;client cipher: aes128-ctr MAC: umac-128-etm@openssh.com compression: none</span><br><span class="line">debug1: kex: client-&gt;server cipher: aes128-ctr MAC: umac-128-etm@openssh.com compression: none</span><br><span class="line">debug1: expecting SSH2_MSG_KEX_ECDH_REPLY</span><br><span class="line">debug1: SSH2_MSG_KEX_ECDH_REPLY received</span><br><span class="line">debug1: Server host key: ssh-ed25519 SHA256:kQPh28MT+40A8EpxJOcmt+lHMS5QlF1YN/lv05KM+Yg</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>在客户端做ssh连接时, 手动指定服务端支持的MAC或cipher，例如:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh -m hmac-sha2-512 -c aes128-ctr root@10.206.216.97 # -m指定MAC, -c指定cipher</span><br></pre></td></tr></table></figure>
+<p>或者修改服务端配置，添加任一个客户端支持的MAC或cipher。在Rocky Linux 9上，可以修改配置文件<code>/etc/crypto-policies/back-ends/opensshserver.config</code></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a href="https://www.h3c.com/cn/d_200805/606213_30003_0.htm">SSH技术白皮书</a></p>
 ]]></content>
       <categories>
-        <category>Nginx</category>
+        <category>SSH</category>
       </categories>
       <tags>
-        <tag>Nginx</tag>
-        <tag>HTTP</tag>
+        <tag>troubleshooting</tag>
+        <tag>SSH</tag>
       </tags>
   </entry>
   <entry>
@@ -11103,6 +11071,38 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>配置Nginx自签名SSL证书，支持HTTPS</title>
+    <url>/2024/1211220649.html</url>
+    <content><![CDATA[<h2 id="配置Nginx自签名SSL证书的流程"><a href="#配置Nginx自签名SSL证书的流程" class="headerlink" title="配置Nginx自签名SSL证书的流程"></a>配置Nginx自签名SSL证书的流程</h2><ul>
+<li>生成一个SSL自签名证书</li>
+<li>客户端机器信任这个自签名证书</li>
+<li>修改RHEL服务器的Nginx配置</li>
+<li>在客户机用curl测试HTTPS</li>
+</ul>
+<h2 id="生成一个SSL自签名证书"><a href="#生成一个SSL自签名证书" class="headerlink" title="生成一个SSL自签名证书"></a>生成一个SSL自签名证书</h2><p>在RHEL服务器上, 用openssl命令生成一个自签名证书</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl genrsa -out server.key 2048 #生成一个2048位的RSA私钥,保存到server.key</span><br><span class="line">openssl req -x509 -new -nodes -key server.key -sha256 -days 3650 -out server.crt -subj &quot;/C=CN/CN=www.petertest.com/O=MyRootCA&quot; # 使用私钥server.key, 生成一个自签名的根证书server.crt, 有效期10年</span><br></pre></td></tr></table></figure>
+<p>注: <code>CN=www.petertest.com</code>需要换成你的服务器域名, 否则curl测试会报错</p>
+<span id="more"></span>
+
+<h2 id="客户端机器信任这个自签名证书"><a href="#客户端机器信任这个自签名证书" class="headerlink" title="客户端机器信任这个自签名证书"></a>客户端机器信任这个自签名证书</h2><p>将server.crt传到客户端Linux机器上。 在RHEL&#x2F;Centos机器上, 需要把证书传到目录<code>/etc/pki/ca-trust/source/anchors/</code>，再用如下命令更新系统信任的CA证书列表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">update-ca-trust</span><br></pre></td></tr></table></figure>
+<h2 id="修改RHEL服务器的Nginx配置"><a href="#修改RHEL服务器的Nginx配置" class="headerlink" title="修改RHEL服务器的Nginx配置"></a>修改RHEL服务器的Nginx配置</h2><p>修改<code>nginx.conf</code>, 如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    server_name www.peter.com; # 设置域名</span><br><span class="line"></span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    ssl_certificate /server.crt; # 指定证书的绝对路径</span><br><span class="line">    ssl_certificate_key /server.key; # 指定私钥的绝对路径</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;Welcome to Nginx&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再把证书文件server.crt和私钥文件server.key拷到服务器的根目录下</p>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>在客户机用curl测试, 返回200 OK</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl https://www.petertest.com:443 -i</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Server: nginx/1.20.1</span><br><span class="line">Date: Wed, 11 Dec 2024 14:02:13 GMT</span><br><span class="line">Content-Type: text/html</span><br><span class="line">Content-Length: 25</span><br><span class="line">Connection: keep-alive</span><br><span class="line"></span><br><span class="line">&lt;h1&gt;Welcome to Nginx&lt;/h1&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://cloud.tencent.com/developer/article/1743989">https://cloud.tencent.com/developer/article/1743989</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+        <tag>HTTP</tag>
       </tags>
   </entry>
   <entry>
@@ -11274,5 +11274,37 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>Python</tag>
         <tag>cheetsheet</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>判断SSH的公钥和私钥是否为一对的方法</title>
+    <url>/2024/1217233035.html</url>
+    <content><![CDATA[<h2 id="使用sshkey-gen命令判断"><a href="#使用sshkey-gen命令判断" class="headerlink" title="使用sshkey-gen命令判断"></a>使用sshkey-gen命令判断</h2><p>使用ssh-keygen -y命令可以从私钥文件中提取公钥。例如: 你的私钥文件是id_rsa，执行如下命令:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -y -f id_rsa &gt; extracted_pubkey.pub</span><br></pre></td></tr></table></figure>
+<p>将提取的公钥保存到extracted_pubkey.pub文件。再和你的公钥文件比较，看文件内容是否相同</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">diff extracted_pubkey.pub id_rsa.pub</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>SSH</category>
+      </categories>
+      <tags>
+        <tag>SSH</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VMware ESXi导出OVA文件中含有ISO文件，如何去除这个ISO</title>
+    <url>/2024/1217233142.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在VMware ESXi上，用官方Rockylinux minimal ISO装了一台Linux机器。导出OVA文件发现大小有3个G。查看OVA文件，发现有个ISO文件占了2G，这个ISO文件用不到，如何删除？</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tar tvf va.ova</span><br><span class="line">-rw-r--r-- someone/someone 9876 2024-12-17 02:27 va.ovf</span><br><span class="line">-rw-r--r-- someone/someone  345 2024-12-17 02:27 va.mf</span><br><span class="line">-rw-r--r-- someone/someone 1829634048 2024-12-17 02:27 va-file1.iso</span><br><span class="line">-rw-r--r-- someone/someone 1332535296 2024-12-17 02:28 va-disk1.vmdk</span><br><span class="line">-rw-r--r-- someone/someone       8684 2024-12-17 02:28 va-file2.nvram</span><br></pre></td></tr></table></figure>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>Poweroff虚拟机，修改虚拟机配置，把光驱删掉，再重新导出OVA即可 </p>
+<span id="more"></span>
+<p><img data-src="/2024/1217233142/image1.png" alt="image1.png"></p>
+<p>新的OVA大小只有1.3G，且ISO成功删除</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tar tvf ./va.ova</span><br><span class="line">-rw-r--r-- someone/someone 9226 2024-12-17 02:41 va.ovf</span><br><span class="line">-rw-r--r-- someone/someone  258 2024-12-17 02:41 va.mf</span><br><span class="line">-rw-r--r-- someone/someone 1332317696 2024-12-17 02:42 va-disk1.vmdk</span><br><span class="line">-rw-r--r-- someone/someone       8684 2024-12-17 02:42 va-file1.nvram</span><br></pre></td></tr></table></figure>
+
+<h2 id="VMware-ESXi导出OVA的方法"><a href="#VMware-ESXi导出OVA的方法" class="headerlink" title="VMware ESXi导出OVA的方法"></a>VMware ESXi导出OVA的方法</h2><p>除了在UI上导出，也可以通过Vmware PowerCLI和ovftool导出OVA</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pwsh</span><br><span class="line">PS&gt; Set-PowerCLIConfiguration -InvalidCertificateAction &quot;Ignore&quot; -Confirm:$false | Out-Null</span><br><span class="line">PS&gt; connect-viserver &#123;your_viserver_ip&#125; -User root -Password &#123;your_password&#125;  </span><br><span class="line">PS&gt; ovftool -dm=thin --noSSLVerify --powerOffSource vi://root:&#123;your_password&#125;@&#123;viserver_ip&#125;//&#123;your_vm_name&#125; va.ova</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://duiz.net/3491.html">https://duiz.net/3491.html</a></p>
+]]></content>
   </entry>
 </search>
