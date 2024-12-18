@@ -4369,6 +4369,21 @@
       </tags>
   </entry>
   <entry>
+    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
+    <url>/2023/0301211739.html</url>
+    <content><![CDATA[<p>Add following line to spec file</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
+<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
+]]></content>
+      <categories>
+        <category>RPM</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何查看Microk8s的apiserver证书过期时间</title>
     <url>/2023/0330211939.html</url>
     <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
@@ -4417,21 +4432,6 @@
       </categories>
       <tags>
         <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RPM打包删除/usr/lib/.buildid目录的方法</title>
-    <url>/2023/0301211739.html</url>
-    <content><![CDATA[<p>Add following line to spec file</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">%define _build_id_links none</span><br></pre></td></tr></table></figure>
-<p>参考：<br><a href="https://gohalo.me/post/linux-create-rpm-package.html">https://gohalo.me/post/linux-create-rpm-package.html</a></p>
-]]></content>
-      <categories>
-        <category>RPM</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>RPM</tag>
       </tags>
   </entry>
   <entry>
@@ -5932,6 +5932,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/0528205224.html</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>如何在centos7上安装ansible</title>
     <url>/2024/0524205110.html</url>
     <content><![CDATA[<p>先安装python3, 再通过pip安装ansible，最后把ansible安装路径添加到环境变量PATH，如下：</p>
@@ -5947,18 +5959,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>ansible</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Notepad++不显示CRLF的方法</title>
-    <url>/2024/0528205224.html</url>
-    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
-]]></content>
-      <categories>
-        <category>other</category>
-      </categories>
-      <tags>
-        <tag>other</tag>
       </tags>
   </entry>
   <entry>
@@ -7249,36 +7249,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Linux中定时删除10天前的日志文件</title>
-    <url>/2024/1009194730.html</url>
-    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
-
-<p>只查看要删除的文件有哪些，不真正删除文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
-<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<p>再配置crontab</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
-
-<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
-<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL基础</title>
     <url>/2024/1003155441.html</url>
     <content><![CDATA[<h2 id="数据库相关概念"><a href="#数据库相关概念" class="headerlink" title="数据库相关概念"></a>数据库相关概念</h2><ul>
@@ -8241,6 +8211,36 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Linux中定时删除10天前的日志文件</title>
+    <url>/2024/1009194730.html</url>
+    <content><![CDATA[<p>例如：删除&#x2F;data&#x2F;log&#x2F;目录下所有10天前的.log文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">find /data/log/ -type f -name &quot;*.log&quot; -mtime +10 -exec rm -f &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+
+<p>只查看要删除的文件有哪些，不真正删除文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">logfiles=$(find /data/log/ -type f -name &quot;*.log&quot; -mtime +10)</span><br><span class="line">echo $logfiles</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>使用crontab添加一个定时任务，每天0点执行一次删除任务</p>
+<p>先写个脚本<code>delete_old_logfile.sh</code>删除10天前日志</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line">logfiles=$(find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">&quot;<span class="variable">$&#123;logfiles&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    find /data/log/ -<span class="built_in">type</span> f -name <span class="string">&quot;*.log&quot;</span> -mtime +10 -<span class="built_in">exec</span> <span class="built_in">rm</span> -f &#123;&#125; \;</span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&quot;Delete old logfiles: <span class="variable">$&#123;logfiles&#125;</span>, ret: $?&quot;</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+<p>再配置crontab</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo &#x27;0 0 * * * (cd /path/to; delete_old_logfile.sh)&#x27; &gt;&gt; /var/spool/cron/root</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何测试"><a href="#如何测试" class="headerlink" title="如何测试"></a>如何测试</h2><p>在&#x2F;data&#x2F;log目录下手动创建几个.log文件，用touch命令把文件的mtime改到10天前</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">touch -m -d &quot;1999-01-01 00:00:00&quot; /data/log/*.log</span><br></pre></td></tr></table></figure>
+<p>手动修改系统时间到23:59:50, 观察0点钟crontab定时任务是否执行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">date -s 23:59:50</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/renshengdezheli/p/13941084.html">Linux文件的三个时间</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2 id="体系结构"><a href="#体系结构" class="headerlink" title="体系结构"></a>体系结构</h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -8965,6 +8965,35 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>MySQL8.0如何重置密码</title>
+    <url>/2024/1017202436.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
+
+<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<p>连接成功后，执行如下sql命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Docker安装教程</title>
     <url>/2024/1017195632.html</url>
     <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
@@ -8995,35 +9024,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>MySQL8.0如何重置密码</title>
-    <url>/2024/1017202436.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
-<li>VMware Rocky Linux 9.4</li>
-<li>MySQL 8.0.36</li>
-</ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
-
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
-<p>连接成功后，执行如下sql命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -10185,6 +10185,60 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>在RockyLinux9.4上安装Microk8s</title>
+    <url>/2024/1201142626.html</url>
+    <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><p>1、安装snap</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
+
+<p>2、安装microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic <span class="comment"># 在RockyLinux9.4上, 默认下载Microk8s 1.31版本</span></span><br><span class="line">snap install microk8s --classic --channel=1.31/stable <span class="comment"># --channnel参数可以指定Microk8s的版本</span></span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>3、安装microk8s插件(addons)</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure>
+
+<p>成功安装后，通过kubectl查看Pod和Image</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">coredns/coredns:1.10.1</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">registry.k8s.io/pause:3.7</span><br></pre></td></tr></table></figure>
+
+<h2 id="在线安装可能遇到的问题"><a href="#在线安装可能遇到的问题" class="headerlink" title="在线安装可能遇到的问题"></a>在线安装可能遇到的问题</h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+<p>从国内源下载镜像，再给镜像打tag</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7  registry.k8s.io/pause:3.7</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1  docker.io/calico/cni:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1  docker.io/calico/node:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1  docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1  docker.io/coredns/coredns:1.10.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2  registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3  registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
+
+<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
+
+<p>2、将下载好的snap包传输到目标机器上，安装microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap ack microk8s_&lt;版本号&gt;.assert</span><br><span class="line">snap install microk8s_&lt;版本号&gt;.snap --classic</span><br></pre></td></tr></table></figure>
+
+<p>3、启动Microk8s服务</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
+
+<p>4、在可联网的环境下载Microk8s插件的Image并导出</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line"></span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> cni.tar docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> kube-controllers.tar docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> .....</span><br></pre></td></tr></table></figure>
+
+<p>5、将image传到目标机器上并导入</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr image import *.tar</span><br></pre></td></tr></table></figure>
+
+<p>6、启动microk8s插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br><span class="line">microk8s status --wait-ready</span><br></pre></td></tr></table></figure>
+
+<p>7、配置kubectl访问Microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
+
+<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>k8s学习笔记</title>
     <url>/2024/1127213752.html</url>
     <content><![CDATA[<p>目标:</p>
@@ -10511,60 +10565,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <ul>
 <li>service(nodeport, clusterIp)<br>service和ingress(nodePort和ingress, iptables,网络是怎么走的)</li>
 </ul>
-]]></content>
-      <categories>
-        <category>k8s</category>
-      </categories>
-      <tags>
-        <tag>k8s</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在RockyLinux9.4上安装Microk8s</title>
-    <url>/2024/1201142626.html</url>
-    <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><p>1、安装snap</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
-
-<p>2、安装microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic <span class="comment"># 在RockyLinux9.4上, 默认下载Microk8s 1.31版本</span></span><br><span class="line">snap install microk8s --classic --channel=1.31/stable <span class="comment"># --channnel参数可以指定Microk8s的版本</span></span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>3、安装microk8s插件(addons)</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure>
-
-<p>成功安装后，通过kubectl查看Pod和Image</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">coredns/coredns:1.10.1</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">registry.k8s.io/pause:3.7</span><br></pre></td></tr></table></figure>
-
-<h2 id="在线安装可能遇到的问题"><a href="#在线安装可能遇到的问题" class="headerlink" title="在线安装可能遇到的问题"></a>在线安装可能遇到的问题</h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
-<p>从国内源下载镜像，再给镜像打tag</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7  registry.k8s.io/pause:3.7</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1  docker.io/calico/cni:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1  docker.io/calico/node:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1  docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1  docker.io/coredns/coredns:1.10.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2  registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3  registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
-
-<p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
-
-<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
-
-<p>2、将下载好的snap包传输到目标机器上，安装microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap ack microk8s_&lt;版本号&gt;.assert</span><br><span class="line">snap install microk8s_&lt;版本号&gt;.snap --classic</span><br></pre></td></tr></table></figure>
-
-<p>3、启动Microk8s服务</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
-
-<p>4、在可联网的环境下载Microk8s插件的Image并导出</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line"></span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> cni.tar docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> kube-controllers.tar docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> .....</span><br></pre></td></tr></table></figure>
-
-<p>5、将image传到目标机器上并导入</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr image import *.tar</span><br></pre></td></tr></table></figure>
-
-<p>6、启动microk8s插件</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br><span class="line">microk8s status --wait-ready</span><br></pre></td></tr></table></figure>
-
-<p>7、配置kubectl访问Microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
-
-<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>k8s</category>
@@ -11306,5 +11306,46 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://duiz.net/3491.html">https://duiz.net/3491.html</a></p>
 ]]></content>
+  </entry>
+  <entry>
+    <title>Rocky Linux 9安装RabbitMQ</title>
+    <url>/2024/1218212631.html</url>
+    <content><![CDATA[<h1 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h1><p>Rocky Linux 9</p>
+<h1 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h1><h2 id="安装Signing-Keys-签名密钥"><a href="#安装Signing-Keys-签名密钥" class="headerlink" title="安装Signing Keys(签名密钥)"></a>安装Signing Keys(签名密钥)</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm --import https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc</span><br><span class="line">rpm --import https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/gpg.E495BB49CC4BBE5B.key</span><br><span class="line">rpm --import https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/gpg.9F4587F226208342.key</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h2 id="创建repo文件"><a href="#创建repo文件" class="headerlink" title="创建repo文件"></a>创建repo文件</h2><p>在&#x2F;etc&#x2F;yum.repos.d&#x2F;目录下创建一个名为rabbitmq.repo的文件，并添加以下内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># In /etc/yum.repos.d/rabbitmq.repo</span><br><span class="line"></span><br><span class="line">##</span><br><span class="line">## Zero dependency Erlang RPM</span><br><span class="line">##</span><br><span class="line"></span><br><span class="line">[modern-erlang]</span><br><span class="line">name=modern-erlang-el9</span><br><span class="line"># uses a Cloudsmith mirror @ yum1.novemberain.com.</span><br><span class="line"># Unlike Cloudsmith, it does not have traffic quotas</span><br><span class="line">baseurl=https://yum1.novemberain.com/erlang/el/9/$basearch</span><br><span class="line">repo_gpgcheck=1</span><br><span class="line">enabled=1</span><br><span class="line">gpgkey=https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/gpg.E495BB49CC4BBE5B.key</span><br><span class="line">gpgcheck=1</span><br><span class="line">sslverify=1</span><br><span class="line">sslcacert=/etc/pki/tls/certs/ca-bundle.crt</span><br><span class="line">metadata_expire=300</span><br><span class="line">pkg_gpgcheck=1</span><br><span class="line">autorefresh=1</span><br><span class="line">type=rpm-md</span><br><span class="line"></span><br><span class="line">[modern-erlang-noarch]</span><br><span class="line">name=modern-erlang-el9-noarch</span><br><span class="line"># uses a Cloudsmith mirror @ yum1.novemberain.com.</span><br><span class="line"># Unlike Cloudsmith, it does not have traffic quotas</span><br><span class="line">baseurl=https://yum1.novemberain.com/erlang/el/9/noarch</span><br><span class="line">repo_gpgcheck=1</span><br><span class="line">enabled=1</span><br><span class="line">gpgkey=https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/gpg.E495BB49CC4BBE5B.key</span><br><span class="line">       https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc</span><br><span class="line">gpgcheck=1</span><br><span class="line">sslverify=1</span><br><span class="line">sslcacert=/etc/pki/tls/certs/ca-bundle.crt</span><br><span class="line">metadata_expire=300</span><br><span class="line">pkg_gpgcheck=1</span><br><span class="line">autorefresh=1</span><br><span class="line">type=rpm-md</span><br><span class="line"></span><br><span class="line">[modern-erlang-source]</span><br><span class="line">name=modern-erlang-el9-source</span><br><span class="line"># uses a Cloudsmith mirror @ yum1.novemberain.com.</span><br><span class="line"># Unlike Cloudsmith, it does not have traffic quotas</span><br><span class="line">baseurl=https://yum1.novemberain.com/erlang/el/9/SRPMS</span><br><span class="line">repo_gpgcheck=1</span><br><span class="line">enabled=1</span><br><span class="line">gpgkey=https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/gpg.E495BB49CC4BBE5B.key</span><br><span class="line">       https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc</span><br><span class="line">gpgcheck=1</span><br><span class="line">sslverify=1</span><br><span class="line">sslcacert=/etc/pki/tls/certs/ca-bundle.crt</span><br><span class="line">metadata_expire=300</span><br><span class="line">pkg_gpgcheck=1</span><br><span class="line">autorefresh=1</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">##</span><br><span class="line">## RabbitMQ Server</span><br><span class="line">##</span><br><span class="line"></span><br><span class="line">[rabbitmq-el9]</span><br><span class="line">name=rabbitmq-el9</span><br><span class="line">baseurl=https://yum1.novemberain.com/rabbitmq/el/9/$basearch</span><br><span class="line">repo_gpgcheck=1</span><br><span class="line">enabled=1</span><br><span class="line"># Cloudsmith&#x27;s repository key and RabbitMQ package signing key</span><br><span class="line">gpgkey=https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/gpg.9F4587F226208342.key</span><br><span class="line">       https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc</span><br><span class="line">gpgcheck=1</span><br><span class="line">sslverify=1</span><br><span class="line">sslcacert=/etc/pki/tls/certs/ca-bundle.crt</span><br><span class="line">metadata_expire=300</span><br><span class="line">pkg_gpgcheck=1</span><br><span class="line">autorefresh=1</span><br><span class="line">type=rpm-md</span><br><span class="line"></span><br><span class="line">[rabbitmq-el9-noarch]</span><br><span class="line">name=rabbitmq-el9-noarch</span><br><span class="line">baseurl=https://yum1.novemberain.com/rabbitmq/el/9/noarch</span><br><span class="line">repo_gpgcheck=1</span><br><span class="line">enabled=1</span><br><span class="line"># Cloudsmith&#x27;s repository key and RabbitMQ package signing key</span><br><span class="line">gpgkey=https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/gpg.9F4587F226208342.key</span><br><span class="line">       https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc</span><br><span class="line">gpgcheck=1</span><br><span class="line">sslverify=1</span><br><span class="line">sslcacert=/etc/pki/tls/certs/ca-bundle.crt</span><br><span class="line">metadata_expire=300</span><br><span class="line">pkg_gpgcheck=1</span><br><span class="line">autorefresh=1</span><br><span class="line">type=rpm-md</span><br><span class="line"></span><br><span class="line">[rabbitmq-el9-source]</span><br><span class="line">name=rabbitmq-el9-source</span><br><span class="line">baseurl=https://yum1.novemberain.com/rabbitmq/el/9/SRPMS</span><br><span class="line">repo_gpgcheck=1</span><br><span class="line">enabled=1</span><br><span class="line">gpgkey=https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/gpg.9F4587F226208342.key</span><br><span class="line">gpgcheck=0</span><br><span class="line">sslverify=1</span><br><span class="line">sslcacert=/etc/pki/tls/certs/ca-bundle.crt</span><br><span class="line">metadata_expire=300</span><br><span class="line">pkg_gpgcheck=1</span><br><span class="line">autorefresh=1</span><br><span class="line">type=rpm-md</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装依赖"><a href="#安装依赖" class="headerlink" title="安装依赖"></a>安装依赖</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf update -y</span><br><span class="line">sudo dnf install -y socat logrotate</span><br><span class="line">sudo dnf install -y erlang</span><br></pre></td></tr></table></figure>
+<p>校验Erlang</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">erl</span><br><span class="line">Erlang/OTP 27 [erts-15.2] [source] [64-bit] [smp:2:2] [ds:2:2:10] [async-threads:1] [jit:ns]</span><br><span class="line"></span><br><span class="line">Eshell V15.2 (press Ctrl+G to abort, type help(). for help)</span><br><span class="line">1&gt;</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装RabbitMQ"><a href="#安装RabbitMQ" class="headerlink" title="安装RabbitMQ"></a>安装RabbitMQ</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf install rabbitmq-server</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动RabbitMQ-设置开机自启动"><a href="#启动RabbitMQ-设置开机自启动" class="headerlink" title="启动RabbitMQ, 设置开机自启动"></a>启动RabbitMQ, 设置开机自启动</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start rabbitmq-server</span><br><span class="line">systemctl enable rabbitmq-server</span><br></pre></td></tr></table></figure>
+
+<h2 id="配置RabbitMQ"><a href="#配置RabbitMQ" class="headerlink" title="配置RabbitMQ"></a>配置RabbitMQ</h2><h3 id="启动admin页面插件"><a href="#启动admin页面插件" class="headerlink" title="启动admin页面插件"></a>启动admin页面插件</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rabbitmq-plugins enable rabbitmq_management</span><br></pre></td></tr></table></figure>
+<h3 id="添加管理员admin"><a href="#添加管理员admin" class="headerlink" title="添加管理员admin"></a>添加管理员admin</h3><p>RabbitMQ自带一个guest用户，默认用户名和密码都是guest。 出于安全考虑，建议创建新的管理员账户并删除或禁用guest账户。  </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rabbitmqctl delete_user guest</span><br><span class="line">rabbitmqctl add_user admin your_admin_password</span><br><span class="line">rabbitmqctl set_user_tags admin administrator</span><br><span class="line">rabbitmqctl set_permissions -p / admin &quot;.*&quot; &quot;.*&quot; &quot;.*&quot;</span><br></pre></td></tr></table></figure>
+<p>其中, your_admin_password是你为管理员账户设置的密码，&#x2F;是默认的虚拟主机名称。 操作完成后查看用户列表：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo rabbitmqctl list_users</span><br><span class="line">Listing users ...</span><br><span class="line">user    tags</span><br><span class="line">admin   [administrator]</span><br></pre></td></tr></table></figure>
+<p>访问管理页面</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://&lt;your_ip_address&gt;:15672/</span><br></pre></td></tr></table></figure>
+
+<h2 id="示例-使用python的pika库操作rabbitmq"><a href="#示例-使用python的pika库操作rabbitmq" class="headerlink" title="示例: 使用python的pika库操作rabbitmq"></a>示例: 使用python的pika库操作rabbitmq</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 install pika</span><br></pre></td></tr></table></figure>
+<p>send.py</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import pika</span><br><span class="line"></span><br><span class="line">credentials = pika.PlainCredentials(&quot;admin&quot;, &quot;your_password&quot;)</span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(&#x27;localhost&#x27;, credentials=credentials))</span><br><span class="line">channel = connection.channel()</span><br><span class="line">channel.queue_declare(queue=&#x27;hello&#x27;)</span><br><span class="line">channel.basic_publish(exchange=&#x27;&#x27;,</span><br><span class="line">                      routing_key=&#x27;hello&#x27;,</span><br><span class="line">                      body=&#x27;Hello World!&#x27;)</span><br><span class="line">print(&quot; [x] Sent &#x27;Hello World!&#x27;&quot;)</span><br><span class="line">connection.close()</span><br></pre></td></tr></table></figure>
+<p>receive.py</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env python</span><br><span class="line">import pika</span><br><span class="line"></span><br><span class="line">credentials = pika.PlainCredentials(&quot;admin&quot;, &quot;your_password@xdr&quot;)</span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(&#x27;localhost&#x27;, credentials=credentials))</span><br><span class="line"></span><br><span class="line">channel = connection.channel()</span><br><span class="line"></span><br><span class="line">channel.queue_declare(queue=&#x27;hello&#x27;)</span><br><span class="line"></span><br><span class="line">def callback(ch, method, properties, body):</span><br><span class="line">    print(&quot; [x] Received %r&quot; % body)</span><br><span class="line"></span><br><span class="line">channel.basic_consume(queue=&quot;hello&quot;, on_message_callback=callback, auto_ack=True)</span><br><span class="line"></span><br><span class="line">print(&#x27; [*] Waiting for messages. To exit press CTRL+C&#x27;)</span><br><span class="line">channel.start_consuming()</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】 <a href="https://www.cnblogs.com/eagle6688/p/17437095.html">RockyLinux 安装RabbitMQ</a><br>【2】 <a href="https://pengpengxp.github.io/archive/before-2018-11-10/2016-12-05-pika-and-rabbitmq.html">使用python的pika库来操作rabbitmq</a> pus</p>
+]]></content>
+      <categories>
+        <category>RabbitMQ</category>
+      </categories>
+      <tags>
+        <tag>RabbitMQ</tag>
+      </tags>
   </entry>
 </search>
