@@ -32,7 +32,7 @@
 <meta property="og:description" content="环境准备Rocky Linux 9 安装步骤安装Signing Keys(签名密钥)123rpm --import https:&#x2F;&#x2F;github.com&#x2F;rabbitmq&#x2F;signing-keys&#x2F;releases&#x2F;download&#x2F;2.0&#x2F;rabbitmq-release-signing-key.ascrpm --import https:&#x2F;&#x2F;dl.cloudsmith.io&#x2F;public&#x2F;ra">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-12-18T13:26:31.000Z">
-<meta property="article:modified_time" content="2024-12-18T14:46:44.315Z">
+<meta property="article:modified_time" content="2024-12-18T14:48:12.302Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="RabbitMQ">
 <meta name="twitter:card" content="summary">
@@ -131,12 +131,12 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">47</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">48</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">165</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">166</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -296,7 +296,7 @@
 <p>receive.py</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">#!/usr/bin/env python</span><br><span class="line">import pika</span><br><span class="line"></span><br><span class="line">credentials = pika.PlainCredentials(&quot;admin&quot;, &quot;your_password@xdr&quot;)</span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(&#x27;localhost&#x27;, credentials=credentials))</span><br><span class="line"></span><br><span class="line">channel = connection.channel()</span><br><span class="line"></span><br><span class="line">channel.queue_declare(queue=&#x27;hello&#x27;)</span><br><span class="line"></span><br><span class="line">def callback(ch, method, properties, body):</span><br><span class="line">    print(&quot; [x] Received %r&quot; % body)</span><br><span class="line"></span><br><span class="line">channel.basic_consume(queue=&quot;hello&quot;, on_message_callback=callback, auto_ack=True)</span><br><span class="line"></span><br><span class="line">print(&#x27; [*] Waiting for messages. To exit press CTRL+C&#x27;)</span><br><span class="line">channel.start_consuming()</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/eagle6688/p/17437095.html">RockyLinux 安装RabbitMQ</a><br>【2】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://pengpengxp.github.io/archive/before-2018-11-10/2016-12-05-pika-and-rabbitmq.html">使用python的pika库来操作rabbitmq</a> pus</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/eagle6688/p/17437095.html">RockyLinux 安装RabbitMQ</a><br>【2】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://pengpengxp.github.io/archive/before-2018-11-10/2016-12-05-pika-and-rabbitmq.html">使用python的pika库来操作rabbitmq</a> </p>
 
     </div>
 
@@ -355,7 +355,10 @@
     <a href="/2024/1217233142.html" rel="prev" title="VMware ESXi导出OVA文件中含有ISO文件，如何去除这个ISO">
       <i class="fa fa-chevron-left"></i> VMware ESXi导出OVA文件中含有ISO文件，如何去除这个ISO
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2024/1228162419.html" rel="next" title="一种Linux系统在线升级方案的设计与实现">
+      一种Linux系统在线升级方案的设计与实现 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -430,7 +433,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">165</span>
+          <span class="site-state-item-count">166</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -443,7 +446,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-count">48</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -489,12 +492,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">670k</span>
+    <span title="站点总字数">686k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">10:09</span>
+    <span title="站点阅读时长">10:24</span>
 </div>
 
 <!--

@@ -1,41 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>2020-01-01-interview-questions</title>
-    <url>/2020/0101145555.html</url>
-    <content><![CDATA[<h1 id="MySQL"><a href="#MySQL" class="headerlink" title="MySQL"></a>MySQL</h1><h2 id="1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"><a href="#1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？" class="headerlink" title="1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"></a>1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？</h2><p>[<a href="https://pcj600.github.io/2021/0101162248.html]">https://pcj600.github.io/2021/0101162248.html]</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Linux下生成core dump文件</title>
-    <url>/2020/0228210741.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
-<span id="more"></span>
-
-<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
-<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
-<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
-<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
-</ol>
-<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
-<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
-<p><strong>指定core文件的输出格式和路径</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/0322220956.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -81,6 +46,29 @@
 <p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
 <p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
 <h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux下生成core dump文件</title>
+    <url>/2020/0228210741.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
+<span id="more"></span>
+
+<h2 id="生成core文件步骤"><a href="#生成core文件步骤" class="headerlink" title="生成core文件步骤"></a>生成core文件步骤</h2><ol>
+<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
+<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
+<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
+</ol>
+<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
+<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
+<p><strong>指定core文件的输出格式和路径</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -235,6 +223,18 @@
       </tags>
   </entry>
   <entry>
+    <title>2020-01-01-interview-questions</title>
+    <url>/2020/0101145555.html</url>
+    <content><![CDATA[<h1 id="MySQL"><a href="#MySQL" class="headerlink" title="MySQL"></a>MySQL</h1><h2 id="1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"><a href="#1-什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？" class="headerlink" title="1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？"></a>1. 什么是三大范式，为什么需要三大范式，什么场景不需要遵循三大范式？</h2><p>[<a href="https://pcj600.github.io/2021/0101162248.html]">https://pcj600.github.io/2021/0101162248.html]</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>tmux常用操作</title>
     <url>/2020/0504172127.html</url>
     <content><![CDATA[<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>TMUX指<strong>terminal multiplexer</strong>，即终端复用软件。tmux结构包含以下三个部分：</p>
@@ -268,6 +268,29 @@
       </tags>
   </entry>
   <entry>
+    <title>64位Linux机器上使用gcc编译32位程序</title>
+    <url>/2020/0531172553.html</url>
+    <content><![CDATA[<h2 id="Ubuntu"><a href="#Ubuntu" class="headerlink" title="Ubuntu"></a>Ubuntu</h2><p>安装以下软件包</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt-get install build-essential module-assistant gcc-multilib g++-multilib</span><br></pre></td></tr></table></figure>
+<h2 id="Centos"><a href="#Centos" class="headerlink" title="Centos"></a>Centos</h2><p>安装以下软件包</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">yum install glibc-devel.i686 libstdc++-devel.i686</span><br></pre></td></tr></table></figure>
+
+<p>gcc编译添加-m32参数，如</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">gcc -m32 main.c</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+
+<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/">http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>gcc</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用git rebase合并多条commit记录</title>
     <url>/2020/0504171429.html</url>
     <content><![CDATA[<h2 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h2><p><strong>首先用git log命令查看历史提交记录</strong>，示例git仓信息如下：</p>
@@ -294,29 +317,6 @@
       </categories>
       <tags>
         <tag>Git</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>64位Linux机器上使用gcc编译32位程序</title>
-    <url>/2020/0531172553.html</url>
-    <content><![CDATA[<h2 id="Ubuntu"><a href="#Ubuntu" class="headerlink" title="Ubuntu"></a>Ubuntu</h2><p>安装以下软件包</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt-get install build-essential module-assistant gcc-multilib g++-multilib</span><br></pre></td></tr></table></figure>
-<h2 id="Centos"><a href="#Centos" class="headerlink" title="Centos"></a>Centos</h2><p>安装以下软件包</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">yum install glibc-devel.i686 libstdc++-devel.i686</span><br></pre></td></tr></table></figure>
-
-<p>gcc编译添加-m32参数，如</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">gcc -m32 main.c</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-
-<h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p><a href="http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/">http://notes.maxwi.com/2017/12/06/compile-x32-executable-at-x64-linux-system/</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>gcc</tag>
       </tags>
   </entry>
   <entry>
@@ -400,6 +400,24 @@
       </categories>
       <tags>
         <tag>GDB</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/0726174432.html</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -657,21 +675,23 @@
       </tags>
   </entry>
   <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/0726174432.html</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+    <title>内核延时函数msleep和mdelay区别</title>
+    <url>/2020/0815181004.html</url>
+    <content><![CDATA[<p><code>msleep</code>和<code>mdelay</code>都是内核的延时函数，原型如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">mdelay</span><span class="params">(<span class="type">unsigned</span> <span class="type">long</span> msecs)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">msleep</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> millisecs)</span>;</span><br></pre></td></tr></table></figure>
+<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><p><code>mdelay</code>是忙等待函数，会占用<code>CPU</code>资源，延迟时间是准确的。</p>
+<p><code>msleep</code>是休眠函数，不占用<code>CPU</code>资源，延迟时间通常高于给定值。</p>
 <span id="more"></span>
 
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
+<p><strong>具体可以参考如下文章：</strong></p>
+<p><a href="https://topic.alibabacloud.com/a/the-difference-between-mdelay--and-msleep--in-linux-linux_1_16_20266988.html">The difference between Mdelay and Msleep in Linux</a></p>
+<p><a href="https://www.cnblogs.com/xihong2014/p/6740876.html">Linux中内核延时函数</a></p>
 ]]></content>
       <categories>
-        <category>CMake</category>
+        <category>Linux</category>
       </categories>
       <tags>
-        <tag>CMake</tag>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -868,26 +888,6 @@
       </tags>
   </entry>
   <entry>
-    <title>内核延时函数msleep和mdelay区别</title>
-    <url>/2020/0815181004.html</url>
-    <content><![CDATA[<p><code>msleep</code>和<code>mdelay</code>都是内核的延时函数，原型如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">mdelay</span><span class="params">(<span class="type">unsigned</span> <span class="type">long</span> msecs)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">msleep</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> millisecs)</span>;</span><br></pre></td></tr></table></figure>
-<h2 id="区别"><a href="#区别" class="headerlink" title="区别"></a>区别</h2><p><code>mdelay</code>是忙等待函数，会占用<code>CPU</code>资源，延迟时间是准确的。</p>
-<p><code>msleep</code>是休眠函数，不占用<code>CPU</code>资源，延迟时间通常高于给定值。</p>
-<span id="more"></span>
-
-<p><strong>具体可以参考如下文章：</strong></p>
-<p><a href="https://topic.alibabacloud.com/a/the-difference-between-mdelay--and-msleep--in-linux-linux_1_16_20266988.html">The difference between Mdelay and Msleep in Linux</a></p>
-<p><a href="https://www.cnblogs.com/xihong2014/p/6740876.html">Linux中内核延时函数</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Linux内核模块编译方法</title>
     <url>/2020/0815180606.html</url>
     <content><![CDATA[<h3 id="运行环境"><a href="#运行环境" class="headerlink" title="运行环境"></a>运行环境</h3><p><code>Linux debian 4.19.0-10-amd64</code></p>
@@ -946,6 +946,32 @@
       </categories>
       <tags>
         <tag>Win</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linux常见控制字符介绍</title>
+    <url>/2020/0829191318.html</url>
+    <content><![CDATA[<h2 id="ctrl-c"><a href="#ctrl-c" class="headerlink" title="ctrl + c"></a>ctrl + c</h2><p>中断键，给前台进程组中所有进程发送<code>SIGINT</code>信号，并终止进程。</p>
+<h2 id="ctrl-z"><a href="#ctrl-z" class="headerlink" title="ctrl + z"></a>ctrl + z</h2><p>挂起键，给前台进程组中所有进程发送<code>SIGTSTP</code>信号,  并挂起进程。被挂起的进程并没有真正结束，可以使用<code>fg</code>或<code>bg</code>命令恢复被挂起的进程。</p>
+<span id="more"></span>
+
+<ul>
+<li>fg —— 将后台作业放到前台终端运行。例如用VIM编辑文件时，需要敲shell命令。可以先用<code>Ctrl + Z</code>挂起VIM，敲完shell命令后再使用<code>fg</code>命令恢复VIM继续编辑，好处是不用退出VIM程序。</li>
+<li>bg —— 恢复后台被挂起的作业，变成在后台继续执行。例如前台启动一个程序时，不希望一直等待程序运行结束，可以先用<code>Ctrl+Z</code>挂起进程，再使用<code>bg</code>命令后台恢复程序的执行，好处是不用终止程序。</li>
+<li>jobs —— 显示当前shell中后台正在运行或被挂起的任务列表。</li>
+</ul>
+<h2 id="ctrl-d"><a href="#ctrl-d" class="headerlink" title="ctrl + d"></a>ctrl + d</h2><p>表示一个特殊二进制值<code>EOF</code>，表示已到达文件末尾(<code>end of file</code>), 可以用来快速退出终端。</p>
+<h2 id="ctrl-s"><a href="#ctrl-s" class="headerlink" title="ctrl + s"></a>ctrl + s</h2><p>中断控制台的输出。有时终端卡死了，敲什么都没反应，很可能是敲了<code>Ctrl + S</code>，可以接着敲<code>Ctrl + q</code>恢复。</p>
+<h2 id="ctrl"><a href="#ctrl" class="headerlink" title="ctrl + \"></a>ctrl + \</h2><p>终止进程，并向进程发送<code>SIGQUIT</code>信号，默认会产生<code>coredump</code>文件。</p>
+<h2 id="ctrl-l"><a href="#ctrl-l" class="headerlink" title="ctrl + l"></a>ctrl + l</h2><p>清屏， 相当于终端里敲<code>clear</code>。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://www.jianshu.com/p/730989a7302e">Linux常见信号大全</a></p>
+<p><a href="https://blog.csdn.net/mylizh/article/details/38385739?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param">Linux中ctrl-c, ctrl-z, ctrl-d区别</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -1014,32 +1040,6 @@
       </categories>
       <tags>
         <tag>CSAPP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Linux常见控制字符介绍</title>
-    <url>/2020/0829191318.html</url>
-    <content><![CDATA[<h2 id="ctrl-c"><a href="#ctrl-c" class="headerlink" title="ctrl + c"></a>ctrl + c</h2><p>中断键，给前台进程组中所有进程发送<code>SIGINT</code>信号，并终止进程。</p>
-<h2 id="ctrl-z"><a href="#ctrl-z" class="headerlink" title="ctrl + z"></a>ctrl + z</h2><p>挂起键，给前台进程组中所有进程发送<code>SIGTSTP</code>信号,  并挂起进程。被挂起的进程并没有真正结束，可以使用<code>fg</code>或<code>bg</code>命令恢复被挂起的进程。</p>
-<span id="more"></span>
-
-<ul>
-<li>fg —— 将后台作业放到前台终端运行。例如用VIM编辑文件时，需要敲shell命令。可以先用<code>Ctrl + Z</code>挂起VIM，敲完shell命令后再使用<code>fg</code>命令恢复VIM继续编辑，好处是不用退出VIM程序。</li>
-<li>bg —— 恢复后台被挂起的作业，变成在后台继续执行。例如前台启动一个程序时，不希望一直等待程序运行结束，可以先用<code>Ctrl+Z</code>挂起进程，再使用<code>bg</code>命令后台恢复程序的执行，好处是不用终止程序。</li>
-<li>jobs —— 显示当前shell中后台正在运行或被挂起的任务列表。</li>
-</ul>
-<h2 id="ctrl-d"><a href="#ctrl-d" class="headerlink" title="ctrl + d"></a>ctrl + d</h2><p>表示一个特殊二进制值<code>EOF</code>，表示已到达文件末尾(<code>end of file</code>), 可以用来快速退出终端。</p>
-<h2 id="ctrl-s"><a href="#ctrl-s" class="headerlink" title="ctrl + s"></a>ctrl + s</h2><p>中断控制台的输出。有时终端卡死了，敲什么都没反应，很可能是敲了<code>Ctrl + S</code>，可以接着敲<code>Ctrl + q</code>恢复。</p>
-<h2 id="ctrl"><a href="#ctrl" class="headerlink" title="ctrl + \"></a>ctrl + \</h2><p>终止进程，并向进程发送<code>SIGQUIT</code>信号，默认会产生<code>coredump</code>文件。</p>
-<h2 id="ctrl-l"><a href="#ctrl-l" class="headerlink" title="ctrl + l"></a>ctrl + l</h2><p>清屏， 相当于终端里敲<code>clear</code>。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://www.jianshu.com/p/730989a7302e">Linux常见信号大全</a></p>
-<p><a href="https://blog.csdn.net/mylizh/article/details/38385739?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-7.channel_param">Linux中ctrl-c, ctrl-z, ctrl-d区别</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
       </tags>
   </entry>
   <entry>
@@ -4663,6 +4663,23 @@
       </tags>
   </entry>
   <entry>
+    <title>Windows上通过git bash执行python卡住的解决方法</title>
+    <url>/2023/0626214641.html</url>
+    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img data-src="/2023/0626214641/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
+<span id="more"></span>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+        <tag>Win</tag>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>pip基础用法示例</title>
     <url>/2023/0525214525.html</url>
     <content><![CDATA[<h2 id="配置国内源"><a href="#配置国内源" class="headerlink" title="配置国内源"></a>配置国内源</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[global]</span><br><span class="line">index-url = https://pypi.tuna.tsinghua.edu.cn/simple</span><br><span class="line">[install]</span><br><span class="line">trusted-host = https://pypi.tuna.tsinghua.edu.cn</span><br></pre></td></tr></table></figure>
@@ -4694,23 +4711,6 @@
         <category>Python</category>
       </categories>
       <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Windows上通过git bash执行python卡住的解决方法</title>
-    <url>/2023/0626214641.html</url>
-    <content><![CDATA[<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>编辑 <code>C:\Program Files\Git\etc\profile.d\aliases.sh</code>，将<code>python2.7</code>改成<code>python</code><br><img data-src="/2023/0626214641/image1.png"><br>编辑完成后，重启git bash, 输入python即可</p>
-<span id="more"></span>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/ofreelander/article/details/112058975">https://blog.csdn.net/ofreelander/article/details/112058975</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
-        <tag>Win</tag>
         <tag>Python</tag>
       </tags>
   </entry>
@@ -4922,6 +4922,25 @@
 <li>_private_attrs：两个下划线开头，声明该属性为私有，不能在类地外部被使用或直接访问。 在类内部的方法中使用时 self.__private_attrs</li>
 <li>__private_method：两个下划线开头，声明该方法为私有方法，不能在类地外部调用</li>
 </ul>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
+    <url>/2023/0815215310.html</url>
+    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
 ]]></content>
       <categories>
         <category>Python</category>
@@ -5191,25 +5210,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h2 id="53-用虚拟环境隔离项目，并重建其依赖关系"><a href="#53-用虚拟环境隔离项目，并重建其依赖关系" class="headerlink" title="53. 用虚拟环境隔离项目，并重建其依赖关系"></a>53. 用虚拟环境隔离项目，并重建其依赖关系</h2><h1 id="x20-第8章-部署"><a href="#x20-第8章-部署" class="headerlink" title="&#x20;第8章 部署"></a>&#x20;第8章 部署</h1><h2 id="54-考虑用模块级别代码配置不同部署环境-x20"><a href="#54-考虑用模块级别代码配置不同部署环境-x20" class="headerlink" title="54. 考虑用模块级别代码配置不同部署环境&#x20;"></a>54. 考虑用模块级别代码配置不同部署环境&#x20;</h2><h2 id="55-通过repr字符串输出调试信息"><a href="#55-通过repr字符串输出调试信息" class="headerlink" title="55. 通过repr字符串输出调试信息"></a>55. 通过repr字符串输出调试信息</h2><p>简单的print不能打印出值的类型信息，可以用repr获取类型信息</p>
 <h2 id="56-用unittest测试全部代码"><a href="#56-用unittest测试全部代码" class="headerlink" title="56. 用unittest测试全部代码"></a>56. 用unittest测试全部代码</h2><h2 id="57-用pdb实现交互调试"><a href="#57-用pdb实现交互调试" class="headerlink" title="57. 用pdb实现交互调试"></a>57. 用pdb实现交互调试</h2><p><a href="https://docs.python.org/zh-cn/3/library/pdb.html">https://docs.python.org/zh-cn/3/library/pdb.html</a></p>
 <h2 id="58-先分析性能，然后再优化"><a href="#58-先分析性能，然后再优化" class="headerlink" title="58. 先分析性能，然后再优化"></a>58. 先分析性能，然后再优化</h2><h2 id="59-用tracemalloc掌握内存使用和泄漏情况"><a href="#59-用tracemalloc掌握内存使用和泄漏情况" class="headerlink" title="59. 用tracemalloc掌握内存使用和泄漏情况"></a>59. 用tracemalloc掌握内存使用和泄漏情况</h2>]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Python的Lamdba函数是什么，应用场景是什么?</title>
-    <url>/2023/0815215310.html</url>
-    <content><![CDATA[<p><strong>定义：</strong> Lambda函数也叫匿名函数，它是功能简单，只用一行代码就能实现的小型函数。<br><strong>使用场景：</strong> Lambda函数没有名字，不用考虑函数名冲突问题；减少了代码行数，方便又简洁。<br><strong>格式：</strong> lambda 参数[,参数] : 表达式 （例： <code>lambda x,y : x + y</code>）<br><strong>举例：</strong> 用lambda函数求出1到20中所有的奇数并组成一个list：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">L = <span class="built_in">list</span>(<span class="built_in">filter</span>(<span class="keyword">lambda</span> x: x % <span class="number">2</span> == <span class="number">1</span>, <span class="built_in">range</span>(<span class="number">1</span>, <span class="number">20</span>)))</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">print</span>(L)</span><br><span class="line">[<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">13</span>, <span class="number">15</span>, <span class="number">17</span>, <span class="number">19</span>]</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>另外，匿名函数也可以赋值给变量，可以通过该变量调用这个匿名函数：</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">f = <span class="keyword">lambda</span> x: x * x</span><br><span class="line"><span class="built_in">print</span>(f(<span class="number">5</span>))</span><br><span class="line"><span class="number">25</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a href="https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528">https://www.liaoxuefeng.com/wiki/1016959663602400/1017451447842528</a></p>
-]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -5932,18 +5932,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Notepad++不显示CRLF的方法</title>
-    <url>/2024/0528205224.html</url>
-    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
-]]></content>
-      <categories>
-        <category>other</category>
-      </categories>
-      <tags>
-        <tag>other</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>如何在centos7上安装ansible</title>
     <url>/2024/0524205110.html</url>
     <content><![CDATA[<p>先安装python3, 再通过pip安装ansible，最后把ansible安装路径添加到环境变量PATH，如下：</p>
@@ -5959,6 +5947,18 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>ansible</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Notepad++不显示CRLF的方法</title>
+    <url>/2024/0528205224.html</url>
+    <content><![CDATA[<p>View -&gt; Show Symbol -&gt; 去掉勾选 Show All Characters<br><img data-src="/2024/0528205224/image1.png"></p>
+]]></content>
+      <categories>
+        <category>other</category>
+      </categories>
+      <tags>
+        <tag>other</tag>
       </tags>
   </entry>
   <entry>
@@ -6377,25 +6377,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>如何查看Squid的DNS缓存</title>
-    <url>/2024/0820194846.html</url>
-    <content><![CDATA[<p>使用<code>squidclient mgr:ipcache</code>命令查看Squid的DNS缓存记录<br>如果squid端口不是3128, 需要指定端口号, <code>squidclient -p &#123;port&#125; mgr:ipcache</code></p>
-<span id="more"></span>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># squidclient mgr:ipcache</span><br><span class="line">...</span><br><span class="line">IP Cache Statistics:</span><br><span class="line">...</span><br><span class="line">IP Cache Contents:</span><br><span class="line"> Hostname                        Flg lstref    TTL  N(b)</span><br><span class="line"> www.trendmicro.com                      19     41  1( 0)                                 23.195.109.63-OK</span><br><span class="line"> localhost6.localdomain6          H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost6                       H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost.localdomain            H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost                        H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost4.localdomain4          H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> localhost4                       H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> www.baidu.com                         1139  -1079  2( 0)                                103.235.47.188-OK</span><br><span class="line">                                                                                          103.235.46.96-OK</span><br></pre></td></tr></table></figure>
-
-<h2 id="DNS请求抓包"><a href="#DNS请求抓包" class="headerlink" title="DNS请求抓包"></a>DNS请求抓包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tcpdump udp port 53 -w dns.pcap</span><br><span class="line">curl -x 127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-<p>10.206.216.93为nameserver的IP<br><img data-src="/2024/0820194846/image1.png"></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://wiki.squid-cache.org/Features/CacheManager/IpCache">https://wiki.squid-cache.org/Features/CacheManager/IpCache</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Django快速上手</title>
     <url>/2024/0823230254.html</url>
     <content><![CDATA[<h2 id="更新软件包"><a href="#更新软件包" class="headerlink" title="更新软件包"></a>更新软件包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf check-update</span><br><span class="line">dnf install dnf-utils</span><br></pre></td></tr></table></figure>
@@ -6425,6 +6406,63 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Python</tag>
         <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>如何查看Squid的DNS缓存</title>
+    <url>/2024/0820194846.html</url>
+    <content><![CDATA[<p>使用<code>squidclient mgr:ipcache</code>命令查看Squid的DNS缓存记录<br>如果squid端口不是3128, 需要指定端口号, <code>squidclient -p &#123;port&#125; mgr:ipcache</code></p>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># squidclient mgr:ipcache</span><br><span class="line">...</span><br><span class="line">IP Cache Statistics:</span><br><span class="line">...</span><br><span class="line">IP Cache Contents:</span><br><span class="line"> Hostname                        Flg lstref    TTL  N(b)</span><br><span class="line"> www.trendmicro.com                      19     41  1( 0)                                 23.195.109.63-OK</span><br><span class="line"> localhost6.localdomain6          H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost6                       H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost.localdomain            H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost                        H      93     -1  1( 0)                                           ::1-OK</span><br><span class="line"> localhost4.localdomain4          H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> localhost4                       H      93     -1  1( 0)                                     127.0.0.1-OK</span><br><span class="line"> www.baidu.com                         1139  -1079  2( 0)                                103.235.47.188-OK</span><br><span class="line">                                                                                          103.235.46.96-OK</span><br></pre></td></tr></table></figure>
+
+<h2 id="DNS请求抓包"><a href="#DNS请求抓包" class="headerlink" title="DNS请求抓包"></a>DNS请求抓包</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tcpdump udp port 53 -w dns.pcap</span><br><span class="line">curl -x 127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<p>10.206.216.93为nameserver的IP<br><img data-src="/2024/0820194846/image1.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://wiki.squid-cache.org/Features/CacheManager/IpCache">https://wiki.squid-cache.org/Features/CacheManager/IpCache</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>源码编译并安装Squid的方法</title>
+    <url>/2024/0831132417.html</url>
+    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RockyLinux9.4 yum包中的Squid版本是5.5, 不是最新的版本，我需要安装最新版本的Squid。</p>
+<h2 id="源码编译并安装Squid的步骤"><a href="#源码编译并安装Squid的步骤" class="headerlink" title="源码编译并安装Squid的步骤"></a>源码编译并安装Squid的步骤</h2><ul>
+<li>访问<a href="https://www.squid-cache.org/Versions/">Squid官网</a>，查看最新的稳定版本为 6.10</li>
+<li>下载6.10版本的源码，各发行版编译安装Squid的方法参考<a href="https://wiki.squid-cache.org/SquidFaq/CompilingSquid">官方文档</a></li>
+</ul>
+<p>下面给出我在RockyLinux9.4 VMware虚拟机上，编译安装Squid 6.10的过程：</p>
+<span id="more"></span>
+
+<h3 id="下载依赖"><a href="#下载依赖" class="headerlink" title="下载依赖"></a>下载依赖</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y perl gcc autoconf automake make <span class="built_in">sudo</span> wget</span><br><span class="line">yum install -y libxml2-devel libcap-devel libtool-ltdl-devel</span><br></pre></td></tr></table></figure>
+<h3 id="下载Squid源码并编译安装"><a href="#下载Squid源码并编译安装" class="headerlink" title="下载Squid源码并编译安装"></a>下载Squid源码并编译安装</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://www.squid-cache.org/Versions/v6/squid-6.10.tar.gz</span><br><span class="line">tar -zxvf squid-6.10.tar.gz</span><br><span class="line"><span class="built_in">cd</span> squid-6.10</span><br><span class="line"></span><br><span class="line">./configure --prefix=/usr --includedir=/usr/include --datadir=/usr/share --bindir=/usr/sbin --libexecdir=/usr/lib/squid --localstatedir=/var --sysconfdir=/etc/squid</span><br><span class="line">make -j4</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<h3 id="添加squid用户-创建Squid日志目录并设置权限"><a href="#添加squid用户-创建Squid日志目录并设置权限" class="headerlink" title="添加squid用户, 创建Squid日志目录并设置权限"></a>添加squid用户, 创建Squid日志目录并设置权限</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br></pre></td></tr></table></figure>
+
+<h3 id="修改squid配置文件"><a href="#修改squid配置文件" class="headerlink" title="修改squid配置文件"></a>修改squid配置文件</h3><p>修改<code>/etc/squid/squid.conf</code>，新增如下配置项：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
+<p>注意事项：</p>
+<ul>
+<li>需要指定<code>cache_effective_user</code>和<code>cache_effective_group</code>, 一般设置为squid; 注意不能设置成root，否则启动会提示错误。</li>
+<li>如果不设置<code>cache_effective_user</code>和<code>cache_effective_group</code>, Squid进程的user和group为nobody，启动后会异常退出，报fopen写入cache.log没有权限(13)的错误！</li>
+<li>在squid配置文件里自定义<code>cache_log</code>,<code>access_log</code>的路径为&#x2F;var&#x2F;log&#x2F;squid。默认的路径为&#x2F;var&#x2F;log, squid用户没有权限写入。</li>
+</ul>
+<h3 id="测试Squid配置是否正确"><a href="#测试Squid配置是否正确" class="headerlink" title="测试Squid配置是否正确"></a>测试Squid配置是否正确</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k parse</span><br><span class="line">squid -z</span><br></pre></td></tr></table></figure>
+<p>如果提示报错，根据错误信息修改配置项。</p>
+<h3 id="启动Squid"><a href="#启动Squid" class="headerlink" title="启动Squid"></a>启动Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid <span class="comment"># 启动</span></span><br><span class="line">netstat -anpt | grep squid <span class="comment"># Squid默认端口3128, 用netstat查看3128端口是否LISTEN</span></span><br><span class="line">tcp6  0  0  :::3128          :::*         LISTEN    pid/(squid-1)</span><br></pre></td></tr></table></figure>
+<h3 id="测试Squid"><a href="#测试Squid" class="headerlink" title="测试Squid"></a>测试Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -x localhost:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
+<h3 id="停止Squid"><a href="#停止Squid" class="headerlink" title="停止Squid"></a>停止Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k shutdown</span><br></pre></td></tr></table></figure>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.squid-cache.org/">https://www.squid-cache.org/</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
       </tags>
   </entry>
   <entry>
@@ -6661,44 +6699,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>源码编译并安装Squid的方法</title>
-    <url>/2024/0831132417.html</url>
-    <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RockyLinux9.4 yum包中的Squid版本是5.5, 不是最新的版本，我需要安装最新版本的Squid。</p>
-<h2 id="源码编译并安装Squid的步骤"><a href="#源码编译并安装Squid的步骤" class="headerlink" title="源码编译并安装Squid的步骤"></a>源码编译并安装Squid的步骤</h2><ul>
-<li>访问<a href="https://www.squid-cache.org/Versions/">Squid官网</a>，查看最新的稳定版本为 6.10</li>
-<li>下载6.10版本的源码，各发行版编译安装Squid的方法参考<a href="https://wiki.squid-cache.org/SquidFaq/CompilingSquid">官方文档</a></li>
-</ul>
-<p>下面给出我在RockyLinux9.4 VMware虚拟机上，编译安装Squid 6.10的过程：</p>
-<span id="more"></span>
-
-<h3 id="下载依赖"><a href="#下载依赖" class="headerlink" title="下载依赖"></a>下载依赖</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y perl gcc autoconf automake make <span class="built_in">sudo</span> wget</span><br><span class="line">yum install -y libxml2-devel libcap-devel libtool-ltdl-devel</span><br></pre></td></tr></table></figure>
-<h3 id="下载Squid源码并编译安装"><a href="#下载Squid源码并编译安装" class="headerlink" title="下载Squid源码并编译安装"></a>下载Squid源码并编译安装</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">wget https://www.squid-cache.org/Versions/v6/squid-6.10.tar.gz</span><br><span class="line">tar -zxvf squid-6.10.tar.gz</span><br><span class="line"><span class="built_in">cd</span> squid-6.10</span><br><span class="line"></span><br><span class="line">./configure --prefix=/usr --includedir=/usr/include --datadir=/usr/share --bindir=/usr/sbin --libexecdir=/usr/lib/squid --localstatedir=/var --sysconfdir=/etc/squid</span><br><span class="line">make -j4</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-
-<h3 id="添加squid用户-创建Squid日志目录并设置权限"><a href="#添加squid用户-创建Squid日志目录并设置权限" class="headerlink" title="添加squid用户, 创建Squid日志目录并设置权限"></a>添加squid用户, 创建Squid日志目录并设置权限</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">useradd -M -s /sbin/nologin squid</span><br><span class="line"><span class="built_in">mkdir</span> -p /var/log/squid</span><br><span class="line"><span class="built_in">chown</span> -R squid:squid /var/log/squid</span><br></pre></td></tr></table></figure>
-
-<h3 id="修改squid配置文件"><a href="#修改squid配置文件" class="headerlink" title="修改squid配置文件"></a>修改squid配置文件</h3><p>修改<code>/etc/squid/squid.conf</code>，新增如下配置项：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cache_effective_user squid</span><br><span class="line">cache_effective_group squid</span><br><span class="line">cache_log /var/log/squid/cache.log</span><br><span class="line">access_log /var/log/squid/access.log squid</span><br></pre></td></tr></table></figure>
-<p>注意事项：</p>
-<ul>
-<li>需要指定<code>cache_effective_user</code>和<code>cache_effective_group</code>, 一般设置为squid; 注意不能设置成root，否则启动会提示错误。</li>
-<li>如果不设置<code>cache_effective_user</code>和<code>cache_effective_group</code>, Squid进程的user和group为nobody，启动后会异常退出，报fopen写入cache.log没有权限(13)的错误！</li>
-<li>在squid配置文件里自定义<code>cache_log</code>,<code>access_log</code>的路径为&#x2F;var&#x2F;log&#x2F;squid。默认的路径为&#x2F;var&#x2F;log, squid用户没有权限写入。</li>
-</ul>
-<h3 id="测试Squid配置是否正确"><a href="#测试Squid配置是否正确" class="headerlink" title="测试Squid配置是否正确"></a>测试Squid配置是否正确</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k parse</span><br><span class="line">squid -z</span><br></pre></td></tr></table></figure>
-<p>如果提示报错，根据错误信息修改配置项。</p>
-<h3 id="启动Squid"><a href="#启动Squid" class="headerlink" title="启动Squid"></a>启动Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid <span class="comment"># 启动</span></span><br><span class="line">netstat -anpt | grep squid <span class="comment"># Squid默认端口3128, 用netstat查看3128端口是否LISTEN</span></span><br><span class="line">tcp6  0  0  :::3128          :::*         LISTEN    pid/(squid-1)</span><br></pre></td></tr></table></figure>
-<h3 id="测试Squid"><a href="#测试Squid" class="headerlink" title="测试Squid"></a>测试Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl -x localhost:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-<h3 id="停止Squid"><a href="#停止Squid" class="headerlink" title="停止Squid"></a>停止Squid</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">squid -k shutdown</span><br></pre></td></tr></table></figure>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.squid-cache.org/">https://www.squid-cache.org/</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Microk8s ingress启动失败, 10254端口被占用问题定位</title>
     <url>/2024/0904203111.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 VM里安装了Microk8s，且使用了Nginx ingress Controller插件，443端口正常。 VM重启一次后，发现443端口没有LISTEN，不能对外提供服务。 </p>
@@ -6797,6 +6797,27 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>iptables</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在RHEL9上安装MySQL</title>
+    <url>/2024/0916144756.html</url>
+    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
+
+<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
+<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
+<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
+<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
+<p>再输入你之前设置的root用户密码即可。</p>
+<span id="more"></span>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -7133,51 +7154,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>在RHEL9上安装MySQL</title>
-    <url>/2024/0916144756.html</url>
-    <content><![CDATA[<h2 id="安装并启动MySQL"><a href="#安装并启动MySQL" class="headerlink" title="安装并启动MySQL"></a>安装并启动MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
-
-<h2 id="设置MySQL的root用户密码"><a href="#设置MySQL的root用户密码" class="headerlink" title="设置MySQL的root用户密码"></a>设置MySQL的root用户密码</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql_secure_installation</span><br></pre></td></tr></table></figure>
-<p><code>mysql_secure_installation</code>是MySQL的一个安全脚本，执行后根据提示选择密码强度，输入root用户的密码</p>
-<h2 id="查看MySQL的版本"><a href="#查看MySQL的版本" class="headerlink" title="查看MySQL的版本"></a>查看MySQL的版本</h2><p>通过mysqladmin查到MySQL版本为8.0.36</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysqladmin -u root -p version</span><br><span class="line">Enter password:</span><br><span class="line"></span><br><span class="line">....</span><br><span class="line">Server version          8.0.36</span><br></pre></td></tr></table></figure>
-<h2 id="连接MySQL"><a href="#连接MySQL" class="headerlink" title="连接MySQL"></a>连接MySQL</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></table></figure>
-<p>再输入你之前设置的root用户密码即可。</p>
-<span id="more"></span>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://juejin.cn/post/7162834297739542565">https://juejin.cn/post/7162834297739542565</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
-    <url>/2024/0916170317.html</url>
-    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
-<h2 id="安装mysqlclient报错"><a href="#安装mysqlclient报错" class="headerlink" title="安装mysqlclient报错"></a>安装mysqlclient报错</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
-<p>报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm -i mysql84-community-release-el9-1.noarch.rpm</span><br><span class="line">yum install -y python3-devel mysql-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
-<p><code>pip list</code> 命令查看已安装的mysqlclient信息</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip list  | grep mysqlclient</span><br><span class="line">mysqlclient         2.2.4</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
-]]></content>
-      <categories>
-        <category>Django</category>
-      </categories>
-      <tags>
-        <tag>Django</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Rocky Linux 9中添加或删除某个网卡的静态路由</title>
     <url>/2024/0919213729.html</url>
     <content><![CDATA[<h2 id="使用ip命令配置临时路由"><a href="#使用ip命令配置临时路由" class="headerlink" title="使用ip命令配置临时路由"></a>使用ip命令配置临时路由</h2><p>添加静态路由</p>
@@ -7206,6 +7182,30 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Linux</tag>
         <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
+    <url>/2024/0916170317.html</url>
+    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
+<h2 id="安装mysqlclient报错"><a href="#安装mysqlclient报错" class="headerlink" title="安装mysqlclient报错"></a>安装mysqlclient报错</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+<p>报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm -i mysql84-community-release-el9-1.noarch.rpm</span><br><span class="line">yum install -y python3-devel mysql-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+<p><code>pip list</code> 命令查看已安装的mysqlclient信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip list  | grep mysqlclient</span><br><span class="line">mysqlclient         2.2.4</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
       </tags>
   </entry>
   <entry>
@@ -8965,35 +8965,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>MySQL8.0如何重置密码</title>
-    <url>/2024/1017202436.html</url>
-    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
-<li>VMware Rocky Linux 9.4</li>
-<li>MySQL 8.0.36</li>
-</ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
-
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
-<p>连接成功后，执行如下sql命令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Docker安装教程</title>
     <url>/2024/1017195632.html</url>
     <content><![CDATA[<h1 id="在Rocky-Linux-9上安装Docker"><a href="#在Rocky-Linux-9上安装Docker" class="headerlink" title="在Rocky Linux 9上安装Docker"></a>在Rocky Linux 9上安装Docker</h1><h2 id="添加docker-repo-更新源-安装docker-ce"><a href="#添加docker-repo-更新源-安装docker-ce" class="headerlink" title="添加docker repo, 更新源, 安装docker-ce"></a>添加docker repo, 更新源, 安装docker-ce</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
@@ -9024,6 +8995,35 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MySQL8.0如何重置密码</title>
+    <url>/2024/1017202436.html</url>
+    <content><![CDATA[<h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+<li>VMware Rocky Linux 9.4</li>
+<li>MySQL 8.0.36</li>
+</ul>
+<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
+
+<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<p>连接成功后，执行如下sql命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+
+<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
       </tags>
   </entry>
   <entry>
@@ -9805,49 +9805,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Nginx解决跨域问题的案例演示</title>
-    <url>/2024/1119221949.html</url>
-    <content><![CDATA[<p>介绍跨域问题前，首先了解浏览器的同源策略(Same-Origin Policy)</p>
-<h2 id="同源策略"><a href="#同源策略" class="headerlink" title="同源策略"></a>同源策略</h2><p>同源策略是一种浏览器安全机制，限制了从一个源加载的文档或脚本与另一个源的资源进行交互的能力。</p>
-<h3 id="同源的定义"><a href="#同源的定义" class="headerlink" title="同源的定义"></a>同源的定义</h3><p>如果两个URL的协议、域名(IP)、端口号均相同，则它们是同源的，否则是跨源的。举例如下：</p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># http和https协议不同, 不满足同源</span><br><span class="line">http://192.168.1.2/user/1</span><br><span class="line">https://192.168.1.2/user/1</span><br><span class="line"></span><br><span class="line"># IP不同，不满足同源</span><br><span class="line">http://192.168.1.2/user/1</span><br><span class="line">http://192.168.1.3/user/1</span><br><span class="line"></span><br><span class="line"># 域名不同，不满足同源</span><br><span class="line">http://www.zhangsan.com/user/1</span><br><span class="line">http://www.lisi.com/user/1</span><br><span class="line"></span><br><span class="line"># 端口不同，不满足同源</span><br><span class="line">http://192.168.1.2/user/1</span><br><span class="line">http://192.168.1.2:8080/user/1</span><br><span class="line"></span><br><span class="line"># 协议、域名、端口均相同，满足同源, 默认端口就是80</span><br><span class="line">http://www.zhangsan:80/user/1</span><br><span class="line">http://www.zhangsan/user/1</span><br></pre></td></tr></table></figure>
-<h3 id="同源策略的必要性"><a href="#同源策略的必要性" class="headerlink" title="同源策略的必要性"></a>同源策略的必要性</h3><p>避免跨站点脚本攻击，防止恶意网站读取另一个网站的敏感数据，保护用户数据安全</p>
-<h2 id="跨域问题演示"><a href="#跨域问题演示" class="headerlink" title="跨域问题演示"></a>跨域问题演示</h2><p>有两台服务器A,B，A和B不满足同源策略。如果从A的页面发送异步请求到B获取数据，就会出现跨域问题。演示如下：</p>
-<p>1、创建一台虚拟机, 用Nginx启动两个服务器，如下:</p>
-<ul>
-<li>服务器A: <a href="http://192.168.52.200/a.html">http://192.168.52.200:80/a.html</a> 页面上添加一个Button, 用户点击Button后发送异步请求到服务器B获取数据</li>
-<li>服务器B: <a href="http://192.168.52.200:8080/user">http://192.168.52.200:8080/user</a> 返回一个JSON数据, 值为{“id”: 1, “name”: “peter”, “age: 28”}</li>
-</ul>
-<p>2、添加服务器A的页面a.html, 编辑<code>/var/www/server_a/a.html</code>，内容如下:</p>
-<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;utf-8&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;jquery-3.7.1.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">            $(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">                $(<span class="string">&quot;#btn&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">                    $.<span class="title function_">get</span>(<span class="string">&#x27;http://192.168.52.200:8080/user&#x27;</span>, <span class="keyword">function</span>(<span class="params">data</span>)&#123;</span></span><br><span class="line"><span class="language-javascript">                        <span class="title function_">alert</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(data));</span></span><br><span class="line"><span class="language-javascript">                    &#125;);</span></span><br><span class="line"><span class="language-javascript">                &#125;);</span></span><br><span class="line"><span class="language-javascript">            &#125;);</span></span><br><span class="line"><span class="language-javascript">        </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">value</span>=<span class="string">&quot;Click Me, Get Data!&quot;</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>3、修改Nginx.conf，添加两个服务器的配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 服务器A</span><br><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  _;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        root /var/www/server_a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error_page 500 502 503 504 /50x.html;</span><br><span class="line">    location = /50x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># 服务器B</span><br><span class="line">server &#123;</span><br><span class="line">    listen       8080;</span><br><span class="line">    server_name  _;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    # 返回简单的JSON数据，用于演示</span><br><span class="line">    location /user &#123;</span><br><span class="line">        default_type application/json;</span><br><span class="line">        return 200 &#x27;&#123;&quot;id&quot;:1, &quot;name&quot;:&quot;peter&quot;,&quot;age&quot;:28&#125;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error_page 500 502 503 504 /50x.html;</span><br><span class="line">    location = /50x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>4.重新加载Nginx并启动, 访问<code>192.168.52.200/a.html</code>，点击Button, 发现没有显示JSON数据，请求失败。浏览器按F12查到如下报错:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Access to XMLHttpRequest at &#x27;http://192.168.52.200:8080/user&#x27; </span><br><span class="line">from origin &#x27;http://192.168.52.200&#x27; has been blocked by CORS policy: </span><br><span class="line">No &#x27;Access-Control-Allow-Origin&#x27; header is present on the requested resource.</span><br></pre></td></tr></table></figure>
-<p>这就是跨域问题。你在浏览器中直接访问<code>http://192.168.52.200:8080/user</code>，是可以返回数据的</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://192.168.52.200:8080/user</span><br><span class="line">&#123;&quot;id&quot;:1, &quot;name&quot;:&quot;peter&quot;,&quot;age&quot;:28&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="使用Nginx解决跨域问题"><a href="#使用Nginx解决跨域问题" class="headerlink" title="使用Nginx解决跨域问题"></a>使用Nginx解决跨域问题</h2><p>跨域问题涉及的几个响应头</p>
-<ul>
-<li>Access-Control-Allow-Origin 指定允许访问的源，可以配置多个，用逗号分隔, 也可以用*代表所有源</li>
-<li>Access-Control-Allow-Methods 指定允许的HTTP方法，值可以为GET POST PUT DELETE，用逗号分隔</li>
-</ul>
-<p><strong>动手实现</strong><br>修改Nginx.conf, 使用add_header指令添加Header，如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> server &#123;</span><br><span class="line">     listen       8080;</span><br><span class="line">     server_name  _;</span><br><span class="line">     access_log   access.log;</span><br><span class="line">     include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">     location /user &#123;</span><br><span class="line"># 添加Header, 允许源地址为192.168.52.200的GET,POST请求</span><br><span class="line">         add_header Access-Control-Allow-Origin http://192.168.52.200;	</span><br><span class="line"># add_header Access-Control-Allow-Origin *; #允许所有地址跨域访问</span><br><span class="line">         add_header Access-Control-Allow-Methods GET,POST;</span><br><span class="line">         default_type application/json;</span><br><span class="line">         return 200 &#x27;&#123;&quot;id&quot;:1, &quot;name&quot;:&quot;peter&quot;,&quot;age&quot;:28&#125;&#x27;;</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
-<p>重新加载Nginx, 访问<code>192.168.52.200/a.html</code>，点击Button，发现请求成功。</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/javastack/p/16065851.html">https://www.cnblogs.com/javastack/p/16065851.html</a><br><a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CORS">https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CORS</a></p>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-      <tags>
-        <tag>Nginx</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Docker基础</title>
     <url>/2024/1123191048.html</url>
     <content><![CDATA[<h1 id="什么是容器"><a href="#什么是容器" class="headerlink" title="什么是容器"></a>什么是容器</h1><ul>
@@ -10073,6 +10030,49 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Nginx解决跨域问题的案例演示</title>
+    <url>/2024/1119221949.html</url>
+    <content><![CDATA[<p>介绍跨域问题前，首先了解浏览器的同源策略(Same-Origin Policy)</p>
+<h2 id="同源策略"><a href="#同源策略" class="headerlink" title="同源策略"></a>同源策略</h2><p>同源策略是一种浏览器安全机制，限制了从一个源加载的文档或脚本与另一个源的资源进行交互的能力。</p>
+<h3 id="同源的定义"><a href="#同源的定义" class="headerlink" title="同源的定义"></a>同源的定义</h3><p>如果两个URL的协议、域名(IP)、端口号均相同，则它们是同源的，否则是跨源的。举例如下：</p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># http和https协议不同, 不满足同源</span><br><span class="line">http://192.168.1.2/user/1</span><br><span class="line">https://192.168.1.2/user/1</span><br><span class="line"></span><br><span class="line"># IP不同，不满足同源</span><br><span class="line">http://192.168.1.2/user/1</span><br><span class="line">http://192.168.1.3/user/1</span><br><span class="line"></span><br><span class="line"># 域名不同，不满足同源</span><br><span class="line">http://www.zhangsan.com/user/1</span><br><span class="line">http://www.lisi.com/user/1</span><br><span class="line"></span><br><span class="line"># 端口不同，不满足同源</span><br><span class="line">http://192.168.1.2/user/1</span><br><span class="line">http://192.168.1.2:8080/user/1</span><br><span class="line"></span><br><span class="line"># 协议、域名、端口均相同，满足同源, 默认端口就是80</span><br><span class="line">http://www.zhangsan:80/user/1</span><br><span class="line">http://www.zhangsan/user/1</span><br></pre></td></tr></table></figure>
+<h3 id="同源策略的必要性"><a href="#同源策略的必要性" class="headerlink" title="同源策略的必要性"></a>同源策略的必要性</h3><p>避免跨站点脚本攻击，防止恶意网站读取另一个网站的敏感数据，保护用户数据安全</p>
+<h2 id="跨域问题演示"><a href="#跨域问题演示" class="headerlink" title="跨域问题演示"></a>跨域问题演示</h2><p>有两台服务器A,B，A和B不满足同源策略。如果从A的页面发送异步请求到B获取数据，就会出现跨域问题。演示如下：</p>
+<p>1、创建一台虚拟机, 用Nginx启动两个服务器，如下:</p>
+<ul>
+<li>服务器A: <a href="http://192.168.52.200/a.html">http://192.168.52.200:80/a.html</a> 页面上添加一个Button, 用户点击Button后发送异步请求到服务器B获取数据</li>
+<li>服务器B: <a href="http://192.168.52.200:8080/user">http://192.168.52.200:8080/user</a> 返回一个JSON数据, 值为{“id”: 1, “name”: “peter”, “age: 28”}</li>
+</ul>
+<p>2、添加服务器A的页面a.html, 编辑<code>/var/www/server_a/a.html</code>，内容如下:</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;utf-8&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;jquery-3.7.1.min.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">            $(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">                $(<span class="string">&quot;#btn&quot;</span>).<span class="title function_">click</span>(<span class="keyword">function</span>(<span class="params"></span>)&#123;</span></span><br><span class="line"><span class="language-javascript">                    $.<span class="title function_">get</span>(<span class="string">&#x27;http://192.168.52.200:8080/user&#x27;</span>, <span class="keyword">function</span>(<span class="params">data</span>)&#123;</span></span><br><span class="line"><span class="language-javascript">                        <span class="title function_">alert</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(data));</span></span><br><span class="line"><span class="language-javascript">                    &#125;);</span></span><br><span class="line"><span class="language-javascript">                &#125;);</span></span><br><span class="line"><span class="language-javascript">            &#125;);</span></span><br><span class="line"><span class="language-javascript">        </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">   <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">&quot;button&quot;</span> <span class="attr">value</span>=<span class="string">&quot;Click Me, Get Data!&quot;</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>/&gt;</span></span><br><span class="line">   <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>3、修改Nginx.conf，添加两个服务器的配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 服务器A</span><br><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  _;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        root /var/www/server_a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error_page 500 502 503 504 /50x.html;</span><br><span class="line">    location = /50x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># 服务器B</span><br><span class="line">server &#123;</span><br><span class="line">    listen       8080;</span><br><span class="line">    server_name  _;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    # 返回简单的JSON数据，用于演示</span><br><span class="line">    location /user &#123;</span><br><span class="line">        default_type application/json;</span><br><span class="line">        return 200 &#x27;&#123;&quot;id&quot;:1, &quot;name&quot;:&quot;peter&quot;,&quot;age&quot;:28&#125;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error_page 500 502 503 504 /50x.html;</span><br><span class="line">    location = /50x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>4.重新加载Nginx并启动, 访问<code>192.168.52.200/a.html</code>，点击Button, 发现没有显示JSON数据，请求失败。浏览器按F12查到如下报错:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Access to XMLHttpRequest at &#x27;http://192.168.52.200:8080/user&#x27; </span><br><span class="line">from origin &#x27;http://192.168.52.200&#x27; has been blocked by CORS policy: </span><br><span class="line">No &#x27;Access-Control-Allow-Origin&#x27; header is present on the requested resource.</span><br></pre></td></tr></table></figure>
+<p>这就是跨域问题。你在浏览器中直接访问<code>http://192.168.52.200:8080/user</code>，是可以返回数据的</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://192.168.52.200:8080/user</span><br><span class="line">&#123;&quot;id&quot;:1, &quot;name&quot;:&quot;peter&quot;,&quot;age&quot;:28&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用Nginx解决跨域问题"><a href="#使用Nginx解决跨域问题" class="headerlink" title="使用Nginx解决跨域问题"></a>使用Nginx解决跨域问题</h2><p>跨域问题涉及的几个响应头</p>
+<ul>
+<li>Access-Control-Allow-Origin 指定允许访问的源，可以配置多个，用逗号分隔, 也可以用*代表所有源</li>
+<li>Access-Control-Allow-Methods 指定允许的HTTP方法，值可以为GET POST PUT DELETE，用逗号分隔</li>
+</ul>
+<p><strong>动手实现</strong><br>修改Nginx.conf, 使用add_header指令添加Header，如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"> server &#123;</span><br><span class="line">     listen       8080;</span><br><span class="line">     server_name  _;</span><br><span class="line">     access_log   access.log;</span><br><span class="line">     include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">     location /user &#123;</span><br><span class="line"># 添加Header, 允许源地址为192.168.52.200的GET,POST请求</span><br><span class="line">         add_header Access-Control-Allow-Origin http://192.168.52.200;	</span><br><span class="line"># add_header Access-Control-Allow-Origin *; #允许所有地址跨域访问</span><br><span class="line">         add_header Access-Control-Allow-Methods GET,POST;</span><br><span class="line">         default_type application/json;</span><br><span class="line">         return 200 &#x27;&#123;&quot;id&quot;:1, &quot;name&quot;:&quot;peter&quot;,&quot;age&quot;:28&#125;&#x27;;</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>重新加载Nginx, 访问<code>192.168.52.200/a.html</code>，点击Button，发现请求成功。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://www.cnblogs.com/javastack/p/16065851.html">https://www.cnblogs.com/javastack/p/16065851.html</a><br><a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CORS">https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CORS</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>keepalived双机热备方案实现Nginx高可用</title>
     <url>/2024/1123135607.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>只用一台Nginx做反向代理，如果这台Nginx出现故障(比如宕机)，则服务不可用。<br/></p>
@@ -10182,60 +10182,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Nginx</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>在RockyLinux9.4上安装Microk8s</title>
-    <url>/2024/1201142626.html</url>
-    <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><p>1、安装snap</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
-
-<p>2、安装microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic <span class="comment"># 在RockyLinux9.4上, 默认下载Microk8s 1.31版本</span></span><br><span class="line">snap install microk8s --classic --channel=1.31/stable <span class="comment"># --channnel参数可以指定Microk8s的版本</span></span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>3、安装microk8s插件(addons)</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure>
-
-<p>成功安装后，通过kubectl查看Pod和Image</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">coredns/coredns:1.10.1</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">registry.k8s.io/pause:3.7</span><br></pre></td></tr></table></figure>
-
-<h2 id="在线安装可能遇到的问题"><a href="#在线安装可能遇到的问题" class="headerlink" title="在线安装可能遇到的问题"></a>在线安装可能遇到的问题</h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
-<p>从国内源下载镜像，再给镜像打tag</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7  registry.k8s.io/pause:3.7</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1  docker.io/calico/cni:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1  docker.io/calico/node:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1  docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1  docker.io/coredns/coredns:1.10.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2  registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3  registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
-
-<p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
-
-<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
-
-<p>2、将下载好的snap包传输到目标机器上，安装microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap ack microk8s_&lt;版本号&gt;.assert</span><br><span class="line">snap install microk8s_&lt;版本号&gt;.snap --classic</span><br></pre></td></tr></table></figure>
-
-<p>3、启动Microk8s服务</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
-
-<p>4、在可联网的环境下载Microk8s插件的Image并导出</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line"></span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> cni.tar docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> kube-controllers.tar docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> .....</span><br></pre></td></tr></table></figure>
-
-<p>5、将image传到目标机器上并导入</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr image import *.tar</span><br></pre></td></tr></table></figure>
-
-<p>6、启动microk8s插件</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br><span class="line">microk8s status --wait-ready</span><br></pre></td></tr></table></figure>
-
-<p>7、配置kubectl访问Microk8s</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
-
-<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>k8s</category>
-      </categories>
-      <tags>
-        <tag>k8s</tag>
       </tags>
   </entry>
   <entry>
@@ -10574,6 +10520,60 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>在RockyLinux9.4上安装Microk8s</title>
+    <url>/2024/1201142626.html</url>
+    <content><![CDATA[<h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><p>1、安装snap</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
+
+<p>2、安装microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap install microk8s --classic <span class="comment"># 在RockyLinux9.4上, 默认下载Microk8s 1.31版本</span></span><br><span class="line">snap install microk8s --classic --channel=1.31/stable <span class="comment"># --channnel参数可以指定Microk8s的版本</span></span><br><span class="line">snap <span class="built_in">alias</span> microk8s.kubectl kubectl</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>3、安装microk8s插件(addons)</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br></pre></td></tr></table></figure>
+
+<p>成功安装后，通过kubectl查看Pod和Image</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">coredns/coredns:1.10.1</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">registry.k8s.io/pause:3.7</span><br></pre></td></tr></table></figure>
+
+<h2 id="在线安装可能遇到的问题"><a href="#在线安装可能遇到的问题" class="headerlink" title="在线安装可能遇到的问题"></a>在线安装可能遇到的问题</h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+<p>从国内源下载镜像，再给镜像打tag</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7  registry.k8s.io/pause:3.7</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1  docker.io/calico/cni:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1  docker.io/calico/node:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1  docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1  docker.io/coredns/coredns:1.10.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2  registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3  registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
+
+<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
+
+<p>2、将下载好的snap包传输到目标机器上，安装microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">snap ack microk8s_&lt;版本号&gt;.assert</span><br><span class="line">snap install microk8s_&lt;版本号&gt;.snap --classic</span><br></pre></td></tr></table></figure>
+
+<p>3、启动Microk8s服务</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
+
+<p>4、在可联网的环境下载Microk8s插件的Image并导出</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line"></span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> cni.tar docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> kube-controllers.tar docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr i <span class="built_in">export</span> .....</span><br></pre></td></tr></table></figure>
+
+<p>5、将image传到目标机器上并导入</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.ctr image import *.tar</span><br></pre></td></tr></table></figure>
+
+<p>6、启动microk8s插件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s <span class="built_in">enable</span> dns ingress metrics-server</span><br><span class="line">microk8s status --wait-ready</span><br></pre></td></tr></table></figure>
+
+<p>7、配置kubectl访问Microk8s</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
+
+<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>k8s</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用kubeadm搭建kubernetes集群</title>
     <url>/2024/1202222352.html</url>
     <content><![CDATA[<h1 id="环境要求"><a href="#环境要求" class="headerlink" title="环境要求"></a>环境要求</h1><p>3台Linux虚拟机, 能联网, 我使用的发行版是Rocky Linux 9.4<br>最低配置: 2CPU, 2G内存, 20G硬盘<br>3台虚拟机的IP和主机名如下</p>
@@ -10758,6 +10758,56 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>给Squid代理添加HTTP basic认证</title>
+    <url>/2024/1208150716.html</url>
+    <content><![CDATA[<p>HTTP basic认证是一种简单的认证机制，要求用户在请求资源前提供有效的用户名和密码。</p>
+<h1 id="实例-给Squid代理添加HTTP-basic认证"><a href="#实例-给Squid代理添加HTTP-basic认证" class="headerlink" title="实例: 给Squid代理添加HTTP basic认证"></a>实例: 给Squid代理添加HTTP basic认证</h1><p>要求: 只允许用户名为peter,密码为123的请求通过认证, 其他请求返回407(Proxy认证失败)</p>
+<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">htpasswd -c /etc/squid/squid_user peter</span><br><span class="line">New password: 123</span><br><span class="line">Re-type new password: 123</span><br><span class="line">Adding password for user peter</span><br></pre></td></tr></table></figure>
+<p>检查密码文件<code>/etc/squid/squid_user</code>，可以找到刚才添加的用户<code>peter</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/squid/squid_user</span><br><span class="line">peter:$XXXXXXXXXXXXXXXXXXX</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<p>对密码文件设置适当权限</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chown squid /etc/squid/squid_user</span><br></pre></td></tr></table></figure>
+<p>验证用户名和密码是否正确, 执行<code>basic_ncsa_auth</code>程序，输入<code>peter 123</code>，显示OK说明正确。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user </span><br><span class="line">peter 123</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+
+<p>2 修改squid配置文件<code>/etc/squid/squid.conf</code>，添加认证相关的配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Insert your own rules here to allow access from your clients</span><br><span class="line"></span><br><span class="line"># http_access allow localhost 加注释，表示localhost也需要认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Proxy Authentication Required</span><br><span class="line">auth_param basic credentialsttl 2 hours</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line"></span><br><span class="line">acl authUsers proxy_auth REQUIRED</span><br><span class="line">http_access allow authUsers</span><br><span class="line"></span><br><span class="line">http_access deny all</span><br></pre></td></tr></table></figure>
+
+<p>修改配置完成后，重启Squid (<code>systemctl restart squid</code>)</p>
+<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>使用<code>curl</code>测试Squid用户名密码认证配置<br>不使用用户名密码认证，访问失败，返回407</p>
+<p><img data-src="/2024/1208150716/basic_auth1.png" alt="basic_auth1.png"></p>
+<p>使用正确的用户名密码认证，访问成功</p>
+<p><img data-src="/2024/1208150716/basic_auth2.png" alt="basic_auth2.png"></p>
+<h1 id="通过编写Auth程序，自定义灵活的认证策略"><a href="#通过编写Auth程序，自定义灵活的认证策略" class="headerlink" title="通过编写Auth程序，自定义灵活的认证策略"></a>通过编写Auth程序，自定义灵活的认证策略</h1><p>最基础的basic认证方式，不一定能满足实际使用需求，考虑如下需求：<br>对于请求的USER, 用SHA1算法加密, 明文为（USER + 一个固定key), 如果请求的PASSWORD和加密后的字符串一致，就认为认证通过，否则不通过。 如何实现这种自定义认证？</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">- Username: GUID</span><br><span class="line">- Password: Digest = SHA1 ( GUID + KEY )</span><br></pre></td></tr></table></figure>
+
+<p>Squid支持自定义认证，只需要编写自定义认证程序，再修改Squid配置项auth_param即可，方法如下:</p>
+<h2 id="编写自定义认证程序"><a href="#编写自定义认证程序" class="headerlink" title="编写自定义认证程序"></a>编写自定义认证程序</h2><p>写一个Python脚本, 主流程是一个死循环, 每次从标准输入读取请求中的user,passwd, 再通过SHA1算法判断密码是否正确。 如密码正确输出OK, 否则输出ERR</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line">logging.basicConfig(level=logging.DEBUG,</span><br><span class="line">                    <span class="built_in">format</span>=<span class="string">&#x27;%(asctime)s %(levelname)s %(message)s&#x27;</span>,</span><br><span class="line">                    filename=<span class="string">&#x27;/var/log/squid/auth.log&#x27;</span>, filemode=<span class="string">&#x27;a&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">sha1_encrypt</span>(<span class="params">username</span>):</span><br><span class="line">    combined = username + <span class="string">&quot;squid&quot;</span></span><br><span class="line">    <span class="keyword">return</span> hashlib.sha1(combined.encode(<span class="string">&#x27;utf-8&#x27;</span>)).hexdigest()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">authenticate</span>(<span class="params">username, password</span>):</span><br><span class="line">    encrypted_password = sha1_encrypt(username)</span><br><span class="line">    <span class="keyword">return</span> encrypted_password == password</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        line = sys.stdin.readline()</span><br><span class="line">        auth = line.split()</span><br><span class="line">        user, passwd = auth[<span class="number">0</span>], auth[<span class="number">1</span>]</span><br><span class="line">        logging.debug(<span class="string">&quot;Auth user=&#123;&#125;, pwd=&#123;&#125;&quot;</span>.<span class="built_in">format</span>(user, passwd))</span><br><span class="line">        <span class="keyword">if</span> authenticate(user, passwd):</span><br><span class="line">            sys.stdout.write(<span class="string">&#x27;OK\n&#x27;</span>)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            sys.stdout.write(<span class="string">&#x27;ERR\n&#x27;</span>)</span><br><span class="line">        sys.stdout.flush()</span><br></pre></td></tr></table></figure>
+<p>把Python脚本安装到&#x2F;my_auth, 再修改squid.conf, 添加如下内容:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http_access allow localhost # 允许localhost直接访问，无需认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /my_auth # 自定义认证程序</span><br><span class="line">auth_param basic key_extras &quot;%&gt;rd&quot;</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Please enter your device credential</span><br><span class="line">auth_param basic credentialsttl 24 hours # 24小时内不需要再认证</span><br><span class="line">auth_param basic casesensitive on # 大小写敏感</span><br><span class="line">acl AuthUsers proxy_auth REQUIRED</span><br><span class="line"></span><br><span class="line">http_access allow AuthUsers</span><br><span class="line"></span><br><span class="line">http_access deny all # 只允许localhost请求, 或者认证通过的请求</span><br></pre></td></tr></table></figure>
+<p>注:</p>
+<ul>
+<li>允许localhost不带认证直接访问</li>
+<li>别的机器访问必须通过认证，否则返回407</li>
+</ul>
+<p><strong>测试</strong><br>用户名和密码正确, 返回200</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x peter:47ae7e2352e92154c82669de2a99dd2091e60faa@192.168.52.202:3128 https://www.baidu.com</span><br><span class="line">...</span><br><span class="line">200 OK </span><br></pre></td></tr></table></figure>
+<p>密码错误，返回407</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x peter123:123@192.168.52.202:3128 https://www.baidu.com</span><br><span class="line">curl: (56) Received HTTP code 407 from proxy after CONNECT</span><br></pre></td></tr></table></figure>
+<p>调试认证程序, 可以查看日志<code>/var/log/squid/auth.log</code></p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://wiki.squid-cache.org/Features/Authentication">https://wiki.squid-cache.org/Features/Authentication</a></p>
+]]></content>
+      <categories>
+        <category>Squid</category>
+      </categories>
+      <tags>
+        <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>【k8s实践】 部署Squid</title>
     <url>/2024/1208145435.html</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>学习如何在k8s中部署Squid, 过程如下:</p>
@@ -10853,56 +10903,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Docker</tag>
         <tag>k8s</tag>
-        <tag>Squid</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>给Squid代理添加HTTP basic认证</title>
-    <url>/2024/1208150716.html</url>
-    <content><![CDATA[<p>HTTP basic认证是一种简单的认证机制，要求用户在请求资源前提供有效的用户名和密码。</p>
-<h1 id="实例-给Squid代理添加HTTP-basic认证"><a href="#实例-给Squid代理添加HTTP-basic认证" class="headerlink" title="实例: 给Squid代理添加HTTP basic认证"></a>实例: 给Squid代理添加HTTP basic认证</h1><p>要求: 只允许用户名为peter,密码为123的请求通过认证, 其他请求返回407(Proxy认证失败)</p>
-<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">htpasswd -c /etc/squid/squid_user peter</span><br><span class="line">New password: 123</span><br><span class="line">Re-type new password: 123</span><br><span class="line">Adding password for user peter</span><br></pre></td></tr></table></figure>
-<p>检查密码文件<code>/etc/squid/squid_user</code>，可以找到刚才添加的用户<code>peter</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/squid/squid_user</span><br><span class="line">peter:$XXXXXXXXXXXXXXXXXXX</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<p>对密码文件设置适当权限</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">chown squid /etc/squid/squid_user</span><br></pre></td></tr></table></figure>
-<p>验证用户名和密码是否正确, 执行<code>basic_ncsa_auth</code>程序，输入<code>peter 123</code>，显示OK说明正确。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user </span><br><span class="line">peter 123</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
-
-<p>2 修改squid配置文件<code>/etc/squid/squid.conf</code>，添加认证相关的配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># Insert your own rules here to allow access from your clients</span><br><span class="line"></span><br><span class="line"># http_access allow localhost 加注释，表示localhost也需要认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Proxy Authentication Required</span><br><span class="line">auth_param basic credentialsttl 2 hours</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line"></span><br><span class="line">acl authUsers proxy_auth REQUIRED</span><br><span class="line">http_access allow authUsers</span><br><span class="line"></span><br><span class="line">http_access deny all</span><br></pre></td></tr></table></figure>
-
-<p>修改配置完成后，重启Squid (<code>systemctl restart squid</code>)</p>
-<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>使用<code>curl</code>测试Squid用户名密码认证配置<br>不使用用户名密码认证，访问失败，返回407</p>
-<p><img data-src="/2024/1208150716/basic_auth1.png" alt="basic_auth1.png"></p>
-<p>使用正确的用户名密码认证，访问成功</p>
-<p><img data-src="/2024/1208150716/basic_auth2.png" alt="basic_auth2.png"></p>
-<h1 id="通过编写Auth程序，自定义灵活的认证策略"><a href="#通过编写Auth程序，自定义灵活的认证策略" class="headerlink" title="通过编写Auth程序，自定义灵活的认证策略"></a>通过编写Auth程序，自定义灵活的认证策略</h1><p>最基础的basic认证方式，不一定能满足实际使用需求，考虑如下需求：<br>对于请求的USER, 用SHA1算法加密, 明文为（USER + 一个固定key), 如果请求的PASSWORD和加密后的字符串一致，就认为认证通过，否则不通过。 如何实现这种自定义认证？</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">- Username: GUID</span><br><span class="line">- Password: Digest = SHA1 ( GUID + KEY )</span><br></pre></td></tr></table></figure>
-
-<p>Squid支持自定义认证，只需要编写自定义认证程序，再修改Squid配置项auth_param即可，方法如下:</p>
-<h2 id="编写自定义认证程序"><a href="#编写自定义认证程序" class="headerlink" title="编写自定义认证程序"></a>编写自定义认证程序</h2><p>写一个Python脚本, 主流程是一个死循环, 每次从标准输入读取请求中的user,passwd, 再通过SHA1算法判断密码是否正确。 如密码正确输出OK, 否则输出ERR</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> hashlib</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line">logging.basicConfig(level=logging.DEBUG,</span><br><span class="line">                    <span class="built_in">format</span>=<span class="string">&#x27;%(asctime)s %(levelname)s %(message)s&#x27;</span>,</span><br><span class="line">                    filename=<span class="string">&#x27;/var/log/squid/auth.log&#x27;</span>, filemode=<span class="string">&#x27;a&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">sha1_encrypt</span>(<span class="params">username</span>):</span><br><span class="line">    combined = username + <span class="string">&quot;squid&quot;</span></span><br><span class="line">    <span class="keyword">return</span> hashlib.sha1(combined.encode(<span class="string">&#x27;utf-8&#x27;</span>)).hexdigest()</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">authenticate</span>(<span class="params">username, password</span>):</span><br><span class="line">    encrypted_password = sha1_encrypt(username)</span><br><span class="line">    <span class="keyword">return</span> encrypted_password == password</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        line = sys.stdin.readline()</span><br><span class="line">        auth = line.split()</span><br><span class="line">        user, passwd = auth[<span class="number">0</span>], auth[<span class="number">1</span>]</span><br><span class="line">        logging.debug(<span class="string">&quot;Auth user=&#123;&#125;, pwd=&#123;&#125;&quot;</span>.<span class="built_in">format</span>(user, passwd))</span><br><span class="line">        <span class="keyword">if</span> authenticate(user, passwd):</span><br><span class="line">            sys.stdout.write(<span class="string">&#x27;OK\n&#x27;</span>)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            sys.stdout.write(<span class="string">&#x27;ERR\n&#x27;</span>)</span><br><span class="line">        sys.stdout.flush()</span><br></pre></td></tr></table></figure>
-<p>把Python脚本安装到&#x2F;my_auth, 再修改squid.conf, 添加如下内容:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http_access allow localhost # 允许localhost直接访问，无需认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /my_auth # 自定义认证程序</span><br><span class="line">auth_param basic key_extras &quot;%&gt;rd&quot;</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Please enter your device credential</span><br><span class="line">auth_param basic credentialsttl 24 hours # 24小时内不需要再认证</span><br><span class="line">auth_param basic casesensitive on # 大小写敏感</span><br><span class="line">acl AuthUsers proxy_auth REQUIRED</span><br><span class="line"></span><br><span class="line">http_access allow AuthUsers</span><br><span class="line"></span><br><span class="line">http_access deny all # 只允许localhost请求, 或者认证通过的请求</span><br></pre></td></tr></table></figure>
-<p>注:</p>
-<ul>
-<li>允许localhost不带认证直接访问</li>
-<li>别的机器访问必须通过认证，否则返回407</li>
-</ul>
-<p><strong>测试</strong><br>用户名和密码正确, 返回200</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x peter:47ae7e2352e92154c82669de2a99dd2091e60faa@192.168.52.202:3128 https://www.baidu.com</span><br><span class="line">...</span><br><span class="line">200 OK </span><br></pre></td></tr></table></figure>
-<p>密码错误，返回407</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -x peter123:123@192.168.52.202:3128 https://www.baidu.com</span><br><span class="line">curl: (56) Received HTTP code 407 from proxy after CONNECT</span><br></pre></td></tr></table></figure>
-<p>调试认证程序, 可以查看日志<code>/var/log/squid/auth.log</code></p>
-<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a href="https://wiki.squid-cache.org/Features/Authentication">https://wiki.squid-cache.org/Features/Authentication</a></p>
-]]></content>
-      <categories>
-        <category>Squid</category>
-      </categories>
-      <tags>
         <tag>Squid</tag>
       </tags>
   </entry>
@@ -11276,21 +11276,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>判断SSH的公钥和私钥是否为一对的方法</title>
-    <url>/2024/1217233035.html</url>
-    <content><![CDATA[<h2 id="使用sshkey-gen命令判断"><a href="#使用sshkey-gen命令判断" class="headerlink" title="使用sshkey-gen命令判断"></a>使用sshkey-gen命令判断</h2><p>使用ssh-keygen -y命令可以从私钥文件中提取公钥。例如: 你的私钥文件是id_rsa，执行如下命令:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -y -f id_rsa &gt; extracted_pubkey.pub</span><br></pre></td></tr></table></figure>
-<p>将提取的公钥保存到extracted_pubkey.pub文件。再和你的公钥文件比较，看文件内容是否相同</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">diff extracted_pubkey.pub id_rsa.pub</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>SSH</category>
-      </categories>
-      <tags>
-        <tag>SSH</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>VMware ESXi导出OVA文件中含有ISO文件，如何去除这个ISO</title>
     <url>/2024/1217233142.html</url>
     <content><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在VMware ESXi上，用官方Rockylinux minimal ISO装了一台Linux机器。导出OVA文件发现大小有3个G。查看OVA文件，发现有个ISO文件占了2G，这个ISO文件用不到，如何删除？</p>
@@ -11306,6 +11291,21 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 
 <h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://duiz.net/3491.html">https://duiz.net/3491.html</a></p>
 ]]></content>
+  </entry>
+  <entry>
+    <title>判断SSH的公钥和私钥是否为一对的方法</title>
+    <url>/2024/1217233035.html</url>
+    <content><![CDATA[<h2 id="使用sshkey-gen命令判断"><a href="#使用sshkey-gen命令判断" class="headerlink" title="使用sshkey-gen命令判断"></a>使用sshkey-gen命令判断</h2><p>使用ssh-keygen -y命令可以从私钥文件中提取公钥。例如: 你的私钥文件是id_rsa，执行如下命令:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ssh-keygen -y -f id_rsa &gt; extracted_pubkey.pub</span><br></pre></td></tr></table></figure>
+<p>将提取的公钥保存到extracted_pubkey.pub文件。再和你的公钥文件比较，看文件内容是否相同</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">diff extracted_pubkey.pub id_rsa.pub</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>SSH</category>
+      </categories>
+      <tags>
+        <tag>SSH</tag>
+      </tags>
   </entry>
   <entry>
     <title>Rocky Linux 9安装RabbitMQ</title>
@@ -11339,13 +11339,177 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>receive.py</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#!/usr/bin/env python</span><br><span class="line">import pika</span><br><span class="line"></span><br><span class="line">credentials = pika.PlainCredentials(&quot;admin&quot;, &quot;your_password@xdr&quot;)</span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(&#x27;localhost&#x27;, credentials=credentials))</span><br><span class="line"></span><br><span class="line">channel = connection.channel()</span><br><span class="line"></span><br><span class="line">channel.queue_declare(queue=&#x27;hello&#x27;)</span><br><span class="line"></span><br><span class="line">def callback(ch, method, properties, body):</span><br><span class="line">    print(&quot; [x] Received %r&quot; % body)</span><br><span class="line"></span><br><span class="line">channel.basic_consume(queue=&quot;hello&quot;, on_message_callback=callback, auto_ack=True)</span><br><span class="line"></span><br><span class="line">print(&#x27; [*] Waiting for messages. To exit press CTRL+C&#x27;)</span><br><span class="line">channel.start_consuming()</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】 <a href="https://www.cnblogs.com/eagle6688/p/17437095.html">RockyLinux 安装RabbitMQ</a><br>【2】 <a href="https://pengpengxp.github.io/archive/before-2018-11-10/2016-12-05-pika-and-rabbitmq.html">使用python的pika库来操作rabbitmq</a> pus</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】 <a href="https://www.cnblogs.com/eagle6688/p/17437095.html">RockyLinux 安装RabbitMQ</a><br>【2】 <a href="https://pengpengxp.github.io/archive/before-2018-11-10/2016-12-05-pika-and-rabbitmq.html">使用python的pika库来操作rabbitmq</a> </p>
 ]]></content>
       <categories>
         <category>RabbitMQ</category>
       </categories>
       <tags>
         <tag>RabbitMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一种Linux系统在线升级方案的设计与实现</title>
+    <url>/2024/1228162419.html</url>
+    <content><![CDATA[<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>客户有一些on-premises的virtual appliance(VA)需要做固件升级。 这些VA是Centos7的OS，而Centos7已经停止维护，我们计划把客户的VA升级到新的OS(RockyLinux9.4)。<br>当时客户VA升级固件的方式是增量升级(差分升级), 只有一个系统分区。 增量升级存在一些难以解决的问题:</p>
+<ul>
+<li>无法实现系统软件的升级。 由于Rocky9.4和Centos7的系统软件包差异太大，卸载这些RPM包会直接导致系统不可用</li>
+<li>升级出现故障后，无法做到版本回滚，只能让客户重装。 难以回滚的原因是升级前后用的是同一个系统分区，数据不隔离。</li>
+</ul>
+<p>因此，需要设计一种全量升级的方案，把客户的VA升级到Rocky9.4这个新的OS <br/></p>
+<span id="more"></span>
+<p>全量升级是指, 做一个全量升级包, 客户的VA通过网络下载升级包，解开升级包后执行一些脚本, 切换到新的OS启动, 完成固件升级。</p>
+<h1 id="难点"><a href="#难点" class="headerlink" title="难点"></a>难点</h1><ul>
+<li>需实现一键升级, 即客户除了在UI上点升级，无需做其他任何的手动操作<ul>
+<li>无需让客户手动调整磁盘容量, 或者添加新的虚拟磁盘</li>
+<li>切换到新系统后, 可以自动同步原先的系统配置，例如: IP, DNS, 登录口令, 而不是让客户手动配置</li>
+</ul>
+</li>
+<li>升级后需支持双系统启动，但是客户的VA只有一个系统分区。 这涉及到重新建立分区的操作。</li>
+</ul>
+<h1 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h1><p>设计了两种方案</p>
+<h2 id="方案一-使用KickStart安装ISO的方式-通过重装系统实现升级"><a href="#方案一-使用KickStart安装ISO的方式-通过重装系统实现升级" class="headerlink" title="方案一: 使用KickStart安装ISO的方式, 通过重装系统实现升级"></a>方案一: 使用KickStart安装ISO的方式, 通过重装系统实现升级</h2><p>流程:</p>
+<ul>
+<li>做一个升级包，内容是新系统的ISO </li>
+<li>客户的VA下载升级包，解压出ISO到硬盘</li>
+<li>调整GRUB的默认启动项, 直接从硬盘的ISO启动，完成操作系统的重新安装</li>
+</ul>
+<p>此方案存在一个问题：旧的系统配置没有同步，因为ISO里只有新系统的文件。<br>解决方法：可以在客户的VA上解开ISO，把系统配置文件拷进去，再重新构建ISO重装系统</p>
+<h2 id="方案二-做一个升级小系统-先进入升级小系统重建分区，再安装新系统"><a href="#方案二-做一个升级小系统-先进入升级小系统重建分区，再安装新系统" class="headerlink" title="方案二: 做一个升级小系统, 先进入升级小系统重建分区，再安装新系统"></a>方案二: 做一个升级小系统, 先进入升级小系统重建分区，再安装新系统</h2><p>流程：</p>
+<ul>
+<li>做一个升级包，内容包括: 一个包含新系统所有文件的压缩包、 分区表文件、 升级小系统(vmlinuz,定制的initramfs)</li>
+<li>客户的VA下载并解压这个升级包到硬盘</li>
+<li>备份当前系统配置到硬盘(切换到新系统后, 需要根据这个备份信息恢复系统配置)</li>
+<li>调整GRUB的默认启动项，从升级小系统启动(根据Rocky9官方ISO的紧急修复模式修改得到的系统), 重启后进入升级小系统的启动流程:<ul>
+<li>挂载根分区, 把升级包和系统配置复制到内存(临时文件系统)</li>
+<li>对整个硬盘重建分区，以支持双系统分区</li>
+<li>把新系统的所有文件解压到根分区</li>
+<li>恢复系统配置和登录口令</li>
+<li>chroot到根分区, 重装GRUB后重启，完成从升级小系统到新系统的切换</li>
+</ul>
+</li>
+</ul>
+<p>两种方案都可以，我采用了第二种方案。 以下给出方案二的具体实现，有类似需求的朋友可以参考</p>
+<h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><h2 id="制作升级包"><a href="#制作升级包" class="headerlink" title="制作升级包"></a>制作升级包</h2><p>升级包就是一个tar包(migration.tar.gz)，客户的VA通过网络下载、解压升级包, 执行其中的脚本自动完成升级。 升级包的内容如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># tar -tvf migration.tar.gz</span></span><br><span class="line">va.sgdisk                   <span class="comment"># 使用sgdisk导出的新系统的分区表文件，支持双系统启动</span></span><br><span class="line">va.tar.xz                   <span class="comment"># 一个压缩包, 把RockyLinux9.4虚拟机导出到OVA，再把OVA文件系统中根分区下的所有文件备份成压缩包</span></span><br><span class="line">initramfs-convert.img       <span class="comment"># 基于Rocky9官方ISO的initramfs定制, 用于启动升级小系统</span></span><br><span class="line">vmlinuz-convert             <span class="comment"># 一个压缩内核, 直接从Rocky9官方ISO的vmlinuz拷贝，用于启动升级小系统</span></span><br><span class="line">upgrade_to_tiny_system.sh   <span class="comment"># 一个Shell脚本，在客户VA上解压升级包后，自动执行这个脚本，切换到升级小系统启动 </span></span><br></pre></td></tr></table></figure>
+<p>以下说明这些升级包中的文件如何制作</p>
+<h3 id="制作va-sgdisk"><a href="#制作va-sgdisk" class="headerlink" title="制作va.sgdisk"></a>制作va.sgdisk</h3><p>首先，基于Rocky9.4的ISO安装一台VMware虚拟机。 注意创建分区时我们只分10个G空间，目的是让导出的OVA文件尽可能小, 可以在客户把新系统安装完毕后，把剩余的磁盘扩容。<br>新系统采用BIOS&#x2F;GPT分区格式, 原因是:</p>
+<ul>
+<li>使用BIOS，而不是UEFI，主要是为了兼容老用户</li>
+<li>相比于MBR, GPT能支持更大容量的磁盘，可靠性和性能也更好</li>
+</ul>
+<p>分区方案是: 1个biosboot分区 + 1个boot分区 + 1个LVM(系统分区)，如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/dev/sda1 BIOS boot 2 MiB</span><br><span class="line">/dev/sda2 /boot     1 GiB</span><br><span class="line">/dev/sda3 LVM       9 GiB</span><br></pre></td></tr></table></figure>
+<p>说明: </p>
+<ul>
+<li>BIOS&#x2F;GPT启动，要求必须要有一个BIOS boot分区</li>
+<li>给&#x2F;boot单独分区不是必要的，也可以不分; 一个&#x2F;boot分区可以启动多个内核，没有必要为了支持双系统分两个boot区。</li>
+<li>系统分区设计为LVM, 而不是标准分区, 这样可以灵活扩容</li>
+<li>只分10G的容量, 剩余的硬盘空间等客户升级完成后再做扩容, 这样可以把升级包尽量做小(大小控制在1G左右)</li>
+</ul>
+<p>对于LVM分区, 先创建一个名为VA的逻辑卷组，基于VA逻辑卷组再分出三个逻辑卷(VA-root, VA-back, VA-data)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NAME		SIZE      MOUNTPOINTS</span><br><span class="line">sda3		</span><br><span class="line">|- VA-root  8G        /</span><br><span class="line">|- VA-back  512M      /back</span><br><span class="line">|- VA-data  512M      /data</span><br></pre></td></tr></table></figure>
+<p>说明:</p>
+<ul>
+<li>分三个逻辑卷的是为了实现双系统双启动项。如果升级新系统遇到故障, 可以迅速回滚到旧的操作系统。</li>
+<li>VA-root为第1个系统分区, VA-back是第2个系统的分区, 这两个系统共用一个&#x2F;boot分区</li>
+<li>设计VA-data分区，存储两个系统都会用到的公共数据</li>
+</ul>
+<p>虚拟机安装完成后，使用gisk查看分区内容</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y gdisk</span><br><span class="line">gdisk -l /dev/sda</span><br><span class="line">...</span><br><span class="line">Disk /dev/sda: 20971520 sectors, 10.0 GiB</span><br><span class="line">...</span><br><span class="line">Number  Start (sector)    End (sector)  Size       Code  Name</span><br><span class="line">   1            2048            6143   2.0 MiB     EF02  BIOS boot partition</span><br><span class="line">   2            6144         2103295   1024.0 MiB  8300  Linux filesystem</span><br><span class="line">   3         2103296        20781055   8.9 GiB     8E00  Linux LVM</span><br></pre></td></tr></table></figure>
+<p>注：如果出现biosboot分区类型不识别的问题，可以用gdisk手动修改分区类型为biosboot，方法如下:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">gdisk</span><br><span class="line"></span><br><span class="line">Type device filename, or press &lt;Enter&gt; to <span class="built_in">exit</span>: /dev/sda</span><br><span class="line"></span><br><span class="line">Command (? <span class="keyword">for</span> <span class="built_in">help</span>): t</span><br><span class="line">Partition number (1-3): 1</span><br><span class="line"></span><br><span class="line">Hex code or GUID (L to show codes): EF02</span><br><span class="line">Changed <span class="built_in">type</span> of partition to <span class="string">&#x27;BIOS boot partition&#x27;</span></span><br><span class="line"></span><br><span class="line">Command (? <span class="keyword">for</span> <span class="built_in">help</span>): w</span><br><span class="line"></span><br><span class="line">Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING PARTITIONS!!</span><br><span class="line"></span><br><span class="line">Do you want to proceed? (Y/N): Y</span><br><span class="line">OK; writing new GUID partition table (GPT) to /dev/sda.</span><br></pre></td></tr></table></figure>
+<p>再重新安装GRUB，reboot确认下系统启动没有问题</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">grub2-install /dev/sda</span><br><span class="line">reboot</span><br></pre></td></tr></table></figure>
+<p>至此, 确认分区无误后，使用gdisk导出分区表文件<code>va.sgdisk</code>，这个分区表文件在后续升级的时候会用到</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y gdisk</span><br><span class="line">sgdisk --backup=./va.sgdisk /dev/sda</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="制作va-tar-xz"><a href="#制作va-tar-xz" class="headerlink" title="制作va.tar.xz"></a>制作va.tar.xz</h3><p>1、导出RockyLinux9.4虚拟机的OVA文件，解压OVA得到一个vmdk格式的硬盘文件</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tar xf va.ova</span><br><span class="line"><span class="built_in">ls</span> va-disk1.vmdk</span><br></pre></td></tr></table></figure>
+<p>2、使用guestmount命令挂载出上面的vmdk文件，再对系统分区和boot分区的内容打包，得到va.tar.xz 。注意打包时需要保存xattr和uid</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y libguestfs libvirt</span><br><span class="line">systemctl start libvirt</span><br><span class="line"><span class="built_in">export</span> LIBGUESTFS_BACKEND=direct</span><br><span class="line">	</span><br><span class="line"><span class="built_in">mkdir</span> -p  /mnt/vmdk</span><br><span class="line">guestmount -a va-disk1.vmdk -i --ro /mnt/vmdk</span><br><span class="line">XZ_OPT=<span class="string">&#x27;-T0 -6&#x27;</span> tar Jcpf va.tar.xz --numeric-owner --xattrs --xattrs-include=* --exclude=<span class="string">&#x27;./back/*&#x27;</span> --exclude=<span class="string">&#x27;./data/*&#x27;</span>  --exclude=<span class="string">&#x27;./lost+found/*&#x27;</span> --exclude=<span class="string">&#x27;./tmp/*&#x27;</span> -C /mnt/vmdk</span><br></pre></td></tr></table></figure>
+
+<h3 id="制作initramfs-vmlinuz"><a href="#制作initramfs-vmlinuz" class="headerlink" title="制作initramfs, vmlinuz"></a>制作initramfs, vmlinuz</h3><p>制作initramfs, vmlinuz，用于启动一个升级小系统。 借助升级小系统实现重建分区表的同时，不丢失升级包和系统配置文件。</p>
+<ul>
+<li>vmlinuz —— 直接用Rocky官方ISO的vmlinuz即可，不需要对这个压缩内核做任何修改。 这里重命名为vmlinuz-convert</li>
+<li>initramfs —— 需要基于Rocky官方ISO的initramfs.img做定制, 再重命名为initramfs-convert.img</li>
+</ul>
+<p>升级小系统启动流程设计如下: </p>
+<ul>
+<li>把va.tar.xz和备份的系统配置复制到内存(initramfs)</li>
+<li>重建硬盘分区，以支持双系统双启动项</li>
+<li>把va.tar.xz解压到硬盘的系统分区，完成新系统文件的安装</li>
+<li>最后做一些必要的配置，确保从升级小系统切换到新系统启动</li>
+</ul>
+<p>我们需要编写一个脚本(tiny_os_start.sh)，把这个脚本做到initramfs里。这样升级小系统启动时，可以通过这个脚本执行以上的流程。</p>
+<h4 id="编写tiny-os-start-sh"><a href="#编写tiny-os-start-sh" class="headerlink" title="编写tiny_os_start.sh"></a>编写tiny_os_start.sh</h4><h5 id="1-把和系统配置文件复制到内存-initramfs"><a href="#1-把和系统配置文件复制到内存-initramfs" class="headerlink" title="1. 把和系统配置文件复制到内存(initramfs)"></a>1. 把和系统配置文件复制到内存(initramfs)</h5><p>首先把根分区挂载出来, 把升级包和旧的系统配置文件拷贝到内存。 考虑到重建分区后磁盘格式化，所有磁盘文件都会丢失，所以先把这些文件拷贝到临时内存里。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">load_upd_files_to_memory</span></span>() &#123;</span><br><span class="line">  lvm vgscan --mknodes</span><br><span class="line">  lvm vgchange -ay</span><br><span class="line"></span><br><span class="line">  <span class="built_in">local</span> rootdev=$(find /dev/mapper/ -name <span class="string">&quot;*root&quot;</span>)</span><br><span class="line">  <span class="built_in">mkdir</span> -p /sysimage</span><br><span class="line">  mount <span class="string">&quot;<span class="variable">$rootdev</span>&quot;</span> /sysimage</span><br><span class="line"></span><br><span class="line">  <span class="comment"># load upd files to memory</span></span><br><span class="line">  <span class="built_in">cp</span> -a /sysimage/etc/upd/* /etc/upd/ <span class="comment"># 把升级包和旧的系统配置拷贝到内存</span></span><br><span class="line">  umount -l -f /sysimage</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-重建磁盘分区"><a href="#2-重建磁盘分区" class="headerlink" title="2. 重建磁盘分区"></a>2. 重建磁盘分区</h5><p>使用分区表文件(va.sgdisk)重建分区，再创建逻辑卷组和逻辑卷，格式化分区</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">init_disk_partition</span></span>() &#123;</span><br><span class="line">    <span class="comment"># 重建分区</span></span><br><span class="line">    <span class="built_in">local</span> vgname=$(lvm vgs  | grep -v <span class="string">&#x27;#&#x27;</span> | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span>)</span><br><span class="line">    <span class="built_in">local</span> dskname=$(lvm pvs | grep <span class="string">&#x27;/dev/&#x27;</span> | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span>)</span><br><span class="line">    lvm vgchange -an <span class="variable">$vgname</span></span><br><span class="line">    lvm pvremove --force --force -y <span class="variable">$dskname</span></span><br><span class="line">    sgdisk -Z /dev/sda</span><br><span class="line">    sgdisk -l /etc/upd/va.sgdisk /dev/sda</span><br><span class="line">    <span class="built_in">echo</span> 1 &gt; /sys/block/sda/device/rescan</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 创建逻辑卷组VA和三个逻辑卷(data,back,root)</span></span><br><span class="line">    lvm vgcreate VA  /dev/sda3</span><br><span class="line">    lvm lvcreate -y -n data -L 512M VA</span><br><span class="line">    lvm lvcreate -y -n back -L 512M VA</span><br><span class="line">    lvm lvcreate -y -n root -l 100%FREE VA</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 格式化分区</span></span><br><span class="line">    mkfs.ext4 -F /dev/sda2</span><br><span class="line">    mkfs.ext4 -F /dev/mapper/VA-root</span><br><span class="line">    mkfs.ext4 -F /dev/mapper/VA-back</span><br><span class="line">    mkfs.ext4 -F /dev/mapper/VA-data</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注: initramfs.img中并没有sgdisk程序, 你需要拷贝sgdisk及其依赖到initramfs.img对应的bin,lib目录下</p>
+<h5 id="3-把va-tar-xz解压到硬盘的系统分区，完成新系统文件的安装"><a href="#3-把va-tar-xz解压到硬盘的系统分区，完成新系统文件的安装" class="headerlink" title="3. 把va.tar.xz解压到硬盘的系统分区，完成新系统文件的安装"></a>3. 把va.tar.xz解压到硬盘的系统分区，完成新系统文件的安装</h5><p>va.tar.xz包括新系统根分区下所有的文件以及boot分区的文件。 依次挂载系统分区(VA-root分区)和boot分区, 再va.tar.xz解压到磁盘</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_upd</span></span>() &#123;</span><br><span class="line">    mount /dev/mapper/VA-root /sysimage</span><br><span class="line">    mount /dev/sda2 /sysimage/boot</span><br><span class="line">    tar xf /etc/upd/va.tar.xz --numeric-owner --xattrs --xattrs-include=* -C /sysimage<span class="string">&quot;</span></span><br><span class="line"><span class="string">    rm -f /etc/upd/va.tar.xz</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="4-做一些必要的配置，确保从升级小系统切换到新系统启动"><a href="#4-做一些必要的配置，确保从升级小系统切换到新系统启动" class="headerlink" title="4. 做一些必要的配置，确保从升级小系统切换到新系统启动"></a>4. 做一些必要的配置，确保从升级小系统切换到新系统启动</h5><p>单纯的解压文件到磁盘，是没办法切换到新的OS正常启动的。 必须要做一些配置操作，包括：</p>
+<ul>
+<li>调整分区UUID。 boot分区的UUID要和系统分区的&#x2F;etc&#x2F;fstab中的保持一致。</li>
+<li>同步内存中的LVM配置文件到系统分区。 因为配置LVM是在小系统里做的，小系统只是个临时的内存，真正的系统启动需要读取系统分区(VA-root)中的LVM配置</li>
+<li>根据之前备份的系统配置，恢复新系统的配置。 例如: 网卡IP, 登录口令等。 </li>
+<li>chroot到系统分区, 重新生成initramfs, 重新安装GRUB，再reboot，完成从小系统到新系统的切换。</li>
+</ul>
+<p>以上配置操作的实现可以参考:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">install_new_va</span></span>() &#123;</span><br><span class="line">    <span class="comment"># 调整boot分区的UUID, 重新挂载boot分区</span></span><br><span class="line">    umount /sysimage/boot</span><br><span class="line">    e2fsck -y -f /dev/sda2</span><br><span class="line">    tune2fs -U $(grep UUID /sysimage/etc/fstab | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span> | sed <span class="string">&#x27;s/UUID=//&#x27;</span>) /dev/sda2<span class="string">&quot;</span></span><br><span class="line"><span class="string">    mount /dev/sda2 /sysimage/boot</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    # 同步LVM配置文件到系统分区</span></span><br><span class="line"><span class="string">    cp -a /etc/lvm/backup/VA /sysimage/etc/lvm/backup/</span></span><br><span class="line"><span class="string">    rm -rf /sysimage/etc/lvm/archive/</span></span><br><span class="line"><span class="string">    cp -a /etc/lvm/archive/ /sysimage/etc/lvm/</span></span><br><span class="line"><span class="string">   </span></span><br><span class="line"><span class="string">    # 把旧系统的配置文件同步到系统分区</span></span><br><span class="line"><span class="string">    ln -s /sysimage/etc/upd/ /etc/upd</span></span><br><span class="line"><span class="string">   </span></span><br><span class="line"><span class="string">    # 使用chroot重新生成initramfs，安装GRUB</span></span><br><span class="line"><span class="string">    mount -t proc  /proc /sysimage/proc/</span></span><br><span class="line"><span class="string">    mount -t sysfs /sys  /sysimage/sys/</span></span><br><span class="line"><span class="string">    mount --rbind  /dev  /sysimage/dev/</span></span><br><span class="line"><span class="string">    mount --rbind  /run  /sysimage/run/</span></span><br><span class="line"><span class="string">	</span></span><br><span class="line"><span class="string">    export KENREL_VER=<span class="subst">$(ls /sysimage/boot/ | grep vmlinuz-5 | sed &#x27;s/vmlinuz-//&#x27;)</span></span></span><br><span class="line"><span class="string">    chroot /sysimage /usr/sbin/grub2-install /dev/sda</span></span><br><span class="line"><span class="string">    chroot /sysimage /usr/bin/dracut -f /boot/initramfs-<span class="variable">$&#123;KENREL_VER&#125;</span>.img <span class="variable">$&#123;KENREL_VER&#125;</span></span></span><br><span class="line"><span class="string">	</span></span><br><span class="line"><span class="string">    # 重启，切换到新系统</span></span><br><span class="line"><span class="string">    reboot</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>注: initramfs.img中并没有e2fsck、tune2fs程序，你需要手动拷贝这些程序及其依赖到initramfs.img对应的bin,lib目录下</p>
+<p>完整的tiny_os_start.sh如下:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">main</span></span>() &#123;</span><br><span class="line">	load_upd_files_to_memory</span><br><span class="line">	init_disk_partition</span><br><span class="line">	extract_upd</span><br><span class="line">	install_new_va</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="自定义一个Systemd服务，用于小系统启动时自动执行tiny-os-start-sh"><a href="#自定义一个Systemd服务，用于小系统启动时自动执行tiny-os-start-sh" class="headerlink" title="自定义一个Systemd服务，用于小系统启动时自动执行tiny_os_start.sh"></a>自定义一个Systemd服务，用于小系统启动时自动执行tiny_os_start.sh</h4><p>光有了脚本还不行，我们需要在小系统启动的某个时点执行这个脚本，可以通过自定义一个systemd的service实现。<br>经过实测，可以直接修改initramfs中已有的dracut-emergency.service，把ExecStart入口设置为tiny_os_start.sh即可，完整的dracut-emergency.service参考:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Dracut Emergency Shell</span><br><span class="line">DefaultDependencies=no</span><br><span class="line">After=systemd-vconsole-setup.service</span><br><span class="line">Wants=systemd-vconsole-setup.service</span><br><span class="line">Conflicts=shutdown.target emergency.target</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line">WorkingDirectory=/</span><br><span class="line">ExecStart=/sbin/tiny_os_start.sh # 指定你的脚本路径</span><br><span class="line">Type=oneshot</span><br><span class="line">StandardInput=tty-force</span><br><span class="line">StandardOutput=inherit</span><br><span class="line">StandardError=inherit</span><br><span class="line">KillMode=process</span><br><span class="line">IgnoreSIGPIPE=no</span><br><span class="line"></span><br><span class="line"># Bash ignores SIGTERM, so we send SIGHUP instead, to ensure that bash</span><br><span class="line"># terminates cleanly.</span><br><span class="line">KillSignal=SIGHUP</span><br></pre></td></tr></table></figure>
+<p>接下来，需要把我们定义的脚本和service配置文件打到initramfs.img中</p>
+<h4 id="定制initramfs-img"><a href="#定制initramfs-img" class="headerlink" title="定制initramfs.img"></a>定制initramfs.img</h4><p>定制initramfs.img的流程如下:</p>
+<ul>
+<li>解压Rocky官方ISO中的initramfs.img</li>
+<li>把dracut-emergency.service, tiny_os_start.sh及其依赖(sgdisk、e2fsck、tune2fs等)拷贝到initramfs.img</li>
+<li>最后把initramfs.img压缩回去</li>
+</ul>
+<p>可以写个脚本(gen_initramfs.sh)实现以上流程</p>
+<h5 id="0-在你的Linux编译机上准备如下文件"><a href="#0-在你的Linux编译机上准备如下文件" class="headerlink" title="0. 在你的Linux编译机上准备如下文件"></a>0. 在你的Linux编译机上准备如下文件</h5><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tree </span><br><span class="line">resources/</span><br><span class="line">	|- va.sgdisk</span><br><span class="line">	|- initramfs-iso.img</span><br><span class="line">	|- tiny_os_start.sh</span><br><span class="line">	|- dracut-emergency.service</span><br><span class="line">output/</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-解压initramfs-img"><a href="#1-解压initramfs-img" class="headerlink" title="1. 解压initramfs.img"></a>1. 解压initramfs.img</h5><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ROOT_DIR=<span class="string">&quot;<span class="subst">$(dirname $(readlink -f -- <span class="string">&quot;<span class="variable">$&#123;BASH_SOURCE[0]:-<span class="variable">$0</span>&#125;</span>&quot;</span>)</span>)&quot;</span></span><br><span class="line">RESOURCES_DIR=<span class="variable">$&#123;ROOT_DIR&#125;</span>/resources</span><br><span class="line">OUTPUT_DIR=<span class="variable">$&#123;ROOT_DIR&#125;</span>/output/img</span><br><span class="line">DESTDIR=<span class="variable">$&#123;OUTPUT_DIR&#125;</span>/rootfs_cpio</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_initramfs</span></span>() &#123;</span><br><span class="line">	<span class="built_in">mkdir</span> -p <span class="variable">$&#123;OUTPUT_DIR&#125;</span>/rootfs_cpio &amp;&amp; <span class="built_in">cd</span> <span class="variable">$&#123;OUTPUT_DIR&#125;</span>/rootfs_cpio</span><br><span class="line">	<span class="built_in">export</span> XZ_OPT=<span class="string">&#x27;-T0 -6&#x27;</span></span><br><span class="line">	xz -dc <span class="variable">$&#123;RESOURCES_DIR&#125;</span>/initramfs-iso.img | cpio -<span class="built_in">id</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="2-把dracut-emergency-service-tiny-os-start-sh及其依赖-sgdisk、e2fsck、tune2fs等-拷贝到initramfs-img"><a href="#2-把dracut-emergency-service-tiny-os-start-sh及其依赖-sgdisk、e2fsck、tune2fs等-拷贝到initramfs-img" class="headerlink" title="2. 把dracut-emergency.service, tiny_os_start.sh及其依赖(sgdisk、e2fsck、tune2fs等)拷贝到initramfs.img"></a>2. 把dracut-emergency.service, tiny_os_start.sh及其依赖(sgdisk、e2fsck、tune2fs等)拷贝到initramfs.img</h5><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">modify_initramfs</span></span>() &#123;</span><br><span class="line">	<span class="built_in">cp</span> -a <span class="variable">$&#123;RESOURCES_DIR&#125;</span>/tiny_os_start.sh <span class="variable">$&#123;DESTDIR&#125;</span>/sbin/</span><br><span class="line">	<span class="built_in">chmod</span> 777 <span class="variable">$&#123;DESTDIR&#125;</span>/sbin/tiny_os_start.sh</span><br><span class="line">	</span><br><span class="line">	<span class="comment"># 拷贝tune2fs、mkfs.ext4、sgdisk程序及其依赖的所有库</span></span><br><span class="line">	<span class="built_in">cd</span> <span class="variable">$&#123;DESTDIR&#125;</span></span><br><span class="line">	copy_exec_and_deps /usr/sbin/tune2fs /sbin</span><br><span class="line">	copy_exec_and_deps /usr/sbin/mkfs.ext4 /sbin</span><br><span class="line">	copy_exec_and_deps /usr/sbin/sgdisk /sbin</span><br><span class="line"></span><br><span class="line">    <span class="built_in">cp</span> /etc/mke2fs.conf ./etc/mke2fs.conf</span><br><span class="line">    <span class="built_in">cp</span> -a <span class="variable">$&#123;RESOURCES_DIR&#125;</span>/dracut-emergency.service <span class="variable">$&#123;DESTDIR&#125;</span>/usr/lib/systemd/system/dracut-emergency.service</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注: copy_exec_and_deps函数用于拷贝一个可执行文件以及依赖的库，代码参考:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># $1 = file type (for logging)</span></span><br><span class="line"><span class="comment"># $2 = file to copy to initramfs</span></span><br><span class="line"><span class="comment"># $3 (optional) Name for the file on the initramfs</span></span><br><span class="line"><span class="comment"># Location of the image dir is assumed to be $DESTDIR</span></span><br><span class="line"><span class="comment"># If the target exists, we leave it and return 1.</span></span><br><span class="line"><span class="comment"># On any other error, we return &gt;1.</span></span><br><span class="line"><span class="function"><span class="title">copy_file</span></span>() &#123;</span><br><span class="line">  <span class="built_in">local</span> <span class="built_in">type</span> src target link_target</span><br><span class="line"></span><br><span class="line">  <span class="built_in">type</span>=<span class="string">&quot;<span class="variable">$&#123;1&#125;</span>&quot;</span></span><br><span class="line">  src=<span class="string">&quot;<span class="variable">$&#123;2&#125;</span>&quot;</span></span><br><span class="line">  target=<span class="string">&quot;<span class="variable">$&#123;3:-<span class="variable">$2</span>&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">  [ -f <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> ] || <span class="built_in">return</span> 2</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> [ -d <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    target=<span class="string">&quot;<span class="variable">$&#123;target&#125;</span>/<span class="variable">$&#123;src##*/&#125;</span>&quot;</span></span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># Canonicalise usr-merged target directories</span></span><br><span class="line">  <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$&#123;target&#125;</span>&quot;</span> <span class="keyword">in</span></span><br><span class="line">    /bin/* | /lib* | /sbin/*) target=<span class="string">&quot;/usr<span class="variable">$&#123;target&#125;</span>&quot;</span> ;;</span><br><span class="line">  <span class="keyword">esac</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># check if already copied</span></span><br><span class="line">  [ -e <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span> ] &amp;&amp; <span class="built_in">return</span> 1</span><br><span class="line"></span><br><span class="line">  <span class="built_in">mkdir</span> -p <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target%/*&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> [ -h <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    <span class="comment"># We don&#x27;t need to replicate a chain of links completely;</span></span><br><span class="line">    <span class="comment"># just link directly to the ultimate target</span></span><br><span class="line">    link_target=<span class="string">&quot;<span class="subst">$(readlink -f <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span>)</span>&quot;</span> || <span class="built_in">return</span> $(($? + <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Update source for the copy</span></span><br><span class="line">    src=<span class="string">&quot;<span class="variable">$&#123;link_target&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Canonicalise usr-merged target directories</span></span><br><span class="line">    <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$&#123;link_target&#125;</span>&quot;</span> <span class="keyword">in</span></span><br><span class="line">      /bin/* | /lib* | /sbin/*) link_target=<span class="string">&quot;/usr<span class="variable">$&#123;link_target&#125;</span>&quot;</span> ;;</span><br><span class="line">    <span class="keyword">esac</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$&#123;link_target&#125;</span>&quot;</span> != <span class="string">&quot;<span class="variable">$&#123;target&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">      [ <span class="string">&quot;<span class="variable">$&#123;verbose?&#125;</span>&quot;</span> = <span class="string">&quot;y&quot;</span> ] &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;Adding <span class="variable">$&#123;type&#125;</span>-link <span class="variable">$&#123;target&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">      <span class="comment"># Create a relative link so it always points</span></span><br><span class="line">      <span class="comment"># to the right place</span></span><br><span class="line">      <span class="built_in">ln</span> -rs <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;link_target&#125;</span>&quot;</span> <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">    <span class="comment"># Copy the link target if it doesn&#x27;t already exist</span></span><br><span class="line">    target=<span class="string">&quot;<span class="variable">$&#123;link_target&#125;</span>&quot;</span></span><br><span class="line">    [ -e <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span> ] &amp;&amp; <span class="built_in">return</span> 0</span><br><span class="line">    <span class="built_in">mkdir</span> -p <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target%/*&#125;</span>&quot;</span></span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">  [ <span class="string">&quot;<span class="variable">$&#123;verbose&#125;</span>&quot;</span> = <span class="string">&quot;y&quot;</span> ] &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;Adding <span class="variable">$&#123;type&#125;</span> <span class="variable">$&#123;src&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">cp</span> -pP <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span> || <span class="built_in">return</span> $(($? + <span class="number">1</span>))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">copy_libgcc</span></span>() &#123;</span><br><span class="line">  <span class="built_in">local</span> libdir library</span><br><span class="line"></span><br><span class="line">  libdir=<span class="string">&quot;<span class="variable">$1</span>&quot;</span></span><br><span class="line">  <span class="keyword">for</span> library <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$&#123;libdir&#125;</span>&quot;</span>/libgcc_s.so.[1-9]; <span class="keyword">do</span></span><br><span class="line">    copy_exec <span class="string">&quot;<span class="variable">$&#123;library&#125;</span>&quot;</span> || <span class="built_in">return</span></span><br><span class="line">  <span class="keyword">done</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># $1 = executable/shared library to copy to initramfs, with dependencies</span></span><br><span class="line"><span class="comment"># $2 (optional) Name for the file on the initramfs</span></span><br><span class="line"><span class="comment"># Location of the image dir is assumed to be $DESTDIR</span></span><br><span class="line"><span class="comment"># We never overwrite the target if it exists.</span></span><br><span class="line"><span class="function"><span class="title">copy_exec_and_deps</span></span>() &#123;</span><br><span class="line">  <span class="built_in">local</span> src target x nonoptlib ret</span><br><span class="line"></span><br><span class="line">  src=<span class="string">&quot;<span class="variable">$&#123;1&#125;</span>&quot;</span></span><br><span class="line">  target=<span class="string">&quot;<span class="variable">$&#123;2:-<span class="variable">$1</span>&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">  copy_file binary <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> <span class="string">&quot;<span class="variable">$&#123;target&#125;</span>&quot;</span> || <span class="built_in">return</span> $(($? - <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">  <span class="comment"># Copy the dependant libraries</span></span><br><span class="line">  <span class="keyword">for</span> x <span class="keyword">in</span> $(<span class="built_in">env</span> --<span class="built_in">unset</span>=LD_PRELOAD ldd <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> 2&gt;/dev/null | sed -e <span class="string">&#x27;</span></span><br><span class="line"><span class="string">                /\//!d;</span></span><br><span class="line"><span class="string">                /linux-gate/d;</span></span><br><span class="line"><span class="string">                /=&gt;/ &#123;s/.*=&gt;[[:blank:]]*\([^[:blank:]]*\).*/\1/&#125;;</span></span><br><span class="line"><span class="string">                s/[[:blank:]]*\([^[:blank:]]*\) (.*)/\1/&#x27;</span> 2&gt;/dev/null); <span class="keyword">do</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Try to use non-optimised libraries where possible.</span></span><br><span class="line">    <span class="comment"># We assume that all HWCAP libraries will be in tls,</span></span><br><span class="line">    <span class="comment"># sse2, vfp or neon.</span></span><br><span class="line">    nonoptlib=$(<span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$&#123;x&#125;</span>&quot;</span> | sed -e <span class="string">&#x27;s#/lib/\([^/]*/\)\?\(tls\|i686\|sse2\|neon\|vfp\).*/\(lib.*\)#/lib/\1\3#&#x27;</span>)</span><br><span class="line">    nonoptlib=$(<span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$&#123;nonoptlib&#125;</span>&quot;</span> | sed -e <span class="string">&#x27;s#-linux-gnu/\(tls\|i686\|sse2\|neon\|vfp\).*/\(lib.*\)#-linux-gnu/\2#&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ -e <span class="string">&quot;<span class="variable">$&#123;nonoptlib&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">      x=<span class="string">&quot;<span class="variable">$&#123;nonoptlib&#125;</span>&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Handle common dlopen() dependency (Debian bug #950254)</span></span><br><span class="line">    <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$&#123;x&#125;</span>&quot;</span> <span class="keyword">in</span></span><br><span class="line">      */libpthread.so.*)</span><br><span class="line">        copy_libgcc <span class="string">&quot;<span class="variable">$&#123;x%/*&#125;</span>&quot;</span> || <span class="built_in">return</span></span><br><span class="line">        ;;</span><br><span class="line">    <span class="keyword">esac</span></span><br><span class="line"></span><br><span class="line">    copy_file binary <span class="string">&quot;<span class="variable">$&#123;x&#125;</span>&quot;</span> || &#123;</span><br><span class="line">      ret=$?</span><br><span class="line">      [ <span class="variable">$&#123;ret&#125;</span> = 1 ] || <span class="built_in">return</span> $((ret - <span class="number">1</span>))</span><br><span class="line">    &#125;</span><br><span class="line">  <span class="keyword">done</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="3-重新打包initramfs"><a href="#3-重新打包initramfs" class="headerlink" title="3. 重新打包initramfs"></a>3. 重新打包initramfs</h5><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">repack_initramfs</span></span>() &#123;</span><br><span class="line">	<span class="built_in">cd</span> <span class="variable">$&#123;DESTDIR&#125;</span></span><br><span class="line">	find . | cpio -c -o | xz -9 --format=lzma &gt;/tmp/initramfs-convert.img</span><br><span class="line">	<span class="built_in">cp</span> -a /tmp/initramfs-convert.img <span class="variable">$&#123;OUTPUT_DIR&#125;</span>/</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>完整的gen_initramfs.sh参考:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">gen_initramfs</span></span>() &#123;</span><br><span class="line">	extract_initramfs</span><br><span class="line">	modify_initramfs</span><br><span class="line">	repack_initramfs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>至此, 升级小系统制作完毕。 我们还需要编写一个脚本(upgrade_to_tiny_system.sh), 客户VA解压升级包后执行这个脚本, 从而切换到升级小系统启动。</p>
+<h3 id="编写一个Shell脚本-upgrade-to-tiny-system-sh-，实现从老系统进入升级小系统"><a href="#编写一个Shell脚本-upgrade-to-tiny-system-sh-，实现从老系统进入升级小系统" class="headerlink" title="编写一个Shell脚本(upgrade_to_tiny_system.sh)，实现从老系统进入升级小系统"></a>编写一个Shell脚本(upgrade_to_tiny_system.sh)，实现从老系统进入升级小系统</h3><p>编写upgrade_to_tiny_system.sh</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">RUN_DIR=<span class="string">&quot;<span class="subst">$(dirname $(readlink -f -- <span class="string">&quot;<span class="variable">$&#123;BASH_SOURCE[0]:-<span class="variable">$0</span>&#125;</span>&quot;</span>)</span>)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 把升级小系统的initramfs,vmlinuz拷贝/boot分区</span></span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$&#123;RUN_DIR&#125;</span>/vmlinuz-convert /boot/</span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$&#123;RUN_DIR&#125;</span>/initramfs-convert.img /boot/</span><br><span class="line"> </span><br><span class="line"><span class="built_in">mkdir</span> -p /etc/upd/</span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$&#123;RUN_DIR&#125;</span>/va.tar.xz /etc/upd/</span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$&#123;RUN_DIR&#125;</span>/va.sgdisk /etc/upd/</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用grubby，把默认启动项设置为升级小系统 </span></span><br><span class="line">grubby --add-kernel=/boot/vmlinuz-convert --title=<span class="string">&quot;VA Migration&quot;</span> --initrd=/boot/initramfs-convert.img --args=<span class="string">&quot;initrd=initramfs-convert.img rd.retry=20 rescue&quot;</span></span><br><span class="line">grubby --set-default /boot/vmlinuz-convert</span><br><span class="line">reboot</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>至此, 所有的编码已完成。 最后把全量升级包打出来(migration.tar.gz)即可。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tar -tvf migration.tar.gz</span><br><span class="line">va.sgdisk</span><br><span class="line">va.tar.xz</span><br><span class="line">initramfs-convert.img</span><br><span class="line">vmlinuz-convert</span><br><span class="line">upgrade_to_tiny_system.sh</span><br></pre></td></tr></table></figure>
+
+<p>整体流程: 客户的VA从网络下载全量升级包 -&gt; 解压全量升级包, 执行upgrade_to_tiny_system.sh -&gt; 进入升级小系统 -&gt; 切换到新系统(RockyLinux9.4)</p>
+<h2 id="调试方法"><a href="#调试方法" class="headerlink" title="调试方法"></a>调试方法</h2><p>难点主要是升级小系统的调试。 可以尝试通过GRUB rescue模式手动加载内核, 手动挂载根分区，再一步一步调试。</p>
+<p>例: GRUB rescue模式手动加载内核</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set root=(hd0,gpt2)</span><br><span class="line">linux (hd0,gpt2)/vmlinuz-convert root=/dev/mapper/VA-root ro rd.lvm.lv=VA/root</span><br><span class="line">initrd (hd0,gpt2)/initramfs-convert.img</span><br></pre></td></tr></table></figure>
+<p>如果需要手动挂载根分区, 可以故意指定一个错误的linux指令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">linux (hd0,gpt2)/vmlinuz-convert root=/dev/mapper/undefined </span><br></pre></td></tr></table></figure>
+<p>其他的调试手段可以自行Google</p>
+<h2 id="典型问题"><a href="#典型问题" class="headerlink" title="典型问题"></a>典型问题</h2><p>问题: 切换到新系统后, 输入正确的用户名和密码，无法登录, console打印localhost login，没有任何错误提示。 而输入错误的密码会提示你认证错误。 进不了后台导致定位有困难。</p>
+<p>解决方法: 通过手动调试升级小系统，手动挂载磁盘分区查看相关日志，发现是SELinux的问题。 设置新系统的SELinux为disabled后，问题得到解决。</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Project</tag>
       </tags>
   </entry>
 </search>
