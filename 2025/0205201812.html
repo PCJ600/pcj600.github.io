@@ -32,7 +32,7 @@
 <meta property="og:description" content="前言Linux安装RabbitMQ官方教程 1. Hello RabbitMQ使用Python pika客户端, 写一个简单的生产者和消费者 1Producer ------&gt; Queue -----&gt; Consumer 编写Producer(send.py)先连接Broker, 建立connection和channel 1234import pikaconnection &#x3D; pika">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-02-05T12:18:12.000Z">
-<meta property="article:modified_time" content="2025-02-07T15:12:20.101Z">
+<meta property="article:modified_time" content="2025-02-07T15:31:06.403Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="RabbitMQ">
 <meta name="twitter:card" content="summary">
@@ -136,7 +136,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">173</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">172</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -276,8 +276,8 @@
 <figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">channel.queue_declare(queue=<span class="string">&#x27;hello&#x27;</span>)</span><br></pre></td></tr></table></figure>
 <p>使用basic_publish发送消息。 这里使用默认交换机(‘’), routing_key参数指定为队列名称</p>
 <figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">channel.basic_publish(exchange=<span class="string">&#x27;&#x27;</span>, routing_key=<span class="string">&#x27;hello&#x27;</span>, body=<span class="string">&#x27;Hello World!&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p>完整的生产者代码(send.py)如下:</p>
 <span id="more"></span>
+<p>完整的生产者代码(send.py)如下:</p>
 <figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pika</span><br><span class="line"></span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(host=<span class="string">&#x27;localhost&#x27;</span>, credentials=pika.PlainCredentials(<span class="string">&#x27;admin&#x27;</span>, <span class="string">&#x27;V2SG@xdr&#x27;</span>)))</span><br><span class="line">channel = connection.channel()</span><br><span class="line">channel.queue_declare(queue=<span class="string">&#x27;hello&#x27;</span>)</span><br><span class="line">channel.basic_publish(exchange=<span class="string">&#x27;&#x27;</span>, routing_key=<span class="string">&#x27;hello&#x27;</span>, body=<span class="string">&#x27;Hello World!&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot; [x] Sent &#x27;Hello World!&#x27;&quot;</span>)</span><br><span class="line">connection.close()</span><br></pre></td></tr></table></figure>
 
 <p>执行成功后，在后台通过<code>rabbitmqadmin</code>查看队列已创建，消息已发送</p>
@@ -572,7 +572,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">173</span>
+          <span class="site-state-item-count">172</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -631,12 +631,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">743k</span>
+    <span title="站点总字数">742k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:16</span>
+    <span title="站点阅读时长">11:15</span>
 </div>
 
 <!--
