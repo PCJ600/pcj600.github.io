@@ -134,7 +134,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">172</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">174</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -193,6 +193,216 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0110201917.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0110201917.html" class="post-title-link" itemprop="url">VA backend Design</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-10 20:19:17" itemprop="dateCreated datePublished" datetime="2025-01-10T20:19:17+08:00">2025-01-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/interview/" itemprop="url" rel="index"><span itemprop="name">interview</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>27k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>24 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">frontend -------&gt;  backend ---------&gt; MQ -----------&gt;  VA(On-premise)</span><br><span class="line">                       /|\                             |  </span><br><span class="line">                        |------------------------------|</span><br><span class="line">						</span><br><span class="line">peter.backend.com:443  backend</span><br><span class="line">peter.channel.com:5672 MQ</span><br><span class="line">peter.frontend.com     frontend</span><br></pre></td></tr></table></figure>
+
+<h1 id="Design"><a href="#Design" class="headerlink" title="Design"></a>Design</h1><h2 id="Auto-upgrade"><a href="#Auto-upgrade" class="headerlink" title="Auto-upgrade"></a>Auto-upgrade</h2><p>dispatchAutoUpgradeInOneHourForAll</p>
+<ul>
+<li>find all running appliances, group by customer_id</li>
+<li>check if appliance need upgrade<ul>
+<li>check schedule update time is within next 1 hour.</li>
+<li>check target version valid (expectedStatus &#x3D; RUNNING and status is not RUNNING)</li>
+<li>don’t upgrade rollback appliances.</li>
+<li>don’t upgrade all appliances at the same time. upgrade half appliances first.</li>
+</ul>
+</li>
+<li>trigger appliance upgrade<ul>
+<li>get firmware download link</li>
+<li>update db, add dbentry for IotTask, update appliance status(upgrading, upgradetaskId: taskId)</li>
+<li>publish iot Task</li>
+</ul>
+</li>
+<li>receive response from Appliance<ul>
+<li>write task to db</li>
+</ul>
+</li>
+</ul>
+<p><img data-src="/2025/0110201917/va_auto_upgrade.png"></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0110201917.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0106201917.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0106201917.html" class="post-title-link" itemprop="url">LeetCode cheetsheet for C++</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-06 20:19:17" itemprop="dateCreated datePublished" datetime="2025-01-06T20:19:17+08:00">2025-01-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="数组-vector"><a href="#数组-vector" class="headerlink" title="数组(vector)"></a>数组(vector)</h1><h2 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vector&lt;int&gt; v(size);</span><br><span class="line">vector&lt;int&gt; v(size, init_value);</span><br><span class="line">v.emplace_back(a.begin(), a.begin() + 3); # 用另一个vector的某一区间初始化vector</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="遍历数组"><a href="#遍历数组" class="headerlink" title="遍历数组"></a>遍历数组</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">for (int i = 0; i &lt; vec.size(); ++i) &#123;</span><br><span class="line">	vec[i] = i;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="数组追加到另一个数组"><a href="#数组追加到另一个数组" class="headerlink" title="数组追加到另一个数组"></a>数组追加到另一个数组</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vec1.insert(vec1.end(), vec2.begin(), vec2.end());</span><br></pre></td></tr></table></figure>
+
+<h2 id="排序数组-去重"><a href="#排序数组-去重" class="headerlink" title="排序数组+去重"></a>排序数组+去重</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sort(nums.begin(), nums.end());</span><br><span class="line">nums.erase(unique(nums.begin(), nums.end()), nums.end());</span><br></pre></td></tr></table></figure>
+
+<h2 id="逆序排序"><a href="#逆序排序" class="headerlink" title="逆序排序"></a>逆序排序</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sort(nums.begin(), nums.end(), greater&lt;int&gt;());</span><br></pre></td></tr></table></figure>
+
+<h2 id="二维vector初始化"><a href="#二维vector初始化" class="headerlink" title="二维vector初始化"></a>二维vector初始化</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vector&lt;vector&lt;bool&gt;&gt; visited(rows, vector&lt;bool&gt;(cols, false));</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0106201917.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -548,182 +758,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1217233035.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/1217233035.html" class="post-title-link" itemprop="url">判断SSH的公钥和私钥是否为一对的方法</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-12-17 23:30:35" itemprop="dateCreated datePublished" datetime="2024-12-17T23:30:35+08:00">2024-12-17</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/SSH/" itemprop="url" rel="index"><span itemprop="name">SSH</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>210</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="使用sshkey-gen命令判断"><a href="#使用sshkey-gen命令判断" class="headerlink" title="使用sshkey-gen命令判断"></a>使用sshkey-gen命令判断</h2><p>使用ssh-keygen -y命令可以从私钥文件中提取公钥。例如: 你的私钥文件是id_rsa，执行如下命令:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -y -f id_rsa &gt; extracted_pubkey.pub</span><br></pre></td></tr></table></figure>
-<p>将提取的公钥保存到extracted_pubkey.pub文件。再和你的公钥文件比较，看文件内容是否相同</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">diff extracted_pubkey.pub id_rsa.pub</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1215170644.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/1215170644.html" class="post-title-link" itemprop="url">Python Cheetsheet</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-12-15 17:06:44" itemprop="dateCreated datePublished" datetime="2024-12-15T17:06:44+08:00">2024-12-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Python/" itemprop="url" rel="index"><span itemprop="name">Python</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>6.6k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>6 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>整理如下内容:</p>
-<ul>
-<li>数据结构和算法</li>
-<li>常用库和使用方法示例</li>
-<li>Flask cheetsheet
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/1215170644.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -795,7 +829,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">172</span>
+          <span class="site-state-item-count">174</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -854,12 +888,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">742k</span>
+    <span title="站点总字数">752k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:15</span>
+    <span title="站点阅读时长">11:24</span>
 </div>
 
 <!--
