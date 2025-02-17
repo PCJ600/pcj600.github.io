@@ -269,12 +269,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="日志"><a href="#日志" class="headerlink" title="日志"></a>日志</h1><h2 id="错误日志"><a href="#错误日志" class="headerlink" title="错误日志"></a>错误日志</h2><p>错误日志记录了mysqld启动和停止时，以及服务器运行中错误信息。数据库出故障时，应首先查看此日志。<br>日志默认路径: <code>/var/log/mysql/mysqld.log</code>, 查看方式如下：</p>
+        <h1><span id="日志">日志</span></h1><h2><span id="错误日志">错误日志</span></h2><p>错误日志记录了mysqld启动和停止时，以及服务器运行中错误信息。数据库出故障时，应首先查看此日志。<br>日志默认路径: <code>/var/log/mysql/mysqld.log</code>, 查看方式如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%log_error%&#x27;;</span><br><span class="line">+----------------------------+----------------------------------------+</span><br><span class="line">| Variable_name              | Value                                  |</span><br><span class="line">+----------------------------+----------------------------------------+</span><br><span class="line">| binlog_error_action        | ABORT_SERVER                           |</span><br><span class="line">| log_error                  | /var/log/mysql/mysqld.log              |</span><br><span class="line">| log_error_services         | log_filter_internal; log_sink_internal |</span><br><span class="line">| log_error_suppression_list |                                        |</span><br><span class="line">| log_error_verbosity        | 2                                      |</span><br><span class="line">+----------------------------+----------------------------------------+</span><br></pre></td></tr></table></figure>
 
 <span id="more"></span>
 
-<h2 id="二进制日志"><a href="#二进制日志" class="headerlink" title="二进制日志"></a>二进制日志</h2><p>binlog记录所有DDL和DML语句，但不包括select,show语句<br>binlog作用：</p>
+<h2><span id="二进制日志">二进制日志</span></h2><p>binlog记录所有DDL和DML语句，但不包括select,show语句<br>binlog作用：</p>
 <ul>
 <li>灾难时数据恢复</li>
 <li>MySQL主从复制<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%log_bin%&#x27;;</span><br><span class="line">+---------------------------------+-----------------------------+</span><br><span class="line">| Variable_name                   | Value                       |</span><br><span class="line">+---------------------------------+-----------------------------+</span><br><span class="line">| log_bin                         | ON                          |</span><br><span class="line">| log_bin_basename                | /var/lib/mysql/binlog       |</span><br><span class="line">| log_bin_index                   | /var/lib/mysql/binlog.index |</span><br><span class="line">| log_bin_trust_function_creators | OFF                         |</span><br><span class="line">| log_bin_use_v1_row_events       | OFF                         |</span><br><span class="line">| sql_log_bin                     | ON                          |</span><br><span class="line">+---------------------------------+-----------------------------+</span><br></pre></td></tr></table></figure></li>
@@ -310,36 +310,36 @@
 <td>删除给定时间点之前产生的所有binlog</td>
 </tr>
 </tbody></table>
-<h2 id="查询日志"><a href="#查询日志" class="headerlink" title="查询日志"></a>查询日志</h2><p>查询日志记录了客户端所有操作语句, binlog不包含查询数据的SQL语句</p>
+<h2><span id="查询日志">查询日志</span></h2><p>查询日志记录了客户端所有操作语句, binlog不包含查询数据的SQL语句</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; show variables like &#x27;%general%&#x27;;</span><br><span class="line">+------------------+--------------------------------------------+</span><br><span class="line">| Variable_name    | Value                                      |</span><br><span class="line">+------------------+--------------------------------------------+</span><br><span class="line">| general_log      | OFF                                        |</span><br><span class="line">| general_log_file | /var/lib/mysql/iZuf65qw76eb18m9yp8b38Z.log |</span><br><span class="line">+------------------+--------------------------------------------+</span><br></pre></td></tr></table></figure>
 <p>查询日志默认是关闭的, 开启查询日志需要修改MySQL配置文件<code>/etc/my.cnf.d/mysql-server.cnf</code>, 添加如下内容:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">general_log=1</span><br><span class="line">general_log_file=/var/lib/mysql/mysql_query.log</span><br></pre></td></tr></table></figure>
 <p>再重启MySQL <code>system restart mysqld</code></p>
-<h2 id="慢查询日志"><a href="#慢查询日志" class="headerlink" title="慢查询日志"></a>慢查询日志</h2><p>记录了所有执行时间超过参数long_query_time设置值，并且扫描记录数不小于min_examined_row_limit的所有SQL语句日志, 默认未开启：<br>修改<code>/etc/my.cnf.d/mysql-server.cnf</code></p>
+<h2><span id="慢查询日志">慢查询日志</span></h2><p>记录了所有执行时间超过参数long_query_time设置值，并且扫描记录数不小于min_examined_row_limit的所有SQL语句日志, 默认未开启：<br>修改<code>/etc/my.cnf.d/mysql-server.cnf</code></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#慢查询日志开关</span><br><span class="line">slow_query_log=1</span><br><span class="line">#执行时间参数</span><br><span class="line">long_query_time=2</span><br></pre></td></tr></table></figure>
 <p>默认情况下，不记录管理语句，也不记录不适用索引查找的语句。可以修改配置文件改变这个默认的行为：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#记录执行较慢的管理语句</span><br><span class="line">log_slow_admin_statements=1</span><br><span class="line">#记录执行较慢的未使用索引的语句</span><br><span class="line">log_queries_not_using_indexes=1</span><br></pre></td></tr></table></figure>
 
-<h1 id="主从复制"><a href="#主从复制" class="headerlink" title="主从复制"></a>主从复制</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>主从复制指将主库的DDL和DML通过二进制日志传到从库, 然后在从库对这些日志重新执行(重做), 从而使得从库和主库数据保持同步<br>MySQL支持一台主库同时向多台从库复制，从库同时可作为其他从服务器的主库，实现链状复制</p>
+<h1><span id="主从复制">主从复制</span></h1><h2><span id="概述">概述</span></h2><p>主从复制指将主库的DDL和DML通过二进制日志传到从库, 然后在从库对这些日志重新执行(重做), 从而使得从库和主库数据保持同步<br>MySQL支持一台主库同时向多台从库复制，从库同时可作为其他从服务器的主库，实现链状复制</p>
 <p>主从复制解决以下问题：</p>
 <ul>
 <li>主库故障，可以切换到从库提供服务</li>
 <li>实现读写分离, 降低主库访问压力</li>
 <li>在从库中执行备份，避免备份期间影响主库服务</li>
 </ul>
-<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p><img data-src="/2024/1030215315/mysql-master-slave-1.png"></p>
+<h2><span id="原理">原理</span></h2><p><img data-src="/2024/1030215315/mysql-master-slave-1.png"></p>
 <ul>
 <li>Master主库在事务提交时，会吧数据变更记录在二进制日志文件Binlog中</li>
 <li>从库读取主库的二进制日志文件Binlog, 写入到从库的中继日志Relay Log</li>
 <li>slave重做中继日志中的事件，将改变反映它自己的数据</li>
 </ul>
-<h2 id="搭建"><a href="#搭建" class="headerlink" title="搭建"></a>搭建</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&vd_source=d8559c2d87607be86810cd806158bb86&p=160">https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&amp;vd_source=d8559c2d87607be86810cd806158bb86&amp;p=160</a><br>准备两台服务器<br>(TODO 搞两台虚拟机)</p>
-<h1 id="分库分表"><a href="#分库分表" class="headerlink" title="分库分表"></a>分库分表</h1><p>单数据库问题:</p>
+<h2><span id="搭建">搭建</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&vd_source=d8559c2d87607be86810cd806158bb86&p=160">https://www.bilibili.com/video/BV1Kr4y1i7ru?spm_id_from=333.788.player.switch&amp;vd_source=d8559c2d87607be86810cd806158bb86&amp;p=160</a><br>准备两台服务器<br>(TODO 搞两台虚拟机)</p>
+<h1><span id="分库分表">分库分表</span></h1><p>单数据库问题:</p>
 <ul>
 <li>IO瓶颈: 热点数据多，数据库缓存不足，产生大量磁盘IO，效率低。请求数据太多，带宽不够，网络IO瓶颈</li>
 <li>CPU瓶颈: 排序，分组，连接查询，聚合统计等SQL耗费CPU资源，请求数据太多，CPU出现瓶颈<br>分库分表中心思想是：将数据分散存储，使得单一数据库或表的数据量变小，缓解单一数据库性能问题，从而达到提升数据库性能目的</li>
 </ul>
-<h2 id="拆分策略"><a href="#拆分策略" class="headerlink" title="拆分策略"></a>拆分策略</h2><ul>
+<h2><span id="拆分策略">拆分策略</span></h2><ul>
 <li>垂直拆分 (垂直分库, 垂直分表)</li>
 <li>水平拆分 (水平分库, 水平分表)</li>
 </ul>
@@ -371,8 +371,8 @@
 <li>shardingJDBC 只支持Java，性能较高</li>
 <li>MyCat 数据库分库分表中间件，支持多种语言 (应用程序 -&gt; MyCat -&gt; MySQL)</li>
 </ul>
-<h2 id="MyCat"><a href="#MyCat" class="headerlink" title="MyCat"></a>MyCat</h2><p>MyCat是开源的，基于Java语言编写的MySQL数据库中间件，可以像使用Mysql一样来使用mycat，对于开发人员来说感知不到MyCat存在</p>
-<h2 id="读写分离"><a href="#读写分离" class="headerlink" title="读写分离"></a>读写分离</h2>
+<h2><span id="mycat">MyCat</span></h2><p>MyCat是开源的，基于Java语言编写的MySQL数据库中间件，可以像使用Mysql一样来使用mycat，对于开发人员来说感知不到MyCat存在</p>
+<h2><span id="读写分离">读写分离</span></h2>
     </div>
 
     
@@ -492,7 +492,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%97%A5%E5%BF%97"><span class="nav-text">日志</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%99%E8%AF%AF%E6%97%A5%E5%BF%97"><span class="nav-text">错误日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%97%A5%E5%BF%97"><span class="nav-text">二进制日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97"><span class="nav-text">查询日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97"><span class="nav-text">慢查询日志</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6"><span class="nav-text">主从复制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%90%AD%E5%BB%BA"><span class="nav-text">搭建</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8"><span class="nav-text">分库分表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8B%86%E5%88%86%E7%AD%96%E7%95%A5"><span class="nav-text">拆分策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MyCat"><span class="nav-text">MyCat</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB"><span class="nav-text">读写分离</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">日志</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">错误日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">二进制日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">查询日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">慢查询日志</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">主从复制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">搭建</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">分库分表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">拆分策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">MyCat</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">读写分离</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -567,12 +567,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

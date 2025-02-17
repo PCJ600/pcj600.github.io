@@ -269,24 +269,24 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="URLRewrite是什么"><a href="#URLRewrite是什么" class="headerlink" title="URLRewrite是什么"></a>URLRewrite是什么</h1><p>URL重写, 是Nginx中用于将请求重定向到其他URL的过程</p>
-<h1 id="URLRewrite的应用场景"><a href="#URLRewrite的应用场景" class="headerlink" title="URLRewrite的应用场景"></a>URLRewrite的应用场景</h1><ul>
+        <h1><span id="urlrewrite是什么">URLRewrite是什么</span></h1><p>URL重写, 是Nginx中用于将请求重定向到其他URL的过程</p>
+<h1><span id="urlrewrite的应用场景">URLRewrite的应用场景</span></h1><ul>
 <li>域名迁移。 当企业更换域名时，通过URL重写将旧域名的访问永久重定向到新域名，避免用户流失。</li>
 <li>URL规范化。通过URL重写，使URL更加规范和美观，提升用户体验。</li>
 <li>伪静态。重写动态URL为静态URL，提高搜索引擎的收录效率和网站排名</li>
 <li>安全性增强。隐藏真实文件目录, 防止攻击者直接访问文件</li>
 </ul>
-<h1 id="URLRewrite案例演示"><a href="#URLRewrite案例演示" class="headerlink" title="URLRewrite案例演示"></a>URLRewrite案例演示</h1><span id="more"></span>
+<h1><span id="urlrewrite案例演示">URLRewrite案例演示</span></h1><span id="more"></span>
 
-<h2 id="案例1-域名迁移"><a href="#案例1-域名迁移" class="headerlink" title="案例1: 域名迁移"></a>案例1: 域名迁移</h2><p>当企业更换域名时，通过URL重写将旧域名的访问永久重定向到新域名，避免用户流失。<br>例如访问京东，通过<code>www.360buy.com</code>, <code>www.jingdong.com</code>，最终都重定向到<code>www.jd.com</code></p>
+<h2><span id="案例1-域名迁移">案例1: 域名迁移</span></h2><p>当企业更换域名时，通过URL重写将旧域名的访问永久重定向到新域名，避免用户流失。<br>例如访问京东，通过<code>www.360buy.com</code>, <code>www.jingdong.com</code>，最终都重定向到<code>www.jd.com</code></p>
 <p><strong>案例演示</strong><br>访问<code>www.petertest1.cn</code>或<code>www.petertest2.cn</code>, 永久重定向到<code>www.peter.com</code></p>
-<h3 id="创建一台Linux虚拟机-准备三个域名"><a href="#创建一台Linux虚拟机-准备三个域名" class="headerlink" title="创建一台Linux虚拟机, 准备三个域名"></a>创建一台Linux虚拟机, 准备三个域名</h3><p>修改虚拟机的&#x2F;etc&#x2F;hosts文件，内容如下:</p>
+<h3><span id="创建一台linux虚拟机-准备三个域名">创建一台Linux虚拟机, 准备三个域名</span></h3><p>修改虚拟机的&#x2F;etc&#x2F;hosts文件，内容如下:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">192.168.52.200 www.petertest1.cn</span><br><span class="line">192.168.52.200 www.petertest2.cn</span><br><span class="line">192.168.52.200 www.peter.com</span><br></pre></td></tr></table></figure>
 <p>注: 192.168.52.200是我的虚拟机IP</p>
-<h3 id="配置Nginx-添加一个服务器-配置重定向"><a href="#配置Nginx-添加一个服务器-配置重定向" class="headerlink" title="配置Nginx, 添加一个服务器, 配置重定向"></a>配置Nginx, 添加一个服务器, 配置重定向</h3><p>修改nginx.conf</p>
+<h3><span id="配置nginx-添加一个服务器-配置重定向">配置Nginx, 添加一个服务器, 配置重定向</span></h3><p>修改nginx.conf</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  www.peter.com;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;Welcome to peter&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name www.petertest1.cn www.petertest2.cn; # 需要永久重定向的旧的域名</span><br><span class="line">    rewrite ^(.*) http://www.peter.com$1 permanent; # rewrite实现重定向, 指定permanent返回301永久重定向, 不指定返回302临时重定向</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><p>在浏览器访问<code>http://www.petertest1.cn/getUser</code>, 可以成功跳转到<code>http://www.peter.com/getUser</code>，且地址栏显示的也是重定向后的URL: <code>http://www.peter.com/getUser</code><br>再用curl测试，返回301永久重定向, Location为<code>http://www.peter.com</code></p>
+<h3><span id="测试">测试</span></h3><p>在浏览器访问<code>http://www.petertest1.cn/getUser</code>, 可以成功跳转到<code>http://www.peter.com/getUser</code>，且地址栏显示的也是重定向后的URL: <code>http://www.peter.com/getUser</code><br>再用curl测试，返回301永久重定向, Location为<code>http://www.peter.com</code></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">curl http://www.petertest2.cn -i</span><br><span class="line">HTTP/1.1 301 Moved Permanently</span><br><span class="line">Server: nginx/1.20.1</span><br><span class="line">Date: Sat, 23 Nov 2024 07:05:41 GMT</span><br><span class="line">Content-Type: text/html</span><br><span class="line">Content-Length: 169</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Location: http://www.peter.com/</span><br></pre></td></tr></table></figure>
 
 <p>另一种实现域名永久重定向的配置方法(不使用URLRewrite)</p>
@@ -295,9 +295,9 @@
 <p>附: 301永久重定向抓包<br>先通过tcpdump抓包<code>tcpdump -i ens33 tcp and port not 22 -w output.pcap</code>, 再用Wireshark分析</p>
 <p><img data-src="/2024/1123152532/301.png"></p>
 <p>这里可以看出重定向和请求转发的区别：客户端收到301后，客户端会再发起一次新的HTTP请求；而内部转发是服务器行为，客户端感知不到。</p>
-<h2 id="案例2-伪静态"><a href="#案例2-伪静态" class="headerlink" title="案例2: 伪静态"></a>案例2: 伪静态</h2><p>伪静态是指，把动态URL转换为静态URL的过程，以对用户更友好的方式显示在浏览器地址栏中。</p>
+<h2><span id="案例2-伪静态">案例2: 伪静态</span></h2><p>伪静态是指，把动态URL转换为静态URL的过程，以对用户更友好的方式显示在浏览器地址栏中。</p>
 <p><strong>案例演示</strong><br>假设有一个动态URL<code>http://peter.com/page.php?id=1</code>, 我想重写成伪静态URL<code>http://peter.com/page/1</code>，Nginx中如何实现?</p>
-<h3 id="配置Nginx"><a href="#配置Nginx" class="headerlink" title="配置Nginx"></a>配置Nginx</h3><p>修改nginx.conf</p>
+<h3><span id="配置nginx">配置Nginx</span></h3><p>修改nginx.conf</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name  www.peter.com;</span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;query_string: $query_string&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line">    location ~ /page/(\d+)$ &#123;</span><br><span class="line">        rewrite ^/page/(\d+)$ /page.php?id=$1 last;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>说明：</p>
 <ul>
@@ -306,7 +306,7 @@
 <p>测试结果:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># curl localhost/page/1</span><br><span class="line">&lt;h1&gt;query_string: id=1&lt;/h1&gt;</span><br><span class="line"># curl localhost/page/234</span><br><span class="line">&lt;h1&gt;query_string: id=234&lt;/h1&gt;</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/m0_62396418/article/details/135747521">Nginx rewrite地址重写</a><br>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://developer.aliyun.com/article/1499869">Nginx-URLRewrite伪静态</a></p>
+<h2><span id="参考">参考</span></h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/m0_62396418/article/details/135747521">Nginx rewrite地址重写</a><br>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://developer.aliyun.com/article/1499869">Nginx-URLRewrite伪静态</a></p>
 
     </div>
 
@@ -427,7 +427,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#URLRewrite%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-text">URLRewrite是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#URLRewrite%E7%9A%84%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-text">URLRewrite的应用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#URLRewrite%E6%A1%88%E4%BE%8B%E6%BC%94%E7%A4%BA"><span class="nav-text">URLRewrite案例演示</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B1-%E5%9F%9F%E5%90%8D%E8%BF%81%E7%A7%BB"><span class="nav-text">案例1: 域名迁移</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E5%8F%B0Linux%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%87%86%E5%A4%87%E4%B8%89%E4%B8%AA%E5%9F%9F%E5%90%8D"><span class="nav-text">创建一台Linux虚拟机, 准备三个域名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AENginx-%E6%B7%BB%E5%8A%A0%E4%B8%80%E4%B8%AA%E6%9C%8D%E5%8A%A1%E5%99%A8-%E9%85%8D%E7%BD%AE%E9%87%8D%E5%AE%9A%E5%90%91"><span class="nav-text">配置Nginx, 添加一个服务器, 配置重定向</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-text">测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B2-%E4%BC%AA%E9%9D%99%E6%80%81"><span class="nav-text">案例2: 伪静态</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AENginx"><span class="nav-text">配置Nginx</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">URLRewrite是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">URLRewrite的应用场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">URLRewrite案例演示</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">案例1: 域名迁移</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">创建一台Linux虚拟机, 准备三个域名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">配置Nginx, 添加一个服务器, 配置重定向</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">测试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">案例2: 伪静态</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">配置Nginx</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -502,12 +502,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

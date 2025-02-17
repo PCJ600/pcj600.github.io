@@ -268,17 +268,17 @@
 
       
         <p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://cloud.tencent.com/developer/article/2113802">https://cloud.tencent.com/developer/article/2113802</a></p>
-<h1 id="什么是消息队列"><a href="#什么是消息队列" class="headerlink" title="什么是消息队列"></a>什么是消息队列</h1><p>消息队列是在消息传输过程中保存消息的容器。 通常有生产者和消费者两个角色:</p>
+<h1><span id="什么是消息队列">什么是消息队列</span></h1><p>消息队列是在消息传输过程中保存消息的容器。 通常有生产者和消费者两个角色:</p>
 <ul>
 <li>生产者只负责发送数据到消息队列，谁消费他不管</li>
 <li>消费者只负责从消息队列中取数据处理，谁发送数据他不管</li>
 </ul>
-<h1 id="常见消息队列中间件"><a href="#常见消息队列中间件" class="headerlink" title="常见消息队列中间件"></a>常见消息队列中间件</h1><ul>
+<h1><span id="常见消息队列中间件">常见消息队列中间件</span></h1><ul>
 <li>Kafka 高吞吐量实时日志采集</li>
 <li>RabbitMQ Erlang语言, 灵活性和易用性，中小规模应用</li>
 <li>RocketMQ 阿里出品, Java开发, 国内市场有很高知名度和应用案例</li>
 </ul>
-<h1 id="为什么使用消息队列"><a href="#为什么使用消息队列" class="headerlink" title="为什么使用消息队列"></a>为什么使用消息队列</h1><span id="more"></span>
+<h1><span id="为什么使用消息队列">为什么使用消息队列</span></h1><span id="more"></span>
 
 <ol>
 <li><p>服务解耦: 通过消息队列, 生产者和消费者之间可以不依赖对方进行通信。 即使某个组件失败，也不影响其他组件，提升可靠性。</p>
@@ -290,7 +290,7 @@
 <li><p>流量削峰: 面对高并发请求，通过消息队列缓冲请求，避免系统过载。 确保系统在高峰期稳定运行</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">        10k requests/s                       consume 2k requests/s</span><br><span class="line">User --------------------&gt; Message Queue --------------------------&gt; System A --------------------&gt; MySQL</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
 </ol>
-<h1 id="消息队列的劣势"><a href="#消息队列的劣势" class="headerlink" title="消息队列的劣势"></a>消息队列的劣势</h1><ul>
+<h1><span id="消息队列的劣势">消息队列的劣势</span></h1><ul>
 <li>系统可用性降低，如果MQ挂了，整个系统就崩了</li>
 <li>系统复杂性增加, 需要考虑消息队列自身的可用性问题，例如：<ul>
 <li>如何保证消息不被重复消费</li>
@@ -300,22 +300,22 @@
 </ul>
 </li>
 </ul>
-<h1 id="不适用消息队列的场景"><a href="#不适用消息队列的场景" class="headerlink" title="不适用消息队列的场景"></a>不适用消息队列的场景</h1><ul>
+<h1><span id="不适用消息队列的场景">不适用消息队列的场景</span></h1><ul>
 <li>对于简单的，快速执行的任务，直接调用API更为直接高效</li>
 <li>需要立即确认结果的交互</li>
 <li>…</li>
 </ul>
-<h1 id="RabbitMQ简介"><a href="#RabbitMQ简介" class="headerlink" title="RabbitMQ简介"></a>RabbitMQ简介</h1><p>RabbitMQ是实现了高级消息队列协议（AMQP）的开源消息代理软件。RabbitMQ服务器是用Erlang语言编写的</p>
-<h1 id="AMQP是什么"><a href="#AMQP是什么" class="headerlink" title="AMQP是什么"></a>AMQP是什么</h1><p>Module Layer: 协议最高层，主要定义了一些客户端调用的命令，客户端可以用这些命令实现自己的业务逻辑。<br>Session Layer: 中间层，主要负责客户端命令发送给服务器，再将服务端应答返回客户端，提供可靠性同步机制和错误处理。<br>TransportLayer: 最底层，主要传输二进制数据流，提供帧的处理、信道服用、错误检测和数据表示等。</p>
-<h1 id="RabbitMQ的几个概念"><a href="#RabbitMQ的几个概念" class="headerlink" title="RabbitMQ的几个概念"></a>RabbitMQ的几个概念</h1><ul>
+<h1><span id="rabbitmq简介">RabbitMQ简介</span></h1><p>RabbitMQ是实现了高级消息队列协议（AMQP）的开源消息代理软件。RabbitMQ服务器是用Erlang语言编写的</p>
+<h1><span id="amqp是什么">AMQP是什么</span></h1><p>Module Layer: 协议最高层，主要定义了一些客户端调用的命令，客户端可以用这些命令实现自己的业务逻辑。<br>Session Layer: 中间层，主要负责客户端命令发送给服务器，再将服务端应答返回客户端，提供可靠性同步机制和错误处理。<br>TransportLayer: 最底层，主要传输二进制数据流，提供帧的处理、信道服用、错误检测和数据表示等。</p>
+<h1><span id="rabbitmq的几个概念">RabbitMQ的几个概念</span></h1><ul>
 <li>Broker, RabbitMQ的服务节点，一个broker可以看做一个RabbitMQ服务器</li>
 <li>Exchange(交换机）, 生产者把消息发送到交换机, 交换机负责把消息路由到队列中</li>
 <li>Queue(队列), 用于存储消息。 多个消费者可以订阅同一个队列，此时队列消息会平摊(Round-Robin)给多个消费者处理</li>
 </ul>
-<h1 id="RoutingKey的概念"><a href="#RoutingKey的概念" class="headerlink" title="RoutingKey的概念"></a>RoutingKey的概念</h1><p>生产者将消息发送给交换机时，需要指定一个RoutingKey, 用于指定消息的路由规则。</p>
-<h1 id="Binding"><a href="#Binding" class="headerlink" title="Binding"></a>Binding</h1><p>通过绑定将交换机和队列关联起来</p>
-<h1 id="RabbitMQ交换机的概念，为什么设计"><a href="#RabbitMQ交换机的概念，为什么设计" class="headerlink" title="RabbitMQ交换机的概念，为什么设计"></a>RabbitMQ交换机的概念，为什么设计</h1><p>RabbitMQ中的消息不是直接发送到队列，而是发送到交换机，由交换机发送到队列</p>
-<h1 id="RabbitMQ交换机的几种类型"><a href="#RabbitMQ交换机的几种类型" class="headerlink" title="RabbitMQ交换机的几种类型"></a>RabbitMQ交换机的几种类型</h1><ul>
+<h1><span id="routingkey的概念">RoutingKey的概念</span></h1><p>生产者将消息发送给交换机时，需要指定一个RoutingKey, 用于指定消息的路由规则。</p>
+<h1><span id="binding">Binding</span></h1><p>通过绑定将交换机和队列关联起来</p>
+<h1><span id="rabbitmq交换机的概念为什么设计">RabbitMQ交换机的概念，为什么设计</span></h1><p>RabbitMQ中的消息不是直接发送到队列，而是发送到交换机，由交换机发送到队列</p>
+<h1><span id="rabbitmq交换机的几种类型">RabbitMQ交换机的几种类型</span></h1><ul>
 <li>fanout 把消息路由到所有与交换机绑定的队列中</li>
 <li>direct 消息路由到BindingKey和RoutingKey完全匹配的队列中</li>
 <li>topic<ul>
@@ -325,7 +325,7 @@
 </li>
 <li>headers 不常用</li>
 </ul>
-<h1 id="生产者发送消息流程"><a href="#生产者发送消息流程" class="headerlink" title="生产者发送消息流程"></a>生产者发送消息流程</h1><ul>
+<h1><span id="生产者发送消息流程">生产者发送消息流程</span></h1><ul>
 <li>生产者连接到Broker, 建立连接, 开启一个信道(channel)</li>
 <li>声明一个交换机</li>
 <li>声明一些队列</li>
@@ -335,65 +335,65 @@
 <li>RabbitMQ收到确认，从队列中删除已确认的消息</li>
 <li>关闭信道和连接</li>
 </ul>
-<h1 id="消费者接受消息"><a href="#消费者接受消息" class="headerlink" title="消费者接受消息"></a>消费者接受消息</h1><ul>
+<h1><span id="消费者接受消息">消费者接受消息</span></h1><ul>
 <li>消费者连接到Broker，建立连接，开启一个信道（channel)</li>
 <li>向Broker请求消费队列中的消息, 设置回调函数</li>
 <li>等待Broker回应，接收信息, 确认收到的消息</li>
 <li>RabbitMQ收到确认，从队列中删除已确认的消息</li>
 <li>关闭信道和连接</li>
 </ul>
-<h1 id="交换机无法找到队列时，怎么处理"><a href="#交换机无法找到队列时，怎么处理" class="headerlink" title="交换机无法找到队列时，怎么处理"></a>交换机无法找到队列时，怎么处理</h1><ul>
+<h1><span id="交换机无法找到队列时怎么处理">交换机无法找到队列时，怎么处理</span></h1><ul>
 <li>mandatory: true, 返回消息给生产者</li>
 <li>mandatory: false, 直接丢弃</li>
 </ul>
-<h1 id="死信队列是什么"><a href="#死信队列是什么" class="headerlink" title="死信队列是什么"></a>死信队列是什么</h1><p>[TODO] 为什么设计？</p>
+<h1><span id="死信队列是什么">死信队列是什么</span></h1><p>[TODO] 为什么设计？</p>
 <ul>
 <li>当消息在一个队列中变成dead message之后，可以被重新发送到另一个交换机中，这个交换机就是DLX(Dead-Letter-Exchange)</li>
 <li>绑定DLX的队列就称为死信队列</li>
 </ul>
-<h1 id="导致dead-message的原因"><a href="#导致dead-message的原因" class="headerlink" title="导致dead message的原因"></a>导致dead message的原因</h1><ul>
+<h1><span id="导致dead-message的原因">导致dead message的原因</span></h1><ul>
 <li>消息被拒</li>
 <li>消息TTL过期</li>
 <li>队列满了，无法添加</li>
 </ul>
-<h1 id="延迟队列"><a href="#延迟队列" class="headerlink" title="延迟队列"></a>延迟队列</h1><p>TODO: 为什么设计<br>当消息发送之后，并不想让消费者立刻拿到消息，而是等待特定时间后，消费者才能拿到这个消息进行消费</p>
-<h1 id="优先级队列"><a href="#优先级队列" class="headerlink" title="优先级队列"></a>优先级队列</h1><p>优先级高的先消费，通过x-max-priority实现，当消费速度比较快，没有消息堆积情况下，这个优先级队列意义不大。</p>
-<h1 id="事物机制"><a href="#事物机制" class="headerlink" title="事物机制"></a>事物机制</h1><p>RabbitMQ客户端中与事务机制相关方法:</p>
+<h1><span id="延迟队列">延迟队列</span></h1><p>TODO: 为什么设计<br>当消息发送之后，并不想让消费者立刻拿到消息，而是等待特定时间后，消费者才能拿到这个消息进行消费</p>
+<h1><span id="优先级队列">优先级队列</span></h1><p>优先级高的先消费，通过x-max-priority实现，当消费速度比较快，没有消息堆积情况下，这个优先级队列意义不大。</p>
+<h1><span id="事物机制">事物机制</span></h1><p>RabbitMQ客户端中与事务机制相关方法:</p>
 <ul>
 <li>channel.txSelect 用于将当前信道设置为事务模式</li>
 <li>channel.txCommit 提交事务</li>
 <li>channel.txRollback 事务回滚，如果事务提交执行前抛出异常，通过txRollback回滚</li>
 </ul>
-<h1 id="发送确认机制"><a href="#发送确认机制" class="headerlink" title="发送确认机制"></a>发送确认机制</h1><p>生产者把信道设置为confirm模式后，所有在此channel发布消息会被指定一个唯一ID,<br>一旦消息被投递到所有匹配队列之后，RabbitMQ就会发送一个确认给生产者，这样生产者就知道消息到达对应的目的地了</p>
-<h1 id="消息传输保证的层级"><a href="#消息传输保证的层级" class="headerlink" title="消息传输保证的层级"></a>消息传输保证的层级</h1><ul>
+<h1><span id="发送确认机制">发送确认机制</span></h1><p>生产者把信道设置为confirm模式后，所有在此channel发布消息会被指定一个唯一ID,<br>一旦消息被投递到所有匹配队列之后，RabbitMQ就会发送一个确认给生产者，这样生产者就知道消息到达对应的目的地了</p>
+<h1><span id="消息传输保证的层级">消息传输保证的层级</span></h1><ul>
 <li>At most once 最多一次，消息可能会丢失，但不会重复传输</li>
 <li>At least once 最少一次，信息不会丢失，但可能重复传输</li>
 <li>Exactly once 恰好一次，消息仅传输一次</li>
 </ul>
-<h1 id="Virtual-Host概念"><a href="#Virtual-Host概念" class="headerlink" title="Virtual Host概念"></a>Virtual Host概念</h1><p>每个RabbitMQ服务器都能创建虚拟的服务器，也叫虚拟主机(vhost)</p>
-<h1 id="集群中的节点类型"><a href="#集群中的节点类型" class="headerlink" title="集群中的节点类型"></a>集群中的节点类型</h1><ul>
+<h1><span id="virtual-host概念">Virtual Host概念</span></h1><p>每个RabbitMQ服务器都能创建虚拟的服务器，也叫虚拟主机(vhost)</p>
+<h1><span id="集群中的节点类型">集群中的节点类型</span></h1><ul>
 <li>内存节点: ram, 将变更写入内存</li>
 <li>磁盘节点: disc, 磁盘写入操作<br>RabbitMQ要求最少有一个磁盘节点</li>
 </ul>
-<h1 id="生产者如何将消息可靠投递到MQ"><a href="#生产者如何将消息可靠投递到MQ" class="headerlink" title="生产者如何将消息可靠投递到MQ"></a>生产者如何将消息可靠投递到MQ</h1><ul>
+<h1><span id="生产者如何将消息可靠投递到mq">生产者如何将消息可靠投递到MQ</span></h1><ul>
 <li>Client发送消息给MQ</li>
 <li>MQ将消息持久化后, 发送Ack消息给Client, 如果说因为网络问题导致Ack无法发送到Client, Client在等待超时后会重传消息</li>
 <li>Client收到ACK后，可以认为消息投递成功</li>
 </ul>
-<h1 id="MQ如何把消息可靠投递到消费者"><a href="#MQ如何把消息可靠投递到消费者" class="headerlink" title="MQ如何把消息可靠投递到消费者"></a>MQ如何把消息可靠投递到消费者</h1><ul>
+<h1><span id="mq如何把消息可靠投递到消费者">MQ如何把消息可靠投递到消费者</span></h1><ul>
 <li>消费者收到消息执行业务逻辑</li>
 <li>发送Ack消息给MQ，通知MQ删除该消息, 此处可能因为网络问题导致ACK失败,导致重复消费，引出消费幂等问题</li>
 <li>MQ将已消费消息删除</li>
 </ul>
-<h1 id="RabbitMQ的高可用"><a href="#RabbitMQ的高可用" class="headerlink" title="RabbitMQ的高可用"></a>RabbitMQ的高可用</h1><ul>
+<h1><span id="rabbitmq的高可用">RabbitMQ的高可用</span></h1><ul>
 <li>单机模式 —— demo, 玩具, 生产环境很少用单机</li>
 <li>普通集群模式 —— 多台机器启动多个RabbitMQ示例</li>
 <li>镜像集群模式 —— 高可用模式, 创建的Queue,消息会存在与多个实例上，每次写消息到Queue时，自动把消息到多个实例的Queue进行消息同步</li>
 </ul>
-<h1 id="如何保证消息的顺序性"><a href="#如何保证消息的顺序性" class="headerlink" title="如何保证消息的顺序性"></a>如何保证消息的顺序性</h1><ul>
+<h1><span id="如何保证消息的顺序性">如何保证消息的顺序性</span></h1><ul>
 <li>拆分多个Queue, 每个Queue对应一个Consumer</li>
 </ul>
-<h1 id="如何保证消息的可靠性"><a href="#如何保证消息的可靠性" class="headerlink" title="如何保证消息的可靠性"></a>如何保证消息的可靠性</h1><ul>
+<h1><span id="如何保证消息的可靠性">如何保证消息的可靠性</span></h1><ul>
 <li>生产者到RabbitMQ: Confirm机制 </li>
 <li>RabbitMQ自身: 持久化(交换机和队列), 集群, 普通模式, 镜像模式 (TODO)</li>
 <li>RabbitMQ到消费者: basicAck机制, 死信队列, 消息补偿机制</li>
@@ -519,7 +519,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="nav-text">什么是消息队列</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E4%B8%AD%E9%97%B4%E4%BB%B6"><span class="nav-text">常见消息队列中间件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97"><span class="nav-text">为什么使用消息队列</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E7%9A%84%E5%8A%A3%E5%8A%BF"><span class="nav-text">消息队列的劣势</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%8D%E9%80%82%E7%94%A8%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="nav-text">不适用消息队列的场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RabbitMQ%E7%AE%80%E4%BB%8B"><span class="nav-text">RabbitMQ简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#AMQP%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-text">AMQP是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RabbitMQ%E7%9A%84%E5%87%A0%E4%B8%AA%E6%A6%82%E5%BF%B5"><span class="nav-text">RabbitMQ的几个概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RoutingKey%E7%9A%84%E6%A6%82%E5%BF%B5"><span class="nav-text">RoutingKey的概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Binding"><span class="nav-text">Binding</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RabbitMQ%E4%BA%A4%E6%8D%A2%E6%9C%BA%E7%9A%84%E6%A6%82%E5%BF%B5%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AE%BE%E8%AE%A1"><span class="nav-text">RabbitMQ交换机的概念，为什么设计</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RabbitMQ%E4%BA%A4%E6%8D%A2%E6%9C%BA%E7%9A%84%E5%87%A0%E7%A7%8D%E7%B1%BB%E5%9E%8B"><span class="nav-text">RabbitMQ交换机的几种类型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%9F%E4%BA%A7%E8%80%85%E5%8F%91%E9%80%81%E6%B6%88%E6%81%AF%E6%B5%81%E7%A8%8B"><span class="nav-text">生产者发送消息流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B6%88%E8%B4%B9%E8%80%85%E6%8E%A5%E5%8F%97%E6%B6%88%E6%81%AF"><span class="nav-text">消费者接受消息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%A4%E6%8D%A2%E6%9C%BA%E6%97%A0%E6%B3%95%E6%89%BE%E5%88%B0%E9%98%9F%E5%88%97%E6%97%B6%EF%BC%8C%E6%80%8E%E4%B9%88%E5%A4%84%E7%90%86"><span class="nav-text">交换机无法找到队列时，怎么处理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%AD%BB%E4%BF%A1%E9%98%9F%E5%88%97%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-text">死信队列是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AF%BC%E8%87%B4dead-message%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-text">导致dead message的原因</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97"><span class="nav-text">延迟队列</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BC%98%E5%85%88%E7%BA%A7%E9%98%9F%E5%88%97"><span class="nav-text">优先级队列</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8B%E7%89%A9%E6%9C%BA%E5%88%B6"><span class="nav-text">事物机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%91%E9%80%81%E7%A1%AE%E8%AE%A4%E6%9C%BA%E5%88%B6"><span class="nav-text">发送确认机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E4%BC%A0%E8%BE%93%E4%BF%9D%E8%AF%81%E7%9A%84%E5%B1%82%E7%BA%A7"><span class="nav-text">消息传输保证的层级</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Virtual-Host%E6%A6%82%E5%BF%B5"><span class="nav-text">Virtual Host概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9B%86%E7%BE%A4%E4%B8%AD%E7%9A%84%E8%8A%82%E7%82%B9%E7%B1%BB%E5%9E%8B"><span class="nav-text">集群中的节点类型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%9F%E4%BA%A7%E8%80%85%E5%A6%82%E4%BD%95%E5%B0%86%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%8A%95%E9%80%92%E5%88%B0MQ"><span class="nav-text">生产者如何将消息可靠投递到MQ</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MQ%E5%A6%82%E4%BD%95%E6%8A%8A%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%8A%95%E9%80%92%E5%88%B0%E6%B6%88%E8%B4%B9%E8%80%85"><span class="nav-text">MQ如何把消息可靠投递到消费者</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RabbitMQ%E7%9A%84%E9%AB%98%E5%8F%AF%E7%94%A8"><span class="nav-text">RabbitMQ的高可用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E7%9A%84%E9%A1%BA%E5%BA%8F%E6%80%A7"><span class="nav-text">如何保证消息的顺序性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E7%9A%84%E5%8F%AF%E9%9D%A0%E6%80%A7"><span class="nav-text">如何保证消息的可靠性</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">什么是消息队列</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">常见消息队列中间件</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">为什么使用消息队列</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">消息队列的劣势</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">不适用消息队列的场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">RabbitMQ简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">AMQP是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">RabbitMQ的几个概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">RoutingKey的概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Binding</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">RabbitMQ交换机的概念，为什么设计</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">RabbitMQ交换机的几种类型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">生产者发送消息流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">消费者接受消息</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">交换机无法找到队列时，怎么处理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">死信队列是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">导致dead message的原因</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">延迟队列</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">优先级队列</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">事物机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">发送确认机制</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">消息传输保证的层级</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Virtual Host概念</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">集群中的节点类型</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">生产者如何将消息可靠投递到MQ</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">MQ如何把消息可靠投递到消费者</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">RabbitMQ的高可用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">如何保证消息的顺序性</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">如何保证消息的可靠性</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -594,12 +594,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

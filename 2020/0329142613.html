@@ -268,7 +268,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+        <h3><span id="问题描述">问题描述</span></h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
 <ul>
 <li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
 </li>
@@ -277,7 +277,7 @@
 </ul>
 <span id="more"></span>
 
-<h3 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<h3><span id="解决过程">解决过程</span></h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
@@ -285,7 +285,7 @@
 
 <p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
 <p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4 id="总结："><a href="#总结：" class="headerlink" title="总结："></a>总结：</h4><ul>
+<h4><span id="总结">总结：</span></h4><ul>
 <li><p>变量使用之前最好初始化。</p>
 </li>
 <li><p>注意判断函数的返回值，可以使用包裹函数。</p>
@@ -412,7 +412,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E8%BF%87%E7%A8%8B"><span class="nav-text">解决过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A"><span class="nav-text">总结：</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">解决过程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">总结：</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -487,12 +487,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

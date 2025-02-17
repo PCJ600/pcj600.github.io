@@ -267,25 +267,25 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="什么是负载均衡"><a href="#什么是负载均衡" class="headerlink" title="什么是负载均衡"></a>什么是负载均衡</h1><p>负载均衡是一种网络流量分配技术, 其核心目的是将大量网络请求均匀分配到多个服务器，提高网络服务的可靠性。有如下作用：</p>
+        <h1><span id="什么是负载均衡">什么是负载均衡</span></h1><p>负载均衡是一种网络流量分配技术, 其核心目的是将大量网络请求均匀分配到多个服务器，提高网络服务的可靠性。有如下作用：</p>
 <ul>
 <li>避免单点故障，提高可用性</li>
 <li>灵活的水平扩展，通过增加或减少服务器数量，提升扩展性；可以用多台便宜机器代替一台高性能机器，省钱</li>
 <li>优化资源利用率，减少响应时间，提升用户体验</li>
 <li>负载均衡器上支持过滤，阻挡不安全的请求，提高系统安全性<span id="more"></span></li>
 </ul>
-<h1 id="正向代理和反向代理"><a href="#正向代理和反向代理" class="headerlink" title="正向代理和反向代理"></a>正向代理和反向代理</h1><p>这里给出通俗解释，详细的定义可以查Google</p>
+<h1><span id="正向代理和反向代理">正向代理和反向代理</span></h1><p>这里给出通俗解释，详细的定义可以查Google</p>
 <ul>
 <li>正向代理：国内你无法访问Google，必须用梯子，你用的这个梯子就是正向代理。</li>
 <li>反向代理：Nginx代理了真实服务器，去和客户端交互; 对于客户端来说, 真实服务器被Nginx隐藏，这个Nginx就是反向代理。</li>
 </ul>
-<h1 id="负载均衡示例"><a href="#负载均衡示例" class="headerlink" title="负载均衡示例"></a>负载均衡示例</h1><p>Nginx负载均衡流程图如下:</p>
+<h1><span id="负载均衡示例">负载均衡示例</span></h1><p>Nginx负载均衡流程图如下:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">                                                   -&gt; web服务器1</span><br><span class="line">                                                 /</span><br><span class="line">客户端 --请求--&gt; Nginx(负载均衡器) --proxy_pass--  -&gt; web服务器2</span><br><span class="line">                                                 \</span><br><span class="line">                                                   -&gt; web服务器3</span><br></pre></td></tr></table></figure>
 <p>Nginx负载均衡策略有很多，这里演示默认的Round-Robin轮询策略</p>
 <p>先准备三台RHEL9 VM机器，每台机器都安装Nginx，用于后面的演示:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">192.168.52.200 Nginx1 </span><br><span class="line">192.168.52.201 Nginx2</span><br><span class="line">192.168.52.202 Nginx3</span><br></pre></td></tr></table></figure>
 
-<h2 id="示例1-最简单的proxy-pass配置"><a href="#示例1-最简单的proxy-pass配置" class="headerlink" title="示例1: 最简单的proxy_pass配置"></a>示例1: 最简单的proxy_pass配置</h2><p>测试机器：</p>
+<h2><span id="示例1-最简单的proxy_pass配置">示例1: 最简单的proxy_pass配置</span></h2><p>测试机器：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">192.168.52.200 Nginx1 </span><br><span class="line">192.168.52.201 Nginx2</span><br></pre></td></tr></table></figure>
 <p>需求: Nginx1作为负载均衡器, 客户请求Nginx1, Nginx1把所有请求转发到Nginx2</p>
 <p><strong>具体步骤</strong><br>先修改Nginx1的<code>nginx.conf</code></p>
@@ -297,7 +297,7 @@
 <p>测试</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl 192.168.52.200:80</span><br><span class="line">Welcome to nginx2</span><br></pre></td></tr></table></figure>
 
-<h2 id="示例2-配置多个proxypass"><a href="#示例2-配置多个proxypass" class="headerlink" title="示例2: 配置多个proxypass"></a>示例2: 配置多个proxypass</h2><p>测试机器:</p>
+<h2><span id="示例2-配置多个proxypass">示例2: 配置多个proxypass</span></h2><p>测试机器:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">192.168.52.200 Nginx1 </span><br><span class="line">192.168.52.201 Nginx2</span><br><span class="line">192.168.52.202 Nginx3</span><br></pre></td></tr></table></figure>
 <p>需求: Nginx1作为负载均衡器, 客户请求Nginx1, Nginx1通过Round-Robin轮询策略把请求转发给Nginx2, Nginx3</p>
 <p><strong>具体方法</strong><br>修改Nginx1的配置文件</p>
@@ -305,7 +305,7 @@
 <p>测试</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to nginx2</span><br><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to Nginx3</span><br></pre></td></tr></table></figure>
 
-<h2 id="示例3-设置权重策略-weight"><a href="#示例3-设置权重策略-weight" class="headerlink" title="示例3: 设置权重策略(weight)"></a>示例3: 设置权重策略(weight)</h2><p>需求:</p>
+<h2><span id="示例3-设置权重策略weight">示例3: 设置权重策略(weight)</span></h2><p>需求:</p>
 <ul>
 <li>Nginx1作为负载均衡器, 客户请求Nginx1, Nginx1通过Round-Robin轮询策略把请求转发给Nginx2, Nginx3; </li>
 <li>给Nginx2设置更大的权重, 设置为Nginx3的四倍</li>
@@ -315,21 +315,21 @@
 <p>测试</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to nginx2</span><br><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to nginx2</span><br><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to Nginx3</span><br><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to nginx2</span><br><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to nginx2</span><br></pre></td></tr></table></figure>
 <p>平均下来，每5次请求有4次转发给Nginx2, 1次转发给Nginx3, 与我们的权重设置吻合</p>
-<h2 id="示例4-让某台服务器下线-down"><a href="#示例4-让某台服务器下线-down" class="headerlink" title="示例4: 让某台服务器下线(down)"></a>示例4: 让某台服务器下线(down)</h2><p>down将服务器标记为不可用，该服务器不参与负载均衡<br/></p>
+<h2><span id="示例4-让某台服务器下线down">示例4: 让某台服务器下线(down)</span></h2><p>down将服务器标记为不可用，该服务器不参与负载均衡<br></p>
 <p>需求: 对Nginx2进行停机维护，标记为不可用</p>
 <p><strong>具体方法</strong><br>修改Nginx1的配置文件，如下:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">upstream my_servers &#123;</span><br><span class="line">    server 192.168.52.201:80 weight=4 down;</span><br><span class="line">    server 192.168.52.202:80 weight=1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>测试: (Nginx2下线, 所有请求只转发到了Nginx3)</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to Nginx3</span><br><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to Nginx3</span><br></pre></td></tr></table></figure>
 
-<h2 id="示例5-备用服务器-backup"><a href="#示例5-备用服务器-backup" class="headerlink" title="示例5: 备用服务器(backup)"></a>示例5: 备用服务器(backup)</h2><p>backup将该服务器标记为备份服务器。仅当其他服务器都出现故障时，Nginx才会把请求转到这台备用服务器</p>
+<h2><span id="示例5-备用服务器backup">示例5: 备用服务器(backup)</span></h2><p>backup将该服务器标记为备份服务器。仅当其他服务器都出现故障时，Nginx才会把请求转到这台备用服务器</p>
 <p>需求: 把Nginx3标记为备份服务器</p>
 <p><strong>具体方法</strong><br>修改Nginx1的配置文件，如下:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">upstream my_servers &#123;</span><br><span class="line">    server 192.168.52.201:80;</span><br><span class="line">    server 192.168.52.202:80 backup;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>测试, 设置Nginx3为backup后, Nginx1把请求只转发到了Nginx2；此时我手动stop Nginx2, 继续请求，Nginx1把请求都转发到了Nginx3</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to nginx2</span><br><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to nginx2</span><br><span class="line"></span><br><span class="line"># 此时手动stop Nginx2 </span><br><span class="line"># curl 192.168.52.200:80</span><br><span class="line">Welcome to Nginx3</span><br></pre></td></tr></table></figure>
 
-<h3 id="其他的负载均衡策略"><a href="#其他的负载均衡策略" class="headerlink" title="其他的负载均衡策略"></a>其他的负载均衡策略</h3><table>
+<h3><span id="其他的负载均衡策略">其他的负载均衡策略</span></h3><table>
 <thead>
 <tr>
 <th>策略</th>
@@ -481,7 +481,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1"><span class="nav-text">什么是负载均衡</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86"><span class="nav-text">正向代理和反向代理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%A4%BA%E4%BE%8B"><span class="nav-text">负载均衡示例</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B1-%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84proxy-pass%E9%85%8D%E7%BD%AE"><span class="nav-text">示例1: 最简单的proxy_pass配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B2-%E9%85%8D%E7%BD%AE%E5%A4%9A%E4%B8%AAproxypass"><span class="nav-text">示例2: 配置多个proxypass</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B3-%E8%AE%BE%E7%BD%AE%E6%9D%83%E9%87%8D%E7%AD%96%E7%95%A5-weight"><span class="nav-text">示例3: 设置权重策略(weight)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B4-%E8%AE%A9%E6%9F%90%E5%8F%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8B%E7%BA%BF-down"><span class="nav-text">示例4: 让某台服务器下线(down)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B5-%E5%A4%87%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8-backup"><span class="nav-text">示例5: 备用服务器(backup)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E7%9A%84%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5"><span class="nav-text">其他的负载均衡策略</span></a></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">什么是负载均衡</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">正向代理和反向代理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">负载均衡示例</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">示例1: 最简单的proxy_pass配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">示例2: 配置多个proxypass</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">示例3: 设置权重策略(weight)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">示例4: 让某台服务器下线(down)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">示例5: 备用服务器(backup)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">其他的负载均衡策略</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -556,12 +556,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

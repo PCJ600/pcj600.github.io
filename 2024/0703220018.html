@@ -267,20 +267,20 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>在Rocky Linux 9 服务器上查看启动日志，发现没有<code>/var/log/dmesg</code>文件。</p>
-<h2 id="dmesg是什么？"><a href="#dmesg是什么？" class="headerlink" title="dmesg是什么？"></a>dmesg是什么？</h2><p><code>dmesg</code>(diagnostic messages)用于打印<code>kernel ring buffer</code>的所有消息。 kernel会将开机信息存储在ring buffer中，如果开机时来不及查看启动信息，可以通过<code>dmesg</code>命令查看。</p>
+        <h2><span id="问题描述">问题描述</span></h2><p>在Rocky Linux 9 服务器上查看启动日志，发现没有<code>/var/log/dmesg</code>文件。</p>
+<h2><span id="dmesg是什么">dmesg是什么？</span></h2><p><code>dmesg</code>(diagnostic messages)用于打印<code>kernel ring buffer</code>的所有消息。 kernel会将开机信息存储在ring buffer中，如果开机时来不及查看启动信息，可以通过<code>dmesg</code>命令查看。</p>
 <p><code>Kernel ring buffer</code>（内核环形缓冲区）是一种在Linux内核中使用的数据结构，用于在生产者（如硬件设备、驱动程序或内核线程）和消费者（如用户空间应用程序）之间传输数据。 这种缓冲区通常用于日志记录、性能监控、事件跟踪等场景。</p>
 <span id="more"></span>
 
-<h2 id="RHEL9找不到-var-log-dmesg日志文件的原因"><a href="#RHEL9找不到-var-log-dmesg日志文件的原因" class="headerlink" title="RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因"></a>RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因</h2><p>参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://access.redhat.com/solutions/3748981">https://access.redhat.com/solutions/3748981</a>，这里摘录如下：</p>
+<h2><span id="rhel9找不到x2fvarx2flogx2fdmesg日志文件的原因">RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因</span></h2><p>参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://access.redhat.com/solutions/3748981">https://access.redhat.com/solutions/3748981</a>，这里摘录如下：</p>
 <p>By design, the &#x2F;var&#x2F;log&#x2F;dmesg file is not generated during boot. The kernel ring buffer is captured within the systemd-journal as well as &#x2F;var&#x2F;log&#x2F;messages, via the imjournal rsyslog plugin.</p>
 <p>翻译一下： 根据设计，在RHEL8&#x2F;RHEL9中，启动期间不会自动生成<code>/var/log/dmesg</code>文件。 内核环形缓冲区(kernel ring buffer)的消息通常会被systemd-journa捕获，存储在<code>/var/log/messages</code>或<code>journalctl</code>中。这种设计可以提供更现代化的日志管理方式，支持更好的搜索和过滤功能</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>手动执行<code>dmesg</code>生成日志文件</p>
+<h2><span id="解决方法">解决方法</span></h2><p>手动执行<code>dmesg</code>生成日志文件</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dmesg &gt; /var/log/dmesg</span><br></pre></td></tr></table></figure>
 <p>或者使用 <code>journalctl</code>命令</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">journalctl -k | tee /var/log/dmesg</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://en.wikipedia.org/wiki/Dmesg">https://en.wikipedia.org/wiki/Dmesg</a><br>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.getpagespeed.com/solutions/the-var-log-dmesg-file-is-not-created-during-boot-for-rocky-linux-8">https://www.getpagespeed.com/solutions/the-var-log-dmesg-file-is-not-created-during-boot-for-rocky-linux-8</a></p>
+<h2><span id="参考">参考</span></h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://en.wikipedia.org/wiki/Dmesg">https://en.wikipedia.org/wiki/Dmesg</a><br>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.getpagespeed.com/solutions/the-var-log-dmesg-file-is-not-created-during-boot-for-rocky-linux-8">https://www.getpagespeed.com/solutions/the-var-log-dmesg-file-is-not-created-during-boot-for-rocky-linux-8</a></p>
 
     </div>
 
@@ -401,7 +401,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dmesg%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-text">dmesg是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RHEL9%E6%89%BE%E4%B8%8D%E5%88%B0-var-log-dmesg%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="nav-text">RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">dmesg是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">RHEL9找不到&#x2F;var&#x2F;log&#x2F;dmesg日志文件的原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -476,12 +476,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

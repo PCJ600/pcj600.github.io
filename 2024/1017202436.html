@@ -267,24 +267,24 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><ul>
+        <h2><span id="测试环境">测试环境</span></h2><ul>
 <li>VMware Rocky Linux 9.4</li>
 <li>MySQL 8.0.36</li>
 </ul>
-<h2 id="修改MySQL配置文件-设置为免密登录"><a href="#修改MySQL配置文件-设置为免密登录" class="headerlink" title="修改MySQL配置文件, 设置为免密登录"></a>修改MySQL配置文件, 设置为免密登录</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
+<h2><span id="修改mysql配置文件-设置为免密登录">修改MySQL配置文件, 设置为免密登录</span></h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 在[mysqld]结尾添加一行<code>skip-grant-tables</code></p>
 <span id="more"></span>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line">datadir=/var/lib/mysql</span><br><span class="line">socket=/var/lib/mysql/mysql.sock</span><br><span class="line">log-error=/var/log/mysql/mysqld.log</span><br><span class="line">pid-file=/run/mysqld/mysqld.pid</span><br><span class="line">skip-grant-tables</span><br></pre></td></tr></table></figure>
 
-<h2 id="重启MySQL服务"><a href="#重启MySQL服务" class="headerlink" title="重启MySQL服务"></a>重启MySQL服务</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
+<h2><span id="重启mysql服务">重启MySQL服务</span></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
 
-<h2 id="连接MySQL，修改密码"><a href="#连接MySQL，修改密码" class="headerlink" title="连接MySQL，修改密码"></a>连接MySQL，修改密码</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
+<h2><span id="连接mysql修改密码">连接MySQL，修改密码</span></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql</span><br></pre></td></tr></table></figure>
 <p>连接成功后，执行如下sql命令</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">use mysql;</span><br><span class="line">flush privileges;</span><br><span class="line">alter user &#x27;root&#x27;@&#x27;localhost&#x27; identified by &#x27;your_new_password&#x27;;</span><br><span class="line">grant all privileges on *.* to &quot;root&quot;@&#x27;localhost&#x27;;</span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
 
-<h2 id="还原配置文件并重启MySQL服务"><a href="#还原配置文件并重启MySQL服务" class="headerlink" title="还原配置文件并重启MySQL服务"></a>还原配置文件并重启MySQL服务</h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
+<h2><span id="还原配置文件并重启mysql服务">还原配置文件并重启MySQL服务</span></h2><p>修改<code>/etc/my.cnf.d/mysql-server.cnf</code>, 删掉开头加的<code>skip-grant-tables</code>，再重启服务即可</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart mysqld</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
+<h2><span id="参考">参考</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/Box_clf/article/details/124599166">https://blog.csdn.net/Box_clf&#x2F;article&#x2F;details&#x2F;124599166</a><br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html">https://blog.namichong.com/learn/sql/mysql/mysql_8.0_reset_password.html</a></p>
 
     </div>
 
@@ -405,7 +405,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83"><span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9MySQL%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6-%E8%AE%BE%E7%BD%AE%E4%B8%BA%E5%85%8D%E5%AF%86%E7%99%BB%E5%BD%95"><span class="nav-text">修改MySQL配置文件, 设置为免密登录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E5%90%AFMySQL%E6%9C%8D%E5%8A%A1"><span class="nav-text">重启MySQL服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5MySQL%EF%BC%8C%E4%BF%AE%E6%94%B9%E5%AF%86%E7%A0%81"><span class="nav-text">连接MySQL，修改密码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%98%E5%8E%9F%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E5%B9%B6%E9%87%8D%E5%90%AFMySQL%E6%9C%8D%E5%8A%A1"><span class="nav-text">还原配置文件并重启MySQL服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">修改MySQL配置文件, 设置为免密登录</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">重启MySQL服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">连接MySQL，修改密码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">还原配置文件并重启MySQL服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -480,12 +480,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

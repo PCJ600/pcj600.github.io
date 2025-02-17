@@ -271,8 +271,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在k8s中启动了一个Host网络模式的pod，这个pod的域名解析失败了。</p>
-<h2 id="定位步骤"><a href="#定位步骤" class="headerlink" title="定位步骤"></a>定位步骤</h2><p>敲<code>kubectl  exec -it [pod_name] -- bash</code>进入pod后台，查看<code>/etc/resolv.conf</code>，发现nameserver配的有问题。<strong>这里我预期的nameserver应该使用宿主机的，但实际上用的是coredns的。</strong></p>
+        <h2><span id="问题描述">问题描述</span></h2><p>我在k8s中启动了一个Host网络模式的pod，这个pod的域名解析失败了。</p>
+<h2><span id="定位步骤">定位步骤</span></h2><p>敲<code>kubectl  exec -it [pod_name] -- bash</code>进入pod后台，查看<code>/etc/resolv.conf</code>，发现nameserver配的有问题。<strong>这里我预期的nameserver应该使用宿主机的，但实际上用的是coredns的。</strong></p>
 <span id="more"></span>
 <p><img data-src="/2024/0612205430/image1.png"></p>
 <p>再查看pod的dnsPolicy，发现dns策略为ClusterFirstWithHostNet，这个策略使得Host模式的Pod仍然使用k8s的dns；我需要使用宿主机的dns，所以需要把这个dns策略改为’Default’</p>
@@ -280,7 +280,7 @@
 
 <p>通过<code>kubectl -n kube-system get cm/coredns -o yaml</code>查看coredns配置，发现coredns里配置的dnsserver为10.204.16.1，这个IP我也配错了，再加上之前pod里配的策略是ClusterFirstWithHostNet，这两个错误同时出现，导致pod域名解析失败。</p>
 <p><img data-src="/2024/0612205430/image2.png"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>把Pod的dnsPolicy改成Default，k8s的四种DNS策略参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://aiops.com/news/post/12763.html">link</a></p>
+<h2><span id="解决方法">解决方法</span></h2><p>把Pod的dnsPolicy改成Default，k8s的四种DNS策略参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://aiops.com/news/post/12763.html">link</a></p>
 
     </div>
 
@@ -402,7 +402,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E6%AD%A5%E9%AA%A4"><span class="nav-text">定位步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">定位步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -477,12 +477,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

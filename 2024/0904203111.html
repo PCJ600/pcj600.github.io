@@ -270,8 +270,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 VM里安装了Microk8s，且使用了Nginx ingress Controller插件，443端口正常。 VM重启一次后，发现443端口没有LISTEN，不能对外提供服务。 </p>
-<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><p>查看ingress pod状态，为CrashLoopBackOff</p>
+        <h2><span id="问题描述">问题描述</span></h2><p>RHEL9 VM里安装了Microk8s，且使用了Nginx ingress Controller插件，443端口正常。 VM重启一次后，发现443端口没有LISTEN，不能对外提供服务。 </p>
+<h2><span id="定位过程">定位过程</span></h2><p>查看ingress pod状态，为CrashLoopBackOff</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl -n ingress get pods</span></span><br><span class="line">NAME                                      READY   STATUS             RESTARTS         AGE</span><br><span class="line">nginx-ingress-microk8s-controller-b6krf   0/1     CrashLoopBackOff   1102 (55s ago)   8d</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
 
@@ -291,10 +291,10 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[grpc]</span><br><span class="line"># ......</span><br><span class="line"></span><br><span class="line">[metrics]</span><br><span class="line">	address=&quot;127.0.0.1:1338&quot;</span><br><span class="line"># ......</span><br><span class="line"></span><br><span class="line">[ plugins. &quot;io.containerd.grpc.v1.cri&quot; ]</span><br><span class="line">  stream_server_address = &quot;127.0.0.1&quot;</span><br><span class="line">  stream_server_port = &quot;0&quot;</span><br></pre></td></tr></table></figure>
 
 <p><code>journalctl -xeu snap.microk8s.daemon-containerd.service</code>查下启动日志，通过启动日志中的关键字快速定位到相关代码：<br><img data-src="/2024/0904203111/image1.png"><br>分析配置文件和代码，找到原因：<strong>containerd配置文件中的stream_server_port默认为0, 说明监听了随机端口号，所以可能存在端口冲突。</strong></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>可以给containerd指定一个端口号，防止端口冲突。 比如改成10300（具体改哪个端口根据你的情况定，这里只举个例子)，如下：</p>
+<h2><span id="解决方法">解决方法</span></h2><p>可以给containerd指定一个端口号，防止端口冲突。 比如改成10300（具体改哪个端口根据你的情况定，这里只举个例子)，如下：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sed -i <span class="string">&#x27;s/stream_server_port = &quot;[^&quot;]*&quot;/stream_server_port = &quot;10300&quot;/&#x27;</span> /var/snap/microk8s/current/args/containerd-template.toml</span><br><span class="line">microk8s stop</span><br><span class="line">microk8s start</span><br></pre></td></tr></table></figure>
 <p>github上找到类似了issue：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/containerd/containerd/issues/7097">https://github.com/containerd/containerd/issues/7097</a></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.thebyte.com.cn/container/CRI-in-Kubernetes.html">https://www.thebyte.com.cn/container/CRI-in-Kubernetes.html</a></p>
+<h2><span id="参考">参考</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.thebyte.com.cn/container/CRI-in-Kubernetes.html">https://www.thebyte.com.cn/container/CRI-in-Kubernetes.html</a></p>
 
     </div>
 
@@ -416,7 +416,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -491,12 +491,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

@@ -267,21 +267,21 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="Nginx文件下载服务器搭建"><a href="#Nginx文件下载服务器搭建" class="headerlink" title="Nginx文件下载服务器搭建"></a>Nginx文件下载服务器搭建</h1><p>80端口启动下载服务器, 下载<code>/var/www/downloads</code>目录下的文件，<code>nginx.conf</code>如下：</p>
+        <h1><span id="nginx文件下载服务器搭建">Nginx文件下载服务器搭建</span></h1><p>80端口启动下载服务器, 下载<code>/var/www/downloads</code>目录下的文件，<code>nginx.conf</code>如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    location /downloads/ &#123;</span><br><span class="line">        root /var/www/downloads;</span><br><span class="line">        autoindex on; # 显示目录</span><br><span class="line">        autoindex_localtime on;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>浏览器中访问，可以查到文件</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">http://192.168.52.200/</span><br><span class="line">Index of /</span><br><span class="line">../</span><br><span class="line">1.txt     17-Nov-2024 14:52      0</span><br><span class="line">2.txt     13-Nov-2024 21:44      0</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
 
-<h2 id="添加登录认证"><a href="#添加登录认证" class="headerlink" title="添加登录认证"></a>添加登录认证</h2><p>有时我们需要对用户身份进行认证。这里采用basic认证, 方法如下:<br/><br>先生成密码文件，用户名admin, 密码123456</p>
+<h2><span id="添加登录认证">添加登录认证</span></h2><p>有时我们需要对用户身份进行认证。这里采用basic认证, 方法如下:<br><br>先生成密码文件，用户名admin, 密码123456</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">echo -n &quot;admin:&quot; &gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">openssl passwd &gt;&gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line"># 输入密码123456</span><br></pre></td></tr></table></figure>
 <p>查看密码文件</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">admin:$1$6ptGV8Fm$781jZKRgxV8wB.HtyTSdk.</span><br></pre></td></tr></table></figure>
 <p>修改nginx.conf，添加auth配置</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line"></span><br><span class="line">    auth_basic &quot;Restricted site&quot;;</span><br><span class="line">    auth_basic_user_file /etc/nginx/conf.d/.nginx_http_passwd;</span><br><span class="line">    # ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>重启Nginx，通过浏览器测试，此时会要求用户输入用户名和密码。</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html">https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html</a></p>
+<h2><span id="参考">参考</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html">https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html</a></p>
 
     </div>
 
@@ -402,7 +402,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Nginx%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8%E6%90%AD%E5%BB%BA"><span class="nav-text">Nginx文件下载服务器搭建</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B7%BB%E5%8A%A0%E7%99%BB%E5%BD%95%E8%AE%A4%E8%AF%81"><span class="nav-text">添加登录认证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Nginx文件下载服务器搭建</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">添加登录认证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -477,12 +477,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

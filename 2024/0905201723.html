@@ -268,8 +268,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户有一台基于Hyper-V创建的RHEL9虚拟机, 安装了MicroK8s, 启动正常。<br>虚拟机重启后, kubectl报错: <code>Unable to connect to the server: x509: certificate has expired or is not yet valid</code></p>
-<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><p>这个报错说明MicroK8s apiserver证书的有效时间不对。 首先简单了解下Microk8s证书（以下内容 by ChatGPT）</p>
+        <h2><span id="问题描述">问题描述</span></h2><p>客户有一台基于Hyper-V创建的RHEL9虚拟机, 安装了MicroK8s, 启动正常。<br>虚拟机重启后, kubectl报错: <code>Unable to connect to the server: x509: certificate has expired or is not yet valid</code></p>
+<h2><span id="定位过程">定位过程</span></h2><p>这个报错说明MicroK8s apiserver证书的有效时间不对。 首先简单了解下Microk8s证书（以下内容 by ChatGPT）</p>
 <span id="more"></span>
 <ul>
 <li>在 MicroK8s 中，ca.crt 和 server.crt 是位于 &#x2F;var&#x2F;snap&#x2F;microk8s&#x2F;current&#x2F;certs&#x2F; 目录下的两个重要证书，作用如下：</li>
@@ -294,7 +294,7 @@
 <li>当前系统时间(09-05)早于证书有效时间(10-04)，所以kubectl报错 <code>certificate is not yet valid</code></li>
 </ul>
 <p>至于Hyper-V为什么没有正确同步虚拟机的RTC时间，这个需要Microsoft的支持。 下面给出一个workaround规避这个问题：</p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>每次启动判断下MicroK8s证书时间是否有效，如果是一个未来的时间，就重新刷下MicroK8s证书。</p>
+<h2><span id="解决方法">解决方法</span></h2><p>每次启动判断下MicroK8s证书时间是否有效，如果是一个未来的时间，就重新刷下MicroK8s证书。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">CERT_FILE=<span class="string">&quot;/var/snap/microk8s/current/certs/server.crt&quot;</span></span><br><span class="line">not_before=$(<span class="built_in">date</span> -d <span class="string">&quot;<span class="subst">$(openssl x509 -noout -dates -in <span class="string">&quot;<span class="variable">$CERT_FILE</span>&quot;</span> | grep <span class="string">&quot;notBefore&quot;</span> | cut -d= -f2)</span>&quot;</span> +%s)</span><br><span class="line">current_time=$(($(date +%s) + <span class="number">300</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ ! -z <span class="string">&quot;<span class="variable">$not_before</span>&quot;</span> ] &amp;&amp; [ <span class="string">&quot;<span class="variable">$current_time</span>&quot;</span> -lt <span class="string">&quot;<span class="variable">$not_before</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">	microk8s refresh-certs --cert server.crt</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
 <p>注：RTC时间可以不用手动设置，因为配置了NTP server之后一段时间会自动同步</p>
 <p>可以添加一个systemd service, 使用<code>systemctl enable</code>命令，每次启动的时候执行。service配置文件如下：</p>
@@ -420,7 +420,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -495,12 +495,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

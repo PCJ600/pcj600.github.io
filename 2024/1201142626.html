@@ -267,7 +267,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><p>1、安装snap</p>
+        <h2><span id="在线安装microk8s">在线安装Microk8s</span></h2><p>1、安装snap</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
 
 <p>2、安装microk8s</p>
@@ -280,7 +280,7 @@
 <p>成功安装后，通过kubectl查看Pod和Image</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl get pods -A</span></span><br><span class="line">kube-system   calico-node-srvfr                         1/1     Running   0          11m</span><br><span class="line">kube-system   calico-kube-controllers-5b577d865-xwqjh   1/1     Running   0          11m</span><br><span class="line">kube-system   coredns-64c6478b6c-fcvkk                  1/1     Running   0          23s</span><br><span class="line">ingress       nginx-ingress-microk8s-controller-rqtj2   1/1     Running   0          32s</span><br><span class="line">kube-system   metrics-server-679c5f986d-vb6z7           1/1     Running   0          53m</span><br><span class="line"></span><br><span class="line">microk8s.ctr i list | grep -vw DIGEST | grep -v ^sha256 | grep -v @sha256 | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span></span><br><span class="line">coredns/coredns:1.10.1</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">registry.k8s.io/pause:3.7</span><br></pre></td></tr></table></figure>
 
-<h2 id="在线安装可能遇到的问题"><a href="#在线安装可能遇到的问题" class="headerlink" title="在线安装可能遇到的问题"></a>在线安装可能遇到的问题</h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
+<h2><span id="在线安装可能遇到的问题">在线安装可能遇到的问题</span></h2><p><strong>问题1:</strong> pod启动失败, 通过<code>kubectl -n kube-system describe pod</code> 查到失败原因是下载镜像失败<br>解决方法: 使用microk8s.ctr从国内源下载镜像，再给镜像打个tag，需要下载的镜像如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">k8s.gcr.io/pause:3.7</span><br><span class="line">docker.io/calico/cni:v3.25.1</span><br><span class="line">docker.io/calico/node:v3.25.1</span><br><span class="line">docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">docker.io/coredns/coredns:1.10.1</span><br><span class="line">registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
 <p>从国内源下载镜像，再给镜像打tag</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/pause:3.7  registry.k8s.io/pause:3.7</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/cni:v3.25.1  docker.io/calico/cni:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/node:v3.25.1  docker.io/calico/node:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/calico/kube-controllers:v3.25.1  docker.io/calico/kube-controllers:v3.25.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/coredns/coredns:v1.10.1  docker.io/coredns/coredns:1.10.1</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.11.2  registry.k8s.io/ingress-nginx/controller:v1.11.2</span><br><span class="line"></span><br><span class="line">microk8s.ctr images pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br><span class="line">microk8s.ctr images tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/metrics-server/metrics-server:v0.6.3  registry.k8s.io/metrics-server/metrics-server:v0.6.3</span><br></pre></td></tr></table></figure>
@@ -288,7 +288,7 @@
 <p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
 
-<h2 id="离线安装Microk8s"><a href="#离线安装Microk8s" class="headerlink" title="离线安装Microk8s"></a>离线安装Microk8s</h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
+<h2><span id="离线安装microk8s">离线安装Microk8s</span></h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
 
 <p>2、将下载好的snap包传输到目标机器上，安装microk8s</p>
@@ -309,7 +309,7 @@
 <p>7、配置kubectl访问Microk8s</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">microk8s.kubectl config view --raw &gt; <span class="variable">$HOME</span>/.kube/config</span><br></pre></td></tr></table></figure>
 
-<h2 id="卸载microk8s"><a href="#卸载microk8s" class="headerlink" title="卸载microk8s"></a>卸载microk8s</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
+<h2><span id="卸载microk8s">卸载microk8s</span></h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">microk8s stop </span><br><span class="line">snap remove microk8s</span><br><span class="line"><span class="built_in">rm</span> -rf /root/.kube</span><br></pre></td></tr></table></figure>
 
     </div>
 
@@ -430,7 +430,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E7%BA%BF%E5%AE%89%E8%A3%85Microk8s"><span class="nav-text">在线安装Microk8s</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E7%BA%BF%E5%AE%89%E8%A3%85%E5%8F%AF%E8%83%BD%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-text">在线安装可能遇到的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A6%BB%E7%BA%BF%E5%AE%89%E8%A3%85Microk8s"><span class="nav-text">离线安装Microk8s</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%B8%E8%BD%BDmicrok8s"><span class="nav-text">卸载microk8s</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">在线安装Microk8s</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">在线安装可能遇到的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">离线安装Microk8s</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">卸载microk8s</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -505,12 +505,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

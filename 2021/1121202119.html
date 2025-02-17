@@ -273,7 +273,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><strong>ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？</strong></p>
+        <h2><span id="问题描述">问题描述</span></h2><p><strong>ARMv8 A64汇编中，立即数是如何表示的？不同的指令对于立即数的表示有差异吗？</strong></p>
 <p>在Stackoverflow上发现类似的讨论：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly">https://stackoverflow.com/questions/30904718/range-of-immediate-values-in-armv8-a64-assembly</a></p>
 <span id="more"></span>
 
@@ -284,28 +284,28 @@
 <p>如果你是<code>x86_64</code>环境，需先安装<code>aarch64</code>编译工具：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get install binutils-aarch64-linux-gnu</span><br></pre></td></tr></table></figure>
 
-<p>2、编译<code>hello.s</code>，发现对于相同立即数<code>0xFEF</code>，<font color='red'>AND指令编译出<code>immediate out of range</code>错，但ADD指令编译却不出错，<strong>为什么？？?</strong></font></p>
+<p>2、编译<code>hello.s</code>，发现对于相同立即数<code>0xFEF</code>，<font color="red">AND指令编译出<code>immediate out of range</code>错，但ADD指令编译却不出错，<strong>为什么？？?</strong></font></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># aarch64-linux-gnu-as hello.s -o hello.o</span><br><span class="line">hello.s: Assembler messages:</span><br><span class="line">hello.s:1: Error: immediate out of range at operand 3 -- `and x12,x10,0xfef&#x27;</span><br></pre></td></tr></table></figure>
 
 
 
-<h2 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h2><p>查询ARMv8指令集手册(<code>C4.1 A64 instruction set encoding</code>)，先来看下A64 指令集编码格式：<br><img data-src="/2021/1121202119/image1.png"></p>
+<h2><span id="原因分析">原因分析</span></h2><p>查询ARMv8指令集手册(<code>C4.1 A64 instruction set encoding</code>)，先来看下A64 指令集编码格式：<br><img data-src="/2021/1121202119/image1.png"></p>
 <p>可以看出<strong>A64指令长度固定为32位，其中op0(占4位)用于区分不同类型的指令，剩下的28位也不可能全用于表示立即数</strong>。因此，和x86&#x2F;x64这种变长指令集对比，A64中立即数表示范围非常有限。</p>
 <p>解释这个问题，需要查询指令集手册，对比ADD, AND指令的立即数编码格式差异。</p>
-<h3 id="ADD-immediate"><a href="#ADD-immediate" class="headerlink" title="ADD(immediate)"></a>ADD(immediate)</h3><p>ADD指令的编码格式和伪码，可以参考手册 <code>C6.2.4 ADD(immediate)</code>，或下图：<br><img data-src="/2021/1121202119/image2.png"></p>
+<h3><span id="addimmediate">ADD(immediate)</span></h3><p>ADD指令的编码格式和伪码，可以参考手册 <code>C6.2.4 ADD(immediate)</code>，或下图：<br><img data-src="/2021/1121202119/image2.png"></p>
 <ul>
 <li><p><code>imm12</code>表示立即数，长度12位，范围0~4095，共4096种取值。</p>
 </li>
 <li><p>读伪代码可知，<code>sh</code>取值为1时，将<code>imm12</code>左移12位得到立即数。因此又有0 &lt;&lt; 12, 1 &lt;&lt; 12, 2 &lt;&lt; 12, … 4095 &lt;&lt; 12 共4096种取值。前后加起来一共8192种取值。</p>
 </li>
-<li><p>此例中<font color = 'red'><strong>0xFEF &#x3D; 4079，显然落在0~4095范围内，所以ADD指令编译不出问题。</strong></font></p>
+<li><p>此例中<font color="red"><strong>0xFEF &#x3D; 4079，显然落在0~4095范围内，所以ADD指令编译不出问题。</strong></font></p>
 </li>
 </ul>
 <p>利用<code>objdump</code>查看<code>ADD X12, X10, 0xFEF</code> 指令的二进制码：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># aarch64-linux-gnu-objdump -d hello.o</span><br><span class="line">Disassembly of section .text:</span><br><span class="line">0000000000000000 &lt;.text&gt;:</span><br><span class="line">   0:   913fbd4c        add     x12, x10, #0xfef</span><br></pre></td></tr></table></figure>
 
 <p> <code>0x913fbd4c</code> &#x3D; <code>1001 0001 0011 1111 1011 1101 0100 1100</code> b， 可以看出这条ADD指令的编码和指令集手册规定的编码格式是一致的。（各字段对应的关系参考上图）</p>
-<h3 id="AND-immediate"><a href="#AND-immediate" class="headerlink" title="AND(immediate)"></a>AND(immediate)</h3><p>AND指令的编码格式和伪码参考手册 <code>C6.2.12 AND(immediate)</code>，或下图：<br><img data-src="/2021/1121202119/image3.png"><br><img data-src="/2021/1121202119/image4.png"></p>
+<h3><span id="andimmediate">AND(immediate)</span></h3><p>AND指令的编码格式和伪码参考手册 <code>C6.2.12 AND(immediate)</code>，或下图：<br><img data-src="/2021/1121202119/image3.png"><br><img data-src="/2021/1121202119/image4.png"></p>
 <p>AND指令的伪码不是很直观，详细解释参考老外的这篇<a target="_blank" rel="noopener external nofollow noreferrer" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">文章</a>，非常清楚（参考<code>Logical Immediates</code>小节）</p>
 <p><strong>这里给出直观的结论：</strong></p>
 <p>AND指令支持的立即数个数为5334个，结果参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://gist.github.com/dinfuehr/51a01ac58c0b23e4de9aac313ed6a06a">full output</a></p>
@@ -399,13 +399,13 @@
 <p>对于给定的<code>N</code>和<code>imms</code>，<strong>x可以取0或1，但不允许所有的x同时取1</strong>，因此对于n位的模式串，x的取值组合有 n - 1种情况。</p>
 <p>以下举几个例子帮助理解：</p>
 <ul>
-<li><p><code>N</code> &#x3D; 0 <code>imms</code> &#x3D; <strong>1 1 1 0</strong> <font color = 'red'><strong>1 0</strong></font>， 表示模式串长度为4，且模式串中连续1的个数为 10 ‘b + 1 &#x3D; 3，即 0111。此时<code>immr</code>的范围[0, 3]</p>
+<li><p><code>N</code> &#x3D; 0 <code>imms</code> &#x3D; <strong>1 1 1 0</strong> <font color="red"><strong>1 0</strong></font>， 表示模式串长度为4，且模式串中连续1的个数为 10 ‘b + 1 &#x3D; 3，即 0111。此时<code>immr</code>的范围[0, 3]</p>
 <ul>
 <li><code>immr</code> &#x3D; 0， 表示立即数为 0111 0111 0111 0111  0111 0111 0111 0111  0111 0111 0111 0111  0111 0111 0111 0111 &#x3D; 0x7777777777777777</li>
 <li><code>immr</code> &#x3D; 2, 表示模式串循坏右移2次 （0111 -&gt; 1101)，立即数为 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 1101 &#x3D; 0xdddddddddddd</li>
 </ul>
 </li>
-<li><p><code>N</code> &#x3D; 0 <code>imms</code> &#x3D; <strong>1 1 1 1 0</strong> <font color = 'red'><strong>0</strong></font>，表示模式串长度为2，且模式串中连续1的个数为 0 ‘b + 1 &#x3D; 1，即 01。此时<code>immr</code>的范围[0, 1]</p>
+<li><p><code>N</code> &#x3D; 0 <code>imms</code> &#x3D; <strong>1 1 1 1 0</strong> <font color="red"><strong>0</strong></font>，表示模式串长度为2，且模式串中连续1的个数为 0 ‘b + 1 &#x3D; 1，即 01。此时<code>immr</code>的范围[0, 1]</p>
 <ul>
 <li><code>immr</code> &#x3D; 0，表示立即数 01 01 …… 01 b(连续32个01组成)，即 0x5555555555555555</li>
 <li><code>immr</code> &#x3D; 1，表示模式串循坏右移1次（01 -&gt; 10），立即数 10 10 ……  10 b(连续32个10组成)，即 0xaaaaaaaaaaaaaaaa</li>
@@ -421,8 +421,8 @@
 </ul>
 <p>综上， AND指令支持的立即数总数为 2 * 1 + 4 * 3 + 8 * 7 + …… + 64 * 63 &#x3D; 5334。</p>
 <p>可以手撕代码，打印出这5334个符合条件的立即数，参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/</a></p>
-<p>回到问题， 0xfef的二进制串为1111 1110 1111，你会发现 <font color ='red'><strong>N, imms, immr不管取什么值，都无法得到1111 1110 1111这个串，所以AND指令的编译会报错</strong></font>。</p>
-<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://developer.arm.com/documentation/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">《ARM Architecture Reference Manual, for ARMv8-A architecture profile》</a></p>
+<p>回到问题， 0xfef的二进制串为1111 1110 1111，你会发现 <font color="red"><strong>N, imms, immr不管取什么值，都无法得到1111 1110 1111这个串，所以AND指令的编译会报错</strong></font>。</p>
+<h2><span id="参考资料">参考资料</span></h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://developer.arm.com/documentation/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">《ARM Architecture Reference Manual, for ARMv8-A architecture profile》</a></p>
 <p>【2】  <a target="_blank" rel="noopener external nofollow noreferrer" href="https://dinfuehr.github.io/blog/encoding-of-immediate-values-on-aarch64/">ENCODING OF IMMEDIATE VALUES ON AARCH64</a></p>
 
     </div>
@@ -545,7 +545,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%9B%A0%E5%88%86%E6%9E%90"><span class="nav-text">原因分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ADD-immediate"><span class="nav-text">ADD(immediate)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AND-immediate"><span class="nav-text">AND(immediate)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">原因分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">ADD(immediate)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">AND(immediate)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考资料</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -620,12 +620,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

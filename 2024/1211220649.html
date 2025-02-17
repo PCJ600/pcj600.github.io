@@ -268,26 +268,26 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="配置Nginx自签名SSL证书的流程"><a href="#配置Nginx自签名SSL证书的流程" class="headerlink" title="配置Nginx自签名SSL证书的流程"></a>配置Nginx自签名SSL证书的流程</h2><ul>
+        <h2><span id="配置nginx自签名ssl证书的流程">配置Nginx自签名SSL证书的流程</span></h2><ul>
 <li>生成一个SSL自签名证书</li>
 <li>客户端机器信任这个自签名证书</li>
 <li>修改RHEL服务器的Nginx配置</li>
 <li>在客户机用curl测试HTTPS</li>
 </ul>
-<h2 id="生成一个SSL自签名证书"><a href="#生成一个SSL自签名证书" class="headerlink" title="生成一个SSL自签名证书"></a>生成一个SSL自签名证书</h2><p>在RHEL服务器上, 用openssl命令生成一个自签名证书</p>
+<h2><span id="生成一个ssl自签名证书">生成一个SSL自签名证书</span></h2><p>在RHEL服务器上, 用openssl命令生成一个自签名证书</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">openssl genrsa -out server.key 2048 #生成一个2048位的RSA私钥,保存到server.key</span><br><span class="line">openssl req -x509 -new -nodes -key server.key -sha256 -days 3650 -out server.crt -subj &quot;/C=CN/CN=www.petertest.com/O=MyRootCA&quot; # 使用私钥server.key, 生成一个自签名的根证书server.crt, 有效期10年</span><br></pre></td></tr></table></figure>
 <p>注: <code>CN=www.petertest.com</code>需要换成你的服务器域名, 否则curl测试会报错</p>
 <span id="more"></span>
 
-<h2 id="客户端机器信任这个自签名证书"><a href="#客户端机器信任这个自签名证书" class="headerlink" title="客户端机器信任这个自签名证书"></a>客户端机器信任这个自签名证书</h2><p>将server.crt传到客户端Linux机器上。 在RHEL&#x2F;Centos机器上, 需要把证书传到目录<code>/etc/pki/ca-trust/source/anchors/</code>，再用如下命令更新系统信任的CA证书列表</p>
+<h2><span id="客户端机器信任这个自签名证书">客户端机器信任这个自签名证书</span></h2><p>将server.crt传到客户端Linux机器上。 在RHEL&#x2F;Centos机器上, 需要把证书传到目录<code>/etc/pki/ca-trust/source/anchors/</code>，再用如下命令更新系统信任的CA证书列表</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update-ca-trust</span><br></pre></td></tr></table></figure>
-<h2 id="修改RHEL服务器的Nginx配置"><a href="#修改RHEL服务器的Nginx配置" class="headerlink" title="修改RHEL服务器的Nginx配置"></a>修改RHEL服务器的Nginx配置</h2><p>修改<code>nginx.conf</code>, 如下：</p>
+<h2><span id="修改rhel服务器的nginx配置">修改RHEL服务器的Nginx配置</span></h2><p>修改<code>nginx.conf</code>, 如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    server_name www.peter.com; # 设置域名</span><br><span class="line"></span><br><span class="line">    access_log   access.log;</span><br><span class="line">    include /etc/nginx/default.d/*.conf;</span><br><span class="line"></span><br><span class="line">    ssl_certificate /server.crt; # 指定证书的绝对路径</span><br><span class="line">    ssl_certificate_key /server.key; # 指定私钥的绝对路径</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        default_type text/html;</span><br><span class="line">        return 200 &#x27;&lt;h1&gt;Welcome to Nginx&lt;/h1&gt;&#x27;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>再把证书文件server.crt和私钥文件server.key拷到服务器的根目录下</p>
-<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>在客户机用curl测试, 返回200 OK</p>
+<h2><span id="测试">测试</span></h2><p>在客户机用curl测试, 返回200 OK</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">curl https://www.petertest.com:443 -i</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Server: nginx/1.20.1</span><br><span class="line">Date: Wed, 11 Dec 2024 14:02:13 GMT</span><br><span class="line">Content-Type: text/html</span><br><span class="line">Content-Length: 25</span><br><span class="line">Connection: keep-alive</span><br><span class="line"></span><br><span class="line">&lt;h1&gt;Welcome to Nginx&lt;/h1&gt;</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://cloud.tencent.com/developer/article/1743989">https://cloud.tencent.com/developer/article/1743989</a></p>
+<h2><span id="参考">参考</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://cloud.tencent.com/developer/article/1743989">https://cloud.tencent.com/developer/article/1743989</a></p>
 
     </div>
 
@@ -409,7 +409,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AENginx%E8%87%AA%E7%AD%BE%E5%90%8DSSL%E8%AF%81%E4%B9%A6%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="nav-text">配置Nginx自签名SSL证书的流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E4%B8%80%E4%B8%AASSL%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6"><span class="nav-text">生成一个SSL自签名证书</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%9C%BA%E5%99%A8%E4%BF%A1%E4%BB%BB%E8%BF%99%E4%B8%AA%E8%87%AA%E7%AD%BE%E5%90%8D%E8%AF%81%E4%B9%A6"><span class="nav-text">客户端机器信任这个自签名证书</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9RHEL%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%9A%84Nginx%E9%85%8D%E7%BD%AE"><span class="nav-text">修改RHEL服务器的Nginx配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-text">测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置Nginx自签名SSL证书的流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">生成一个SSL自签名证书</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">客户端机器信任这个自签名证书</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">修改RHEL服务器的Nginx配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -484,12 +484,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

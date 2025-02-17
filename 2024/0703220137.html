@@ -270,8 +270,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>Centos7.9 Squid 3.5.20</p>
-<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
+        <h2><span id="环境">环境</span></h2><p>Centos7.9 Squid 3.5.20</p>
+<h2><span id="步骤">步骤</span></h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">htpasswd -c /etc/squid/squid_user peter</span><br><span class="line">New password: 123</span><br><span class="line">Re-type new password: 123</span><br><span class="line">Adding password for user peter</span><br></pre></td></tr></table></figure>
 <p>检查密码文件<code>/etc/squid/squid_user</code>，可以找到刚才添加的用户<code>peter</code></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/squid/squid_user</span><br><span class="line">peter:$XXXXXXXXXXXXXXXXXXX</span><br></pre></td></tr></table></figure>
@@ -285,8 +285,8 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># Insert your own rules here to allow access from your clients</span><br><span class="line"></span><br><span class="line"># http_access allow localhost 加注释，表示localhost也需要认证</span><br><span class="line"></span><br><span class="line">auth_param basic program /usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Proxy Authentication Required</span><br><span class="line">auth_param basic credentialsttl 2 hours</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line"></span><br><span class="line">acl authUsers proxy_auth REQUIRED</span><br><span class="line">http_access allow authUsers</span><br><span class="line"></span><br><span class="line">http_access deny all</span><br></pre></td></tr></table></figure>
 
 <p>修改配置完成后，重启Squid (<code>systemctl restart squid</code>)</p>
-<h2 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h2><p>使用<code>curl</code>测试Squid用户名密码认证配置<br>不使用用户名密码认证，访问失败，返回407<br><img data-src="/2024/0703220137/image1.png"><br>使用正确的用户名密码认证，访问成功<br><img data-src="/2024/0703220137/image2.png"></p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/blxt/p/14501176.html">Squid设置用户名密码</a></p>
+<h2><span id="验证">验证</span></h2><p>使用<code>curl</code>测试Squid用户名密码认证配置<br>不使用用户名密码认证，访问失败，返回407<br><img data-src="/2024/0703220137/image1.png"><br>使用正确的用户名密码认证，访问成功<br><img data-src="/2024/0703220137/image2.png"></p>
+<h2><span id="参考">参考</span></h2><p>【1】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.cnblogs.com/blxt/p/14501176.html">Squid设置用户名密码</a></p>
 
     </div>
 
@@ -407,7 +407,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83"><span class="nav-text">环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AD%A5%E9%AA%A4"><span class="nav-text">步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AA%8C%E8%AF%81"><span class="nav-text">验证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">验证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -482,12 +482,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

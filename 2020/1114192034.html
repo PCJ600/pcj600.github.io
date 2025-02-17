@@ -269,24 +269,24 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
-<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
+        <h3><span id="问题描述">问题描述</span></h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
+<h3><span id="原因分析">原因分析</span></h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
 <p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
 <span id="more"></span>
 
-<h4 id="为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？"><a href="#为什么sem-open中mode参数指定的权限-0666-和创建文件的实际权限-0644-不一致？" class="headerlink" title="为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？"></a>为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
+<h4><span id="为什么sem_open中mode参数指定的权限0666和创建文件的实际权限0644不一致">为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</span></h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
 <ul>
 <li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
 <li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
 </ul>
-<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
+<h3><span id="解决方法">解决方法</span></h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
 <p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
 
 <p>写法参考如下：</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
+<h3><span id="参考资料">参考资料</span></h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
 
     </div>
 
@@ -409,7 +409,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%9F%E5%9B%A0%E5%88%86%E6%9E%90"><span class="nav-text">原因分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88sem-open%E4%B8%ADmode%E5%8F%82%E6%95%B0%E6%8C%87%E5%AE%9A%E7%9A%84%E6%9D%83%E9%99%90-0666-%E5%92%8C%E5%88%9B%E5%BB%BA%E6%96%87%E4%BB%B6%E7%9A%84%E5%AE%9E%E9%99%85%E6%9D%83%E9%99%90-0644-%E4%B8%8D%E4%B8%80%E8%87%B4%EF%BC%9F"><span class="nav-text">为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">原因分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">参考资料</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -484,12 +484,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

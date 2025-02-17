@@ -267,16 +267,16 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我想通过iptables允许以下这20个端口通过：</p>
+        <h2><span id="问题描述">问题描述</span></h2><p>我想通过iptables允许以下这20个端口通过：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p tcp -i eth0 -m multiport --dports 22,80,443,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46 -j ACCEPT</span><br></pre></td></tr></table></figure>
 <p>执行后报错，<code>iptables: too many ports specified</code></p>
-<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>查看<a target="_blank" rel="noopener external nofollow noreferrer" href="https://linux.die.net/man/8/iptables">iptables官方文档</a>, 发现iptables单条multiports规则最多只支持15个端口。 原文如下： </p>
+<h2><span id="原因">原因</span></h2><p>查看<a target="_blank" rel="noopener external nofollow noreferrer" href="https://linux.die.net/man/8/iptables">iptables官方文档</a>, 发现iptables单条multiports规则最多只支持15个端口。 原文如下： </p>
 <span id="more"></span>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">multiport</span><br><span class="line"></span><br><span class="line">This module matches a set of source or destination ports. Up to 15 ports can be specified. A port range (port:port) counts as two ports. It can only be used in conjunction with -p tcp or -p udp.</span><br></pre></td></tr></table></figure>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>每15个端口新增一条multiport的rule即可, 代码参考:</p>
+<h2><span id="解决方法">解决方法</span></h2><p>每15个端口新增一条multiport的rule即可, 代码参考:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"></span><br><span class="line">all_ports=<span class="string">&quot;22,80,443,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46&quot;</span></span><br><span class="line">ports_array=($(<span class="built_in">echo</span> <span class="variable">$all_ports</span> | <span class="built_in">tr</span> <span class="string">&#x27;,&#x27;</span> <span class="string">&#x27; &#x27;</span>))</span><br><span class="line">ports=<span class="string">&quot;&quot;</span></span><br><span class="line"><span class="keyword">for</span> (( i=<span class="number">0</span>; i&lt;<span class="variable">$&#123;#ports_array[@]&#125;</span>; i++ )); <span class="keyword">do</span></span><br><span class="line">    ports+=<span class="string">&quot;<span class="variable">$&#123;ports_array[$i]&#125;</span>,&quot;</span></span><br><span class="line">    <span class="comment"># One iptables multiports rule supports at most 15 ports</span></span><br><span class="line">    <span class="keyword">if</span> (( (i + <span class="number">1</span>) % <span class="number">15</span> == <span class="number">0</span> || i == <span class="variable">$&#123;#ports_array[@]&#125;</span> - <span class="number">1</span> )); <span class="keyword">then</span></span><br><span class="line">        ports=<span class="variable">$&#123;ports%,&#125;</span></span><br><span class="line">        <span class="built_in">echo</span> <span class="string">&quot;ports: <span class="variable">$&#123;ports&#125;</span>&quot;</span></span><br><span class="line">        <span class="built_in">sudo</span> iptables -I INPUT -p tcp -m multiport --dports <span class="variable">$&#123;ports&#125;</span> -j ACCEPT</span><br><span class="line">        <span class="built_in">sudo</span> iptables -I INPUT -p tcp -m multiport --sports <span class="variable">$&#123;ports&#125;</span> -j ACCEPT</span><br><span class="line">        ports=<span class="string">&quot;&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://linux.die.net/man/8/iptableshttps://linux.die.net/man/8/iptables">https://linux.die.net/man/8/iptables</a></p>
+<h2><span id="参考">参考</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://linux.die.net/man/8/iptableshttps://linux.die.net/man/8/iptables">https://linux.die.net/man/8/iptables</a></p>
 
     </div>
 
@@ -397,7 +397,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%9B%A0"><span class="nav-text">原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -472,12 +472,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

@@ -269,10 +269,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="什么是隐式函数声明"><a href="#什么是隐式函数声明" class="headerlink" title="什么是隐式函数声明"></a>什么是隐式函数声明</h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
+        <h2><span id="什么是隐式函数声明">什么是隐式函数声明</span></h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
 <span id="more"></span>
 
-<h2 id="忽略隐式函数声明警告的危害"><a href="#忽略隐式函数声明警告的危害" class="headerlink" title="忽略隐式函数声明警告的危害"></a>忽略隐式函数声明警告的危害</h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
+<h2><span id="忽略隐式函数声明警告的危害">忽略隐式函数声明警告的危害</span></h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img data-src="/2020/0411143310/image1.png"></p>
@@ -291,7 +291,7 @@
 
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ gcc main.c -ldl</span><br><span class="line">$ ./a.out</span><br><span class="line">1 + 2 = 3</span><br><span class="line">./a.out: symbol lookup error: ./libadd.so: undefined symbol: ad</span><br></pre></td></tr></table></figure>
 <p>虽然编译成功，libadd.so可以加载，add函数可以执行，但执行sum函数时报未定义符号错。如及时处理隐式函数声明警告，可以在编译add.c的时候就发现该问题。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<h2><span id="总结">总结</span></h2><ul>
 <li><p>函数先声明再使用，包含必要的头文件。</p>
 </li>
 <li><p>重视编译器的隐式函数声明警告, 可开启-Werror选项检查, 不要简单使用-Wno忽略该编译告警。</p>
@@ -417,7 +417,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E9%9A%90%E5%BC%8F%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E"><span class="nav-text">什么是隐式函数声明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%BD%E7%95%A5%E9%9A%90%E5%BC%8F%E5%87%BD%E6%95%B0%E5%A3%B0%E6%98%8E%E8%AD%A6%E5%91%8A%E7%9A%84%E5%8D%B1%E5%AE%B3"><span class="nav-text">忽略隐式函数声明警告的危害</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-text">总结</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">什么是隐式函数声明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">忽略隐式函数声明警告的危害</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -492,12 +492,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

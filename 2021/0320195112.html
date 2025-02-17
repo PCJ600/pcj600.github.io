@@ -267,7 +267,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>Redis提供了AOF(append only file)持久化功能，通过保存服务器执行的写命令的方式记录数据库状态。本文介绍如下内容：</p>
+        <h3><span id="简介">简介</span></h3><p>Redis提供了AOF(append only file)持久化功能，通过保存服务器执行的写命令的方式记录数据库状态。本文介绍如下内容：</p>
 <ul>
 <li>AOF持久化的实现 (命令追加、文件写入、AOF重写、AOF后台重写)</li>
 <li>如何通过AOF文件还原数据库</li>
@@ -276,7 +276,7 @@
 </ul>
 <span id="more"></span>
 
-<h3 id="AOF持久化的实现"><a href="#AOF持久化的实现" class="headerlink" title="AOF持久化的实现"></a>AOF持久化的实现</h3><p>以下介绍AOF持久化的实现方式，内容分别如下：</p>
+<h3><span id="aof持久化的实现">AOF持久化的实现</span></h3><p>以下介绍AOF持久化的实现方式，内容分别如下：</p>
 <ul>
 <li><p>命令追加</p>
 </li>
@@ -287,7 +287,7 @@
 <li><p>AOF后台重写</p>
 </li>
 </ul>
-<h4 id="命令追加"><a href="#命令追加" class="headerlink" title="命令追加"></a>命令追加</h4><p>AOF功能开启后，每当服务器执行完一条写命令，这条写命令就会以协议格式追加到服务器状态的aof_buf缓冲区中。</p>
+<h4><span id="命令追加">命令追加</span></h4><p>AOF功能开启后，每当服务器执行完一条写命令，这条写命令就会以协议格式追加到服务器状态的aof_buf缓冲区中。</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">redisServer</span> &#123;</span></span><br><span class="line">	sds aof_buf;</span><br><span class="line">	<span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
 <p>例如，客户端向服务端发送<code>set number 1</code>命令，服务器执行完SET后，会将如下协议内容追加到aof_buf缓冲区</p>
@@ -295,7 +295,7 @@
 <p>其中，\r\n表示换行符，我们打开对应的AOF文件，可以看到文件末尾追加了如下内容：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">*3</span><br><span class="line">$3</span><br><span class="line">set</span><br><span class="line">$6</span><br><span class="line">number</span><br><span class="line">$1</span><br><span class="line">1</span><br></pre></td></tr></table></figure>
 
-<h4 id="文件写入和同步"><a href="#文件写入和同步" class="headerlink" title="文件写入和同步"></a>文件写入和同步</h4><p><strong>问题：</strong> aof_buf缓冲区在内存中，它是在什么时间点，以何种策略被写入到AOF文件的？</p>
+<h4><span id="文件写入和同步">文件写入和同步</span></h4><p><strong>问题：</strong> aof_buf缓冲区在内存中，它是在什么时间点，以何种策略被写入到AOF文件的？</p>
 <p>Redis服务器是一个事件驱动的程序，主进程就是一个事件循环(参考aeMain函数)，负责处理两类事件：文件事件、时间事件。</p>
 <p>服务器处理文件事件时可能会执行写命令，这使得相应的协议内容被追加到aof_buf缓冲区，<strong>因此服务器在结束一个事件循环前，会调用flushAppendOnlyFile函数，考虑是否将aof_buf缓冲区的内容写入到AOF文件。</strong></p>
 <p>以Redis 6.0版本的源码为例，事件主循环aeMain的实现如下：</p>
@@ -331,22 +331,22 @@
 </tbody></table>
 <p>可以看出，<code>everysec</code>选项兼顾了性能和安全性，这也是官方推荐的默认选项。</p>
 <p>注：<code>fsync</code>，<code>fdatasync</code>可以强制操作系统立即将内存缓冲区中数据写入磁盘。</p>
-<h4 id="AOF重写"><a href="#AOF重写" class="headerlink" title="AOF重写"></a>AOF重写</h4><p>随着服务器持续运行，执行的写命令会越来越多，导致AOF文件越来越大，影响性能。<strong>因此我们需要对AOF文件大小加以控制，在不改变数据库状态的前提下，压缩AOF文件体积</strong> —— 这就是Redis提供的AOF重写功能。</p>
+<h4><span id="aof重写">AOF重写</span></h4><p>随着服务器持续运行，执行的写命令会越来越多，导致AOF文件越来越大，影响性能。<strong>因此我们需要对AOF文件大小加以控制，在不改变数据库状态的前提下，压缩AOF文件体积</strong> —— 这就是Redis提供的AOF重写功能。</p>
 <p>举例:</p>
 <p>对一个列表键做如下写操作，为了保存这个列表键，AOF文件需记录3条命令，如下所示：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">redis&gt; rpush list1 a b		# [a, b]</span><br><span class="line">redis&gt; rpop list1			# [b]</span><br><span class="line">redis&gt; rpush list1 c		# [b, c]</span><br></pre></td></tr></table></figure>
 
 <p>如果想用更少的命令记录这个列表键，最简单的方法是直接读取这个列表键的值，用<code>rpush list1 b c</code>替代上面的3条命令。</p>
 <p>通过这个例子可以看出AOF重写的实现要点：<strong>AOF重写通过读取服务器数据库状态来实现，而不是去分析现有的AOF文件！</strong> 源码实现参考<code>rewriteAppendOnlyFileBackground</code>函数。</p>
-<h4 id="AOF后台重写"><a href="#AOF后台重写" class="headerlink" title="AOF后台重写"></a>AOF后台重写</h4><p>AOF重写功能涉及大量写操作，Redis不希望AOF重写造成服务器无法处理请求，所以<strong>将AOF重写放到子进程里执行</strong>(这点和RDB持久化的BGSAVE思路类似)，这使得父进程不被阻塞，可以继续处理请求。这种处理方式会引入了一个问题：<strong>子进程执行AOF重写时，服务器会继续处理请求，可能会执行新的写命令，导致数据库状态发生变化，与AOF文件中的数据库状态不一致！</strong></p>
+<h4><span id="aof后台重写">AOF后台重写</span></h4><p>AOF重写功能涉及大量写操作，Redis不希望AOF重写造成服务器无法处理请求，所以<strong>将AOF重写放到子进程里执行</strong>(这点和RDB持久化的BGSAVE思路类似)，这使得父进程不被阻塞，可以继续处理请求。这种处理方式会引入了一个问题：<strong>子进程执行AOF重写时，服务器会继续处理请求，可能会执行新的写命令，导致数据库状态发生变化，与AOF文件中的数据库状态不一致！</strong></p>
 <p>为了解决这种数据不一致的问题，<strong>Redis设置了一个AOF重写缓冲区，在子进程进行AOF重写期间，服务器将客户端的写命令请求同时追加到AOF缓冲区和AOF重写缓冲区</strong>。</p>
 <p>子进程完成AOF重写工作后，通知父进程将AOF重写缓冲区中的内容追加到新的AOF文件中，再原子性地覆盖旧的AOF文件，完成整个AOF后台重写。</p>
 <p>源码实现参考<code>rewriteAppendOnlyFileBackground</code>函数和<code>backgroundRewriteDoneHandler</code>函数</p>
-<h4 id="如何通过AOF文件还原数据库"><a href="#如何通过AOF文件还原数据库" class="headerlink" title="如何通过AOF文件还原数据库"></a>如何通过AOF文件还原数据库</h4><p>创建一个无网络连接的伪客户端(fd值为-1)，从AOF文件中读出每条指令并执行，一直到AOF文件中所有的写命令执行完毕为止。源码实现参考<code>loadAppendOnlyFile</code>函数</p>
-<h3 id="AOF配置选项"><a href="#AOF配置选项" class="headerlink" title="AOF配置选项"></a>AOF配置选项</h3><p>常用配置选项如下：</p>
+<h4><span id="如何通过aof文件还原数据库">如何通过AOF文件还原数据库</span></h4><p>创建一个无网络连接的伪客户端(fd值为-1)，从AOF文件中读出每条指令并执行，一直到AOF文件中所有的写命令执行完毕为止。源码实现参考<code>loadAppendOnlyFile</code>函数</p>
+<h3><span id="aof配置选项">AOF配置选项</span></h3><p>常用配置选项如下：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">appendonly yes                      # 值为yes，表示开启AOF持久化功能。</span><br><span class="line">appendfilename &quot;appendonly.aof&quot;     # 指定aof文件名称</span><br><span class="line">appendfsync everysec                # 指定AOF文件的写入方式， everysec表示每秒同步一次</span><br></pre></td></tr></table></figure>
 
-<h3 id="AOF和RDB比较"><a href="#AOF和RDB比较" class="headerlink" title="AOF和RDB比较"></a>AOF和RDB比较</h3><p>RDB：文件相对较小，恢复较快，适合数据备份、灾难恢复。</p>
+<h3><span id="aof和rdb比较">AOF和RDB比较</span></h3><p>RDB：文件相对较小，恢复较快，适合数据备份、灾难恢复。</p>
 <p>AOF：文件相对较大，备份频率高(要设置fsync 策略), 适合故障恢复。</p>
 <p>需针对不同业务场景选择合适的持久化方式：</p>
 <ul>
@@ -355,7 +355,7 @@
 <li><p>对丢失数据不敏感 —— 仅使用RDB；对丢失数据敏感 —— 综合使用RDB + AOF</p>
 </li>
 </ul>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>【1】《Redis设计与实现》第11章 AOF持久化<br>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://gitchat.csdn.net/activity/5d5117876f8c3424da08b7af?utm_source=so">Redis 持久化 RDB&#x2F;AOF 详解与实践</a></p>
+<h3><span id="参考资料">参考资料</span></h3><p>【1】《Redis设计与实现》第11章 AOF持久化<br>【2】<a target="_blank" rel="noopener external nofollow noreferrer" href="https://gitchat.csdn.net/activity/5d5117876f8c3424da08b7af?utm_source=so">Redis 持久化 RDB&#x2F;AOF 详解与实践</a></p>
 
     </div>
 
@@ -476,7 +476,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%80%E4%BB%8B"><span class="nav-text">简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AOF%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-text">AOF持久化的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%91%BD%E4%BB%A4%E8%BF%BD%E5%8A%A0"><span class="nav-text">命令追加</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%87%E4%BB%B6%E5%86%99%E5%85%A5%E5%92%8C%E5%90%8C%E6%AD%A5"><span class="nav-text">文件写入和同步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AOF%E9%87%8D%E5%86%99"><span class="nav-text">AOF重写</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AOF%E5%90%8E%E5%8F%B0%E9%87%8D%E5%86%99"><span class="nav-text">AOF后台重写</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87AOF%E6%96%87%E4%BB%B6%E8%BF%98%E5%8E%9F%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-text">如何通过AOF文件还原数据库</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AOF%E9%85%8D%E7%BD%AE%E9%80%89%E9%A1%B9"><span class="nav-text">AOF配置选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AOF%E5%92%8CRDB%E6%AF%94%E8%BE%83"><span class="nav-text">AOF和RDB比较</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-text">参考资料</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">AOF持久化的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">命令追加</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">文件写入和同步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">AOF重写</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">AOF后台重写</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">如何通过AOF文件还原数据库</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">AOF配置选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">AOF和RDB比较</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">参考资料</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -551,12 +551,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

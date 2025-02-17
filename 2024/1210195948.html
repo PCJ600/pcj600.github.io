@@ -267,7 +267,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="ACL简介"><a href="#ACL简介" class="headerlink" title="ACL简介"></a>ACL简介</h2><p>Squid ACL（Access Control List，访问控制列表）提供了代理控制的功能。<br>通过设置ACL，Squid可以针对源地址、目标地址、访问的URL路径、访问的时间等各种条件进行过滤，从而实现对网络流量的精细控制。</p>
+        <h2><span id="acl简介">ACL简介</span></h2><p>Squid ACL（Access Control List，访问控制列表）提供了代理控制的功能。<br>通过设置ACL，Squid可以针对源地址、目标地址、访问的URL路径、访问的时间等各种条件进行过滤，从而实现对网络流量的精细控制。</p>
 <p>基本的ACL元素语法:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">acl name type value1 value2 ...</span><br></pre></td></tr></table></figure>
 <p>可以对一个ACL元素列举多个值，也可以多个ACL行使用同一个名字。例如，以下两种配置方式是等价的</p>
@@ -276,24 +276,24 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">acl safe_ports port 80</span><br><span class="line">acl safe_ports port 443</span><br><span class="line">acl safe_ports port 8080</span><br></pre></td></tr></table></figure>
 <span id="more"></span>
 
-<h2 id="ACL使用方法实例"><a href="#ACL使用方法实例" class="headerlink" title="ACL使用方法实例"></a>ACL使用方法实例</h2><h3 id="实例1：只允许网段10-206-216-0-24的客户机访问Squid-拒绝其他客户端请求"><a href="#实例1：只允许网段10-206-216-0-24的客户机访问Squid-拒绝其他客户端请求" class="headerlink" title="实例1：只允许网段10.206.216.0&#x2F;24的客户机访问Squid, 拒绝其他客户端请求"></a>实例1：只允许网段10.206.216.0&#x2F;24的客户机访问Squid, 拒绝其他客户端请求</h3><p>修改squid.conf,添加如下几行配置</p>
+<h2><span id="acl使用方法实例">ACL使用方法实例</span></h2><h3><span id="实例1只允许网段102062160x2f24的客户机访问squid-拒绝其他客户端请求">实例1：只允许网段10.206.216.0&#x2F;24的客户机访问Squid, 拒绝其他客户端请求</span></h3><p>修改squid.conf,添加如下几行配置</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">acl clients src 10.206.216.0/24</span><br><span class="line">http_access allow clients</span><br><span class="line">http_access deny all</span><br></pre></td></tr></table></figure>
 <p>使用如下命令校验配置文件，重启Squid</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">squid -k parse # 校验Squid配置文件</span><br><span class="line">squid -k reconfigure # 重新加载配置</span><br></pre></td></tr></table></figure>
 
-<h3 id="实例2：只允许访问指定的域名或IP"><a href="#实例2：只允许访问指定的域名或IP" class="headerlink" title="实例2：只允许访问指定的域名或IP"></a>实例2：只允许访问指定的域名或IP</h3><p>修改squid.conf,添加如下几行配置</p>
+<h3><span id="实例2只允许访问指定的域名或ip">实例2：只允许访问指定的域名或IP</span></h3><p>修改squid.conf,添加如下几行配置</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">acl SSL_ports port 443</span><br><span class="line">http_access deny CONNECT !SSL_ports</span><br><span class="line"></span><br><span class="line">acl allow_domain dstdomain www.baidu.com .google.com</span><br><span class="line">acl allow_ip dst 180.101.50.188 142.250.199.100</span><br><span class="line">http_access allow allow_domain</span><br><span class="line">http_access allow allow_ip</span><br></pre></td></tr></table></figure>
 <p>注: 当ACL域名以”.”开头，squid将它作为通配符，它匹配在该域的任何主机名，甚至域名自身。如果ACL域名不以”.”开头，squid使用精确的字符串比较。</p>
 <p>测试：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">curl -x localhost:3128 https://www.baidu.com</span><br><span class="line">curl -x localhost:3128 https://www.google.com</span><br><span class="line">curl -x localhost:3128 180.101.50.188</span><br><span class="line">curl -x localhost:3128 142.250.199.100</span><br><span class="line">都应该返回200 OK</span><br><span class="line"></span><br><span class="line">访问其他domain或IP, 返回403 Forbidden</span><br><span class="line">curl -x localhost:3128 https://www.4399.com</span><br><span class="line">curl: (56) Received HTTP code 403 from proxy after CONNECT</span><br></pre></td></tr></table></figure>
 
-<h3 id="实例3：允许非443端口的FQDN通过"><a href="#实例3：允许非443端口的FQDN通过" class="headerlink" title="实例3：允许非443端口的FQDN通过"></a>实例3：允许非443端口的FQDN通过</h3><p>实际场景中，HTTPS server未必都是443标准端口。<br>比方说,我需要允许<code>www.yourserver.com:8080</code>这个FQDN通过，拒绝其他HTTPS请求。 squid.conf可以配置如下</p>
+<h3><span id="实例3允许非443端口的fqdn通过">实例3：允许非443端口的FQDN通过</span></h3><p>实际场景中，HTTPS server未必都是443标准端口。<br>比方说,我需要允许<code>www.yourserver.com:8080</code>这个FQDN通过，拒绝其他HTTPS请求。 squid.conf可以配置如下</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">acl SSL_ports port 8080</span><br><span class="line">http_access deny CONNECT !SSL_ports</span><br><span class="line"></span><br><span class="line">acl PORT_8080 port 8080</span><br><span class="line">acl allow_domain_8080 dstdomain www.yourserver.com</span><br><span class="line">http_access allow allow_domain_8080 PORT_8080</span><br></pre></td></tr></table></figure>
 <p>测试:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -x peter:123@localhost:3128 https://www.yourserver.com:8080</span><br><span class="line">返回200 OK，或者超时， 不会返回403 Forbidden</span><br></pre></td></tr></table></figure>
 
-<h3 id="实例4：只允许通过认证的客户访问Squid"><a href="#实例4：只允许通过认证的客户访问Squid" class="headerlink" title="实例4：只允许通过认证的客户访问Squid"></a>实例4：只允许通过认证的客户访问Squid</h3><p>参考: <a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/pcj_888/article/details/144328927">给Squid代理添加basic认证</a></p>
-<h3 id="一个综合案例"><a href="#一个综合案例" class="headerlink" title="一个综合案例"></a>一个综合案例</h3><p>配置squid.conf，需求如下：</p>
+<h3><span id="实例4只允许通过认证的客户访问squid">实例4：只允许通过认证的客户访问Squid</span></h3><p>参考: <a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/pcj_888/article/details/144328927">给Squid代理添加basic认证</a></p>
+<h3><span id="一个综合案例">一个综合案例</span></h3><p>配置squid.conf，需求如下：</p>
 <ul>
 <li>只允许通过HTTP basic认证的客户访问Squid</li>
 <li>对于通过认证的客户, 只允许如下FQDN通过，拒绝其他的FQDN<ul>
@@ -311,7 +311,7 @@
 <p>认证正确，访问白名单的FQDN，返回200 OK</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -x peter:123@localhost:3128 https://www.baidu.com</span><br><span class="line">curl -x peter:123@localhost:3128 https://www.yourserver.com:8080</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>【1】 <a target="_blank" rel="noopener external nofollow noreferrer" href="http://blog.zyan.cc/book/squid/chap06.html">Squid中文权威指南 第6章</a><br>【2】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://developer.aliyun.com/article/415847">巧用Squid的ACL和访问列表实现高效访问控制</a></p>
+<h2><span id="参考">参考</span></h2><p>【1】 <a target="_blank" rel="noopener external nofollow noreferrer" href="http://blog.zyan.cc/book/squid/chap06.html">Squid中文权威指南 第6章</a><br>【2】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://developer.aliyun.com/article/415847">巧用Squid的ACL和访问列表实现高效访问控制</a></p>
 
     </div>
 
@@ -432,7 +432,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ACL%E7%AE%80%E4%BB%8B"><span class="nav-text">ACL简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ACL%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95%E5%AE%9E%E4%BE%8B"><span class="nav-text">ACL使用方法实例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B1%EF%BC%9A%E5%8F%AA%E5%85%81%E8%AE%B8%E7%BD%91%E6%AE%B510-206-216-0-24%E7%9A%84%E5%AE%A2%E6%88%B7%E6%9C%BA%E8%AE%BF%E9%97%AESquid-%E6%8B%92%E7%BB%9D%E5%85%B6%E4%BB%96%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AF%B7%E6%B1%82"><span class="nav-text">实例1：只允许网段10.206.216.0&#x2F;24的客户机访问Squid, 拒绝其他客户端请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B2%EF%BC%9A%E5%8F%AA%E5%85%81%E8%AE%B8%E8%AE%BF%E9%97%AE%E6%8C%87%E5%AE%9A%E7%9A%84%E5%9F%9F%E5%90%8D%E6%88%96IP"><span class="nav-text">实例2：只允许访问指定的域名或IP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B3%EF%BC%9A%E5%85%81%E8%AE%B8%E9%9D%9E443%E7%AB%AF%E5%8F%A3%E7%9A%84FQDN%E9%80%9A%E8%BF%87"><span class="nav-text">实例3：允许非443端口的FQDN通过</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B4%EF%BC%9A%E5%8F%AA%E5%85%81%E8%AE%B8%E9%80%9A%E8%BF%87%E8%AE%A4%E8%AF%81%E7%9A%84%E5%AE%A2%E6%88%B7%E8%AE%BF%E9%97%AESquid"><span class="nav-text">实例4：只允许通过认证的客户访问Squid</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E7%BB%BC%E5%90%88%E6%A1%88%E4%BE%8B"><span class="nav-text">一个综合案例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">ACL简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">ACL使用方法实例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">实例1：只允许网段10.206.216.0&#x2F;24的客户机访问Squid, 拒绝其他客户端请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">实例2：只允许访问指定的域名或IP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">实例3：允许非443端口的FQDN通过</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">实例4：只允许通过认证的客户访问Squid</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">一个综合案例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -507,12 +507,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

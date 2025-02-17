@@ -267,19 +267,19 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
-<h2 id="安装mysqlclient报错"><a href="#安装mysqlclient报错" class="headerlink" title="安装mysqlclient报错"></a>安装mysqlclient报错</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+        <h2><span id="环境">环境</span></h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
+<h2><span id="安装mysqlclient报错">安装mysqlclient报错</span></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
 <p>报错：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
 
 <span id="more"></span>
 
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
+<h2><span id="解决方法">解决方法</span></h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">rpm -i mysql84-community-release-el9-1.noarch.rpm</span><br><span class="line">yum install -y python3-devel mysql-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
 <p><code>pip list</code> 命令查看已安装的mysqlclient信息</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pip list  | grep mysqlclient</span><br><span class="line">mysqlclient         2.2.4</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
+<h2><span id="参考">参考</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
 
     </div>
 
@@ -400,7 +400,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8E%AF%E5%A2%83"><span class="nav-text">环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85mysqlclient%E6%8A%A5%E9%94%99"><span class="nav-text">安装mysqlclient报错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">安装mysqlclient报错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -475,12 +475,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

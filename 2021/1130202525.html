@@ -271,7 +271,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><p>hiredis查询key失败后，出现key丢失的问题。</p>
+        <h3><span id="问题描述">问题描述</span></h3><p>hiredis查询key失败后，出现key丢失的问题。</p>
 <p>REDIS版本及源码：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/redis/redis/releases/tag/6.0.10">6.0.10</a></p>
 <p>hiredis版本及源码：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/redis/hiredis/releases/tag/v1.0.2">v1.0.2</a></p>
 <span id="more"></span>
@@ -282,7 +282,7 @@
 
 
 
-<h3 id="定位思路"><a href="#定位思路" class="headerlink" title="定位思路"></a>定位思路</h3><p>Redis key丢失一般有如下原因：</p>
+<h3><span id="定位思路">定位思路</span></h3><p>Redis key丢失一般有如下原因：</p>
 <ul>
 <li>key被客户端删除。</li>
 <li>key是过期键，到期自动删除。</li>
@@ -291,11 +291,11 @@
 <p>本案例中的客户端只有get,set，没有删除操作，未设置键的过期时间，且机器内存也足够（4G以上）。初步分析不出原因，只能结合REDIS源码正向定位，于是有了第二种思路：</p>
 <p><em><strong>REDIS是基于内存的数据库，字符串键肯定在REDIS-SERVER进程中的某个内存地址处，key丢失时这个地址的内容肯定被改写，这时只需要GDB打个数据断点，看下调用栈即可分析原因。</strong></em></p>
 <p>以下给出详细的定位过程。</p>
-<h3 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h3><p>1、使用GCC的-g -O0编译选项，重新编译redis-server, hiredis源代码。（这一步非必要，目的是更方便调试）</p>
+<h3><span id="定位过程">定位过程</span></h3><p>1、使用GCC的-g -O0编译选项，重新编译redis-server, hiredis源代码。（这一步非必要，目的是更方便调试）</p>
 <p>2、GDB打数据断点<br><img data-src="/2021/1130202525/image1.png"></p>
 <p>3、断点触发，观察调用栈<br><img data-src="/2021/1130202525/image2.png"></p>
 <p>观察第5帧，<code>freeMemoryIfNeeded</code>，说明触发了REDIS的内存淘汰机制，GDB打印出的REDIS配置项<code>maxmemory</code>仅为1048576字节(表示内存大小为1M)，且内存淘汰机制为<code>allkeys-lru</code>，这个机制会导致key被回收。</p>
-<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><p>修改redis配置项maxmemory，内存给多点。（这里给1073741824，表示1G内存）</p>
+<h3><span id="解决方法">解决方法</span></h3><p>修改redis配置项maxmemory，内存给多点。（这里给1073741824，表示1G内存）</p>
 
     </div>
 
@@ -417,7 +417,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E6%80%9D%E8%B7%AF"><span class="nav-text">定位思路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">定位思路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">解决方法</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -492,12 +492,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

@@ -265,19 +265,19 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware虚拟机 RockyLinux 9 x86_64</p>
+        <h2><span id="测试环境">测试环境</span></h2><p>VMware虚拟机 RockyLinux 9 x86_64</p>
 <p>双网卡：eth0(访问外网): 10.206.216.92&#x2F;24; eth1(访问内网) 192.168.1.4&#x2F;24</p>
-<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>虚拟机重启后，SSH连接失败，提示”Connection time out”，重启之前SSH连接还是正常的。</p>
+<h2><span id="问题描述">问题描述</span></h2><p>虚拟机重启后，SSH连接失败，提示”Connection time out”，重启之前SSH连接还是正常的。</p>
 <span id="more"></span>
 
 <p><img data-src="/2024/0627215122/image1.png"></p>
-<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><p>登录Vmware串口，先确认sshd进程是否启动，通过ps查看sshd进程运行进程正常, netstat查看22号端口LISTEN，这一步没问题。</p>
+<h2><span id="定位过程">定位过程</span></h2><p>登录Vmware串口，先确认sshd进程是否启动，通过ps查看sshd进程运行进程正常, netstat查看22号端口LISTEN，这一步没问题。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ps axf | grep sshd</span><br><span class="line">    996 ?        Ss     0:00 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups</span><br><span class="line">ss -antp | grep 22 | grep LISTEN</span><br><span class="line">LISTEN    0      128                   0.0.0.0:22                    0.0.0.0:*     <span class="built_in">users</span>:((&quot;sshd&quot;,pid=<span class="number">996</span>,fd=<span class="number">3</span>))</span><br></pre></td></tr></table></figure>
 
 <p>再通过<code>tcpdump -i eth0 port 22</code> 抓包，确认是否收到SSH请求报文，排除防火墙设置的原因。<br><img data-src="/2024/0627215122/image2.png"></p>
 <p>从抓包结果看，只有收的包，没有发出去的包。再用<code>route</code>命令查看路由表，发现问题：<strong>eth0默认路由Metric值为101，大于eth1的Metric(100)，这说明eth1默认路由优先级更高，结果应答报文从eth1发出去了，导致客户端收不到应答，显示”Connection time out”</strong><br><img data-src="/2024/0627215122/image3.png"></p>
 <p>通过<code>dmesg</code>查看虚拟机启动日志，发现eth1居然先于eth0 UP，所以系统自动分配给eth1的metric更小(优先级更高)。而之前SSH连接正常的时候，都是eth0先UP。<br><img data-src="/2024/0627215122/image4.png"></p>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>手动设置下两个网卡的metric值，保证eth0的<code>ipv4.route-metric</code>小于eth1就行。写个脚本每次启动跑一下：</p>
+<h2><span id="解决方法">解决方法</span></h2><p>手动设置下两个网卡的metric值，保证eth0的<code>ipv4.route-metric</code>小于eth1就行。写个脚本每次启动跑一下：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nmcli connection modify eth0 ipv4.route-metric 100</span><br><span class="line">nmcli connection modify eth1 ipv4.route-metric 101</span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c up eth1</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure>
 <p>查看网卡配置文件确认修改生效：<br><img data-src="/" alt="image5.png"></p>
 
@@ -401,7 +401,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83"><span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -476,12 +476,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

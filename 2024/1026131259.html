@@ -268,8 +268,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户在Rocky Linux 9.4的VM上配了一个local的NTP server(IP: 10.64.1.76)。配置完成后, 时钟可以同步，但一段时间后客户的firewall收到告警, 拒绝了大量目标端口为123的请求, 且这些请求的目的IP并不是客户指定的NTP server的IP，客户要求解释原因并给出解决方案。</p>
-<h2 id="定位"><a href="#定位" class="headerlink" title="定位"></a>定位</h2><p>先通过<code>chronyc sourcestats</code>命令，查看当前连接的NTP服务器</p>
+        <h2><span id="问题描述">问题描述</span></h2><p>客户在Rocky Linux 9.4的VM上配了一个local的NTP server(IP: 10.64.1.76)。配置完成后, 时钟可以同步，但一段时间后客户的firewall收到告警, 拒绝了大量目标端口为123的请求, 且这些请求的目的IP并不是客户指定的NTP server的IP，客户要求解释原因并给出解决方案。</p>
+<h2><span id="定位">定位</span></h2><p>先通过<code>chronyc sourcestats</code>命令，查看当前连接的NTP服务器</p>
 <span id="more"></span>
 
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Name/IP Address            NP  NR  Span  Frequency  Freq Skew  Offset  Std Dev</span><br><span class="line">==============================================================================</span><br><span class="line">10.64.1.76                  1   0     0     +0.000   2000.000    +15us  4000ms</span><br><span class="line">117.80.112.205              0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">202.112.29.82               0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">tock.ntp.infomaniak.ch      0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">2001:da8:9000::130          2   0     2     +0.000   2000.000  -1254us  4000ms</span><br><span class="line">ntp1.flashdance.cx          0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">tock.ntp.infomaniak.ch      0   0     0     +0.000   2000.000     +0ns  4000ms</span><br><span class="line">2001:470:1d:281::123        1   0     0     +0.000   2000.000    -12ms  4000ms</span><br><span class="line">time.cloudflare.com         1   0     0     +0.000   2000.000  -2445us  4000ms</span><br></pre></td></tr></table></figure>
@@ -282,11 +282,11 @@
 <p>想搞清楚NTP选择source的策略，需要下一份源码调试，后面有时间再来研究</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># chronyd --version  确认chronyd版本</span><br><span class="line">chronyd (chrony) version 4.3</span><br><span class="line">源码: https://git.tuxfamily.org/chrony/chrony.git/</span><br></pre></td></tr></table></figure>
 
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><ul>
+<h2><span id="解决方法">解决方法</span></h2><ul>
 <li>让客户放开这些public IP，或者123端口(这种做法显然不安全)</li>
 <li>或者禁用pool, 修改&#x2F;etc&#x2F;chrony.conf, 删掉<code>pool 2.rocky.pool.ntp.org iburst</code>, 再<code>systemctl restart chronyd</code>重启chronyd. (这种方法会降低时间同步的可靠性，如果local server不工作，时间同步就会失败)</li>
 </ul>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://chrony-project.org/index.html">https://chrony-project.org/index.html</a></p>
+<h2><span id="参考">参考</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://chrony-project.org/index.html">https://chrony-project.org/index.html</a></p>
 
     </div>
 
@@ -408,7 +408,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D"><span class="nav-text">定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -483,12 +483,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

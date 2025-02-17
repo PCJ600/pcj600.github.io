@@ -273,16 +273,16 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="测试环境"><a href="#测试环境" class="headerlink" title="测试环境"></a>测试环境</h2><p>VMware Rocky Linux 9.3 x86_64</p>
-<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>microk8s启动失败，microk8s.daemon-containerd服务启动失败，报“Failed to start Service for snap application microk8s.daemon-containerd”</p>
-<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><span id="more"></span>
+        <h2><span id="测试环境">测试环境</span></h2><p>VMware Rocky Linux 9.3 x86_64</p>
+<h2><span id="问题描述">问题描述</span></h2><p>microk8s启动失败，microk8s.daemon-containerd服务启动失败，报“Failed to start Service for snap application microk8s.daemon-containerd”</p>
+<h2><span id="定位过程">定位过程</span></h2><span id="more"></span>
 <ol>
 <li>敲<code>microk8s inspect</code>，检查相关service启动是否正常，发现snap.microk8s.daemon-containerd服务没有running.<br><img data-src="/2024/0521204320/image1.png"></li>
 <li>敲<code>journal -u snap.microk8s.daemon-containerd</code>，查看服务启动失败原因：<br><img data-src="/2024/0521204320/image2.png"></li>
 <li>观察上面的journal日志发现，microk8s.daemon-containerd反复尝试获取默认路由失败，因此怀疑是网卡配置有问题，敲<code>route</code>发现路由表为空，敲<code>ifconfig</code>发现主网卡没有配置IP地址。<br><img data-src="/2024/0521204320/image3.png"></li>
 <li>检查VMware虚拟机设置，找到网卡没有IP地址原因：主网卡没有<strong>connect</strong><br><img data-src="/2024/0521204320/image4.png"></li>
 </ol>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>Vmware VM设置里勾选网卡状态为connect，再设置主网卡IP, Gateway, DNS，重启microk8s问题解决。<br>配置网卡使用<code>nmcli</code>命令，方法如下：</p>
+<h2><span id="解决方法">解决方法</span></h2><p>Vmware VM设置里勾选网卡状态为connect，再设置主网卡IP, Gateway, DNS，重启microk8s问题解决。<br>配置网卡使用<code>nmcli</code>命令，方法如下：</p>
 <ul>
 <li>修改已存在的connection<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nmcli con mod eth0 ipv4.addresses <span class="string">&quot;<span class="variable">$&#123;ip&#125;</span>&quot;</span></span><br><span class="line">nmcli con mod eth0 ipv4.dns <span class="string">&quot;<span class="variable">$&#123;dns&#125;</span>&quot;</span></span><br><span class="line">nmcli con mod eth0 ipv4.gateway <span class="string">&quot;<span class="variable">$&#123;gw&#125;</span>&quot;</span></span><br><span class="line">nmcli con up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure></li>
 <li>connection不存在，需要新增<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nmcli con add con-name eth0 autoconnect <span class="built_in">yes</span>  <span class="built_in">type</span> ethernet ifname eth0 ipv4.method manual ip4 <span class="string">&quot;<span class="variable">$&#123;ip&#125;</span>&quot;</span> gw4 <span class="string">&quot;<span class="variable">$&#123;gw&#125;</span>&quot;</span> ipv4.dns <span class="string">&quot;<span class="variable">$&#123;dns&#125;</span>&quot;</span></span><br><span class="line">nmcli c up eth0</span><br><span class="line">nmcli c reload</span><br></pre></td></tr></table></figure></li>
@@ -408,7 +408,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83"><span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E8%BF%87%E7%A8%8B"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -483,12 +483,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--

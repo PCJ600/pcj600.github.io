@@ -260,18 +260,18 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我在VMware ESXi上，用官方Rockylinux minimal ISO装了一台Linux机器。导出OVA文件发现大小有3个G。查看OVA文件，发现有个ISO文件占了2G，这个ISO文件用不到，如何删除？</p>
+        <h2><span id="问题描述">问题描述</span></h2><p>我在VMware ESXi上，用官方Rockylinux minimal ISO装了一台Linux机器。导出OVA文件发现大小有3个G。查看OVA文件，发现有个ISO文件占了2G，这个ISO文件用不到，如何删除？</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># tar tvf va.ova</span><br><span class="line">-rw-r--r-- someone/someone 9876 2024-12-17 02:27 va.ovf</span><br><span class="line">-rw-r--r-- someone/someone  345 2024-12-17 02:27 va.mf</span><br><span class="line">-rw-r--r-- someone/someone 1829634048 2024-12-17 02:27 va-file1.iso</span><br><span class="line">-rw-r--r-- someone/someone 1332535296 2024-12-17 02:28 va-disk1.vmdk</span><br><span class="line">-rw-r--r-- someone/someone       8684 2024-12-17 02:28 va-file2.nvram</span><br></pre></td></tr></table></figure>
-<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>Poweroff虚拟机，修改虚拟机配置，把光驱删掉，再重新导出OVA即可 </p>
+<h2><span id="解决方法">解决方法</span></h2><p>Poweroff虚拟机，修改虚拟机配置，把光驱删掉，再重新导出OVA即可 </p>
 <span id="more"></span>
 <p><img data-src="/2024/1217233142/image1.png" alt="image1.png"></p>
 <p>新的OVA大小只有1.3G，且ISO成功删除</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar tvf ./va.ova</span><br><span class="line">-rw-r--r-- someone/someone 9226 2024-12-17 02:41 va.ovf</span><br><span class="line">-rw-r--r-- someone/someone  258 2024-12-17 02:41 va.mf</span><br><span class="line">-rw-r--r-- someone/someone 1332317696 2024-12-17 02:42 va-disk1.vmdk</span><br><span class="line">-rw-r--r-- someone/someone       8684 2024-12-17 02:42 va-file1.nvram</span><br></pre></td></tr></table></figure>
 
-<h2 id="VMware-ESXi导出OVA的方法"><a href="#VMware-ESXi导出OVA的方法" class="headerlink" title="VMware ESXi导出OVA的方法"></a>VMware ESXi导出OVA的方法</h2><p>除了在UI上导出，也可以通过Vmware PowerCLI和ovftool导出OVA</p>
+<h2><span id="vmware-esxi导出ova的方法">VMware ESXi导出OVA的方法</span></h2><p>除了在UI上导出，也可以通过Vmware PowerCLI和ovftool导出OVA</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pwsh</span><br><span class="line">PS&gt; Set-PowerCLIConfiguration -InvalidCertificateAction &quot;Ignore&quot; -Confirm:$false | Out-Null</span><br><span class="line">PS&gt; connect-viserver &#123;your_viserver_ip&#125; -User root -Password &#123;your_password&#125;  </span><br><span class="line">PS&gt; ovftool -dm=thin --noSSLVerify --powerOffSource vi://root:&#123;your_password&#125;@&#123;viserver_ip&#125;//&#123;your_vm_name&#125; va.ova</span><br></pre></td></tr></table></figure>
 
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://duiz.net/3491.html">https://duiz.net/3491.html</a></p>
+<h2><span id="参考">参考</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://duiz.net/3491.html">https://duiz.net/3491.html</a></p>
 
     </div>
 
@@ -389,7 +389,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E6%8F%8F%E8%BF%B0"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#VMware-ESXi%E5%AF%BC%E5%87%BAOVA%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-text">VMware ESXi导出OVA的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">VMware ESXi导出OVA的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -464,12 +464,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">752k</span>
+    <span title="站点总字数">757k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:24</span>
+    <span title="站点阅读时长">11:28</span>
 </div>
 
 <!--
