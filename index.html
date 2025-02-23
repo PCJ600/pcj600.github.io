@@ -239,7 +239,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>4.6k</span>
+              <span>4.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -265,7 +265,7 @@
 <li>消费者只负责从消息队列中取数据处理，谁发送数据他不管</li>
 </ul>
 <h1 id="常见消息队列中间件"><a href="#常见消息队列中间件" class="headerlink" title="常见消息队列中间件"></a>常见消息队列中间件</h1><ul>
-<li>Kafka 高吞吐量实时日志采集</li>
+<li>Kafka 高吞吐量, 实时日志采集</li>
 <li>RabbitMQ Erlang语言, 灵活性和易用性，中小规模应用</li>
 <li>RocketMQ 阿里出品, Java开发, 国内市场有很高知名度和应用案例</li>
 </ul>
@@ -310,7 +310,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2025/0205201812.html" class="post-title-link" itemprop="url">RabbitMQ入门</a>
+            <a href="/2025/0205201812.html" class="post-title-link" itemprop="url">RabbitMQ入门教程</a>
         </h2>
 
         <div class="post-meta">
@@ -568,116 +568,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0110201917.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0110201917.html" class="post-title-link" itemprop="url">VA backend Design</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-01-10 20:19:17" itemprop="dateCreated datePublished" datetime="2025-01-10T20:19:17+08:00">2025-01-10</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/interview/" itemprop="url" rel="index"><span itemprop="name">interview</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>27k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>24 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">frontend -------&gt;  backend ---------&gt; MQ -----------&gt;  VA(On-premise)</span><br><span class="line">                       /|\                             |  </span><br><span class="line">                        |------------------------------|</span><br><span class="line">						</span><br><span class="line">peter.backend.com:443  backend</span><br><span class="line">peter.channel.com:5672 MQ</span><br><span class="line">peter.frontend.com     frontend</span><br></pre></td></tr></table></figure>
-
-<h1 id="Design"><a href="#Design" class="headerlink" title="Design"></a>Design</h1><h2 id="Auto-upgrade"><a href="#Auto-upgrade" class="headerlink" title="Auto-upgrade"></a>Auto-upgrade</h2><p>dispatchAutoUpgradeInOneHourForAll</p>
-<ul>
-<li>find all running appliances, group by customer_id</li>
-<li>check if appliance need upgrade<ul>
-<li>check schedule update time is within next 1 hour.</li>
-<li>check target version valid (expectedStatus &#x3D; RUNNING and status is not RUNNING)</li>
-<li>don’t upgrade rollback appliances.</li>
-<li>don’t upgrade all appliances at the same time. upgrade half appliances first.</li>
-</ul>
-</li>
-<li>trigger appliance upgrade<ul>
-<li>get firmware download link</li>
-<li>update db, add dbentry for IotTask, update appliance status(upgrading, upgradetaskId: taskId)</li>
-<li>publish iot Task</li>
-</ul>
-</li>
-<li>receive response from Appliance<ul>
-<li>write task to db</li>
-</ul>
-</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/0110201917.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0106201917.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -754,6 +644,94 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2025/0106201917.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1229141431.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/1229141431.html" class="post-title-link" itemprop="url">过去15年A股的收益率如何?</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-12-29 14:14:31" itemprop="dateCreated datePublished" datetime="2024-12-29T14:14:31+08:00">2024-12-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/investment/" itemprop="url" rel="index"><span itemprop="name">investment</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>479</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>来看一张经典的图<br/></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/1229141431.html#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -903,12 +881,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">756k</span>
+    <span title="站点总字数">768k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:27</span>
+    <span title="站点阅读时长">11:38</span>
 </div>
 
 <!--

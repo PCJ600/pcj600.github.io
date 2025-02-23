@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="项目1: Trend Micro - Service Gateway 简单介绍下你的项目 为什么选择双系统全量升级方案? 固件的具体内容包括哪些？如何保证其最小化但又能满足功能需求 在线升级整体流程是什么, Python升级模块怎么设计的 你提到多线程来处理不同类型的任务，但如何保证线程间的同步和数据一致性？ 为什么引入消息队列 你如何防止重复消费 如何保证消息传递可靠性, 是否有重试机制或">
+<meta property="og:type" content="article">
+<meta property="og:title" content="项目问题梳理">
+<meta property="og:url" content="https://pcj600.github.io/2020/0102175630.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="项目1: Trend Micro - Service Gateway 简单介绍下你的项目 为什么选择双系统全量升级方案? 固件的具体内容包括哪些？如何保证其最小化但又能满足功能需求 在线升级整体流程是什么, Python升级模块怎么设计的 你提到多线程来处理不同类型的任务，但如何保证线程间的同步和数据一致性？ 为什么引入消息队列 你如何防止重复消费 如何保证消息传递可靠性, 是否有重试机制或">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-01-02T09:56:30.000Z">
+<meta property="article:modified_time" content="2025-02-23T10:06:16.560Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="interview">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://pcj600.github.io/2020/0102175630.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>项目问题梳理 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">Life is short, Play more!</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">35</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">48</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">173</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2020/0102175630.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          项目问题梳理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-02 17:56:30" itemprop="dateCreated datePublished" datetime="2020-01-02T17:56:30+08:00">2020-01-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/interview/" itemprop="url" rel="index"><span itemprop="name">interview</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>12k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>10 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <!-- toc -->
+
+<ul>
+<li><a href="#%E9%A1%B9%E7%9B%AE1-trend-micro-service-gateway">项目1: Trend Micro - Service Gateway</a><ul>
+<li><a href="#%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%E4%B8%8B%E4%BD%A0%E7%9A%84%E9%A1%B9%E7%9B%AE">简单介绍下你的项目</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9%E5%8F%8C%E7%B3%BB%E7%BB%9F%E5%85%A8%E9%87%8F%E5%8D%87%E7%BA%A7%E6%96%B9%E6%A1%88">为什么选择双系统全量升级方案?</a></li>
+<li><a href="#%E5%9B%BA%E4%BB%B6%E7%9A%84%E5%85%B7%E4%BD%93%E5%86%85%E5%AE%B9%E5%8C%85%E6%8B%AC%E5%93%AA%E4%BA%9B%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E5%85%B6%E6%9C%80%E5%B0%8F%E5%8C%96%E4%BD%86%E5%8F%88%E8%83%BD%E6%BB%A1%E8%B6%B3%E5%8A%9F%E8%83%BD%E9%9C%80%E6%B1%82">固件的具体内容包括哪些？如何保证其最小化但又能满足功能需求</a></li>
+<li><a href="#%E5%9C%A8%E7%BA%BF%E5%8D%87%E7%BA%A7%E6%95%B4%E4%BD%93%E6%B5%81%E7%A8%8B%E6%98%AF%E4%BB%80%E4%B9%88-python%E5%8D%87%E7%BA%A7%E6%A8%A1%E5%9D%97%E6%80%8E%E4%B9%88%E8%AE%BE%E8%AE%A1%E7%9A%84">在线升级整体流程是什么, Python升级模块怎么设计的</a></li>
+<li><a href="#%E4%BD%A0%E6%8F%90%E5%88%B0%E5%A4%9A%E7%BA%BF%E7%A8%8B%E6%9D%A5%E5%A4%84%E7%90%86%E4%B8%8D%E5%90%8C%E7%B1%BB%E5%9E%8B%E7%9A%84%E4%BB%BB%E5%8A%A1%E4%BD%86%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E7%BA%BF%E7%A8%8B%E9%97%B4%E7%9A%84%E5%90%8C%E6%AD%A5%E5%92%8C%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7">你提到多线程来处理不同类型的任务，但如何保证线程间的同步和数据一致性？</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BC%95%E5%85%A5%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97">为什么引入消息队列</a></li>
+<li><a href="#%E4%BD%A0%E5%A6%82%E4%BD%95%E9%98%B2%E6%AD%A2%E9%87%8D%E5%A4%8D%E6%B6%88%E8%B4%B9">你如何防止重复消费</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E5%8F%AF%E9%9D%A0%E6%80%A7-%E6%98%AF%E5%90%A6%E6%9C%89%E9%87%8D%E8%AF%95%E6%9C%BA%E5%88%B6%E6%88%96%E6%B6%88%E6%81%AF%E7%A1%AE%E8%AE%A4%E6%9C%BA%E5%88%B6">如何保证消息传递可靠性, 是否有重试机制或消息确认机制 ?</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9aws-iot-%E6%9C%89%E6%B2%A1%E6%9C%89%E8%80%83%E8%99%91%E5%85%B6%E4%BB%96mq%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">为什么选择AWS IoT, 有没有考虑其他MQ解决方案 ?</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AE%BE%E8%AE%A1cronjob%E4%B8%8D%E7%9B%B4%E6%8E%A5%E5%9C%A8python%E6%9C%8D%E5%8A%A1%E9%87%8C%E5%A4%84%E7%90%86%E5%8D%87%E7%BA%A7">为什么设计Cronjob，不直接在Python服务里处理升级</a></li>
+<li><a href="#%E5%90%AF%E5%8A%A8%E9%A1%B9%E5%88%87%E6%8D%A2%E5%88%B0%E5%A4%87%E7%94%A8%E5%88%86%E5%8C%BA%E7%9A%84%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F%E6%98%AF%E4%BB%80%E4%B9%88">启动项切换到备用分区的具体实现方式是什么？</a></li>
+<li><a href="#%E8%AF%B4%E4%B8%8Blinux%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B">说下Linux启动流程</a></li>
+<li><a href="#%E8%AF%B4%E4%B8%8Bgrub%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86">说下GRUB工作原理</a></li>
+<li><a href="#%E5%85%A8%E9%87%8F%E5%8D%87%E7%BA%A7%E5%8C%85%E7%9A%84%E4%B8%8B%E8%BD%BD%E5%92%8C%E8%A7%A3%E5%8E%8B%E8%BF%87%E7%A8%8B%E4%B8%AD%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86%E7%BD%91%E7%BB%9C%E4%B8%AD%E6%96%AD%E6%88%96%E7%A3%81%E7%9B%98%E7%A9%BA%E9%97%B4%E4%B8%8D%E8%B6%B3%E7%9A%84%E9%97%AE%E9%A2%98">全量升级包的下载和解压过程中，如何处理网络中断或磁盘空间不足的问题 ?</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89microk8s-%E4%B8%8D%E9%80%89k3s-minukube">为什么选Microk8s, 不选k3s, minukube ?</a></li>
+<li><a href="#os%E8%BF%81%E7%A7%BB%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">OS迁移怎么做的</a></li>
+<li><a href="#%E5%9B%9E%E6%BB%9A%E6%9C%BA%E5%88%B6%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84-%E8%BF%98%E6%98%AF%E5%8F%AA%E8%83%BD%E5%AE%8C%E5%85%A8%E5%9B%9E%E6%BB%9A%E6%95%B4%E4%B8%AA%E7%B3%BB%E7%BB%9F">回滚机制是如何实现的？ 还是只能完全回滚整个系统？</a></li>
+<li><a href="#%E4%BC%98%E5%8C%96%E4%BA%86%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%9A%84%E9%9B%86%E6%88%90%E6%96%B9%E6%A1%88-%E8%BF%99%E4%B8%AA%E6%98%AF%E6%80%8E%E4%B9%88%E5%9B%9E%E4%BA%8B">优化了微服务的集成方案, 这个是怎么回事?</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AEingress%E7%9A%84-nginx%E5%A6%82%E4%BD%95%E6%8F%90%E4%BE%9B%E7%BB%9F%E4%B8%80%E5%85%A5%E5%8F%A3%E7%82%B9%E7%9A%84%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F%E6%98%AF%E4%BB%80%E4%B9%88-%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E6%98%AF%E4%BB%80%E4%B9%88">如何配置Ingress的? Nginx如何提供统一入口点的，具体实现方式是什么? 具体实现原理是什么?</a></li>
+<li><a href="#%E5%BC%95%E5%85%A5ingress%E5%90%8E%E5%A6%82%E4%BD%95%E7%A1%AE%E4%BF%9D%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%9A%84%E5%AE%89%E5%85%A8%E6%80%A7">引入Ingress后，如何确保微服务的安全性？</a></li>
+<li><a href="#cli%E6%80%8E%E4%B9%88%E5%BC%80%E5%8F%91%E7%9A%84">CLI怎么开发的</a></li>
+<li><a href="#%E6%80%8E%E4%B9%88%E5%AE%9E%E7%8E%B0%E6%B3%A8%E5%86%8C%E7%9A%84">怎么实现注册的</a></li>
+<li><a href="#jwt%E6%A0%A1%E9%AA%8C%E6%B5%81%E7%A8%8B%E6%98%AF%E4%BB%80%E4%B9%88">JWT校验流程是什么</a></li>
+<li><a href="#%E4%B8%BA%E5%95%A5appliancetoken%E5%92%8Cregistertoken%E6%98%AF%E4%B8%80%E6%A0%B7%E7%9A%84%E5%91%A2">为啥applianceToken和registerToken是一样的呢 ?</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9jwt-%E8%80%8C%E4%B8%8D%E6%98%AFup%E6%88%96%E8%80%85session">为什么选择JWT, 而不是u&#x2F;p或者session</a></li>
+<li><a href="#jwt%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E5%A6%82%E4%BD%95%E8%AE%BE%E7%BD%AE%E7%9A%84%E6%80%8E%E4%B9%88%E5%90%8C%E6%AD%A5%E7%9A%84">JWT过期时间如何设置的，怎么同步的</a></li>
+<li><a href="#%E5%BC%80%E5%8F%91%E4%BA%86%E4%B8%80%E7%BB%84%E8%AF%8A%E6%96%AD%E5%91%BD%E4%BB%A4%E7%94%A8%E4%BA%8E%E5%BF%AB%E9%80%9F%E5%AE%9A%E4%BD%8D-os-kubernetes-%E5%92%8C%E7%BD%91%E7%BB%9C%E7%9B%B8%E5%85%B3%E9%97%AE%E9%A2%98">开发了一组诊断命令，用于快速定位 OS、Kubernetes 和网络相关问题</a></li>
+<li><a href="#%E8%83%BD%E4%B8%BE%E4%B8%80%E4%B8%AAtroubleshooting%E5%AE%A2%E6%88%B7%E6%A1%88%E4%BE%8B%E5%90%97-%E4%BD%A0%E6%80%8E%E4%B9%88%E8%A7%A3%E5%86%B3%E7%9A%84">能举一个troubleshooting客户案例吗, 你怎么解决的</a></li>
+<li><a href="#%E9%A1%B9%E7%9B%AE%E6%9C%89%E5%90%88%E4%BD%9C%E5%90%97%E6%80%8E%E4%B9%88%E5%90%88%E4%BD%9C%E7%9A%84">项目有合作吗，怎么合作的</a></li>
+<li><a href="#%E9%A1%B9%E7%9B%AE%E5%AD%98%E5%9C%A8%E5%93%AA%E4%BA%9B%E4%BC%98%E5%8C%96%E7%A9%BA%E9%97%B4">项目存在哪些优化空间</a></li>
+</ul>
+</li>
+<li><a href="#%E9%A1%B9%E7%9B%AE2-forward-proxy-service">项目2: Forward Proxy Service</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8D%E4%B8%8Bforward-proxy%E8%BF%99%E4%B8%AA%E9%A1%B9%E7%9B%AE">介绍下Forward Proxy这个项目</a></li>
+<li><a href="#forward-proxy-service%E6%98%AF%E5%A6%82%E4%BD%95%E9%83%A8%E7%BD%B2%E7%9A%84">Forward Proxy Service是如何部署的？</a></li>
+<li><a href="#%E5%B9%B6%E5%8F%91%E9%87%8F%E6%9C%89%E5%A4%9A%E5%B0%91%E6%80%8E%E4%B9%88%E6%B5%8B%E8%AF%95%E7%9A%84">并发量有多少，怎么测试的</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89squid-%E6%98%AF%E5%90%A6%E6%9C%89%E5%85%B6%E4%BB%96%E6%9B%BF%E4%BB%A3%E6%96%B9%E6%A1%88nginx-haproxy">为什么选Squid, 是否有其他替代方案(Nginx, HAProxy)?</a></li>
+<li><a href="#squid%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E7%9A%84%E5%8E%9F%E7%90%86">Squid正向代理的原理</a></li>
+<li><a href="#squid%E7%9A%84%E5%AE%89%E5%85%A8%E8%AE%A4%E8%AF%81%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9basic%E8%AE%A4%E8%AF%81-%E8%BF%98%E6%9C%89%E5%93%AA%E4%BA%9B%E8%AE%A4%E8%AF%81%E6%96%B9%E5%BC%8F">Squid的安全认证是如何实现的？ 为什么选择Basic认证, 还有哪些认证方式?</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88squid%E4%BB%A3%E7%90%86%E4%BD%BF%E7%94%A8http-%E4%B8%8D%E6%98%AFhttps">为什么Squid代理使用HTTP, 不是HTTPS</a></li>
+<li><a href="#%E8%AE%BF%E9%97%AE%E6%8E%A7%E5%88%B6%E7%9A%84%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F%E6%98%AF%E4%BB%80%E4%B9%88%E4%BE%8B%E5%A6%82%E6%98%AF%E5%90%A6%E5%9F%BA%E4%BA%8Eip%E5%9C%B0%E5%9D%80-%E6%88%96url-%E7%99%BD%E5%90%8D%E5%8D%95%E9%BB%91%E5%90%8D%E5%8D%95">访问控制的具体实现方式是什么？例如是否基于IP地址、或URL 白名单&#x2F;黑名单？</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AE%E7%94%A8%E6%88%B7%E4%BB%A3%E7%90%86%E4%BD%9C%E7%94%A8%E6%98%AF%E4%BB%80%E4%B9%88%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">配置用户代理作用是什么，怎么做的</a></li>
+<li><a href="#squid-%E7%9A%84%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6%E6%98%AF%E5%90%A6%E8%A2%AB%E5%90%AF%E7%94%A8%E5%A6%82%E6%9E%9C%E6%9C%89%E5%85%B7%E4%BD%93%E7%9A%84%E7%BC%93%E5%AD%98%E7%AD%96%E7%95%A5%E6%98%AF%E4%BB%80%E4%B9%88">Squid 的缓存机制是否被启用？如果有，具体的缓存策略是什么？</a></li>
+<li><a href="#%E8%AF%B4%E4%B8%80%E4%B8%8Bstunnel%E7%9A%84%E5%8A%A0%E5%AF%86%E9%80%9A%E4%BF%A1%E6%96%B9%E6%A1%88">说一下Stunnel的加密通信方案</a></li>
+<li><a href="#stunnel%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86">Stunnel工作原理</a></li>
+<li><a href="#%E4%B8%BE%E4%B8%80%E4%B8%AA%E5%AE%9A%E4%BD%8D%E6%A1%88%E4%BE%8B">举一个定位案例</a></li>
+</ul>
+</li>
+<li><a href="#%E9%A1%B9%E7%9B%AE3-matrix%E4%BB%BF%E7%9C%9F%E5%B9%B3%E5%8F%B0">项目3: Matrix仿真平台</a><ul>
+<li><a href="#%E9%A9%B1%E5%8A%A8%E6%8E%A5%E5%8F%A3%E4%BB%BF%E7%9C%9F%E6%98%AF%E6%80%8E%E4%B9%88%E5%9B%9E%E4%BA%8B">驱动接口仿真是怎么回事</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8redis%E4%B8%8D%E7%94%A8mysql">为什么用Redis不用MySQL?</a></li>
+<li><a href="#%E8%AF%BB%E5%86%99redis%E5%BA%93%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">读写Redis库怎么做的</a></li>
+<li><a href="#redis%E6%8C%82%E4%BA%86%E6%80%8E%E4%B9%88%E5%8A%9E-%E5%8F%AF%E9%9D%A0%E6%80%A7%E6%80%8E%E4%B9%88%E8%80%83%E8%99%91">Redis挂了怎么办, 可靠性怎么考虑</a></li>
+<li><a href="#%E5%88%A9%E7%94%A8redis%E7%9A%84%E9%94%AE%E7%A9%BA%E9%97%B4%E9%80%9A%E7%9F%A5%E6%9C%BA%E5%88%B6-%E5%BC%80%E5%8F%91%E4%BA%86%E4%B8%80%E7%BB%84%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E7%9A%84api">利用Redis的键空间通知机制, 开发了一组发布订阅的API</a></li>
+<li><a href="#3-%E6%8A%8Aredis%E7%9F%AD%E8%BF%9E%E6%8E%A5%E4%BC%98%E5%8C%96%E4%B8%BA%E9%95%BF%E8%BF%9E%E6%8E%A5%E6%80%8E%E4%B9%88%E5%9B%9E%E4%BA%8B">3. 把Redis短连接优化为长连接怎么回事</a></li>
+<li><a href="#%E5%B7%A5%E5%85%B7%E6%98%AF%E4%BD%A0%E4%B8%80%E4%B8%AA%E5%81%9A%E7%9A%84%E8%BF%98%E6%98%AF%E5%90%88%E4%BD%9C%E7%9A%84%E6%80%8E%E4%B9%88%E5%90%88%E4%BD%9C%E7%9A%84">工具是你一个做的？还是合作的？怎么合作的？</a></li>
+<li><a href="#%E4%BD%A0%E8%A7%89%E5%BE%97%E8%BF%98%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8C%96">你觉得还有什么优化</a></li>
+<li><a href="#%E4%B8%BE%E4%B8%80%E4%B8%AA%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D%E6%A1%88%E4%BE%8B">举一个问题定位案例</a></li>
+</ul>
+</li>
+</ul>
+<!-- tocstop -->
+
+<span id="more"></span>
+
+<h1><span id="项目1-trend-micro-service-gateway">项目1: Trend Micro - Service Gateway</span></h1><h2><span id="简单介绍下你的项目">简单介绍下你的项目</span></h2><ul>
+<li>我参与的项目是Service Gateway, 一个安装在企业网络的服务网关, 允许本地的趋势产品访问后端服务</li>
+<li>服务网关由两部分组成: 一个部署在客户网络的Linux虚拟机设备和一个云端的APP</li>
+<li>虚拟设备安装了Microk8s, 给本地的安全产品提供服务, 减少客户的带宽消耗. 云端的APP包括一个前后端, 用于管理连接的虚拟设备</li>
+<li>我负责虚拟设备和微服务的设计开发工作, 主要贡献是设计了一个虚拟设备固件的双系统分区升级方案, 解决了开发过程中的痛点, 改善了客户体验. </li>
+<li>目前有6k+企业客户, 1w+台设备使用我的升级方案</li>
+</ul>
+<h2><span id="为什么选择双系统全量升级方案">为什么选择双系统全量升级方案?</span></h2><p>首先交代背景, 为什么要重新设计原来的方案</p>
+<p>我们提到, 虚拟设备安装在客户本地网络中, 虚拟设备的固件和微服务需要定期升级. 固件就是指虚拟机ISO镜像, 包括CentOS+Microk8s+软件<br>早期采用增量升级方案, 有三个问题很难解决</p>
+<ul>
+<li>每次升级需要维护两个版本间差异, 导致历史代码积累, 增加开发维护的复杂度</li>
+<li>无法实现OS迁移，早期我们使用的发行版是CentOS, 面临CentOS停止维护的问题, 一个系统分区很难实现OS的迁移</li>
+<li>不支持回滚, 升级出现故障后很难恢复, 只能让客户重装，客户体验非常差</li>
+</ul>
+<p>为了解决这些问题, 我们自然想到了双系统分区方案. 比如嵌入式设备, 安卓设备都采用A&#x2F;B分级升级的方案</p>
+<h2><span id="固件的具体内容包括哪些如何保证其最小化但又能满足功能需求">固件的具体内容包括哪些？如何保证其最小化但又能满足功能需求</span></h2><p>ISO镜像包括一个RockyLinux官方ISO, Microk8s, 升级模块RPM包, 一个CLI命令行<br>我们采用了很多策略, 实现镜像的最小化</p>
+<ul>
+<li>使用RockyLinux 9.4官方的最小发行版定制ISO镜像, 官方镜像只有1.7G</li>
+<li>选择了Microk8s, 一个轻量化的K8s发行版。 Microk8s插件支持按需加载, 只安装必要的插件</li>
+<li>客户用OVA安装虚拟设备而不是直接用ISO。 为了最小化OVA<ul>
+<li>只分配有限空间给构建镜像的虚拟机, 等客户安装成功后再自动分配剩余磁盘空间。 </li>
+<li>导出OVA前，清理临时文件，日志文件, 临时关闭swap分区<br>最终导出的OVA在2.5G左右</li>
+</ul>
+</li>
+</ul>
+<h2><span id="在线升级整体流程是什么-python升级模块怎么设计的">在线升级整体流程是什么, Python升级模块怎么设计的</span></h2><p>在线升级的整体流程时:</p>
+<ul>
+<li>首先划分双系统分区, 构建虚拟设备镜像, 基于镜像出一个全量的升级包（压缩包)</li>
+<li>虚拟设备下载升级包，把升级包解压到备用系统分区</li>
+<li>在通过设置启动项, 切换到备用分区完成升级</li>
+</ul>
+<p>为了实现在线升级的功能, 我开发了一个升级模块. 升级模块包含一个Python的后台进程和一个Cronjob脚本, 部署在虚拟设备上<br>Python daemon的作用是, 通过AWS IoT消息队列, 消费后端发来的升级任务. 设计方法:</p>
+<ul>
+<li>基于AWS IoT的SDK实现了一个MQ的消费端</li>
+<li>利用Python中线程安全的队列, 消费者收到消息后，根据消息类型, 把消息分发到不同的队列. 每个消费线程从各自队列中取消息处理.</li>
+</ul>
+<h2><span id="你提到多线程来处理不同类型的任务但如何保证线程间的同步和数据一致性">你提到多线程来处理不同类型的任务，但如何保证线程间的同步和数据一致性？</span></h2><p>使用Python的Queue处理不同类型任务, 利用Queue的线程安全特性, 保证多个线程同时访问队列不会出现数据竞争问题</p>
+<h2><span id="为什么引入消息队列">为什么引入消息队列</span></h2><ul>
+<li>实现后端和虚拟设备的异步通信。 由于虚拟设备的IP可能变更, 使用HTTP通过IP请求的方式可能会失败</li>
+<li>减轻后端压力，因为升级任务耗时较长, HTTP交互不适合长时间任务</li>
+</ul>
+<h2><span id="你如何防止重复消费">你如何防止重复消费</span></h2><ul>
+<li>首先每个消息都有一个UUID类型的taskID<br>在Python daemon中, 利用Python过期字典，每次消费时, 先获取锁, 检查taskID是否在过期字典中; 如果ID存在说明重复消息; 否则消费消息, 把taskID添加到过期字典</li>
+<li>第二个是消费消息做到幂等性, 比如升级场景, 如果判断当前版本和目标版本一致, 就不做处理. 保证同一个task执行多次，结果也是一致的。</li>
+</ul>
+<h2><span id="如何保证消息传递可靠性-是否有重试机制或消息确认机制">如何保证消息传递可靠性, 是否有重试机制或消息确认机制 ?</span></h2><ul>
+<li>Aws IoT协议的Qos(服务质量)机制, 支持QOS 1, 至少一次消息传递, 重复发送直到收到PUBACK</li>
+<li>发送端发送失败后重试3次</li>
+</ul>
+<h2><span id="为什么选择aws-iot-有没有考虑其他mq解决方案">为什么选择AWS IoT, 有没有考虑其他MQ解决方案 ?</span></h2><ul>
+<li>AWS IoT支持基于Topic的主题分发, 每个虚拟设备通过订阅topic执行升级任务, 功能上可以满足要求</li>
+<li>AWS IoT支持MQTT协议，轻量高效，资源消耗低, 适合本地设备的通信</li>
+<li>AWS IoT是Amazon提供的服务, 经过了企业生产环境验证, 具有稳定性和可靠性, 且我们公司在普遍使用AWS的服务, 选择AWS IoT可以简化开发流程</li>
+<li>不选择Kafka，是因为我们的并发需求不高, 6k客户,1w+虚拟设备, 主要是低频但关键的任务。 使用Kafka没有明显优势，反而增加复杂性</li>
+<li>不选择RabbitMQ, 因为这需要自行搭建，维护集群. 增加开发维护成本</li>
+</ul>
+<h2><span id="为什么设计cronjob不直接在python服务里处理升级">为什么设计Cronjob，不直接在Python服务里处理升级</span></h2><p>这样设计是考虑到职责分离; Python Daemon专注于消息消费和记录任务, Cronjob负责具体任务执行, 这样便于维护和扩展。</p>
+<h2><span id="启动项切换到备用分区的具体实现方式是什么">启动项切换到备用分区的具体实现方式是什么？</span></h2><p>使用grubby管理启动项, grubby是一个专门用于管理GRUB的工具，比手动编辑GRUB配置文件更安全高效<br>实现步骤概括: 划分独立的boot分区, 禁用os_prober, 使用grubby添加启动项, 设置默认启动项, 重装GRUB<br>理解GRUB工作原理, Linux启动流程, 完成开发和调试工作。 </p>
+<h2><span id="说下linux启动流程">说下Linux启动流程</span></h2><ul>
+<li>系统加电, BIOS开机自检</li>
+<li>按照BIOS设定启动的顺序, 查找可启动设备, 通常是硬盘, 把控制权交给GRUB</li>
+<li>GRUB把内核加载到内存，挂载initrd, 通过initrd加载真正的根文件系统</li>
+<li>内核启动完成后, 执行第一个用户空间进程init, init负责启动其他服务</li>
+</ul>
+<h2><span id="说下grub工作原理">说下GRUB工作原理</span></h2><p>GRUB是Linux的引导加载程序，负责将内核加载到内存中启动，两阶段运行<br>一阶段位于磁盘的主引导记录(MBR)中，加载二阶段的core.img; core.img读取grub.cfg, 生成启动菜单, 加载指定的内核和initrd</p>
+<h2><span id="全量升级包的下载和解压过程中如何处理网络中断或磁盘空间不足的问题">全量升级包的下载和解压过程中，如何处理网络中断或磁盘空间不足的问题 ?</span></h2><p>对于网络中断的处理</p>
+<ul>
+<li>升级时, 虚拟设备从云端获取升级包下载链接和sha256sum校验值。 使用wget -c下载, 支持断点续传。</li>
+<li>下载完成后, 通过sha256sum校验文件完整性。 如果校验失败，说明下载失败, 此时通知后端下载失败, 提示客户重试。<br>磁盘空间不足的处理</li>
+<li>后端每15分钟收集所有虚拟设备的metrics，包括磁盘使用率，内存，CPU负载。 磁盘占用超过80%，通过UI提示客户kongjian 不足。</li>
+<li>另外, 我们实现了磁盘扩容的功能，支持客户在UI上扩容或者通过CLI里离线扩容</li>
+</ul>
+<h2><span id="为什么选microk8s-不选k3s-minukube">为什么选Microk8s, 不选k3s, minukube ?</span></h2><ul>
+<li>除了Microk8s, 还有minukube, k3s. Minikube只适合本地开发和学习，不是为企业生产环境设计的，缺乏高可用性，排除</li>
+<li>k3s有很多优点, 比如使用二进制文件, 依赖少，资源占用低，社区比Microk8s活跃</li>
+<li>Microk8s的缺点是社区活跃不足, 且安装依赖snapd, 但是这种影响可控。 且项目早期已选择Microk8s,为了保持一致性，减少迁移成本，最终仍然选择了Microk8s</li>
+</ul>
+<h2><span id="os迁移怎么做的">OS迁移怎么做的</span></h2><p>首先说下OS迁移面临的难点</p>
+<ul>
+<li>从单分区到双分区, 需要重建分区表, 这会破坏当前系统数据. 怎么一键式重建分区是个难点</li>
+<li>还要考虑扩展性, 后续如果有迁移OS的需求，做到零修改</li>
+</ul>
+<p>我们的做法是, 基于CentOS ISO中的initrd做定制, 把升级包复制到临时内存, 对磁盘重建分区, 再把升级包解压到真正根文件系统, 恢复系统配置和登录口令</p>
+<h2><span id="回滚机制是如何实现的-还是只能完全回滚整个系统">回滚机制是如何实现的？ 还是只能完全回滚整个系统？</span></h2><p>客户只需在CLI上敲rollback即可, 我们会通过grubby设置启动项, 重启后启动切换到前一个分区</p>
+<h2><span id="优化了微服务的集成方案-这个是怎么回事">优化了微服务的集成方案, 这个是怎么回事?</span></h2><p>早期版本中, 微服务镜像和部署文件以RPM包集成在ISO中。 基础镜像有5G, 客户部署时间很长</p>
+<p>优化的方法是, 把微服务从镜像中解耦开, 通过网络下载的方式灵活安装, 具体做法是:</p>
+<ul>
+<li>给每个微服务分配一个独一无二的serviceCode, 服务网关根据serviceCode创建同名的namespace, 实现资源隔离</li>
+<li>定义统一的部署标准, 每个微服务需要提供一个tar.gz的部署包, 包括容器镜像和部署yaml, 包括deployment, service, configmap, volume, Ingress, 发布到AWS S3</li>
+<li>启动Microk8s的Ingress插件，提供统一的服务入口</li>
+</ul>
+<h2><span id="如何配置ingress的-nginx如何提供统一入口点的具体实现方式是什么-具体实现原理是什么">如何配置Ingress的? Nginx如何提供统一入口点的，具体实现方式是什么? 具体实现原理是什么?</span></h2><ul>
+<li>选择了Microk8s默认的Nginx Ingress插件</li>
+<li>定义一个DaemonSet部署Nginx Ingress Controller, 在DaemonSet中指定hostNetwork, 让Nginx监听宿主机的80和443端口，从而提供外部统一访问入口</li>
+<li>这种方式避免了NodePort直接暴露端口，从而简化了微服务管理。</li>
+<li>除了支持HTTP请求，可以通过在DaemonSet定义TCP端口, 支持TCP负载均衡</li>
+<li>微服务需要提供ingress.yaml, 指定路径路由, 比如把某个路径的请求转发到某个服务。</li>
+</ul>
+<h2><span id="引入ingress后如何确保微服务的安全性">引入Ingress后，如何确保微服务的安全性？</span></h2><p>每个虚拟设备注册时，后端会发送公司的证书和私钥, 虚拟设备拿到证书和私钥, 配置在ingress-cert这个secret中</p>
+<h2><span id="cli怎么开发的">CLI怎么开发的</span></h2><p>虚拟设备安装后，客户需要登录到设备, 做网络配置，进行注册, 才能连到云端。<br>我们基于Cisco的开源框架实现了一个命令行工具，客户通过CLI完成网络配置，实现注册功能</p>
+<h2><span id="怎么实现注册的">怎么实现注册的</span></h2><p>使用JWT注册方式</p>
+<ul>
+<li>客户首先在UI上拿到register_token （注: 这个register_token并不是后端生成的，而是服务平台维护的)</li>
+<li>用户在命令行中输入register_token注册，触发注册请求</li>
+<li>虚拟设备通过POST请求将CPU,内存,IP信息连同register_token一起发送给后端</li>
+<li>后端收到请求, 解析请求头的token, 验证签名, 获取customerId</li>
+<li>校验通过后, 后端为虚拟设备生成一个uuid, 用于唯一标识这台设备</li>
+<li>后端会再生成一个applianceToken (为了简化处理, 这个token和register_token是一样的)</li>
+<li>后端把虚拟设备信息存到MySQL数据库, 把虚拟设备ID, Token, 还有消息队列的FQDN返回给虚拟设备</li>
+<li>虚拟设备成功收到响应后，保存applianceId, applianceToken, 用于后续通信</li>
+</ul>
+<h2><span id="jwt校验流程是什么">JWT校验流程是什么</span></h2><p>JWT验证依赖于服务平台的密钥对，在后端配置服务平台的公钥, 使用公钥解密JWT, 并验证签名，</p>
+<h2><span id="为啥appliancetoken和registertoken是一样的呢">为啥applianceToken和registerToken是一样的呢 ?</span></h2><p>为了简化实现, 减少额外的Token生成; 会有这样一个问题: 即使不调用注册API，也可以直接使用这个token访问其他的API<br>项目中的处理方式是： 只用调用注册接口，数据库才能生成对应的注册记录, 其他请求时会判断数据库是否注册状态</p>
+<h2><span id="为什么选择jwt-而不是ux2fp或者session">为什么选择JWT, 而不是u&#x2F;p或者session</span></h2><p>JWT一种无状态的认证机制, 后端无需查询数据库就能完成身份验证, 且支持跨域认证<br>Session需要维护一个会话ID到数据库，就没采用这个方案</p>
+<h2><span id="jwt过期时间如何设置的怎么同步的">JWT过期时间如何设置的，怎么同步的</span></h2><p>每天定时从服务平台同步Token, Token设置了两个月过期时间, 过期前10天，立刻请求服务平台刷新Token</p>
+<h2><span id="开发了一组诊断命令用于快速定位-os-kubernetes-和网络相关问题">开发了一组诊断命令，用于快速定位 OS、Kubernetes 和网络相关问题</span></h2><p>OS: 查cpu, 内存, 进程, disk<br>网络: IP, 路由, 网卡, iptables, Route<br>K8S: IMAGE, namespace, pod, configmap, ingress, deployment, services, volume, Microk8s日志<br>系统日志: 网络没有问题, 可以支持上传日志, 和Remote Shell</p>
+<h2><span id="能举一个troubleshooting客户案例吗-你怎么解决的">能举一个troubleshooting客户案例吗, 你怎么解决的</span></h2><ul>
+<li>客户的NTP服务器问题，导致时间不正确, 和AWS IoT连接失败</li>
+<li>客户人为操作失误, 把网卡disconnect了, 导致k8s启动失败</li>
+<li>k8s apiserver证书过期, 导致微服务有问题</li>
+<li>客户虚拟机配置问题，虚拟CPU不支持AVX指令集, 但物理CPU支持</li>
+</ul>
+<h2><span id="项目有合作吗怎么合作的">项目有合作吗，怎么合作的</span></h2><p>[TODO]</p>
+<h2><span id="项目存在哪些优化空间">项目存在哪些优化空间</span></h2><p>比如微服务镜像瘦身, 某些微服务基础镜像有几百M, 把镜像做小可以节省客户安装时间, 提升用户体验  </p>
+<h1><span id="项目2-forward-proxy-service">项目2: Forward Proxy Service</span></h1><h2><span id="介绍下forward-proxy这个项目">介绍下Forward Proxy这个项目</span></h2><p>这是一个安装在Service Gateway上的微服务, 为本地的趋势终端产品接入云服务提供正向代理功能, 实现本地产品访问互联网的集中管理  </p>
+<p>早期, 各个本地产品从云端下载数据, 需要各自访问不同的后端, 只能各自实现一套认证，访问控制方案.<br>通过引入Forward Proxy服务，所有本地产品连接到这个正向代理即可，实现了集中的认证, 访问控制, 降低了各产品开发和维护成本</p>
+<h2><span id="forward-proxy-service是如何部署的">Forward Proxy Service是如何部署的？</span></h2><p>通过Microk8s部署, 基于hostNetwork模式, 直接使用宿主机网络栈，监听8080端口，提升性能<br>核心组件有两部分, 一个是Squid软件, 另一个是Python进程, 感知网络设置和白名单变化, 更新Squid配置文件，重新加载Squid</p>
+<h2><span id="并发量有多少怎么测试的">并发量有多少，怎么测试的</span></h2><p>8vCPU&#x2F;12G&#x2F;500G&#x2F;1000Mbps<br>1000台agent并发升级, 流量157M<em>1000, 30分钟下载完毕<br>CPU 8%, Mem 58%, Disk 1%，峰值内存7G，瓶颈在带宽<br>157</em>8&#x2F;(30*60) &#x3D; 700Mbps, 相当于1Gpbs网卡</p>
+<h2><span id="为什么选squid-是否有其他替代方案nginx-haproxy">为什么选Squid, 是否有其他替代方案(Nginx, HAProxy)?</span></h2><ul>
+<li>Squid作为老牌正向代理, 在生产环境经过验证，稳定可靠.<br>结合我们的项目需求，正向代理需要支持认证功能, 基于IP,URL的访问控制, 配置用户代理, 以及多代理转发场景(不同的FQDN走不同的代理)<br>Squid功能丰富，配置简单, 可以容易实现这些功能<br>Nginx也能支持这些功能, 但是需要通过三方模块, 配置维护复杂一些.</li>
+</ul>
+<h2><span id="squid正向代理的原理">Squid正向代理的原理</span></h2><p>默认监听3128端口接收客户端连接<br>Squid使用多进程模型, 主进程不直接处理客户请求, 而是请求分发给worker进程，每个worker进程处理客户端请求 </p>
+<h2><span id="squid的安全认证是如何实现的-为什么选择basic认证-还有哪些认证方式">Squid的安全认证是如何实现的？ 为什么选择Basic认证, 还有哪些认证方式?</span></h2><p>我们使用Basic认证, 请求头中Authorization: 提供用户名和密码<br>用户名是本地产品名称+guid, 方便密码, 密码设计(用户名+apikey)做SHA1, apikey只有客户知道, 30天过期<br>代理是HTTP的, 由于虚拟设备在内部网络环境, 就采用了Basic认证方式, 简单快速</p>
+<h2><span id="为什么squid代理使用http-不是https">为什么Squid代理使用HTTP, 不是HTTPS</span></h2><p>如果使用HTTPS, 就需要为每个代理服务器生成SSL证书<br>虚拟设备安装在内网环境， 内网环境使用HTTP代理即可, 证书管理存在维护复杂性<br>HTTPS涉及加密, 对性能有影响</p>
+<h2><span id="访问控制的具体实现方式是什么例如是否基于ip地址-或url-白名单x2f黑名单">访问控制的具体实现方式是什么？例如是否基于IP地址、或URL 白名单&#x2F;黑名单？</span></h2><p>通过Squid配置文件中定义ACL, 实现访问控制。<br>基于FQDN的访问控制, 预设一个白名单, 只允许白名单中的FQDN通过<br>允许客户在UI上添加白名单, 白名单信息由后端下发到虚拟设备，保存到ConfigMap<br>Pod中把ConfigMap挂到文件, 如白名单发生变化，从ConfigMap读取新的白名单，再reconfigure</p>
+<h2><span id="配置用户代理作用是什么怎么做的">配置用户代理作用是什么，怎么做的</span></h2><p>客户出于他的网络管理要求，希望所有虚拟设备流量通过他的代理服务器; Squid支持父级代理, 通过配置cache_peer定义父级代理的地址</p>
+<h2><span id="squid-的缓存机制是否被启用如果有具体的缓存策略是什么">Squid 的缓存机制是否被启用？如果有，具体的缓存策略是什么？</span></h2><p>没有手动启动磁盘缓存. Squid默认会启动内存缓存, 根据响应头,请求方法决定是否缓存某个请求<br>Cache-Control 强缓存, Etag 弱缓存; GET, HEAD可以缓存 </p>
+<h2><span id="说一下stunnel的加密通信方案">说一下Stunnel的加密通信方案</span></h2><p>Forward Proxy安装在客户本地网络中，客户网络是一个高度不确定的环境。 部分客户配置防火墙规则时会出现一些问题, 比如:</p>
+<ul>
+<li>不支持通配符FQDN</li>
+<li>配置错误, 或遗漏某个FQDN</li>
+<li>客户重新配置防火墙规则需要一定时间, 这段时间服务无法工作, 影响用户体验</li>
+</ul>
+<p>有两个问题:</p>
+<ul>
+<li><ol>
+<li>减少客户的防火墙配置错误导致的网络不通问题</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>某些特定的FQDN由于性能原因不适合加密, 需要直出或者走客户代理, 其余FQDN数据需要加密走别的代理出。 需要支持这种多代理转发场景</li>
+</ol>
+</li>
+</ul>
+<p>我们参考了科学上网的方案, 基于Stunnel对Squid数据做TLS加密, 从而将终端到云端访问整合为一个FQDN, 简化客户防火墙配置</p>
+<h2><span id="stunnel工作原理">Stunnel工作原理</span></h2><ul>
+<li>基于TLS加密隧道工具, 客户将未加密流量发到Squid, Squid发送到Stunnel</li>
+<li>Stunnel client端使用TLS加密, 传到Stunnel Server, 防火墙只能看到TCP&#x2F;443的包，只需要允许Stunnel Server的1个FQDN通过即可</li>
+<li>Stunnel Server解密，把HTTP请求送给目标服务</li>
+</ul>
+<h2><span id="举一个定位案例">举一个定位案例</span></h2><p>写一个KB，让客户先排查是否防火墙配置问题</p>
+<ul>
+<li>首先检查网络设置和网络连接: ip, netmask, gateway, dns, ping gateway</li>
+<li>让客户检查防火墙规则: 协议，方向, 行为, 规则顺序</li>
+<li>禁用防火墙的HTTPS证书替换, 某些防火墙为了检测HTTPS流量, 会做中间人拦截HTTPS流量。 防火墙生成一个新的SSL证书，冒充目标网站证书</li>
+</ul>
+<p>举例: 某些客户防火墙为了检测HTTPS流量, 会做中间人拦截HTTPS流量。 防火墙生成一个新证书，冒充目标网站证书, 因为虚拟设备不支持客户自定义CA，导致网络不通<br>解决方法: CLI中实现诊断网络的命令，通过查看curl的结果, 看issuer是否为entrust, Amazon; 如果issuer是一个IP,hostname或防火墙产商名字，说明被替换了</p>
+<p><strong>DeployMent</strong><br>AWS云, 每个site一个EKS<br>site: US, EU, SG, AU, IN, JP, UAE<br>site: US-EAST-1<br>vpc cidr: 10.131.44.0&#x2F;22<br>subnets:<br>xdr-app-tgw-private-1a	10.131.45.0&#x2F;24<br>xdr-app-tgw-private-1b	10.131.46.0&#x2F;24<br>xdr-app-tgw-private-1c	10.131.47.0&#x2F;24<br>xdr-app-tgw-public-1a	10.131.44.0&#x2F;25<br>xdr-app-tgw-public-1b	10.131.44.128&#x2F;25<br>routes:<br>rtb-03eb993eb0a0df54b<br>0.0.0.0&#x2F;0	nat-0d7fa27334ad10a4a<br>10.0.0.0&#x2F;8	tgw-0c4d0ec54e6f330f1<br>10.131.44.0&#x2F;22	local</p>
+<p><strong>Cost</strong><br>2022-11</p>
+<ul>
+<li>RDS 8500$</li>
+<li>EC2 2500$</li>
+<li>EKS cluster 140$</li>
+<li>Load Balancer 133$</li>
+<li>VPC 150$</li>
+<li>Cloudwatch&#x2F;S3 300$</li>
+<li>IOT 300$<br>total 12000$</li>
+</ul>
+<h1><span id="项目3-matrix仿真平台">项目3: Matrix仿真平台</span></h1><h2><span id="驱动接口仿真是怎么回事">驱动接口仿真是怎么回事</span></h2><ul>
+<li>在真实的交换机上，我们领域的业务代码依赖驱动提供的接口</li>
+<li>要实现仿真环境的验证，需要对驱动接口进行打桩的工作</li>
+<li>测试人员需要构造故障, 比如通过改变驱动行为的方式。 如果每次都修改C代码再重新编译, 这种测试体验会很差</li>
+</ul>
+<h2><span id="为什么用redis不用mysql">为什么用Redis不用MySQL?</span></h2><ul>
+<li>Redis是基于内存的，性能很高。 我这个项目中的数据规模在2w个key左右，QPS最高在1w左右，因此我们直接使用Redis做数据库</li>
+<li>Redis的key-value模型很适合模拟驱动接口行为，灵活方便, 因为我们的驱动接口就是get&#x2F;set; MySQL是关系型的，还要先建表, 不灵活</li>
+<li>Redis数据类型丰富（string, list, set, zset, hash)，mamcached只支持string, mongodb是文档型数据库，更适合文档存储</li>
+<li>Redis支持发布订阅和数据库通知 。我在项目中使用这两个特性，解决了仿真环境中单板插拔流程的验证问题</li>
+</ul>
+<h2><span id="读写redis库怎么做的">读写Redis库怎么做的</span></h2><p>基于Hiredis这个C语言实现的开源库, 开了一组读写Redis key的API. 选用HiRedis是因为我们被测代码也是so库, 集成很方便<br>举例： 把1号单板设置成不在位，通过修改Redis key: “&#x2F;board#1&#x2F;present_status”的值实现，无需修改驱动代码</p>
+<h2><span id="redis挂了怎么办-可靠性怎么考虑">Redis挂了怎么办, 可靠性怎么考虑</span></h2><p>每个单板1个容器，作为redis client; 1个管理容器，安装redis数据库<br>如果Redis挂了，管理容器会检测到异常，并依次重启管理容器和各个单板容器。<br>由于这是仿真环境大部分驱动数据是易失性的，无需持久化或集群支持; 对于需要持久化数据, 通过写文件和Docker Volume方式存储</p>
+<h2><span id="利用redis的键空间通知机制-开发了一组发布订阅的api">利用Redis的键空间通知机制, 开发了一组发布订阅的API</span></h2><p>设备管理的业务依赖驱动接口注册一个回调, 从而感知单板插板事件<br>我们需要仿真驱动接口，保证发生插拔事件可以触发这个回调, 实现单板插板特性在仿真环境的而测试<br>如果是轮询的方式，定时检查Redis中单板在位状态, 这种方式浪费CPU.</p>
+<p><strong>如何解决的？成果：</strong><br>利用Redis的键空间通知机制解决这个问题:<br>在驱动函数中, 向Redis发起频道订阅, 频道的名称可以是”Board1&#x2F;present_status”, 订阅单板的在位状态<br>然后模拟单板插入动作，更新Redis键, 触发Redis键空间通知机制。 Redis将消息发布到所有在线的消费者(也就是我们的上层业务)。<br>上层业务收到订阅消息后，触发一次业务回调，从而感知到了单板插板。</p>
+<h2><span id="3-把redis短连接优化为长连接怎么回事">3. 把Redis短连接优化为长连接怎么回事</span></h2><p>早期的仿真平台, 驱动接口是通过Redis短连接实现的，导致频繁地建立连接和关闭连接，性能低下。<br>设备管理有一段子卡初始化代码，需要查询很多属性, 用短连接耗时很长</p>
+<p><strong>怎么解决的</strong></p>
+<ul>
+<li>通过netstat发现TIME_WAIT过多，都是6379端口，判断使用Redis短连接</li>
+<li>把短连接改造为长连接。 每个进程分一个Redis长连接，各线程通过pthread互斥锁获取长连接</li>
+<li>将驱动接口平均一次读写时间缩短为原先的1&#x2F;15，从平均2ms到0.1ms一次，获得显著性能提升。</li>
+</ul>
+<h2><span id="工具是你一个做的还是合作的怎么合作的">工具是你一个做的？还是合作的？怎么合作的？</span></h2><p>这个工具是合作完成的<br>早期设计阶段, 有1个架构师, 1个SE, 我参与项目设计和方案讨论, 梳理业务做原型验证，和架构,SE讨论方案。<br>连我在内, 有两个开发，另一个开发来自杭州。 我负责驱动接口仿真和Redis，另一个同事负责Docker镜像, 仿真设备包构建</p>
+<p>后期的性能优化也是合作的，连我在内有3名开发，在同一个部门的业务组。<br>我做方案设计, 梳理流程拓扑, 把开发任务分解到2名开发同事去做。</p>
+<h2><span id="你觉得还有什么优化">你觉得还有什么优化</span></h2><ul>
+<li>优化内存。比如对字符串键做压缩存储（因为Redis字符串键的三种编码: long, embstr,raw）</li>
+<li>优化请求速度，有些驱动函数会一次性读写多个key，用mset, mget命令代替get, set, 减少客户端和Redis的通信次数</li>
+</ul>
+<h2><span id="举一个问题定位案例">举一个问题定位案例</span></h2><p>当时遇到一个Redis key被意外删除的问题 </p>
+<p>我们通过常规的查看日志, tcpdump抓包方法, 没有找到原因.<br>我当时看过REDIS的单机数据库实现, 想到既然Redis是基于内存的数据库，字符串键肯定在进程中的某个内存地址处，key丢失时这个地址的内容肯定被改写<br>所以我只需要GDB打个断点，看下调用栈不就搞定了<br>后来发现是REDIS配置项maxmemory过低, 只给了1M, 导致Redis认为空间不够就随机淘汰了一些key, 修改了这个配置项后问题得到了解决</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2020/0102175630.html" title="项目问题梳理">https://pcj600.github.io/2020/0102175630.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/interview/" rel="tag"><i class="fa fa-tag"></i> interview</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/0102171050.html" rel="prev" title="IT人事面试题">
+      <i class="fa fa-chevron-left"></i> IT人事面试题
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/0103201917.html" rel="next" title="VA backend Design">
+      VA backend Design <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目1: Trend Micro - Service Gateway</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">简单介绍下你的项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选择双系统全量升级方案?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">固件的具体内容包括哪些？如何保证其最小化但又能满足功能需求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">在线升级整体流程是什么, Python升级模块怎么设计的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你提到多线程来处理不同类型的任务，但如何保证线程间的同步和数据一致性？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么引入消息队列</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你如何防止重复消费</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何保证消息传递可靠性, 是否有重试机制或消息确认机制 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选择AWS IoT, 有没有考虑其他MQ解决方案 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么设计Cronjob，不直接在Python服务里处理升级</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">启动项切换到备用分区的具体实现方式是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下Linux启动流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下GRUB工作原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">全量升级包的下载和解压过程中，如何处理网络中断或磁盘空间不足的问题 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选Microk8s, 不选k3s, minukube ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">OS迁移怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">回滚机制是如何实现的？ 还是只能完全回滚整个系统？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">优化了微服务的集成方案, 这个是怎么回事?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何配置Ingress的? Nginx如何提供统一入口点的，具体实现方式是什么? 具体实现原理是什么?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">引入Ingress后，如何确保微服务的安全性？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">CLI怎么开发的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">怎么实现注册的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT校验流程是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为啥applianceToken和registerToken是一样的呢 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选择JWT, 而不是u&#x2F;p或者session</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT过期时间如何设置的，怎么同步的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">开发了一组诊断命令，用于快速定位 OS、Kubernetes 和网络相关问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">能举一个troubleshooting客户案例吗, 你怎么解决的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">项目有合作吗，怎么合作的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">项目存在哪些优化空间</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目2: Forward Proxy Service</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">介绍下Forward Proxy这个项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Forward Proxy Service是如何部署的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">并发量有多少，怎么测试的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选Squid, 是否有其他替代方案(Nginx, HAProxy)?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid正向代理的原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid的安全认证是如何实现的？ 为什么选择Basic认证, 还有哪些认证方式?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么Squid代理使用HTTP, 不是HTTPS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">访问控制的具体实现方式是什么？例如是否基于IP地址、或URL 白名单&#x2F;黑名单？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置用户代理作用是什么，怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid 的缓存机制是否被启用？如果有，具体的缓存策略是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说一下Stunnel的加密通信方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Stunnel工作原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">举一个定位案例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目3: Matrix仿真平台</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">驱动接口仿真是怎么回事</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么用Redis不用MySQL?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">读写Redis库怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Redis挂了怎么办, 可靠性怎么考虑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">利用Redis的键空间通知机制, 开发了一组发布订阅的API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">3. 把Redis短连接优化为长连接怎么回事</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">工具是你一个做的？还是合作的？怎么合作的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你觉得还有什么优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">举一个问题定位案例</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description">PC的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">173</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">48</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="/nju_pc@163.com" title="E-Mail → nju_pc@163.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">768k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">11:38</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>
