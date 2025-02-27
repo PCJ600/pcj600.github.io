@@ -24,15 +24,15 @@
     var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="项目: Trend Micro - Service Gateway 简单介绍下你的项目 说下升级方案怎么做的 说下OS迁移怎么做的 回滚是怎么做的 说下微服务的集成方案怎么做的 最大的难点是什么, 你是如何解决的 能举一个问题定位案例吗, 你如何解决的 这个项目都做了哪些测试？ 还有什么可以优化的 用什么技术开发的, 你做了哪些部分 几个人开发的, 你怎么合作的 这个项目用了什么第三方软件&amp;">
+  <meta name="description" content="项目: Trend Micro - Service Gateway 简单介绍下你的项目 说下升级方案怎么做的 说下OS迁移怎么做的 回滚是怎么做的 说下微服务的集成方案怎么做的 项目中最大难点时什么, 如何定位解决的   常见项目问题 这个项目都做了哪些测试？ 还有什么可以优化的 用什么技术开发的, 你做了哪些部分 几个人开发的, 你怎么合作的 这个项目用了什么第三方软件&#x2F;插件？">
 <meta property="og:type" content="article">
 <meta property="og:title" content="项目问题梳理">
 <meta property="og:url" content="https://pcj600.github.io/2020/0102175630.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
-<meta property="og:description" content="项目: Trend Micro - Service Gateway 简单介绍下你的项目 说下升级方案怎么做的 说下OS迁移怎么做的 回滚是怎么做的 说下微服务的集成方案怎么做的 最大的难点是什么, 你是如何解决的 能举一个问题定位案例吗, 你如何解决的 这个项目都做了哪些测试？ 还有什么可以优化的 用什么技术开发的, 你做了哪些部分 几个人开发的, 你怎么合作的 这个项目用了什么第三方软件&amp;">
+<meta property="og:description" content="项目: Trend Micro - Service Gateway 简单介绍下你的项目 说下升级方案怎么做的 说下OS迁移怎么做的 回滚是怎么做的 说下微服务的集成方案怎么做的 项目中最大难点时什么, 如何定位解决的   常见项目问题 这个项目都做了哪些测试？ 还有什么可以优化的 用什么技术开发的, 你做了哪些部分 几个人开发的, 你怎么合作的 这个项目用了什么第三方软件&#x2F;插件？">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-01-02T09:56:30.000Z">
-<meta property="article:modified_time" content="2025-02-26T15:55:12.354Z">
+<meta property="article:modified_time" content="2025-02-27T15:44:53.425Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="interview">
 <meta name="twitter:card" content="summary">
@@ -248,14 +248,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>15k</span>
+              <span>21k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>14 分钟</span>
+              <span>20 分钟</span>
             </span>
 
         </div>
@@ -276,15 +276,35 @@
 <li><a href="#%E8%AF%B4%E4%B8%8Bos%E8%BF%81%E7%A7%BB%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">说下OS迁移怎么做的</a></li>
 <li><a href="#%E5%9B%9E%E6%BB%9A%E6%98%AF%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">回滚是怎么做的</a></li>
 <li><a href="#%E8%AF%B4%E4%B8%8B%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%9A%84%E9%9B%86%E6%88%90%E6%96%B9%E6%A1%88%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">说下微服务的集成方案怎么做的</a></li>
-<li><a href="#%E6%9C%80%E5%A4%A7%E7%9A%84%E9%9A%BE%E7%82%B9%E6%98%AF%E4%BB%80%E4%B9%88-%E4%BD%A0%E6%98%AF%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3%E7%9A%84">最大的难点是什么, 你是如何解决的</a></li>
-<li><a href="#%E8%83%BD%E4%B8%BE%E4%B8%80%E4%B8%AA%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D%E6%A1%88%E4%BE%8B%E5%90%97-%E4%BD%A0%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3%E7%9A%84">能举一个问题定位案例吗, 你如何解决的</a></li>
+<li><a href="#%E9%A1%B9%E7%9B%AE%E4%B8%AD%E6%9C%80%E5%A4%A7%E9%9A%BE%E7%82%B9%E6%97%B6%E4%BB%80%E4%B9%88-%E5%A6%82%E4%BD%95%E5%AE%9A%E4%BD%8D%E8%A7%A3%E5%86%B3%E7%9A%84">项目中最大难点时什么, 如何定位解决的</a></li>
+</ul>
+</li>
+<li><a href="#%E5%B8%B8%E8%A7%81%E9%A1%B9%E7%9B%AE%E9%97%AE%E9%A2%98">常见项目问题</a><ul>
 <li><a href="#%E8%BF%99%E4%B8%AA%E9%A1%B9%E7%9B%AE%E9%83%BD%E5%81%9A%E4%BA%86%E5%93%AA%E4%BA%9B%E6%B5%8B%E8%AF%95">这个项目都做了哪些测试？</a></li>
 <li><a href="#%E8%BF%98%E6%9C%89%E4%BB%80%E4%B9%88%E5%8F%AF%E4%BB%A5%E4%BC%98%E5%8C%96%E7%9A%84">还有什么可以优化的</a></li>
 <li><a href="#%E7%94%A8%E4%BB%80%E4%B9%88%E6%8A%80%E6%9C%AF%E5%BC%80%E5%8F%91%E7%9A%84-%E4%BD%A0%E5%81%9A%E4%BA%86%E5%93%AA%E4%BA%9B%E9%83%A8%E5%88%86">用什么技术开发的, 你做了哪些部分</a></li>
 <li><a href="#%E5%87%A0%E4%B8%AA%E4%BA%BA%E5%BC%80%E5%8F%91%E7%9A%84-%E4%BD%A0%E6%80%8E%E4%B9%88%E5%90%88%E4%BD%9C%E7%9A%84">几个人开发的, 你怎么合作的</a></li>
 <li><a href="#%E8%BF%99%E4%B8%AA%E9%A1%B9%E7%9B%AE%E7%94%A8%E4%BA%86%E4%BB%80%E4%B9%88%E7%AC%AC%E4%B8%89%E6%96%B9%E8%BD%AF%E4%BB%B6%E6%8F%92%E4%BB%B6">这个项目用了什么第三方软件&#x2F;插件？</a></li>
 <li><a href="#%E8%BF%99%E4%B8%AA%E9%A1%B9%E7%9B%AE%E9%87%87%E7%94%A8%E4%BA%86%E4%BB%80%E4%B9%88%E6%A0%B7%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B">这个项目采用了什么样的软件开发流程？</a></li>
-<li><a href="#%E9%97%AE%E9%A2%98">问题</a><ul>
+<li><a href="#fps%E9%A1%B9%E7%9B%AE%E4%B8%AD%E6%9C%80%E5%A4%A7%E7%9A%84%E9%9A%BE%E9%A2%98%E6%98%AF%E4%BB%80%E4%B9%88-%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3%E7%9A%84">FPS项目中最大的难题是什么? 如何解决的？**</a></li>
+</ul>
+</li>
+<li><a href="#%E9%A1%B9%E7%9B%AE2-forward-proxy-service">项目2: Forward Proxy Service</a><ul>
+<li><a href="#%E4%BB%8B%E7%BB%8D%E4%B8%8Bforward-proxy%E8%BF%99%E4%B8%AA%E9%A1%B9%E7%9B%AE">介绍下Forward Proxy这个项目</a></li>
+<li><a href="#%E8%AF%B4%E4%B8%80%E4%B8%8Bstunnel%E7%9A%84%E5%8A%A0%E5%AF%86%E9%80%9A%E4%BF%A1%E6%96%B9%E6%A1%88">说一下Stunnel的加密通信方案</a></li>
+</ul>
+</li>
+<li><a href="#%E9%A1%B9%E7%9B%AE3-matrix%E4%BB%BF%E7%9C%9F%E5%B9%B3%E5%8F%B0">项目3: Matrix仿真平台</a><ul>
+<li><a href="#%E9%A9%B1%E5%8A%A8%E6%8E%A5%E5%8F%A3%E4%BB%BF%E7%9C%9F%E6%98%AF%E6%80%8E%E4%B9%88%E5%9B%9E%E4%BA%8B">驱动接口仿真是怎么回事</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8redis%E4%B8%8D%E7%94%A8mysql">为什么用Redis不用MySQL</a></li>
+<li><a href="#%E8%AF%BB%E5%86%99redis%E5%BA%93%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">读写Redis库怎么做的</a></li>
+<li><a href="#redis%E6%8C%82%E4%BA%86%E6%80%8E%E4%B9%88%E5%8A%9E-%E5%8F%AF%E9%9D%A0%E6%80%A7%E6%80%8E%E4%B9%88%E8%80%83%E8%99%91">Redis挂了怎么办, 可靠性怎么考虑</a></li>
+<li><a href="#%E5%88%A9%E7%94%A8redis%E7%9A%84%E9%94%AE%E7%A9%BA%E9%97%B4%E9%80%9A%E7%9F%A5%E6%9C%BA%E5%88%B6-%E5%BC%80%E5%8F%91%E4%BA%86%E4%B8%80%E7%BB%84%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E7%9A%84api">利用Redis的键空间通知机制, 开发了一组发布订阅的API</a></li>
+<li><a href="#3-%E6%8A%8Aredis%E7%9F%AD%E8%BF%9E%E6%8E%A5%E4%BC%98%E5%8C%96%E4%B8%BA%E9%95%BF%E8%BF%9E%E6%8E%A5%E6%80%8E%E4%B9%88%E5%9B%9E%E4%BA%8B">3. 把Redis短连接优化为长连接怎么回事</a></li>
+<li><a href="#%E5%B7%A5%E5%85%B7%E6%98%AF%E4%BD%A0%E4%B8%80%E4%B8%AA%E5%81%9A%E7%9A%84%E8%BF%98%E6%98%AF%E5%90%88%E4%BD%9C%E7%9A%84%E6%80%8E%E4%B9%88%E5%90%88%E4%BD%9C%E7%9A%84">工具是你一个做的？还是合作的？怎么合作的？</a></li>
+<li><a href="#%E4%BD%A0%E8%A7%89%E5%BE%97%E8%BF%98%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8C%96">你觉得还有什么优化</a></li>
+<li><a href="#%E4%B8%BE%E4%B8%80%E4%B8%AA%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D%E6%A1%88%E4%BE%8B">举一个问题定位案例</a></li>
+<li><a href="#%E5%85%B6%E4%BB%96%E9%A1%B9%E7%9B%AE%E9%97%AE%E9%A2%98">其他项目问题</a><ul>
 <li><a href="#%E5%A6%82%E4%BD%95%E5%8E%8B%E7%BC%A9%E5%85%A8%E9%87%8F%E5%8D%87%E7%BA%A7%E5%8C%85">如何压缩全量升级包</a></li>
 <li><a href="#%E5%9C%A8%E7%BA%BF%E5%8D%87%E7%BA%A7%E9%81%87%E5%88%B0%E7%BD%91%E7%BB%9C%E4%B8%8D%E7%A8%B3%E5%AE%9A%E6%80%8E%E4%B9%88%E5%A4%84%E7%90%86%E7%9A%84">在线升级遇到网络不稳定怎么处理的</a></li>
 </ul>
@@ -308,11 +328,6 @@
 <li><a href="#%E6%80%8E%E4%B9%88%E5%AE%9E%E7%8E%B0%E6%B3%A8%E5%86%8C%E7%9A%84">怎么实现注册的</a></li>
 <li><a href="#jwt%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E6%98%AF%E4%BB%80%E4%B9%88">JWT工作原理是什么</a></li>
 <li><a href="#jwt%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%E5%A6%82%E4%BD%95%E8%AE%BE%E7%BD%AE%E7%9A%84%E6%80%8E%E4%B9%88%E5%90%8C%E6%AD%A5%E7%9A%84">JWT过期时间如何设置的，怎么同步的</a></li>
-</ul>
-</li>
-<li><a href="#%E9%A1%B9%E7%9B%AE2-forward-proxy-service">项目2: Forward Proxy Service</a><ul>
-<li><a href="#%E4%BB%8B%E7%BB%8D%E4%B8%8Bforward-proxy%E8%BF%99%E4%B8%AA%E9%A1%B9%E7%9B%AE">介绍下Forward Proxy这个项目</a></li>
-<li><a href="#forward-proxy-service%E6%98%AF%E5%A6%82%E4%BD%95%E9%83%A8%E7%BD%B2%E7%9A%84">Forward Proxy Service是如何部署的？</a></li>
 <li><a href="#%E5%B9%B6%E5%8F%91%E9%87%8F%E6%9C%89%E5%A4%9A%E5%B0%91%E6%80%8E%E4%B9%88%E6%B5%8B%E8%AF%95%E7%9A%84">并发量有多少，怎么测试的</a></li>
 <li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89squid-%E6%98%AF%E5%90%A6%E6%9C%89%E5%85%B6%E4%BB%96%E6%9B%BF%E4%BB%A3%E6%96%B9%E6%A1%88nginx-haproxy">为什么选Squid, 是否有其他替代方案(Nginx, HAProxy)?</a></li>
 <li><a href="#squid%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E7%9A%84%E5%8E%9F%E7%90%86">Squid正向代理的原理</a></li>
@@ -321,21 +336,7 @@
 <li><a href="#%E8%AE%BF%E9%97%AE%E6%8E%A7%E5%88%B6%E7%9A%84%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F%E6%98%AF%E4%BB%80%E4%B9%88%E4%BE%8B%E5%A6%82%E6%98%AF%E5%90%A6%E5%9F%BA%E4%BA%8Eip%E5%9C%B0%E5%9D%80-%E6%88%96url-%E7%99%BD%E5%90%8D%E5%8D%95%E9%BB%91%E5%90%8D%E5%8D%95">访问控制的具体实现方式是什么？例如是否基于IP地址、或URL 白名单&#x2F;黑名单？</a></li>
 <li><a href="#%E9%85%8D%E7%BD%AE%E7%94%A8%E6%88%B7%E4%BB%A3%E7%90%86%E4%BD%9C%E7%94%A8%E6%98%AF%E4%BB%80%E4%B9%88%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">配置用户代理作用是什么，怎么做的</a></li>
 <li><a href="#squid-%E7%9A%84%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6%E6%98%AF%E5%90%A6%E8%A2%AB%E5%90%AF%E7%94%A8%E5%A6%82%E6%9E%9C%E6%9C%89%E5%85%B7%E4%BD%93%E7%9A%84%E7%BC%93%E5%AD%98%E7%AD%96%E7%95%A5%E6%98%AF%E4%BB%80%E4%B9%88">Squid 的缓存机制是否被启用？如果有，具体的缓存策略是什么？</a></li>
-<li><a href="#%E8%AF%B4%E4%B8%80%E4%B8%8Bstunnel%E7%9A%84%E5%8A%A0%E5%AF%86%E9%80%9A%E4%BF%A1%E6%96%B9%E6%A1%88">说一下Stunnel的加密通信方案</a></li>
-<li><a href="#stunnel%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86">Stunnel工作原理</a></li>
-<li><a href="#%E4%B8%BE%E4%B8%80%E4%B8%AA%E5%AE%9A%E4%BD%8D%E6%A1%88%E4%BE%8B">举一个定位案例</a></li>
-</ul>
-</li>
-<li><a href="#%E9%A1%B9%E7%9B%AE3-matrix%E4%BB%BF%E7%9C%9F%E5%B9%B3%E5%8F%B0">项目3: Matrix仿真平台</a><ul>
-<li><a href="#%E9%A9%B1%E5%8A%A8%E6%8E%A5%E5%8F%A3%E4%BB%BF%E7%9C%9F%E6%98%AF%E6%80%8E%E4%B9%88%E5%9B%9E%E4%BA%8B">驱动接口仿真是怎么回事</a></li>
-<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8redis%E4%B8%8D%E7%94%A8mysql">为什么用Redis不用MySQL</a></li>
-<li><a href="#%E8%AF%BB%E5%86%99redis%E5%BA%93%E6%80%8E%E4%B9%88%E5%81%9A%E7%9A%84">读写Redis库怎么做的</a></li>
-<li><a href="#redis%E6%8C%82%E4%BA%86%E6%80%8E%E4%B9%88%E5%8A%9E-%E5%8F%AF%E9%9D%A0%E6%80%A7%E6%80%8E%E4%B9%88%E8%80%83%E8%99%91">Redis挂了怎么办, 可靠性怎么考虑</a></li>
-<li><a href="#%E5%88%A9%E7%94%A8redis%E7%9A%84%E9%94%AE%E7%A9%BA%E9%97%B4%E9%80%9A%E7%9F%A5%E6%9C%BA%E5%88%B6-%E5%BC%80%E5%8F%91%E4%BA%86%E4%B8%80%E7%BB%84%E5%8F%91%E5%B8%83%E8%AE%A2%E9%98%85%E7%9A%84api">利用Redis的键空间通知机制, 开发了一组发布订阅的API</a></li>
-<li><a href="#3-%E6%8A%8Aredis%E7%9F%AD%E8%BF%9E%E6%8E%A5%E4%BC%98%E5%8C%96%E4%B8%BA%E9%95%BF%E8%BF%9E%E6%8E%A5%E6%80%8E%E4%B9%88%E5%9B%9E%E4%BA%8B">3. 把Redis短连接优化为长连接怎么回事</a></li>
-<li><a href="#%E5%B7%A5%E5%85%B7%E6%98%AF%E4%BD%A0%E4%B8%80%E4%B8%AA%E5%81%9A%E7%9A%84%E8%BF%98%E6%98%AF%E5%90%88%E4%BD%9C%E7%9A%84%E6%80%8E%E4%B9%88%E5%90%88%E4%BD%9C%E7%9A%84">工具是你一个做的？还是合作的？怎么合作的？</a></li>
-<li><a href="#%E4%BD%A0%E8%A7%89%E5%BE%97%E8%BF%98%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8C%96">你觉得还有什么优化</a></li>
-<li><a href="#%E4%B8%BE%E4%B8%80%E4%B8%AA%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D%E6%A1%88%E4%BE%8B">举一个问题定位案例</a></li>
+<li><a href="#%E6%9C%80%E5%A4%A7%E7%9A%84%E9%9A%BE%E7%82%B9%E6%98%AF%E4%BB%80%E4%B9%88-%E4%BD%A0%E6%98%AF%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3%E7%9A%84">最大的难点是什么, 你是如何解决的</a></li>
 </ul>
 </li>
 </ul>
@@ -362,50 +363,68 @@
 </li>
 </ul>
 <p>I designed this solution to solve problems in old incremental upgrade solution. Since incremental upgrade requires maintaining differences between two versions,<br>the accumulation of historical code made the system complex and difficult to manage.<br>When I took over this project, the codebase for incremental upgrade had grown to 800 MB, it’s becoming unmanagable.<br>So, I designed a full-upgrade solution with dual system, which consists of two steps:<br>Firstly, we need to build a full upgrade package.<br>Customize an ISO image for virtual appliance based on minimal Rocky Linux. We need to re-partition the disk and use LVM to create two system partitions.<br>Use ISO to install a VM, then export VM to OVA. Pack all disk files of OVA and we’ll get the full upgrade package<br>Secondly, we need to upgrade online. I developed an upgrade module. The upgrade module contains a Python daemon and a Cronjob.<br>The Python daemon communicate with backend by subscribing AWS IoT, and receive upgrade message from backend, then notify Cronjob to process.<br>The Cronjob is responsible for performing upgrade task. Download and extract upgrade package to hidden partition, sync current configuration, add GRUB menuentry and reboot.<br>Finally complete the system upgrade.</p>
-<h2><span id="说下os迁移怎么做的">说下OS迁移怎么做的</span></h2><p>早期客户的虚拟设备OS是CentOS7, 但是CentOS7在2024年停止维护, 为了保证系统安全性, 我们需要将客户虚拟设备迁移到新的OS<br>OS迁移的难点在于, 如何在重新分区过程中保存并同步客户的配置, 实现一键式迁移, 从而提高用户体验<br>我们通过定制了一个initrd镜像解决这个问题, 在initrd环境中执行以下步骤:</p>
+<h2><span id="说下os迁移怎么做的">说下OS迁移怎么做的</span></h2><p>早期客户的虚拟设备OS是CentOS7, 但是CentOS7在2024年停止维护, 为了保证系统安全性, 我们需要将客户虚拟设备迁移到新的OS<br>OS迁移的难点在于, 如何在重新分区过程中保存并同步客户的配置, 实现自动迁移, 从而提高用户体验<br>我们通过定制了一个initrd镜像解决这个问题, 在initrd环境中执行以下步骤:</p>
 <ul>
 <li>把升级包和客户配置从硬盘复制到临时内存, 确保客户配置不会丢失</li>
 <li>对整个硬盘重新分区, 划分两个系统分区</li>
 <li>把升级包安装到主分区, 恢复客户配置</li>
 <li>最后, 通过GRUB设置默认启动项为新的OS, 重启设备完成迁移</li>
 </ul>
-<p>In early time, customers’ virtual appliances were based on CentOS7. However, CentOS reached end of lie on 2024.<br>To ensure the security of the system, we need to migrate customers’ virtual appliances to a new operation systems.</p>
-<h2><span id="回滚是怎么做的">回滚是怎么做的</span></h2><p>回滚是基于我们设计的双份去升级方案实现的, 由于采用了双分区方案, 回滚过程实现相对简单。<br>客户在CLI上执行rollback命令时, 调用我们写的脚本。 这个脚本使用grubby工具, 把GRUB引导程序的默认启动项设置为前一个系统分区<br>设置完启动项后, 再执行reboot, 这样设备重启后就回滚到了上一个分区</p>
+<p>In early time, customers’ virtual appliances were based on CentOS7. However, CentOS reached end of lie on 2024.<br>To ensure the security of the system, we need to migrate customers’ virtual appliances to a new operation systems.<br>The challenge is how to sync customer’s configurations during disk re-partitioning process and implement automatic OS migration,  then improve customer experience.<br>We solved this problem by customizing an initrd image, which consists of following steps</p>
+<ul>
+<li>Copy upgrade package and customer configurations from disk to temporary file system to ensure customer’s configuration are not lost</li>
+<li>Repartition the entire disk and create two system partitions, then install upgrade package on primary partition and recover customer’s configuration,</li>
+<li>Finally, use GRUB to set default boot option to new OS, then reboot virtual appliance to complete migration.</li>
+</ul>
+<h2><span id="回滚是怎么做的">回滚是怎么做的</span></h2><p>回滚是基于双分区升级方案实现的, 实现比较容易。<br>客户在CLI上执行rollback命令时, 调用我们写的脚本。 这个脚本使用grubby工具把默认启动项设置为前一个系统分区<br>设置完启动项后, 再执行reboot, 这样设备重启后就回滚到了上一个分区</p>
+<p>The rollback feature is implemented based on our dual-system upgrade solution, so it’s easy to implement.<br>Customer execute rollback command in CLI, and it calls a Shell script we developed. This script used grubby tool to set default boot option to previous system partition.<br>Then reboot the virtual appliance, it will rollback to previous partition successfully.</p>
 <h2><span id="说下微服务的集成方案怎么做的">说下微服务的集成方案怎么做的</span></h2><p>早期版本中, 微服务是集成在固件中的, 这导致虚拟设备ISO镜像体积很大, 有5G左右, 客户安装和升级速度慢, 体验较差<br>我们的优化方案是, 把微服务的镜像和配置从固件中解耦, 支持客户灵活的在线安装或卸载某个微服务<br>难点在于:</p>
 <ul>
-<li>如何实现微服务间的资源隔离</li>
-<li>微服务如何感知用户的配置变更, 怎么获取全局的配置</li>
-<li>多个微服务部署可能存在端口冲突问题</li>
+<li>如何避免微服务间的资源竞争</li>
+<li>如何避免端口冲突</li>
+<li>微服务如何感知用户的配置变更</li>
 </ul>
-<p>做法:</p>
+<p>做法是:</p>
 <ul>
 <li>给每个微服务分配一个独一无二的serviceCode, 服务网关根据serviceCode创建同名的namespace, 实现了不同微服务之间的资源隔离</li>
-<li>定义统一的部署标准, 每个微服务需提供一个tar.gz部署包, 包括容器镜像和部署yaml文件两部分, 微服务团队负责把部署包发布到AWS S3 </li>
-<li>每个微服务创建一个configMap, 用户修改配置后, 后端发送配置变更任务到MQ, 虚拟设备上的升级模块负责把配置写入configMap </li>
-<li>对于微服务依赖的全局配置, 我们创建了一个appliance的configmap, 定时把这个configmap同步给各个微服务, 各微服务监控configMap配置变化, 读取最新配置到内存</li>
+<li>每个微服务需提供一个tar.gz部署包, 包括容器镜像和部署yaml文件两部分, 微服务团队负责把部署包发布到AWS S3 </li>
+<li>每个微服务创建一个configMap, 用户修改配置后, 后端通过消息队列通知虚拟设备, 虚拟设备上的升级模块负责把配置写入configMap </li>
+<li>对于微服务依赖的全局配置, 我们创建了一个appliance-configmap, 定时把这个configmap同步给各个微服务, 各微服务监控configMap配置, 获得最新配置</li>
 <li>对于端口冲突问题, 启用了Microk8s自带的Ingress插件, 所有http请求从宿主机的80或443端口进入。微服务的提供者需要在部署包中定义ingress yaml, 指定path和backend</li>
 </ul>
-<h2><span id="最大的难点是什么-你是如何解决的">最大的难点是什么, 你是如何解决的</span></h2><p>项目中最大的挑战在于虚拟设备固件升级方案的设计与实现, 难点体现在两个方面:</p>
+<p>In early versions, microservices were integrated directly into the firmware. This caused virtual appliance ISO image very large,<br>the installation speed is very slow for customers, which negatively impacted user experience.</p>
+<p>Our goal is to decouple the microservice image from the firmware, allowing customers to install or uninstall specific microservices flexibly.<br>There are many challenges, for example, how to avoid resource competition and port conflicts between microservices. How microservices detect user configurations change.</p>
+<p>The approaches we took are as follows:</p>
 <ul>
-<li>一个是没有先例可循; 公司内部没有部门实现过类似的升级方案, 当时也没有chatgpt, 需要基于对技术原理的理解推导方案</li>
-<li>另一个是涉及的技术比较多; 比如Linux技术, 需要了解启动流程, 分区管理, initrd定制, ISO定制, GRUB引导程序, 比如K8S技术, HTTP, 消息队列, Python编程, Shell编程等<br>不仅要求我对整个升级流程有深入了解，还需要整合多种技术实现了一个可靠的解决方案.</li>
+<li>Assigned a unique serviceCode to each microservice. Service Gateway will create a namespace with the same name as the serviceCode, to avoid resource competition between different microservices.</li>
+<li>Each microservice should provide a deployment package, which includes two parts: container images and deployment YAML files. The microservice team is responsible for publishing the deployment package to AWS S3.</li>
+<li>Each microservice should create a ConfigMap. When customer modifies configuration, backend notifies virtual appliance via a message queue.<br>The upgrade module on the virtual appliance is responsible for updating configuration into the ConfigMap.</li>
+<li>For global configurations that all microservices share,  we created an appliance-configmap and sync it periodically to all microservices. Each microservice monitors its ConfigMap to get latest configuration.</li>
+<li>To address port conflicts, we used Microk8s Ingress plugin. All microservices provide HTTP service use port 80 or 443 on the host machine. Each Microservice should provide an Ingress YAML in their deployment package, specify the path and backend.</li>
 </ul>
-<p>为了解决这些难点, 我做了几件事:</p>
-<ul>
-<li>首先在设计阶段，花了大量时间学习相关技术, 确保对升级流程有了清晰的认识; 和团队沟通, 明确升级方案的具体需求</li>
-<li>接着是模块化设计，把整个升级流程分为多个独立模块, 比如升级包制作模块, 在线升级模块, 每个模块专注于解决特定问题, 降低开发难度, 提高可维护性</li>
-<li>然后是技术选型, 选择最合适的工具满足需求, 例如: 使用AWS IoT实现云端到设备通信; 使用轻量化的Microk8s部署服务</li>
-</ul>
-<p>目前有6k+企业客户, 1w+台虚拟设备使用我的升级方案, 这套方案降低了开发维护成本, 同时显著改善了用户体验</p>
-<h2><span id="能举一个问题定位案例吗-你如何解决的">能举一个问题定位案例吗, 你如何解决的</span></h2><ul>
-<li>客户的NTP服务器问题，导致时间不正确, 和AWS IoT连接失败</li>
-<li>客户人为操作失误, 把网卡disconnect了, 导致k8s启动失败</li>
-<li>k8s apiserver证书过期, 导致微服务有问题</li>
-<li>客户虚拟机配置问题，虚拟CPU不支持AVX指令集, 但物理CPU支持</li>
-</ul>
-<h2><span id="这个项目都做了哪些测试">这个项目都做了哪些测试？</span></h2><p>黑盒测试, 针对功能点的测试 [TODO]</p>
+<h2><span id="项目中最大难点时什么-如何定位解决的">项目中最大难点时什么, 如何定位解决的</span></h2><p>项目最大难点在于问题的快速定位。 比如客户虚拟设备重启时，可能出现各种复杂的K8S问题或网络问题</p>
+<p>我举一个k8s问题定位案例<br>有一个客户反馈, 他们的虚拟设备重启后无法正常工作了<br>我通过日志发现Microk8s不工作, 由于apiserver证书有效时间不正确; 但是客户坚称他们的虚拟机时间是正确的, 这使得问题变得复杂</p>
+<p>好在项目设计的时候，我就考虑到了定位的问题。 我们记录了每次虚拟设备启动日志, 通过回溯日志, 我发现了一条关键线索: 某次启动中, 客户虚拟机的RTC时间比正确时间快了一个月.<br>为了进一步验证, 我在本地环境中模拟了类似情况, 发现Microk8s的确在每次重启后, 根据当前虚拟机系统时间刷新apiserver证书。 此时, 我终于确认了问题的root cause.</p>
+<p>我和客户沟通, 把日志截图提供给客户, 说明了客户的环境问题，建议客户重启解决问题。<br>后面我们设计了一个workaround, 通过添加一个定时任务, 检测证书是否有效, 如果证书失效, 就直接刷新证书, 避免了因为客户环境问题导致的服务中断, 提升了用户体验 </p>
+<p>The biggest challenge in the project is trouble-shooting. We need to address various complex Kubernetes or network problems.</p>
+<p>Here is an example of a K8S issue.</p>
+<p>A customer reported that their virtual device failed to work after reboot.<br>I found that Microk8s didn’t work due to invalid cert time of apiserver, but customer insisted that their system time was right. This made the problem become more complex.</p>
+<p>Fortunately, I had already considered the trouble-shooting before. We recorded all startup logs.<br>By reviewing these logs, I found that during one particular startup, the system time on the customer’s virtual appliance was one month ahead of the correct time.</p>
+<p>For further validation, I tested in my local machine, and discovered that Microk8s will refresh apiserver cert based on system time when reboot. Finally, I found the root cause.  </p>
+<p>I communicated with customer, provided them with logs and explained the root cause. I recommended our customer to reboot and solve the problem.<br>Besides, I designed a workaround by adding a cronjob to check certificate continously. if cert time is invalid, it would be refreshed immediately.<br>This workaround can improve user experience.</p>
+<p>我再举一个网络问题定位案例</p>
+<p>在本地测试过程中，我们遇到了一个问题: 如果虚拟设备配置了双网卡，在升级后有概率出现网络不通的情况。 然而，升级后的网卡IP和Gateway看上去是正确的。</p>
+<p>首先，我尝试通过ping网关来验证网络连通性, 这是基本排查步骤。 如果网关不可达, 说明问题可能出现网络接口或路由配置上。 结果发现ping失败<br>接着, 我通过日志详细对比升级前后的网卡配置变化, 发现升级后网卡的MAC地址有问题, eth0和eth1的MAC地址反了<br>我进一步搜索资料, 发现问题的根本原因在于, 现代Linux系统通常使用基于硬件信息(如PCI总线ID)的可预测网卡命名规则, 保证迁移后网卡顺序也是正确的<br>然而我们的虚拟设备采用的还是传统的eth命名规则, 这种规则不能保证网卡顺序的正确性</p>
+<p>为了解决这个问题, 我写了一段脚本, 升级前使用ethtool获取两个网卡的businfo, 升级后根据businfo判断, 如果网卡顺序不正确，就通过modprobe重新加载网卡驱动, 最终解决了问题</p>
+<p>Here is an example of a Network issue.<br>During local testing, I found a problem<br>If a virtual appliance was configured with dual network interface, there may be a network failure after an upgrade.<br>However, the IP address and Gateway of two NICs seemed correct after the upgrade. This made the problem more complex.</p>
+<p>First, I attempted to ping gateway to test network. Because if the gateway is unreachable, it indicates problemes in NIC configs and routing table.<br>Next, I reviewed logs and compared the NIC configurations before and after the upgrade. I found that MAC address of eth0 and eth1 were swapped.</p>
+<p>After further research, I found the root cause. Modern Linux systems use predictable network interface naming rules to ensure consistent NIC ordering<br>However, our virtual appliance still used the traditional ethX naming rule. This may caused wrong NIC order.</p>
+<p>To address this issue, I wrote a script. Before the upgrade, I used ethtool to record the businfo of both NICs.<br>After the upgrade, the script checked the businfo to determine whether the NIC order was correct.<br>If the order was incorrect, the script used modprobe to reload the NIC drivers in the correct sequence.</p>
+<p>And this solution eventualy resolved the problem.</p>
+<h1><span id="常见项目问题">常见项目问题</span></h1><h2><span id="这个项目都做了哪些测试">这个项目都做了哪些测试？</span></h2><p>黑盒测试, 针对功能点的测试 [TODO]</p>
 <h2><span id="还有什么可以优化的">还有什么可以优化的</span></h2><ul>
-<li>压缩虚拟设备镜像大小, 精简微服务基础镜像</li>
+<li>压缩虚拟设备镜像大小</li>
+<li>精简微服务基础镜像</li>
 </ul>
 <h2><span id="用什么技术开发的-你做了哪些部分">用什么技术开发的, 你做了哪些部分</span></h2><p>在服务网关项目中, 我负责虚拟设备的特性开发工作.</p>
 <ul>
@@ -438,7 +457,84 @@
 <li>Jira和GitHub issues管理任务, 代码review</li>
 <li>持续集成与交付, Github Actions作为CI&#x2F;CD工具</li>
 </ul>
-<h2><span id="问题">问题</span></h2><h3><span id="如何压缩全量升级包">如何压缩全量升级包</span></h3><ul>
+<h2><span id="fps项目中最大的难题是什么-如何解决的">FPS项目中最大的难题是什么? 如何解决的？**</span></h2><p>[TODO]<br>最大难点就是解决客户网络不通问题。 因为客户网络是一个高度不确定的环境, 绝大多数的网络不通问题都是客户防火墙导致的</p>
+<p>防火墙配置错误, 导致FQDN不通过<br>监听了HTTPS请求, 做中间人, 导致证书校验不通过</p>
+<p>HTTPS流程, HTTP代理+HTTPS流程, Squid+Stunnel流程</p>
+<p>HTTP CONNECT通道</p>
+<ul>
+<li>客户端和代理服务器进行三次握手, 建立TCP连接</li>
+<li>客户端发送HTTP CONNECT请求给代理, 告诉代理目标站点地址和端口号</li>
+<li>代理收到请求后, 和目标服务器也进行三次握手, 建立TCP连接</li>
+<li>连接建立后返回200 OK, 告诉客户端加密通道已生成</li>
+<li>之后代理只是来回转发客户端和服务器间的加密数据包 （TLS握手+HTTP数据)</li>
+</ul>
+<p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.hawu.me/operation/886">https://www.hawu.me/operation/886</a><br>Stunnel加密通信原理<br>Stunnel Client部署在防火墙内, Stunnel Server部署在云上(客户防火墙外)<br>Squid把包发给Stunnel Client<br>Stunnel Client将包加密, 发送给Stunnel Server<br>Stunnel Server解密后转发请求<br>由于通过客户防火墙的数据是被Stunnel加密的, 客户防火墙只能看到Stunnel Server:443的TCP包, 看不到具体的FQDN</p>
+<p>写一个KB，让客户先排查是否防火墙配置问题</p>
+<ul>
+<li>首先检查网络设置和网络连接: ip, netmask, gateway, dns, ping gateway</li>
+<li>让客户检查防火墙规则: 协议，方向, 行为, 规则顺序</li>
+<li>禁用防火墙的HTTPS证书替换, 某些防火墙为了检测HTTPS流量, 会做中间人拦截HTTPS流量。 防火墙生成一个新的SSL证书，冒充目标网站证书</li>
+</ul>
+<p>举例: 某些客户防火墙为了检测HTTPS流量, 会做中间人拦截HTTPS流量。 防火墙生成一个新证书，冒充目标网站证书, 因为虚拟设备不支持客户自定义CA，导致网络不通<br>解决方法: CLI中实现诊断网络的命令，通过查看curl的结果, 看issuer是否为entrust, Amazon; 如果issuer是一个IP,hostname或防火墙产商名字，说明被替换了</p>
+<h1><span id="项目2-forward-proxy-service">项目2: Forward Proxy Service</span></h1><h2><span id="介绍下forward-proxy这个项目">介绍下Forward Proxy这个项目</span></h2><p>这是一个安装在Service Gateway上的微服务, 为本地的趋势终端产品接入云服务提供正向代理功能, 实现本地产品访问互联网的集中管理  </p>
+<p>早期, 各个本地产品从云端下载数据, 需要各自访问不同的后端, 只能各自实现一套认证，访问控制方案.<br>通过引入Forward Proxy服务，所有本地产品连接到这个正向代理即可，实现了集中的认证, 访问控制, 降低了各产品开发和维护成本</p>
+<p>通过Microk8s部署, 基于hostNetwork模式, 直接使用宿主机网络栈，监听8080端口，提升性能<br>核心组件有两部分, 一个是Squid软件, 另一个是Python进程, 感知网络设置和白名单变化, 更新Squid配置文件，重新加载Squid</p>
+<h2><span id="说一下stunnel的加密通信方案">说一下Stunnel的加密通信方案</span></h2><p>Forward Proxy安装在客户本地网络中，客户网络是一个高度不确定的环境。 部分客户配置防火墙规则时会出现一些问题, 比如:</p>
+<ul>
+<li>不支持通配符FQDN</li>
+<li>配置错误, 或遗漏某个FQDN</li>
+<li>客户重新配置防火墙规则需要一定时间, 这段时间服务无法工作, 影响用户体验</li>
+</ul>
+<p>有两个问题:</p>
+<ul>
+<li><ol>
+<li>减少客户的防火墙配置错误导致的网络不通问题</li>
+</ol>
+</li>
+<li><ol start="2">
+<li>某些特定的FQDN由于性能原因不适合加密, 需要直出或者走客户代理, 其余FQDN数据需要加密走别的代理出。 需要支持这种多代理转发场景</li>
+</ol>
+</li>
+</ul>
+<p>我们参考了科学上网的方案, 基于Stunnel对Squid数据做TLS加密, 从而将终端到云端访问整合为一个FQDN, 简化客户防火墙配置</p>
+<p>Stunnel工作原理是:</p>
+<ul>
+<li>基于TLS加密隧道工具, 客户将未加密流量发到Squid, Squid发送到Stunnel</li>
+<li>Stunnel client端使用TLS加密, 传到Stunnel Server, 防火墙只能看到TCP&#x2F;443的包，只需要允许Stunnel Server的1个FQDN通过即可</li>
+<li>Stunnel Server解密，把HTTP请求送给目标服务</li>
+</ul>
+<p>client -&gt; server<br>client -&gt; Squid -&gt; server<br>client -&gt; Squid -&gt; Stunnel -&gt; server </p>
+<h1><span id="项目3-matrix仿真平台">项目3: Matrix仿真平台</span></h1><h2><span id="驱动接口仿真是怎么回事">驱动接口仿真是怎么回事</span></h2><ul>
+<li>在真实的交换机上，我们领域的业务代码依赖驱动提供的接口</li>
+<li>要实现仿真环境的验证，需要对驱动接口进行打桩的工作</li>
+<li>测试人员需要构造故障, 比如通过改变驱动行为的方式。 如果每次都修改C代码再重新编译, 这种测试体验会很差</li>
+</ul>
+<h2><span id="为什么用redis不用mysql">为什么用Redis不用MySQL</span></h2><ul>
+<li>Redis是基于内存的，性能很高。 我这个项目中的数据规模在2w个key左右，QPS最高在1w左右，因此我们直接使用Redis做数据库</li>
+<li>Redis的key-value模型很适合模拟驱动接口行为，灵活方便, 因为我们的驱动接口就是get&#x2F;set; MySQL是关系型的，还要先建表, 不灵活</li>
+<li>Redis数据类型丰富（string, list, set, zset, hash)，mamcached只支持string, mongodb是文档型数据库，更适合文档存储</li>
+<li>Redis支持发布订阅和数据库通知 。我在项目中使用这两个特性，解决了仿真环境中单板插拔流程的验证问题</li>
+</ul>
+<h2><span id="读写redis库怎么做的">读写Redis库怎么做的</span></h2><p>基于Hiredis这个C语言实现的开源库, 开了一组读写Redis key的API. 选用HiRedis是因为我们被测代码也是so库, 集成很方便<br>举例： 把1号单板设置成不在位，通过修改Redis key: “&#x2F;board#1&#x2F;present_status”的值实现，无需修改驱动代码</p>
+<h2><span id="redis挂了怎么办-可靠性怎么考虑">Redis挂了怎么办, 可靠性怎么考虑</span></h2><p>每个单板1个容器，作为redis client; 1个管理容器，安装redis数据库<br>如果Redis挂了，管理容器会检测到异常，并依次重启管理容器和各个单板容器。<br>由于这是仿真环境大部分驱动数据是易失性的，无需持久化或集群支持; 对于需要持久化数据, 通过写文件和Docker Volume方式存储</p>
+<h2><span id="利用redis的键空间通知机制-开发了一组发布订阅的api">利用Redis的键空间通知机制, 开发了一组发布订阅的API</span></h2><p>设备管理的业务依赖驱动接口注册一个回调, 从而感知单板插板事件<br>我们需要仿真驱动接口，保证发生插拔事件可以触发这个回调, 实现单板插板特性在仿真环境的而测试<br>如果是轮询的方式，定时检查Redis中单板在位状态, 这种方式浪费CPU.</p>
+<p><strong>如何解决的？成果：</strong><br>利用Redis的键空间通知机制解决这个问题:<br>在驱动函数中, 向Redis发起频道订阅, 频道的名称可以是”Board1&#x2F;present_status”, 订阅单板的在位状态<br>然后模拟单板插入动作，更新Redis键, 触发Redis键空间通知机制。 Redis将消息发布到所有在线的消费者(也就是我们的上层业务)。<br>上层业务收到订阅消息后，触发一次业务回调，从而感知到了单板插板。</p>
+<h2><span id="3-把redis短连接优化为长连接怎么回事">3. 把Redis短连接优化为长连接怎么回事</span></h2><p>早期的仿真平台, 驱动接口是通过Redis短连接实现的，导致频繁地建立连接和关闭连接，性能低下。<br>设备管理有一段子卡初始化代码，需要查询很多属性, 用短连接耗时很长</p>
+<p><strong>怎么解决的</strong></p>
+<ul>
+<li>通过netstat发现TIME_WAIT过多，都是6379端口，判断使用Redis短连接</li>
+<li>把短连接改造为长连接。 每个进程分一个Redis长连接，各线程通过pthread互斥锁获取长连接</li>
+<li>将驱动接口平均一次读写时间缩短为原先的1&#x2F;15，从平均2ms到0.1ms一次，获得显著性能提升。</li>
+</ul>
+<h2><span id="工具是你一个做的还是合作的怎么合作的">工具是你一个做的？还是合作的？怎么合作的？</span></h2><p>这个工具是合作完成的<br>早期设计阶段, 有1个架构师, 1个SE, 我参与项目设计和方案讨论, 梳理业务做原型验证，和架构,SE讨论方案。<br>连我在内, 有两个开发，另一个开发来自杭州。 我负责驱动接口仿真和Redis，另一个同事负责Docker镜像, 仿真设备包构建</p>
+<p>后期的性能优化也是合作的，连我在内有3名开发，在同一个部门的业务组。<br>我做方案设计, 梳理流程拓扑, 把开发任务分解到2名开发同事去做。</p>
+<h2><span id="你觉得还有什么优化">你觉得还有什么优化</span></h2><ul>
+<li>优化内存。比如对字符串键做压缩存储（因为Redis字符串键的三种编码: long, embstr,raw）</li>
+<li>优化请求速度，有些驱动函数会一次性读写多个key，用mset, mget命令代替get, set, 减少客户端和Redis的通信次数</li>
+</ul>
+<h2><span id="举一个问题定位案例">举一个问题定位案例</span></h2><p>当时遇到一个Redis key被意外删除的问题 </p>
+<p>我们通过常规的查看日志, tcpdump抓包方法, 没有找到原因.<br>我当时看过REDIS的单机数据库实现, 想到既然Redis是基于内存的数据库，字符串键肯定在进程中的某个内存地址处，key丢失时这个地址的内容肯定被改写<br>所以我只需要GDB打个断点，看下调用栈不就搞定了<br>后来发现是REDIS配置项maxmemory过低, 只给了1M, 导致Redis认为空间不够就随机淘汰了一些key, 修改了这个配置项后问题得到了解决</p>
+<h2><span id="其他项目问题">其他项目问题</span></h2><h3><span id="如何压缩全量升级包">如何压缩全量升级包</span></h3><ul>
 <li>使用Rocky官方minimal的镜像做定制, 这个镜像在1.7G左右</li>
 <li>只分配必要空间给构建镜像的虚拟机, 等客户安装成功后再分配剩余磁盘空间. 进一步压缩OVA大小</li>
 <li>导出OVA前, 清理临时文件，日志文件, 临时关闭swap分区</li>
@@ -519,9 +615,6 @@
 <li>无法主动失效</li>
 </ul>
 <h2><span id="jwt过期时间如何设置的怎么同步的">JWT过期时间如何设置的，怎么同步的</span></h2><p>每天定时从服务平台同步Token, Token设置了两个月过期时间, 过期前10天，立刻请求服务平台刷新Token</p>
-<h1><span id="项目2-forward-proxy-service">项目2: Forward Proxy Service</span></h1><h2><span id="介绍下forward-proxy这个项目">介绍下Forward Proxy这个项目</span></h2><p>这是一个安装在Service Gateway上的微服务, 为本地的趋势终端产品接入云服务提供正向代理功能, 实现本地产品访问互联网的集中管理  </p>
-<p>早期, 各个本地产品从云端下载数据, 需要各自访问不同的后端, 只能各自实现一套认证，访问控制方案.<br>通过引入Forward Proxy服务，所有本地产品连接到这个正向代理即可，实现了集中的认证, 访问控制, 降低了各产品开发和维护成本</p>
-<h2><span id="forward-proxy-service是如何部署的">Forward Proxy Service是如何部署的？</span></h2><p>通过Microk8s部署, 基于hostNetwork模式, 直接使用宿主机网络栈，监听8080端口，提升性能<br>核心组件有两部分, 一个是Squid软件, 另一个是Python进程, 感知网络设置和白名单变化, 更新Squid配置文件，重新加载Squid</p>
 <h2><span id="并发量有多少怎么测试的">并发量有多少，怎么测试的</span></h2><p>8vCPU&#x2F;12G&#x2F;500G&#x2F;1000Mbps<br>1000台agent并发升级, 流量157M<em>1000, 30分钟下载完毕<br>CPU 8%, Mem 58%, Disk 1%，峰值内存7G，瓶颈在带宽<br>157</em>8&#x2F;(30*60) &#x3D; 700Mbps, 相当于1Gpbs网卡</p>
 <h2><span id="为什么选squid-是否有其他替代方案nginx-haproxy">为什么选Squid, 是否有其他替代方案(Nginx, HAProxy)?</span></h2><ul>
 <li>Squid作为老牌正向代理, 在生产环境经过验证，稳定可靠.<br>结合我们的项目需求，正向代理需要支持认证功能, 基于IP,URL的访问控制, 配置用户代理, 以及多代理转发场景(不同的FQDN走不同的代理)<br>Squid功能丰富，配置简单, 可以容易实现这些功能<br>Nginx也能支持这些功能, 但是需要通过三方模块, 配置维护复杂一些.</li>
@@ -532,66 +625,6 @@
 <h2><span id="访问控制的具体实现方式是什么例如是否基于ip地址-或url-白名单x2f黑名单">访问控制的具体实现方式是什么？例如是否基于IP地址、或URL 白名单&#x2F;黑名单？</span></h2><p>通过Squid配置文件中定义ACL, 实现访问控制。<br>基于FQDN的访问控制, 预设一个白名单, 只允许白名单中的FQDN通过<br>允许客户在UI上添加白名单, 白名单信息由后端下发到虚拟设备，保存到ConfigMap<br>Pod中把ConfigMap挂到文件, 如白名单发生变化，从ConfigMap读取新的白名单，再reconfigure</p>
 <h2><span id="配置用户代理作用是什么怎么做的">配置用户代理作用是什么，怎么做的</span></h2><p>客户出于他的网络管理要求，希望所有虚拟设备流量通过他的代理服务器; Squid支持父级代理, 通过配置cache_peer定义父级代理的地址</p>
 <h2><span id="squid-的缓存机制是否被启用如果有具体的缓存策略是什么">Squid 的缓存机制是否被启用？如果有，具体的缓存策略是什么？</span></h2><p>没有手动启动磁盘缓存. Squid默认会启动内存缓存, 根据响应头,请求方法决定是否缓存某个请求<br>Cache-Control 强缓存, Etag 弱缓存; GET, HEAD可以缓存 </p>
-<h2><span id="说一下stunnel的加密通信方案">说一下Stunnel的加密通信方案</span></h2><p>Forward Proxy安装在客户本地网络中，客户网络是一个高度不确定的环境。 部分客户配置防火墙规则时会出现一些问题, 比如:</p>
-<ul>
-<li>不支持通配符FQDN</li>
-<li>配置错误, 或遗漏某个FQDN</li>
-<li>客户重新配置防火墙规则需要一定时间, 这段时间服务无法工作, 影响用户体验</li>
-</ul>
-<p>有两个问题:</p>
-<ul>
-<li><ol>
-<li>减少客户的防火墙配置错误导致的网络不通问题</li>
-</ol>
-</li>
-<li><ol start="2">
-<li>某些特定的FQDN由于性能原因不适合加密, 需要直出或者走客户代理, 其余FQDN数据需要加密走别的代理出。 需要支持这种多代理转发场景</li>
-</ol>
-</li>
-</ul>
-<p>我们参考了科学上网的方案, 基于Stunnel对Squid数据做TLS加密, 从而将终端到云端访问整合为一个FQDN, 简化客户防火墙配置</p>
-<h2><span id="stunnel工作原理">Stunnel工作原理</span></h2><ul>
-<li>基于TLS加密隧道工具, 客户将未加密流量发到Squid, Squid发送到Stunnel</li>
-<li>Stunnel client端使用TLS加密, 传到Stunnel Server, 防火墙只能看到TCP&#x2F;443的包，只需要允许Stunnel Server的1个FQDN通过即可</li>
-<li>Stunnel Server解密，把HTTP请求送给目标服务</li>
-</ul>
-<h2><span id="举一个定位案例">举一个定位案例</span></h2><p>写一个KB，让客户先排查是否防火墙配置问题</p>
-<ul>
-<li>首先检查网络设置和网络连接: ip, netmask, gateway, dns, ping gateway</li>
-<li>让客户检查防火墙规则: 协议，方向, 行为, 规则顺序</li>
-<li>禁用防火墙的HTTPS证书替换, 某些防火墙为了检测HTTPS流量, 会做中间人拦截HTTPS流量。 防火墙生成一个新的SSL证书，冒充目标网站证书</li>
-</ul>
-<p>举例: 某些客户防火墙为了检测HTTPS流量, 会做中间人拦截HTTPS流量。 防火墙生成一个新证书，冒充目标网站证书, 因为虚拟设备不支持客户自定义CA，导致网络不通<br>解决方法: CLI中实现诊断网络的命令，通过查看curl的结果, 看issuer是否为entrust, Amazon; 如果issuer是一个IP,hostname或防火墙产商名字，说明被替换了</p>
-<h1><span id="项目3-matrix仿真平台">项目3: Matrix仿真平台</span></h1><h2><span id="驱动接口仿真是怎么回事">驱动接口仿真是怎么回事</span></h2><ul>
-<li>在真实的交换机上，我们领域的业务代码依赖驱动提供的接口</li>
-<li>要实现仿真环境的验证，需要对驱动接口进行打桩的工作</li>
-<li>测试人员需要构造故障, 比如通过改变驱动行为的方式。 如果每次都修改C代码再重新编译, 这种测试体验会很差</li>
-</ul>
-<h2><span id="为什么用redis不用mysql">为什么用Redis不用MySQL</span></h2><ul>
-<li>Redis是基于内存的，性能很高。 我这个项目中的数据规模在2w个key左右，QPS最高在1w左右，因此我们直接使用Redis做数据库</li>
-<li>Redis的key-value模型很适合模拟驱动接口行为，灵活方便, 因为我们的驱动接口就是get&#x2F;set; MySQL是关系型的，还要先建表, 不灵活</li>
-<li>Redis数据类型丰富（string, list, set, zset, hash)，mamcached只支持string, mongodb是文档型数据库，更适合文档存储</li>
-<li>Redis支持发布订阅和数据库通知 。我在项目中使用这两个特性，解决了仿真环境中单板插拔流程的验证问题</li>
-</ul>
-<h2><span id="读写redis库怎么做的">读写Redis库怎么做的</span></h2><p>基于Hiredis这个C语言实现的开源库, 开了一组读写Redis key的API. 选用HiRedis是因为我们被测代码也是so库, 集成很方便<br>举例： 把1号单板设置成不在位，通过修改Redis key: “&#x2F;board#1&#x2F;present_status”的值实现，无需修改驱动代码</p>
-<h2><span id="redis挂了怎么办-可靠性怎么考虑">Redis挂了怎么办, 可靠性怎么考虑</span></h2><p>每个单板1个容器，作为redis client; 1个管理容器，安装redis数据库<br>如果Redis挂了，管理容器会检测到异常，并依次重启管理容器和各个单板容器。<br>由于这是仿真环境大部分驱动数据是易失性的，无需持久化或集群支持; 对于需要持久化数据, 通过写文件和Docker Volume方式存储</p>
-<h2><span id="利用redis的键空间通知机制-开发了一组发布订阅的api">利用Redis的键空间通知机制, 开发了一组发布订阅的API</span></h2><p>设备管理的业务依赖驱动接口注册一个回调, 从而感知单板插板事件<br>我们需要仿真驱动接口，保证发生插拔事件可以触发这个回调, 实现单板插板特性在仿真环境的而测试<br>如果是轮询的方式，定时检查Redis中单板在位状态, 这种方式浪费CPU.</p>
-<p><strong>如何解决的？成果：</strong><br>利用Redis的键空间通知机制解决这个问题:<br>在驱动函数中, 向Redis发起频道订阅, 频道的名称可以是”Board1&#x2F;present_status”, 订阅单板的在位状态<br>然后模拟单板插入动作，更新Redis键, 触发Redis键空间通知机制。 Redis将消息发布到所有在线的消费者(也就是我们的上层业务)。<br>上层业务收到订阅消息后，触发一次业务回调，从而感知到了单板插板。</p>
-<h2><span id="3-把redis短连接优化为长连接怎么回事">3. 把Redis短连接优化为长连接怎么回事</span></h2><p>早期的仿真平台, 驱动接口是通过Redis短连接实现的，导致频繁地建立连接和关闭连接，性能低下。<br>设备管理有一段子卡初始化代码，需要查询很多属性, 用短连接耗时很长</p>
-<p><strong>怎么解决的</strong></p>
-<ul>
-<li>通过netstat发现TIME_WAIT过多，都是6379端口，判断使用Redis短连接</li>
-<li>把短连接改造为长连接。 每个进程分一个Redis长连接，各线程通过pthread互斥锁获取长连接</li>
-<li>将驱动接口平均一次读写时间缩短为原先的1&#x2F;15，从平均2ms到0.1ms一次，获得显著性能提升。</li>
-</ul>
-<h2><span id="工具是你一个做的还是合作的怎么合作的">工具是你一个做的？还是合作的？怎么合作的？</span></h2><p>这个工具是合作完成的<br>早期设计阶段, 有1个架构师, 1个SE, 我参与项目设计和方案讨论, 梳理业务做原型验证，和架构,SE讨论方案。<br>连我在内, 有两个开发，另一个开发来自杭州。 我负责驱动接口仿真和Redis，另一个同事负责Docker镜像, 仿真设备包构建</p>
-<p>后期的性能优化也是合作的，连我在内有3名开发，在同一个部门的业务组。<br>我做方案设计, 梳理流程拓扑, 把开发任务分解到2名开发同事去做。</p>
-<h2><span id="你觉得还有什么优化">你觉得还有什么优化</span></h2><ul>
-<li>优化内存。比如对字符串键做压缩存储（因为Redis字符串键的三种编码: long, embstr,raw）</li>
-<li>优化请求速度，有些驱动函数会一次性读写多个key，用mset, mget命令代替get, set, 减少客户端和Redis的通信次数</li>
-</ul>
-<h2><span id="举一个问题定位案例">举一个问题定位案例</span></h2><p>当时遇到一个Redis key被意外删除的问题 </p>
-<p>我们通过常规的查看日志, tcpdump抓包方法, 没有找到原因.<br>我当时看过REDIS的单机数据库实现, 想到既然Redis是基于内存的数据库，字符串键肯定在进程中的某个内存地址处，key丢失时这个地址的内容肯定被改写<br>所以我只需要GDB打个断点，看下调用栈不就搞定了<br>后来发现是REDIS配置项maxmemory过低, 只给了1M, 导致Redis认为空间不够就随机淘汰了一些key, 修改了这个配置项后问题得到了解决</p>
 <p><strong>DeployMent</strong><br>AWS云, 每个site一个EKS<br>site: US, EU, SG, AU, IN, JP, UAE<br>site: US-EAST-1<br>vpc cidr: 10.131.44.0&#x2F;22<br>subnets:<br>xdr-app-tgw-private-1a	10.131.45.0&#x2F;24<br>xdr-app-tgw-private-1b	10.131.46.0&#x2F;24<br>xdr-app-tgw-private-1c	10.131.47.0&#x2F;24<br>xdr-app-tgw-public-1a	10.131.44.0&#x2F;25<br>xdr-app-tgw-public-1b	10.131.44.128&#x2F;25<br>routes:<br>rtb-03eb993eb0a0df54b<br>0.0.0.0&#x2F;0	nat-0d7fa27334ad10a4a<br>10.0.0.0&#x2F;8	tgw-0c4d0ec54e6f330f1<br>10.131.44.0&#x2F;22	local</p>
 <p><strong>Cost</strong><br>2022-11</p>
 <ul>
@@ -610,7 +643,18 @@
 <li>502 Gateway 问题</li>
 <li>分析流量</li>
 </ul>
-<p>问题:<br>客户虚拟机时间不对, 导致k8s证书无效 —— 重启, systemd服务刷新时间<br>iptables一条链不超过15个端口<br>containerd grpc随机端口, 与Ingress controller冲突<br>OS切换后, 双网卡问题<br>SSH</p>
+<h2><span id></span></h2><h2><span id="最大的难点是什么-你是如何解决的">最大的难点是什么, 你是如何解决的</span></h2><p>项目中最大的挑战在于虚拟设备固件升级方案的设计与实现, 难点体现在两个方面:</p>
+<ul>
+<li>一个是没有先例可循; 公司内部没有部门实现过类似的升级方案, 当时也没有chatgpt, 需要基于对技术原理的理解推导方案</li>
+<li>另一个是涉及的技术比较多; 比如Linux技术, 需要了解启动流程, 分区管理, initrd定制, ISO定制, GRUB引导程序, 比如K8S, Docker, HTTP, 消息队列, Python等<br>不仅要求我对整个升级流程有深入了解，还需要整合多种技术实现了一个可靠的解决方案.</li>
+</ul>
+<p>为了解决这些难点, 我做了几件事:</p>
+<ul>
+<li>首先在设计阶段，花了大量时间学习相关技术, 确保对升级流程有了清晰的认识; 和团队沟通, 明确升级方案的具体需求</li>
+<li>接着是模块化设计，把整个升级流程分为多个独立模块, 比如升级包制作模块, 在线升级模块, 每个模块专注于解决特定问题, 降低开发难度, 提高可维护性</li>
+<li>然后是技术选型, 选择最合适的工具满足需求, 例如: 使用AWS IoT实现云端到设备通信; 使用轻量化的Microk8s部署服务</li>
+</ul>
+<p>目前有6k+企业客户, 1w+台虚拟设备使用我的升级方案, 这套方案降低了开发维护成本, 同时显著改善了用户体验</p>
 
     </div>
 
@@ -731,7 +775,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目: Trend Micro - Service Gateway</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">简单介绍下你的项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下升级方案怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下OS迁移怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">回滚是怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下微服务的集成方案怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">最大的难点是什么, 你是如何解决的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">能举一个问题定位案例吗, 你如何解决的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">这个项目都做了哪些测试？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">还有什么可以优化的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">用什么技术开发的, 你做了哪些部分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">几个人开发的, 你怎么合作的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">这个项目用了什么第三方软件&#x2F;插件？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">这个项目采用了什么样的软件开发流程？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">如何压缩全量升级包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">在线升级遇到网络不稳定怎么处理的</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你提到多线程来处理不同类型的任务，但如何保证线程间的同步和数据一致性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么引入消息队列</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你如何保证消息传输可靠性?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你如何防止重复消费</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何保证消息传递可靠性, 是否有重试机制或消息确认机制 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选择AWS IoT, 有没有考虑其他MQ解决方案 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么设计Cronjob，不直接在Python服务里处理升级</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何检测微服务运行状态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">启动项切换到备用分区的具体实现方式是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下Linux启动流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下GRUB工作原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选Microk8s, 不选k3s, minukube ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何配置Ingress的? Nginx如何提供统一入口点的，具体实现方式是什么? 具体实现原理是什么?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">引入Ingress后，如何确保微服务的安全性？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">CLI怎么开发的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">开发了一组诊断命令，用于快速定位 OS、Kubernetes 和网络相关问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">怎么实现注册的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT工作原理是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT过期时间如何设置的，怎么同步的</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目2: Forward Proxy Service</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">介绍下Forward Proxy这个项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Forward Proxy Service是如何部署的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">并发量有多少，怎么测试的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选Squid, 是否有其他替代方案(Nginx, HAProxy)?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid正向代理的原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid的安全认证是如何实现的？ 为什么选择Basic认证, 还有哪些认证方式?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么Squid代理使用HTTP, 不是HTTPS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">访问控制的具体实现方式是什么？例如是否基于IP地址、或URL 白名单&#x2F;黑名单？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置用户代理作用是什么，怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid 的缓存机制是否被启用？如果有，具体的缓存策略是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说一下Stunnel的加密通信方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Stunnel工作原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">举一个定位案例</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目3: Matrix仿真平台</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">驱动接口仿真是怎么回事</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么用Redis不用MySQL</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">读写Redis库怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Redis挂了怎么办, 可靠性怎么考虑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">利用Redis的键空间通知机制, 开发了一组发布订阅的API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">3. 把Redis短连接优化为长连接怎么回事</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">工具是你一个做的？还是合作的？怎么合作的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你觉得还有什么优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">举一个问题定位案例</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目: Trend Micro - Service Gateway</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">简单介绍下你的项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下升级方案怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下OS迁移怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">回滚是怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下微服务的集成方案怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">项目中最大难点时什么, 如何定位解决的</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">常见项目问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">这个项目都做了哪些测试？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">还有什么可以优化的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">用什么技术开发的, 你做了哪些部分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">几个人开发的, 你怎么合作的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">这个项目用了什么第三方软件&#x2F;插件？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">这个项目采用了什么样的软件开发流程？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">FPS项目中最大的难题是什么? 如何解决的？**</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目2: Forward Proxy Service</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">介绍下Forward Proxy这个项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说一下Stunnel的加密通信方案</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目3: Matrix仿真平台</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">驱动接口仿真是怎么回事</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么用Redis不用MySQL</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">读写Redis库怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Redis挂了怎么办, 可靠性怎么考虑</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">利用Redis的键空间通知机制, 开发了一组发布订阅的API</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">3. 把Redis短连接优化为长连接怎么回事</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">工具是你一个做的？还是合作的？怎么合作的？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你觉得还有什么优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">举一个问题定位案例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">其他项目问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">如何压缩全量升级包</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">在线升级遇到网络不稳定怎么处理的</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你提到多线程来处理不同类型的任务，但如何保证线程间的同步和数据一致性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么引入消息队列</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你如何保证消息传输可靠性?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你如何防止重复消费</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何保证消息传递可靠性, 是否有重试机制或消息确认机制 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选择AWS IoT, 有没有考虑其他MQ解决方案 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么设计Cronjob，不直接在Python服务里处理升级</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何检测微服务运行状态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">启动项切换到备用分区的具体实现方式是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下Linux启动流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下GRUB工作原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选Microk8s, 不选k3s, minukube ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何配置Ingress的? Nginx如何提供统一入口点的，具体实现方式是什么? 具体实现原理是什么?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">引入Ingress后，如何确保微服务的安全性？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">CLI怎么开发的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">开发了一组诊断命令，用于快速定位 OS、Kubernetes 和网络相关问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">怎么实现注册的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT工作原理是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT过期时间如何设置的，怎么同步的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">并发量有多少，怎么测试的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么选Squid, 是否有其他替代方案(Nginx, HAProxy)?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid正向代理的原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid的安全认证是如何实现的？ 为什么选择Basic认证, 还有哪些认证方式?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么Squid代理使用HTTP, 不是HTTPS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">访问控制的具体实现方式是什么？例如是否基于IP地址、或URL 白名单&#x2F;黑名单？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置用户代理作用是什么，怎么做的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Squid 的缓存机制是否被启用？如果有，具体的缓存策略是什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text"></span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">最大的难点是什么, 你是如何解决的</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -806,12 +850,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">771k</span>
+    <span title="站点总字数">777k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:41</span>
+    <span title="站点阅读时长">11:46</span>
 </div>
 
 <!--
