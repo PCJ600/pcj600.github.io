@@ -31,13 +31,13 @@
 <meta property="og:site_name" content="PC&#39;s Blog">
 <meta property="og:description" content="前言docker0是Docker默认网络的核心组件, 通过虚拟网桥和NAT技术, 实现了容器间的通信以及容器与外部网络的交互。然而, docker0网段是固定的(通常是172.17.0.0&#x2F;16), 为了更灵活地管理容器网络，Docker支持创建自定义网桥，允许用户指定网段。例如, 在我以前做的一个单板仿真项目里, 每个容器用来模拟一块板, 单板的IP需要设置为172.16.0.0&amp;#x">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://pcj600.github.io/2020/0102171050">
+<meta property="og:image" content="https://pcj600.github.io/2025/0304214819/image2.png">
 <meta property="article:published_time" content="2025-03-04T13:48:19.000Z">
 <meta property="article:modified_time" content="2025-03-04T14:41:33.328Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="Docker">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://pcj600.github.io/2020/0102171050">
+<meta name="twitter:image" content="https://pcj600.github.io/2025/0304214819/image2.png">
 
 <link rel="canonical" href="https://pcj600.github.io/2025/0304214819.html">
 
@@ -106,7 +106,6 @@
       <h1 class="site-title">PC's Blog</h1>
       <span class="logo-line-after"><i></i></span>
     </a>
-      <p class="site-subtitle" itemprop="description">carpe diem</p>
   </div>
 
   <div class="site-nav-right">
@@ -128,12 +127,12 @@
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">37</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">36</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">50</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">49</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
@@ -272,7 +271,7 @@
         <h1><span id="前言">前言</span></h1><p>docker0是Docker默认网络的核心组件, 通过虚拟网桥和NAT技术, 实现了容器间的通信以及容器与外部网络的交互。然而, docker0网段是固定的(通常是172.17.0.0&#x2F;16), 为了更灵活地管理容器网络，Docker支持创建自定义网桥，允许用户指定网段。<br>例如, 在我以前做的一个单板仿真项目里, 每个容器用来模拟一块板, 单板的IP需要设置为172.16.0.0&#x2F;16, 和docker0网段不一致。 由于这个项目部署在每个开发的工作机上, 我们决定不直接修改docker0配置, 选择了创建自定义网桥这种更灵活的方式。</p>
 <h1><span id="docker网桥的工作机制">Docker网桥的工作机制</span></h1><p>Docker在主机上创建一个虚拟网桥(docker0), 每当启动一个容器，Docker会自动创建一对虚拟网卡(veth pair), 其中一端放在容器内部作为它的网络接口, 另一端则连接到主机上的这个虚拟网桥。 通过这种方式，容器之间可以通过网桥直接通信，数据包在网桥内转发，不经过主机的物理网络接口。<br>如果容器访问的是外部网络, 容器发出的数据包会先通过虚拟网桥到达主机, 然后主机通过NAT将容器的私有IP替换为自己的公网IP，从而让数据包能够顺利发送到外部网络。</p>
 <span id="more"></span>
-<p><img data-src="/2020/0102171050"></p>
+<p><img data-src="/2025/0304214819/image2.png"></p>
 <h1><span id="示例-创建自定义网桥">示例： 创建自定义网桥</span></h1><p>创建自定义网桥br0, 网段为172.16.0.0&#x2F;16, 创建一组容器连到网桥br0, 各容器通过eth1(172.16.0.0&#x2F;16)可以互联</p>
 <h2><span id="创建自定义网桥br0">创建自定义网桥br0</span></h2><p>创建一个新的网桥br0, 为其分配子网172.16.0.254&#x2F;24</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo ip link add name br0 type bridge</span><br><span class="line">sudo ip link set dev br0 up</span><br><span class="line">sudo ip addr add 172.16.0.254/16 dev br0</span><br></pre></td></tr></table></figure>
@@ -432,13 +431,13 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">36</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-count">49</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -481,7 +480,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">800k</span>
+    <span title="站点总字数">799k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
