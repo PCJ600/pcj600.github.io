@@ -123,12 +123,12 @@
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">36</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">37</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">49</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">50</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
@@ -413,7 +413,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                  <a href="/categories/kubernetes/" itemprop="url" rel="index"><span itemprop="name">kubernetes</span></a>
                 </span>
             </span>
 
@@ -423,14 +423,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.4k</span>
+              <span>496</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>2 分钟</span>
+              <span>1 分钟</span>
             </span>
 
         </div>
@@ -442,17 +442,17 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="在线安装Microk8s"><a href="#在线安装Microk8s" class="headerlink" title="在线安装Microk8s"></a>在线安装Microk8s</h2><ol>
-<li><p>安装snap</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install -y epel-release</span><br><span class="line">yum install -y snapd</span><br><span class="line">systemctl enable --now snapd.socket</span><br><span class="line">systemctl start snapd</span><br><span class="line">ln -s /var/lib/snapd/snap /snap</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2023/0330211939.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
+          <p>使用以下命令检查当前 MicroK8s 控制平面运行状态：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">microk8s status</span><br></pre></td></tr></table></figure>
+<p>确认 MicroK8s 控制平面运行正常后，使用以下命令获取 Kubernetes 集群的配置信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">microk8s config view</span><br></pre></td></tr></table></figure>
+<p>找到以下行，其中包含 API Server 的证书:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">certificate-authority-data: ***</span><br><span class="line">certificate-authority-data 给出了证书的 Base64 编码数据。</span><br></pre></td></tr></table></figure>
+<p>在终端中解码证书数据并输出详细信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -in &lt;(echo &quot;&lt;cert-data&gt;&quot;) -text -noout | grep &quot;Not After&quot;</span><br></pre></td></tr></table></figure>
+<p>将 <cert-data> 替换为第三步输出的证书编码数据，该命令将解码证书并输出其详细信息，包括过期时间, 在输出信息中找到 “Not After” 字段，它包含证书的过期日期。</cert-data></p>
+<p>microk8s证书默认路径：&#x2F;var&#x2F;snap&#x2F;microk8s&#x2F;current&#x2F;certs&#x2F;</p>
+
       
     </div>
 
@@ -808,13 +808,13 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">36</span>
+        <span class="site-state-item-count">37</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -857,12 +857,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">800k</span>
+    <span title="站点总字数">801k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12:07</span>
+    <span title="站点阅读时长">12:08</span>
 </div>
 
 <!--

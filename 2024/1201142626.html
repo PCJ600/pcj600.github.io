@@ -26,15 +26,15 @@
 
   <meta name="description" content="在线安装Microk8s1、安装snap 12345yum install -y epel-releaseyum install -y snapdsystemctl enable --now snapd.socketsystemctl start snapdln -s &#x2F;var&#x2F;lib&#x2F;snapd&#x2F;snap &#x2F;snap  2、安装microk8s 123snap install microk8s">
 <meta property="og:type" content="article">
-<meta property="og:title" content="在RockyLinux9.4上安装Microk8s">
+<meta property="og:title" content="如何在RockyLinux9.4上安装Microk8s">
 <meta property="og:url" content="https://pcj600.github.io/2024/1201142626.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
 <meta property="og:description" content="在线安装Microk8s1、安装snap 12345yum install -y epel-releaseyum install -y snapdsystemctl enable --now snapd.socketsystemctl start snapdln -s &#x2F;var&#x2F;lib&#x2F;snapd&#x2F;snap &#x2F;snap  2、安装microk8s 123snap install microk8s">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-12-01T06:26:26.000Z">
-<meta property="article:modified_time" content="2024-12-01T06:44:38.564Z">
+<meta property="article:modified_time" content="2025-03-08T11:05:15.296Z">
 <meta property="article:author" content="PC">
-<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="kubernetes">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://pcj600.github.io/2024/1201142626.html">
@@ -50,7 +50,7 @@
   };
 </script>
 
-  <title>在RockyLinux9.4上安装Microk8s | PC's Blog</title>
+  <title>如何在RockyLinux9.4上安装Microk8s | PC's Blog</title>
   
 
 
@@ -125,12 +125,12 @@
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">36</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">37</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">49</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">50</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
@@ -212,7 +212,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          在RockyLinux9.4上安装Microk8s
+          如何在RockyLinux9.4上安装Microk8s
         </h1>
 
         <div class="post-meta">
@@ -230,7 +230,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
+                  <a href="/categories/kubernetes/" itemprop="url" rel="index"><span itemprop="name">kubernetes</span></a>
                 </span>
             </span>
 
@@ -247,7 +247,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>4.8k</span>
+              <span>4.9k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -286,6 +286,9 @@
 
 <p><strong>问题2</strong>: metrics-server启动失败, ‘dial tcp XXX:10250: connect: no route to host”<br>解决方法：关闭防火墙，禁用SELinux</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">systemctl disable firewalld --now</span><br><span class="line">setenforce 0</span><br><span class="line">vim /etc/selinux/config</span><br><span class="line">SELINX=enforcing这行改成SELINUX=permissive</span><br></pre></td></tr></table></figure>
+
+<p>开启ip_forward</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">/etc/sysctl.conf</span><br><span class="line">net.bridge.bridge-nf-call-iptables  = 1</span><br><span class="line">net.ipv4.ip_forward                 = 1</span><br><span class="line">net.bridge.bridge-nf-call-ip6tables = 1</span><br></pre></td></tr></table></figure>
 
 <h2><span id="离线安装microk8s">离线安装Microk8s</span></h2><p>1、在可联网的环境下载Microk8s的snap安装包</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">snap download microk8s --channel=1.31/stable <span class="comment"># 下载指定版本1.31</span></span><br></pre></td></tr></table></figure>
@@ -344,7 +347,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://pcj600.github.io/2024/1201142626.html" title="在RockyLinux9.4上安装Microk8s">https://pcj600.github.io/2024/1201142626.html</a>
+    <a href="https://pcj600.github.io/2024/1201142626.html" title="如何在RockyLinux9.4上安装Microk8s">https://pcj600.github.io/2024/1201142626.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
@@ -355,7 +358,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/k8s/" rel="tag"><i class="fa fa-tag"></i> k8s</a>
+              <a href="/tags/kubernetes/" rel="tag"><i class="fa fa-tag"></i> kubernetes</a>
           </div>
 
         
@@ -364,12 +367,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2024/1127213752.html" rel="prev" title="k8s学习笔记">
-      <i class="fa fa-chevron-left"></i> k8s学习笔记
+    <a href="/2024/1127213752.html" rel="prev" title="kubernetes学习笔记">
+      <i class="fa fa-chevron-left"></i> kubernetes学习笔记
     </a></div>
       <div class="post-nav-item">
-    <a href="/2024/1202220520.html" rel="next" title="在k8s上创建第一个Pod">
-      在k8s上创建第一个Pod <i class="fa fa-chevron-right"></i>
+    <a href="/2024/1202220520.html" rel="next" title="在Microk8s上创建Pod">
+      在Microk8s上创建Pod <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -452,13 +455,13 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">36</span>
+        <span class="site-state-item-count">37</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -501,12 +504,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">800k</span>
+    <span title="站点总字数">801k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12:07</span>
+    <span title="站点阅读时长">12:08</span>
 </div>
 
 <!--
