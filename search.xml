@@ -9852,6 +9852,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Linux</tag>
+        <tag>Project</tag>
       </tags>
   </entry>
   <entry>
@@ -12754,157 +12755,91 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>一种Linux系统在线迁移方案的设计与实现</title>
+    <title>通过定制initramfs实现从单系统分区到双系统的无缝升级</title>
     <url>/2025/0301162419.html</url>
-    <content><![CDATA[<h1><span id="背景">背景</span></h1><p>客户有一些on-premises的virtual appliance(VA)需要做固件升级。 这些VA是Centos7的OS，而Centos7已经停止维护，我们计划把客户的VA升级到新的OS(RockyLinux9.4)。<br>当时客户VA升级固件的方式是增量升级(差分升级), 只有一个系统分区。 增量升级存在一些难以解决的问题:</p>
+    <content><![CDATA[<h1><span id="背景">背景</span></h1><p>我们的客户有一些本地部署的网关设备(CentOS 7)需要做固件升级。 原有的单系统分区架构缺乏有效的回滚机制, 升级遇到故障后无法回滚, 导致服务中断, 用户体验差</p>
+<h1><span id="目标">目标</span></h1><p>设计一种解决方案, 自动将客户的网关设备从单系统分区平滑升级到双系统，同时保证用户配置(IP, DNS, 登录口令)不丢失<br>整个升级过程对客户完全透明, 无需客户进行额外操作(比如添加磁盘, 创建新机器)</p>
+<h1><span id="方案">方案</span></h1><p>设计如下方案:</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>描述</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>定制initramfs</td>
+<td>通过定制initramfs进入紧急模式，预先加载升级包和配置文件到内存，再重建磁盘分区</td>
+<td>用户无感知, 且备份了旧的配置</td>
+<td>内存空间有限, 升级包+解压后系统文件需小于内存</td>
+</tr>
+<tr>
+<td>安装ISO</td>
+<td>下载并安装目标系统ISO</td>
+<td>不需要单独出一个升级包</td>
+<td>客户的配置很难同步, 升级后需要用户做一些手动配置</td>
+</tr>
+</tbody></table>
+<p>最终采用定制initramfs方案。 客户虚拟机内存最低配置是8G, 需保证initramfs阶段的升级包+解压后系统文件小于8G<br>测试结果: c7最小化镜像900M, 安装后磁盘占用1.3G; 安装Microk8s后磁盘占用3G左右, 升级包1.7G, initramfs用掉4G内存, 远小于8G, 可行</p>
+<h1><span id="实现">实现</span></h1><p><img data-src="/2020/0102171050/pgrade-support-dual-os/image1.png"></p>
+<p><strong>目标系统分区设计</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># lsblk</span><br><span class="line">NAME         MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT</span><br><span class="line">sda            8:0    0   10G  0 disk</span><br><span class="line">├─sda1         8:1    0    2M  0 part</span><br><span class="line">├─sda2         8:2    0    1G  0 part /boot</span><br><span class="line">└─sda3         8:3    0  8.8G  0 part</span><br><span class="line">  ├─VA-root  253:0    0  7.8G  0 lvm  /</span><br><span class="line">  ├─VA-image 253:1    0  512M  0 lvm  /image</span><br><span class="line">  └─VA-data  253:2    0  512M  0 lvm  /data</span><br></pre></td></tr></table></figure>
+
+<p><strong>升级包设计</strong></p>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>目标系统的分区表文件(sgdisk)</td>
+<td>使用sgdisk导出的新系统的分区表文件，支持双系统启动</td>
+</tr>
+<tr>
+<td>目标系统文件的压缩包(.tar.xz)</td>
+<td>把虚拟机导出到OVA，再把VMDK根文件系统中所有文件备份成压缩包</td>
+</tr>
+<tr>
+<td>initramfs-convert.img</td>
+<td>基于官方ISO的initramfs定制</td>
+</tr>
+<tr>
+<td>vmlinuz-convert</td>
+<td>一个压缩内核, 直接从官方ISO取</td>
+</tr>
+<tr>
+<td>upgrade.sh</td>
+<td>二阶段执行, 一阶段在客户机上执行, 下载升级包, 进入紧急模式; 二阶段在initramfs执行, 完成分区重建, 安装和启动目标系统</td>
+</tr>
+</tbody></table>
+<p>实现细节:</p>
 <ul>
-<li>无法实现系统软件的升级。 由于Rocky9.4和Centos7的系统软件包差异太大，卸载这些RPM包会直接导致系统不可用</li>
-<li>升级出现故障后，无法做到版本回滚，只能让客户重装。 难以回滚的原因是升级前后用的是同一个系统分区，数据不隔离。</li>
+<li>分区方案采用BIOS&#x2F;GPT, BIOS是为了兼容老客户, GPT可以支持2T以上磁盘, 可扩展性和性能更好</li>
+<li>tar备份目标系统时, 需要<code>--numeric-owner</code>保留文件的UID&#x2F;GID, 以及文件扩展属性xattr(有snap的应用运行状态）</li>
+<li></li>
 </ul>
-<p>因此，需要设计一种全量升级的方案，把客户的VA升级到Rocky9.4这个新的OS <br></p>
-<span id="more"></span>
-<p>全量升级是指, 做一个全量升级包, 客户的VA通过网络下载升级包，解开升级包后执行一些脚本, 切换到新的OS启动, 完成固件升级。</p>
-<h1><span id="难点">难点</span></h1><ul>
-<li>需实现一键升级, 即客户除了在UI上点升级，无需做其他任何的手动操作<ul>
-<li>无需让客户手动调整磁盘容量, 或者添加新的虚拟磁盘</li>
-<li>切换到新系统后, 可以自动同步原先的系统配置，例如: IP, DNS, 登录口令, 而不是让客户手动配置</li>
-</ul>
-</li>
-<li>升级后需支持双系统启动，但是客户的VA只有一个系统分区。 这涉及到重新建立分区的操作。</li>
-</ul>
-<h1><span id="方案">方案</span></h1><p>基于initrd做一个升级小系统, 先进入升级小系统重建分区，再安装新系统, 流程:</p>
+<h1><span id="难点">难点</span></h1><p>initramfs空间有限, 需要尽可能压缩升级包</p>
 <ul>
-<li>做一个升级包，内容包括: 一个包含新系统所有文件的压缩包、 分区表文件、 升级小系统(vmlinuz,定制的initramfs)</li>
-<li>客户的VA下载并解压这个升级包到硬盘</li>
-<li>备份当前系统配置到硬盘(切换到新系统后, 需要根据这个备份信息恢复系统配置)</li>
-<li>调整GRUB的默认启动项，从升级小系统启动(根据Rocky9官方ISO的紧急修复模式修改得到的系统), 重启后进入升级小系统的启动流程:<ul>
-<li>挂载根分区, 把升级包和系统配置复制到内存(临时文件系统)</li>
-<li>对整个硬盘重建分区，以支持双系统分区</li>
-<li>把新系统的所有文件解压到根分区</li>
-<li>恢复系统配置和登录口令</li>
-<li>chroot到根分区, 重装GRUB后重启，完成从升级小系统到新系统的切换</li>
+<li>使用CentOS 7官方的minimal ISO做镜像(900M)</li>
+<li>只分配必要磁盘空间, 等客户升级成功后动态分配剩余空间, 使升级包尽可能做小</li>
+<li>导出OVA前, 清理临时文件，日志文件, 禁用交换分区</li>
+<li>使用压缩比率高的压缩算法(xz)</li>
 </ul>
-</li>
-</ul>
-<h1><span id="实现">实现</span></h1><h2><span id="制作升级包">制作升级包</span></h2><p>升级包就是一个tar包(migration.tar.gz)，客户的VA通过网络下载、解压升级包, 执行其中的脚本自动完成升级。 升级包的内容如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># tar -tvf migration.tar.gz</span></span><br><span class="line">va.sgdisk                   <span class="comment"># 使用sgdisk导出的新系统的分区表文件，支持双系统启动</span></span><br><span class="line">va.tar.xz                   <span class="comment"># 一个压缩包, 把RockyLinux9.4虚拟机导出到OVA，再把OVA文件系统中根分区下的所有文件备份成压缩包</span></span><br><span class="line">initramfs-convert.img       <span class="comment"># 基于Rocky9官方ISO的initramfs定制, 用于启动升级小系统</span></span><br><span class="line">vmlinuz-convert             <span class="comment"># 一个压缩内核, 直接从Rocky9官方ISO的vmlinuz拷贝，用于启动升级小系统</span></span><br><span class="line">upgrade_to_tiny_system.sh   <span class="comment"># 一个Shell脚本，在客户VA上解压升级包后，自动执行这个脚本，切换到升级小系统启动 </span></span><br></pre></td></tr></table></figure>
-<p>以下说明这些升级包中的文件如何制作</p>
-<h3><span id="制作vasgdisk">制作va.sgdisk</span></h3><p>首先，基于Rocky9.4的ISO安装一台VMware虚拟机。 注意创建分区时我们只分10个G空间，目的是让导出的OVA文件尽可能小, 可以在客户把新系统安装完毕后，把剩余的磁盘扩容。<br>新系统采用BIOS&#x2F;GPT分区格式, 原因是:</p>
-<ul>
-<li>使用BIOS，而不是UEFI，主要是为了兼容老用户</li>
-<li>相比于MBR, GPT能支持更大容量的磁盘，可靠性和性能也更好</li>
-</ul>
-<p>分区方案是: 1个biosboot分区 + 1个boot分区 + 1个LVM(系统分区)，如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">/dev/sda1 BIOS boot 2 MiB</span><br><span class="line">/dev/sda2 /boot     1 GiB</span><br><span class="line">/dev/sda3 LVM       9 GiB</span><br></pre></td></tr></table></figure>
-<p>说明: </p>
-<ul>
-<li>BIOS&#x2F;GPT启动，要求必须要有一个BIOS boot分区</li>
-<li>给&#x2F;boot单独分区不是必要的，也可以不分; 一个&#x2F;boot分区可以启动多个内核，没有必要为了支持双系统分两个boot区。</li>
-<li>系统分区设计为LVM, 而不是标准分区, 这样可以灵活扩容</li>
-<li>只分10G的容量, 剩余的硬盘空间等客户升级完成后再做扩容, 这样可以把升级包尽量做小(大小控制在1G左右)</li>
-</ul>
-<p>对于LVM分区, 先创建一个名为VA的逻辑卷组，基于VA逻辑卷组再分出三个逻辑卷(VA-root, VA-back, VA-data)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">NAME		SIZE      MOUNTPOINTS</span><br><span class="line">sda3		</span><br><span class="line">|- VA-root  8G        /</span><br><span class="line">|- VA-back  512M      /back</span><br><span class="line">|- VA-data  512M      /data</span><br></pre></td></tr></table></figure>
-<p>说明:</p>
-<ul>
-<li>分三个逻辑卷的是为了实现双系统双启动项。如果升级新系统遇到故障, 可以迅速回滚到旧的操作系统。</li>
-<li>VA-root为第1个系统分区, VA-back是第2个系统的分区, 这两个系统共用一个&#x2F;boot分区</li>
-<li>设计VA-data分区，存储两个系统都会用到的公共数据</li>
-</ul>
-<p>虚拟机安装完成后，使用gisk查看分区内容</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y gdisk</span><br><span class="line">gdisk -l /dev/sda</span><br><span class="line">...</span><br><span class="line">Disk /dev/sda: 20971520 sectors, 10.0 GiB</span><br><span class="line">...</span><br><span class="line">Number  Start (sector)    End (sector)  Size       Code  Name</span><br><span class="line">   1            2048            6143   2.0 MiB     EF02  BIOS boot partition</span><br><span class="line">   2            6144         2103295   1024.0 MiB  8300  Linux filesystem</span><br><span class="line">   3         2103296        20781055   8.9 GiB     8E00  Linux LVM</span><br></pre></td></tr></table></figure>
-<p>注：如果出现biosboot分区类型不识别的问题，可以用gdisk手动修改分区类型为biosboot，方法如下:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">gdisk</span><br><span class="line"></span><br><span class="line">Type device filename, or press &lt;Enter&gt; to <span class="built_in">exit</span>: /dev/sda</span><br><span class="line"></span><br><span class="line">Command (? <span class="keyword">for</span> <span class="built_in">help</span>): t</span><br><span class="line">Partition number (1-3): 1</span><br><span class="line"></span><br><span class="line">Hex code or GUID (L to show codes): EF02</span><br><span class="line">Changed <span class="built_in">type</span> of partition to <span class="string">&#x27;BIOS boot partition&#x27;</span></span><br><span class="line"></span><br><span class="line">Command (? <span class="keyword">for</span> <span class="built_in">help</span>): w</span><br><span class="line"></span><br><span class="line">Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING PARTITIONS!!</span><br><span class="line"></span><br><span class="line">Do you want to proceed? (Y/N): Y</span><br><span class="line">OK; writing new GUID partition table (GPT) to /dev/sda.</span><br></pre></td></tr></table></figure>
-<p>再重新安装GRUB，reboot确认下系统启动没有问题</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">grub2-install /dev/sda</span><br><span class="line">reboot</span><br></pre></td></tr></table></figure>
-<p>至此, 确认分区无误后，使用gdisk导出分区表文件<code>va.sgdisk</code>，这个分区表文件在后续升级的时候会用到</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y gdisk</span><br><span class="line">sgdisk --backup=./va.sgdisk /dev/sda</span><br></pre></td></tr></table></figure>
-
-
-
-<h3><span id="制作vatarxz">制作va.tar.xz</span></h3><p>1、导出RockyLinux9.4虚拟机的OVA文件，解压OVA得到一个vmdk格式的硬盘文件</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tar xf va.ova</span><br><span class="line"><span class="built_in">ls</span> va-disk1.vmdk</span><br></pre></td></tr></table></figure>
-<p>2、使用guestmount命令挂载出上面的vmdk文件，再对系统分区和boot分区的内容打包，得到va.tar.xz 。注意打包时需要保存xattr和uid</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install -y libguestfs libvirt</span><br><span class="line">systemctl start libvirt</span><br><span class="line"><span class="built_in">export</span> LIBGUESTFS_BACKEND=direct</span><br><span class="line">	</span><br><span class="line"><span class="built_in">mkdir</span> -p  /mnt/vmdk</span><br><span class="line">guestmount -a va-disk1.vmdk -i --ro /mnt/vmdk</span><br><span class="line">XZ_OPT=<span class="string">&#x27;-T0 -6&#x27;</span> tar Jcpf va.tar.xz --numeric-owner --xattrs --xattrs-include=* --exclude=<span class="string">&#x27;./back/*&#x27;</span> --exclude=<span class="string">&#x27;./data/*&#x27;</span>  --exclude=<span class="string">&#x27;./lost+found/*&#x27;</span> --exclude=<span class="string">&#x27;./tmp/*&#x27;</span> -C /mnt/vmdk</span><br></pre></td></tr></table></figure>
-
-<h3><span id="制作initramfs-vmlinuz">制作initramfs, vmlinuz</span></h3><p>制作initramfs, vmlinuz，用于启动一个升级小系统。 借助升级小系统实现重建分区表的同时，不丢失升级包和系统配置文件。</p>
-<ul>
-<li>vmlinuz —— 直接用Rocky官方ISO的vmlinuz即可，不需要对这个压缩内核做任何修改。 这里重命名为vmlinuz-convert</li>
-<li>initramfs —— 需要基于Rocky官方ISO的initramfs.img做定制, 再重命名为initramfs-convert.img</li>
-</ul>
-<p>升级小系统启动流程设计如下: </p>
-<ul>
-<li>把va.tar.xz和备份的系统配置复制到内存(initramfs)</li>
-<li>重建硬盘分区，以支持双系统双启动项</li>
-<li>把va.tar.xz解压到硬盘的系统分区，完成新系统文件的安装</li>
-<li>最后做一些必要的配置，确保从升级小系统切换到新系统启动</li>
-</ul>
-<p>我们需要编写一个脚本(tiny_os_start.sh)，把这个脚本做到initramfs里。这样升级小系统启动时，可以通过这个脚本执行以上的流程。</p>
-<h4><span id="编写tiny_os_startsh">编写tiny_os_start.sh</span></h4><h5><span id="1-把和系统配置文件复制到内存initramfs">1. 把和系统配置文件复制到内存(initramfs)</span></h5><p>首先把根分区挂载出来, 把升级包和旧的系统配置文件拷贝到内存。 考虑到重建分区后磁盘格式化，所有磁盘文件都会丢失，所以先把这些文件拷贝到临时内存里。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">load_upd_files_to_memory</span></span>() &#123;</span><br><span class="line">  lvm vgscan --mknodes</span><br><span class="line">  lvm vgchange -ay</span><br><span class="line"></span><br><span class="line">  <span class="built_in">local</span> rootdev=$(find /dev/mapper/ -name <span class="string">&quot;*root&quot;</span>)</span><br><span class="line">  <span class="built_in">mkdir</span> -p /sysimage</span><br><span class="line">  mount <span class="string">&quot;<span class="variable">$rootdev</span>&quot;</span> /sysimage</span><br><span class="line"></span><br><span class="line">  <span class="comment"># load upd files to memory</span></span><br><span class="line">  <span class="built_in">cp</span> -a /sysimage/etc/upd/* /etc/upd/ <span class="comment"># 把升级包和旧的系统配置拷贝到内存</span></span><br><span class="line">  umount -l -f /sysimage</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5><span id="2-重建磁盘分区">2. 重建磁盘分区</span></h5><p>使用分区表文件(va.sgdisk)重建分区，再创建逻辑卷组和逻辑卷，格式化分区</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">init_disk_partition</span></span>() &#123;</span><br><span class="line">    <span class="comment"># 重建分区</span></span><br><span class="line">    <span class="built_in">local</span> vgname=$(lvm vgs  | grep -v <span class="string">&#x27;#&#x27;</span> | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span>)</span><br><span class="line">    <span class="built_in">local</span> dskname=$(lvm pvs | grep <span class="string">&#x27;/dev/&#x27;</span> | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span>)</span><br><span class="line">    lvm vgchange -an <span class="variable">$vgname</span></span><br><span class="line">    lvm pvremove --force --force -y <span class="variable">$dskname</span></span><br><span class="line">    sgdisk -Z /dev/sda</span><br><span class="line">    sgdisk -l /etc/upd/va.sgdisk /dev/sda</span><br><span class="line">    <span class="built_in">echo</span> 1 &gt; /sys/block/sda/device/rescan</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 创建逻辑卷组VA和三个逻辑卷(data,back,root)</span></span><br><span class="line">    lvm vgcreate VA  /dev/sda3</span><br><span class="line">    lvm lvcreate -y -n data -L 512M VA</span><br><span class="line">    lvm lvcreate -y -n back -L 512M VA</span><br><span class="line">    lvm lvcreate -y -n root -l 100%FREE VA</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 格式化分区</span></span><br><span class="line">    mkfs.ext4 -F /dev/sda2</span><br><span class="line">    mkfs.ext4 -F /dev/mapper/VA-root</span><br><span class="line">    mkfs.ext4 -F /dev/mapper/VA-back</span><br><span class="line">    mkfs.ext4 -F /dev/mapper/VA-data</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注: initramfs.img中并没有sgdisk程序, 你需要拷贝sgdisk及其依赖到initramfs.img对应的bin,lib目录下</p>
-<h5><span id="3-把vatarxz解压到硬盘的系统分区完成新系统文件的安装">3. 把va.tar.xz解压到硬盘的系统分区，完成新系统文件的安装</span></h5><p>va.tar.xz包括新系统根分区下所有的文件以及boot分区的文件。 依次挂载系统分区(VA-root分区)和boot分区, 再va.tar.xz解压到磁盘</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_upd</span></span>() &#123;</span><br><span class="line">    mount /dev/mapper/VA-root /sysimage</span><br><span class="line">    mount /dev/sda2 /sysimage/boot</span><br><span class="line">    tar xf /etc/upd/va.tar.xz --numeric-owner --xattrs --xattrs-include=* -C /sysimage<span class="string">&quot;</span></span><br><span class="line"><span class="string">    rm -f /etc/upd/va.tar.xz</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<h5><span id="4-做一些必要的配置确保从升级小系统切换到新系统启动">4. 做一些必要的配置，确保从升级小系统切换到新系统启动</span></h5><p>单纯的解压文件到磁盘，是没办法切换到新的OS正常启动的。 必须要做一些配置操作，包括：</p>
-<ul>
-<li>调整分区UUID。 boot分区的UUID要和系统分区的&#x2F;etc&#x2F;fstab中的保持一致。</li>
-<li>同步内存中的LVM配置文件到系统分区。 因为配置LVM是在小系统里做的，小系统只是个临时的内存，真正的系统启动需要读取系统分区(VA-root)中的LVM配置</li>
-<li>根据之前备份的系统配置，恢复新系统的配置。 例如: 网卡IP, 登录口令等。 </li>
-<li>chroot到系统分区, 重新生成initramfs, 重新安装GRUB，再reboot，完成从小系统到新系统的切换。</li>
-</ul>
-<p>以上配置操作的实现可以参考:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">install_new_va</span></span>() &#123;</span><br><span class="line">    <span class="comment"># 调整boot分区的UUID, 重新挂载boot分区</span></span><br><span class="line">    umount /sysimage/boot</span><br><span class="line">    e2fsck -y -f /dev/sda2</span><br><span class="line">    tune2fs -U $(grep UUID /sysimage/etc/fstab | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span> | sed <span class="string">&#x27;s/UUID=//&#x27;</span>) /dev/sda2</span><br><span class="line">    mount /dev/sda2 /sysimage/boot</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 同步LVM配置文件到系统分区</span></span><br><span class="line">    <span class="built_in">cp</span> -a /etc/lvm/backup/VA /sysimage/etc/lvm/backup/</span><br><span class="line">    <span class="built_in">rm</span> -rf /sysimage/etc/lvm/archive/</span><br><span class="line">    <span class="built_in">cp</span> -a /etc/lvm/archive/ /sysimage/etc/lvm/</span><br><span class="line">   </span><br><span class="line">    <span class="comment"># 把旧系统的配置文件同步到系统分区</span></span><br><span class="line">    <span class="built_in">ln</span> -s /sysimage/etc/upd/ /etc/upd</span><br><span class="line">   </span><br><span class="line">    <span class="comment"># 使用chroot重新生成initramfs，安装GRUB</span></span><br><span class="line">    mount -t proc  /proc /sysimage/proc/</span><br><span class="line">    mount -t sysfs /sys  /sysimage/sys/</span><br><span class="line">    mount --rbind  /dev  /sysimage/dev/</span><br><span class="line">    mount --rbind  /run  /sysimage/run/</span><br><span class="line">	</span><br><span class="line">    <span class="built_in">export</span> KENREL_VER=$(<span class="built_in">ls</span> /sysimage/boot/ | grep vmlinuz-5 | sed <span class="string">&#x27;s/vmlinuz-//&#x27;</span>)</span><br><span class="line">    <span class="built_in">chroot</span> /sysimage /usr/sbin/grub2-install /dev/sda</span><br><span class="line">    <span class="built_in">chroot</span> /sysimage /usr/bin/dracut -f /boot/initramfs-<span class="variable">$&#123;KENREL_VER&#125;</span>.img <span class="variable">$&#123;KENREL_VER&#125;</span></span><br><span class="line">	</span><br><span class="line">    <span class="comment"># 重启，切换到新系统</span></span><br><span class="line">    reboot</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注: initramfs.img中并没有e2fsck、tune2fs程序，你需要手动拷贝这些程序及其依赖到initramfs.img对应的bin,lib目录下</p>
-<p>完整的tiny_os_start.sh如下:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">main</span></span>() &#123;</span><br><span class="line">	load_upd_files_to_memory</span><br><span class="line">	init_disk_partition</span><br><span class="line">	extract_upd</span><br><span class="line">	install_new_va</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h4><span id="自定义一个systemd服务用于小系统启动时自动执行tiny_os_startsh">自定义一个Systemd服务，用于小系统启动时自动执行tiny_os_start.sh</span></h4><p>光有了脚本还不行，我们需要在小系统启动的某个时点执行这个脚本，可以通过自定义一个systemd的service实现。<br>经过实测，可以直接修改initramfs中已有的dracut-emergency.service，把ExecStart入口设置为tiny_os_start.sh即可，完整的dracut-emergency.service参考:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Dracut Emergency Shell</span><br><span class="line">DefaultDependencies=no</span><br><span class="line">After=systemd-vconsole-setup.service</span><br><span class="line">Wants=systemd-vconsole-setup.service</span><br><span class="line">Conflicts=shutdown.target emergency.target</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line">WorkingDirectory=/</span><br><span class="line">ExecStart=/sbin/tiny_os_start.sh # 指定你的脚本路径</span><br><span class="line">Type=oneshot</span><br><span class="line">StandardInput=tty-force</span><br><span class="line">StandardOutput=inherit</span><br><span class="line">StandardError=inherit</span><br><span class="line">KillMode=process</span><br><span class="line">IgnoreSIGPIPE=no</span><br><span class="line"></span><br><span class="line"># Bash ignores SIGTERM, so we send SIGHUP instead, to ensure that bash</span><br><span class="line"># terminates cleanly.</span><br><span class="line">KillSignal=SIGHUP</span><br></pre></td></tr></table></figure>
-<p>接下来，需要把我们定义的脚本和service配置文件打到initramfs.img中</p>
-<h4><span id="定制initramfsimg">定制initramfs.img</span></h4><p>定制initramfs.img的流程如下:</p>
-<ul>
-<li>解压Rocky官方ISO中的initramfs.img</li>
-<li>把dracut-emergency.service, tiny_os_start.sh及其依赖(sgdisk、e2fsck、tune2fs等)拷贝到initramfs.img</li>
-<li>最后把initramfs.img压缩回去</li>
-</ul>
-<p>可以写个脚本(gen_initramfs.sh)实现以上流程</p>
-<h5><span id="0-在你的linux编译机上准备如下文件">0. 在你的Linux编译机上准备如下文件</span></h5><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tree</span><br><span class="line">gen_initramfs.sh </span><br><span class="line">resources/</span><br><span class="line">	|- va.sgdisk</span><br><span class="line">	|- initramfs-iso.img</span><br><span class="line">	|- tiny_os_start.sh</span><br><span class="line">	|- dracut-emergency.service</span><br><span class="line">output/</span><br></pre></td></tr></table></figure>
-
-<h5><span id="1-解压initramfsimg">1. 解压initramfs.img</span></h5><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">ROOT_DIR=<span class="string">&quot;<span class="subst">$(dirname $(readlink -f -- <span class="string">&quot;<span class="variable">$&#123;BASH_SOURCE[0]:-<span class="variable">$0</span>&#125;</span>&quot;</span>)</span>)&quot;</span></span><br><span class="line">RESOURCES_DIR=<span class="variable">$&#123;ROOT_DIR&#125;</span>/resources</span><br><span class="line">OUTPUT_DIR=<span class="variable">$&#123;ROOT_DIR&#125;</span>/output/img</span><br><span class="line">DESTDIR=<span class="variable">$&#123;OUTPUT_DIR&#125;</span>/rootfs_cpio</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">extract_initramfs</span></span>() &#123;</span><br><span class="line">	<span class="built_in">mkdir</span> -p <span class="variable">$&#123;OUTPUT_DIR&#125;</span>/rootfs_cpio &amp;&amp; <span class="built_in">cd</span> <span class="variable">$&#123;OUTPUT_DIR&#125;</span>/rootfs_cpio</span><br><span class="line">	<span class="built_in">export</span> XZ_OPT=<span class="string">&#x27;-T0 -6&#x27;</span></span><br><span class="line">	xz -dc <span class="variable">$&#123;RESOURCES_DIR&#125;</span>/initramfs-iso.img | cpio -<span class="built_in">id</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5><span id="2-把dracut-emergencyservice-tiny_os_startsh及其依赖sgdisk-e2fsck-tune2fs等拷贝到initramfsimg">2. 把dracut-emergency.service, tiny_os_start.sh及其依赖(sgdisk、e2fsck、tune2fs等)拷贝到initramfs.img</span></h5><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">modify_initramfs</span></span>() &#123;</span><br><span class="line">	<span class="built_in">cp</span> -a <span class="variable">$&#123;RESOURCES_DIR&#125;</span>/tiny_os_start.sh <span class="variable">$&#123;DESTDIR&#125;</span>/sbin/</span><br><span class="line">	<span class="built_in">chmod</span> 777 <span class="variable">$&#123;DESTDIR&#125;</span>/sbin/tiny_os_start.sh</span><br><span class="line">	</span><br><span class="line">	<span class="comment"># 拷贝tune2fs、mkfs.ext4、sgdisk程序及其依赖的所有库</span></span><br><span class="line">	<span class="built_in">cd</span> <span class="variable">$&#123;DESTDIR&#125;</span></span><br><span class="line">	copy_exec_and_deps /usr/sbin/tune2fs /sbin</span><br><span class="line">	copy_exec_and_deps /usr/sbin/mkfs.ext4 /sbin</span><br><span class="line">	copy_exec_and_deps /usr/sbin/sgdisk /sbin</span><br><span class="line"></span><br><span class="line">    <span class="built_in">cp</span> /etc/mke2fs.conf ./etc/mke2fs.conf</span><br><span class="line">    <span class="built_in">cp</span> -a <span class="variable">$&#123;RESOURCES_DIR&#125;</span>/dracut-emergency.service <span class="variable">$&#123;DESTDIR&#125;</span>/usr/lib/systemd/system/dracut-emergency.service</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>注: copy_exec_and_deps函数用于拷贝一个可执行文件以及依赖的库，代码参考:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># $1 = file type (for logging)</span></span><br><span class="line"><span class="comment"># $2 = file to copy to initramfs</span></span><br><span class="line"><span class="comment"># $3 (optional) Name for the file on the initramfs</span></span><br><span class="line"><span class="comment"># Location of the image dir is assumed to be $DESTDIR</span></span><br><span class="line"><span class="comment"># If the target exists, we leave it and return 1.</span></span><br><span class="line"><span class="comment"># On any other error, we return &gt;1.</span></span><br><span class="line"><span class="function"><span class="title">copy_file</span></span>() &#123;</span><br><span class="line">  <span class="built_in">local</span> <span class="built_in">type</span> src target link_target</span><br><span class="line"></span><br><span class="line">  <span class="built_in">type</span>=<span class="string">&quot;<span class="variable">$&#123;1&#125;</span>&quot;</span></span><br><span class="line">  src=<span class="string">&quot;<span class="variable">$&#123;2&#125;</span>&quot;</span></span><br><span class="line">  target=<span class="string">&quot;<span class="variable">$&#123;3:-<span class="variable">$2</span>&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">  [ -f <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> ] || <span class="built_in">return</span> 2</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> [ -d <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    target=<span class="string">&quot;<span class="variable">$&#123;target&#125;</span>/<span class="variable">$&#123;src##*/&#125;</span>&quot;</span></span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># Canonicalise usr-merged target directories</span></span><br><span class="line">  <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$&#123;target&#125;</span>&quot;</span> <span class="keyword">in</span></span><br><span class="line">    /bin/* | /lib* | /sbin/*) target=<span class="string">&quot;/usr<span class="variable">$&#123;target&#125;</span>&quot;</span> ;;</span><br><span class="line">  <span class="keyword">esac</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># check if already copied</span></span><br><span class="line">  [ -e <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span> ] &amp;&amp; <span class="built_in">return</span> 1</span><br><span class="line"></span><br><span class="line">  <span class="built_in">mkdir</span> -p <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target%/*&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> [ -h <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">    <span class="comment"># We don&#x27;t need to replicate a chain of links completely;</span></span><br><span class="line">    <span class="comment"># just link directly to the ultimate target</span></span><br><span class="line">    link_target=<span class="string">&quot;<span class="subst">$(readlink -f <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span>)</span>&quot;</span> || <span class="built_in">return</span> $(($? + <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Update source for the copy</span></span><br><span class="line">    src=<span class="string">&quot;<span class="variable">$&#123;link_target&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Canonicalise usr-merged target directories</span></span><br><span class="line">    <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$&#123;link_target&#125;</span>&quot;</span> <span class="keyword">in</span></span><br><span class="line">      /bin/* | /lib* | /sbin/*) link_target=<span class="string">&quot;/usr<span class="variable">$&#123;link_target&#125;</span>&quot;</span> ;;</span><br><span class="line">    <span class="keyword">esac</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">&quot;<span class="variable">$&#123;link_target&#125;</span>&quot;</span> != <span class="string">&quot;<span class="variable">$&#123;target&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">      [ <span class="string">&quot;<span class="variable">$&#123;verbose?&#125;</span>&quot;</span> = <span class="string">&quot;y&quot;</span> ] &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;Adding <span class="variable">$&#123;type&#125;</span>-link <span class="variable">$&#123;target&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">      <span class="comment"># Create a relative link so it always points</span></span><br><span class="line">      <span class="comment"># to the right place</span></span><br><span class="line">      <span class="built_in">ln</span> -rs <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;link_target&#125;</span>&quot;</span> <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">    <span class="comment"># Copy the link target if it doesn&#x27;t already exist</span></span><br><span class="line">    target=<span class="string">&quot;<span class="variable">$&#123;link_target&#125;</span>&quot;</span></span><br><span class="line">    [ -e <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span> ] &amp;&amp; <span class="built_in">return</span> 0</span><br><span class="line">    <span class="built_in">mkdir</span> -p <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target%/*&#125;</span>&quot;</span></span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">  [ <span class="string">&quot;<span class="variable">$&#123;verbose&#125;</span>&quot;</span> = <span class="string">&quot;y&quot;</span> ] &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;Adding <span class="variable">$&#123;type&#125;</span> <span class="variable">$&#123;src&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">cp</span> -pP <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> <span class="string">&quot;<span class="variable">$&#123;DESTDIR&#125;</span>/<span class="variable">$&#123;target&#125;</span>&quot;</span> || <span class="built_in">return</span> $(($? + <span class="number">1</span>))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">copy_libgcc</span></span>() &#123;</span><br><span class="line">  <span class="built_in">local</span> libdir library</span><br><span class="line"></span><br><span class="line">  libdir=<span class="string">&quot;<span class="variable">$1</span>&quot;</span></span><br><span class="line">  <span class="keyword">for</span> library <span class="keyword">in</span> <span class="string">&quot;<span class="variable">$&#123;libdir&#125;</span>&quot;</span>/libgcc_s.so.[1-9]; <span class="keyword">do</span></span><br><span class="line">    copy_exec <span class="string">&quot;<span class="variable">$&#123;library&#125;</span>&quot;</span> || <span class="built_in">return</span></span><br><span class="line">  <span class="keyword">done</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># $1 = executable/shared library to copy to initramfs, with dependencies</span></span><br><span class="line"><span class="comment"># $2 (optional) Name for the file on the initramfs</span></span><br><span class="line"><span class="comment"># Location of the image dir is assumed to be $DESTDIR</span></span><br><span class="line"><span class="comment"># We never overwrite the target if it exists.</span></span><br><span class="line"><span class="function"><span class="title">copy_exec_and_deps</span></span>() &#123;</span><br><span class="line">  <span class="built_in">local</span> src target x nonoptlib ret</span><br><span class="line"></span><br><span class="line">  src=<span class="string">&quot;<span class="variable">$&#123;1&#125;</span>&quot;</span></span><br><span class="line">  target=<span class="string">&quot;<span class="variable">$&#123;2:-<span class="variable">$1</span>&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line">  copy_file binary <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> <span class="string">&quot;<span class="variable">$&#123;target&#125;</span>&quot;</span> || <span class="built_in">return</span> $(($? - <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">  <span class="comment"># Copy the dependant libraries</span></span><br><span class="line">  <span class="keyword">for</span> x <span class="keyword">in</span> $(<span class="built_in">env</span> --<span class="built_in">unset</span>=LD_PRELOAD ldd <span class="string">&quot;<span class="variable">$&#123;src&#125;</span>&quot;</span> 2&gt;/dev/null | sed -e <span class="string">&#x27;</span></span><br><span class="line"><span class="string">                /\//!d;</span></span><br><span class="line"><span class="string">                /linux-gate/d;</span></span><br><span class="line"><span class="string">                /=&gt;/ &#123;s/.*=&gt;[[:blank:]]*\([^[:blank:]]*\).*/\1/&#125;;</span></span><br><span class="line"><span class="string">                s/[[:blank:]]*\([^[:blank:]]*\) (.*)/\1/&#x27;</span> 2&gt;/dev/null); <span class="keyword">do</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Try to use non-optimised libraries where possible.</span></span><br><span class="line">    <span class="comment"># We assume that all HWCAP libraries will be in tls,</span></span><br><span class="line">    <span class="comment"># sse2, vfp or neon.</span></span><br><span class="line">    nonoptlib=$(<span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$&#123;x&#125;</span>&quot;</span> | sed -e <span class="string">&#x27;s#/lib/\([^/]*/\)\?\(tls\|i686\|sse2\|neon\|vfp\).*/\(lib.*\)#/lib/\1\3#&#x27;</span>)</span><br><span class="line">    nonoptlib=$(<span class="built_in">echo</span> <span class="string">&quot;<span class="variable">$&#123;nonoptlib&#125;</span>&quot;</span> | sed -e <span class="string">&#x27;s#-linux-gnu/\(tls\|i686\|sse2\|neon\|vfp\).*/\(lib.*\)#-linux-gnu/\2#&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [ -e <span class="string">&quot;<span class="variable">$&#123;nonoptlib&#125;</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">      x=<span class="string">&quot;<span class="variable">$&#123;nonoptlib&#125;</span>&quot;</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Handle common dlopen() dependency (Debian bug #950254)</span></span><br><span class="line">    <span class="keyword">case</span> <span class="string">&quot;<span class="variable">$&#123;x&#125;</span>&quot;</span> <span class="keyword">in</span></span><br><span class="line">      */libpthread.so.*)</span><br><span class="line">        copy_libgcc <span class="string">&quot;<span class="variable">$&#123;x%/*&#125;</span>&quot;</span> || <span class="built_in">return</span></span><br><span class="line">        ;;</span><br><span class="line">    <span class="keyword">esac</span></span><br><span class="line"></span><br><span class="line">    copy_file binary <span class="string">&quot;<span class="variable">$&#123;x&#125;</span>&quot;</span> || &#123;</span><br><span class="line">      ret=$?</span><br><span class="line">      [ <span class="variable">$&#123;ret&#125;</span> = 1 ] || <span class="built_in">return</span> $((ret - <span class="number">1</span>))</span><br><span class="line">    &#125;</span><br><span class="line">  <span class="keyword">done</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h5><span id="3-重新打包initramfs">3. 重新打包initramfs</span></h5><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">repack_initramfs</span></span>() &#123;</span><br><span class="line">	<span class="built_in">cd</span> <span class="variable">$&#123;DESTDIR&#125;</span></span><br><span class="line">	find . | cpio -c -o | xz -9 --format=lzma &gt;/tmp/initramfs-convert.img</span><br><span class="line">	<span class="built_in">cp</span> -a /tmp/initramfs-convert.img <span class="variable">$&#123;OUTPUT_DIR&#125;</span>/</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>完整的gen_initramfs.sh参考:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="function"><span class="title">gen_initramfs</span></span>() &#123;</span><br><span class="line">	extract_initramfs</span><br><span class="line">	modify_initramfs</span><br><span class="line">	repack_initramfs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>至此, 升级小系统制作完毕。 我们还需要编写一个脚本(upgrade_to_tiny_system.sh), 客户VA解压升级包后执行这个脚本, 从而切换到升级小系统启动。</p>
-<h3><span id="编写upgrade_to_tiny_systemsh实现从老系统进入升级小系统">编写upgrade_to_tiny_system.sh，实现从老系统进入升级小系统</span></h3><p>编写upgrade_to_tiny_system.sh</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">RUN_DIR=<span class="string">&quot;<span class="subst">$(dirname $(readlink -f -- <span class="string">&quot;<span class="variable">$&#123;BASH_SOURCE[0]:-<span class="variable">$0</span>&#125;</span>&quot;</span>)</span>)&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 把升级小系统的initramfs,vmlinuz拷贝/boot分区</span></span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$&#123;RUN_DIR&#125;</span>/vmlinuz-convert /boot/</span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$&#123;RUN_DIR&#125;</span>/initramfs-convert.img /boot/</span><br><span class="line"> </span><br><span class="line"><span class="built_in">mkdir</span> -p /etc/upd/</span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$&#123;RUN_DIR&#125;</span>/va.tar.xz /etc/upd/</span><br><span class="line"><span class="built_in">mv</span> <span class="variable">$&#123;RUN_DIR&#125;</span>/va.sgdisk /etc/upd/</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用grubby，把默认启动项设置为升级小系统 </span></span><br><span class="line">grubby --add-kernel=/boot/vmlinuz-convert --title=<span class="string">&quot;VA Migration&quot;</span> --initrd=/boot/initramfs-convert.img --args=<span class="string">&quot;initrd=initramfs-convert.img rd.retry=20 rescue&quot;</span></span><br><span class="line">grubby --set-default /boot/vmlinuz-convert</span><br><span class="line">reboot</span><br></pre></td></tr></table></figure>
-
-<p>至此, 所有的编码已完成。 最后把升级包打出来(migration.tar.gz)即可。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># tar -tvf migration.tar.gz</span><br><span class="line">va.sgdisk</span><br><span class="line">va.tar.xz</span><br><span class="line">initramfs-convert.img</span><br><span class="line">vmlinuz-convert</span><br><span class="line">upgrade_to_tiny_system.sh</span><br></pre></td></tr></table></figure>
-
-<p>升级流程:<br>客户的VA从网络下载升级包 -&gt; 解压升级包, 执行upgrade_to_tiny_system.sh -&gt; 进入升级小系统 -&gt; 切换到新系统(RockyLinux9.4)</p>
-<h2><span id="调试方法">调试方法</span></h2><p>难点主要是升级小系统的调试。 可以进入GRUB rescue模式手动加载内核, 手动挂载根分区，再逐步调试。</p>
-<p>例: GRUB rescue模式手动加载内核</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set root=(hd0,gpt2)</span><br><span class="line">linux (hd0,gpt2)/vmlinuz-convert root=/dev/mapper/VA-root ro rd.lvm.lv=VA/root</span><br><span class="line">initrd (hd0,gpt2)/initramfs-convert.img</span><br></pre></td></tr></table></figure>
-<p>如果需要手动挂载根分区, 可以故意指定一个错误的linux指令</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">linux (hd0,gpt2)/vmlinuz-convert root=/dev/mapper/undefined </span><br></pre></td></tr></table></figure>
-<p>其他的调试手段可以自行Google</p>
-<h2><span id="典型问题">典型问题</span></h2><p>问题: 切换到新系统后, 输入正确的用户名和密码，无法登录, console打印localhost login，没有任何错误提示。 而输入错误的密码会提示你认证错误。 进不了后台导致定位有困难。</p>
-<p>解决方法: 通过手动调试升级小系统，手动挂载磁盘分区查看相关日志，发现是SELinux的问题。 设置新系统的SELinux为disabled后，问题得到解决。</p>
+<h1><span id="调试方法">调试方法</span></h1><ol>
+<li>手动进入GRUB rescue模式加载内核, 手动挂载磁盘根分区，查看失败日志<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set root=(hd0,gpt2)</span><br><span class="line">linux (hd0,gpt2)/vmlinuz-convert root=/dev/mapper/VA-root ro rd.lvm.lv=VA/root</span><br><span class="line">initrd (hd0,gpt2)/initramfs-convert.img</span><br></pre></td></tr></table></figure></li>
+<li>先对虚拟机做快照, 如果调试失败通过快照迅速恢复系统</li>
+</ol>
+<h1><span id="调试问题">调试问题</span></h1><p>Q: 切换到新系统后, 输入正确的用户名和密码也无法登录, console一直打印localhost login<br>A: 通过手动进入GRUB rescue模式调试, 挂载磁盘日志发现是SELinux的问题, 将目标系统的SELinux设置为disabled后，问题得到解决</p>
 ]]></content>
       <categories>
         <category>Linux</category>
       </categories>
       <tags>
+        <tag>Linux</tag>
         <tag>Project</tag>
       </tags>
   </entry>
@@ -13037,6 +12972,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>kubernetes</tag>
+        <tag>Project</tag>
       </tags>
   </entry>
   <entry>
@@ -13104,6 +13040,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <category>Stunnel</category>
       </categories>
       <tags>
+        <tag>Project</tag>
         <tag>Stunnel</tag>
       </tags>
   </entry>
@@ -13139,6 +13076,19 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
+        <tag>Project</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Kubernetes集群中使用Prometheus和Grafana</title>
+    <url>/2025/0308200607.html</url>
+    <content><![CDATA[<p>k8s集群(三主三从)</p>
+]]></content>
+      <categories>
+        <category>kubernetes</category>
+      </categories>
+      <tags>
+        <tag>kubernetes</tag>
       </tags>
   </entry>
 </search>
