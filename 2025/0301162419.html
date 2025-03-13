@@ -31,14 +31,14 @@
 <meta property="og:site_name" content="PC&#39;s Blog">
 <meta property="og:description" content="背景我们的客户有一些本地部署的网关设备(CentOS 7)需要做固件升级。 原有的单系统分区架构缺乏有效的回滚机制, 升级遇到故障后无法回滚, 导致服务中断, 用户体验差 目标设计一种解决方案, 自动将客户的网关设备从单系统分区平滑升级到双系统，同时保证用户配置(IP, DNS, 登录口令)不丢失整个升级过程对客户完全透明, 无需客户进行额外操作(比如添加磁盘, 创建新机器) 方案设计如下方案:">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://pcj600.github.io/2020/0102171050/pgrade-support-dual-os/image1.png">
+<meta property="og:image" content="https://pcj600.github.io/2025/0301162419/image1.png">
 <meta property="article:published_time" content="2025-03-01T08:24:19.000Z">
-<meta property="article:modified_time" content="2025-03-09T11:10:46.329Z">
+<meta property="article:modified_time" content="2025-03-09T11:36:47.002Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="Linux">
 <meta property="article:tag" content="Project">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://pcj600.github.io/2020/0102171050/pgrade-support-dual-os/image1.png">
+<meta name="twitter:image" content="https://pcj600.github.io/2025/0301162419/image1.png">
 
 <link rel="canonical" href="https://pcj600.github.io/2025/0301162419.html">
 
@@ -138,7 +138,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">179</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">181</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -250,7 +250,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>1.7k</span>
+              <span>1.8k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -295,7 +295,7 @@
 </tr>
 </tbody></table>
 <p>最终采用定制initramfs方案。 客户虚拟机内存最低配置是8G, 需保证initramfs阶段的升级包+解压后系统文件小于8G<br>测试结果: c7最小化镜像900M, 安装后磁盘占用1.3G; 安装Microk8s后磁盘占用3G左右, 升级包1.7G, initramfs用掉4G内存, 远小于8G, 可行</p>
-<h1><span id="实现">实现</span></h1><p><img data-src="/2020/0102171050/pgrade-support-dual-os/image1.png"></p>
+<h1><span id="实现">实现</span></h1><p><img data-src="/2025/0301162419/image1.png"></p>
 <p><strong>目标系统分区设计</strong></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># lsblk</span><br><span class="line">NAME         MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT</span><br><span class="line">sda            8:0    0   10G  0 disk</span><br><span class="line">├─sda1         8:1    0    2M  0 part</span><br><span class="line">├─sda2         8:2    0    1G  0 part /boot</span><br><span class="line">└─sda3         8:3    0  8.8G  0 part</span><br><span class="line">  ├─VA-root  253:0    0  7.8G  0 lvm  /</span><br><span class="line">  ├─VA-image 253:1    0  512M  0 lvm  /image</span><br><span class="line">  └─VA-data  253:2    0  512M  0 lvm  /data</span><br></pre></td></tr></table></figure>
 
@@ -332,8 +332,8 @@
 <ul>
 <li>分区方案采用BIOS&#x2F;GPT, BIOS是为了兼容老客户, GPT可以支持2T以上磁盘, 可扩展性和性能更好</li>
 <li>tar备份目标系统时, 需要<code>--numeric-owner</code>保留文件的UID&#x2F;GID, 以及文件扩展属性xattr(有snap的应用运行状态）</li>
-<li></li>
 </ul>
+<p>代码参考: <a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/PCJ600/os_migrate">https://github.com/PCJ600/os_migrate</a></p>
 <h1><span id="难点">难点</span></h1><p>initramfs空间有限, 需要尽可能压缩升级包</p>
 <ul>
 <li>使用CentOS 7官方的minimal ISO做镜像(900M)</li>
@@ -483,7 +483,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-count">181</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -539,12 +539,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">787k</span>
+    <span title="站点总字数">791k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:55</span>
+    <span title="站点阅读时长">11:59</span>
 </div>
 
 <!--
