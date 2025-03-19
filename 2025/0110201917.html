@@ -24,22 +24,23 @@
     var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Overview1234567frontend -------&gt;  backend ---------&gt; MQ -----------&gt;  VA(On-premise)                       &#x2F;|\                             |                          |------------------------">
+  <meta name="description" content="Virtual Appliance Design heartbeart">
 <meta property="og:type" content="article">
-<meta property="og:title" content="VA backend Design">
-<meta property="og:url" content="https://pcj600.github.io/2020/0103201917.html">
+<meta property="og:title" content="Service Gateway 项目设计">
+<meta property="og:url" content="https://pcj600.github.io/2025/0110201917.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
-<meta property="og:description" content="Overview1234567frontend -------&gt;  backend ---------&gt; MQ -----------&gt;  VA(On-premise)                       &#x2F;|\                             |                          |------------------------">
+<meta property="og:description" content="Virtual Appliance Design heartbeart">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://pcj600.github.io/2020/0103201917/va_auto_upgrade.png">
-<meta property="article:published_time" content="2020-01-03T12:19:17.000Z">
-<meta property="article:modified_time" content="2025-02-23T10:03:54.194Z">
+<meta property="og:image" content="https://pcj600.github.io/2020/0102171050">
+<meta property="og:image" content="https://pcj600.github.io/2025/0110201917/va_auto_upgrade.png">
+<meta property="article:published_time" content="2025-01-10T12:19:17.000Z">
+<meta property="article:modified_time" content="2025-03-19T12:55:27.015Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="interview">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://pcj600.github.io/2020/0103201917/va_auto_upgrade.png">
+<meta name="twitter:image" content="https://pcj600.github.io/2020/0102171050">
 
-<link rel="canonical" href="https://pcj600.github.io/2020/0103201917.html">
+<link rel="canonical" href="https://pcj600.github.io/2025/0110201917.html">
 
 
 <script id="page-configurations">
@@ -52,7 +53,7 @@
   };
 </script>
 
-  <title>VA backend Design | PC's Blog</title>
+  <title>Service Gateway 项目设计 | PC's Blog</title>
   
 
 
@@ -201,7 +202,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2020/0103201917.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0110201917.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -214,7 +215,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          VA backend Design
+          Service Gateway 项目设计
         </h1>
 
         <div class="post-meta">
@@ -224,7 +225,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-01-03 20:19:17" itemprop="dateCreated datePublished" datetime="2020-01-03T20:19:17+08:00">2020-01-03</time>
+              <time title="创建时间：2025-01-10 20:19:17" itemprop="dateCreated datePublished" datetime="2025-01-10T20:19:17+08:00">2025-01-10</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -249,14 +250,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>27k</span>
+              <span>25k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>24 分钟</span>
+              <span>23 分钟</span>
             </span>
 
         </div>
@@ -268,39 +269,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1><span id="overview">Overview</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">frontend -------&gt;  backend ---------&gt; MQ -----------&gt;  VA(On-premise)</span><br><span class="line">                       /|\                             |  </span><br><span class="line">                        |------------------------------|</span><br><span class="line">						</span><br><span class="line">peter.backend.com:443  backend</span><br><span class="line">peter.channel.com:5672 MQ</span><br><span class="line">peter.frontend.com     frontend</span><br></pre></td></tr></table></figure>
-
-<h1><span id="design">Design</span></h1><h2><span id="auto-upgrade">Auto-upgrade</span></h2><p>dispatchAutoUpgradeInOneHourForAll</p>
-<ul>
-<li>find all running appliances, group by customer_id</li>
-<li>check if appliance need upgrade<ul>
-<li>check schedule update time is within next 1 hour.</li>
-<li>check target version valid (expectedStatus &#x3D; RUNNING and status is not RUNNING)</li>
-<li>don’t upgrade rollback appliances.</li>
-<li>don’t upgrade all appliances at the same time. upgrade half appliances first.</li>
-</ul>
-</li>
-<li>trigger appliance upgrade<ul>
-<li>get firmware download link</li>
-<li>update db, add dbentry for IotTask, update appliance status(upgrading, upgradetaskId: taskId)</li>
-<li>publish iot Task</li>
-</ul>
-</li>
-<li>receive response from Appliance<ul>
-<li>write task to db</li>
-</ul>
-</li>
-</ul>
+        <h1><span id="virtual-appliance-design">Virtual Appliance Design</span></h1><p><img data-src="/2020/0102171050"></p>
+<h1><span id="heartbeart">heartbeart</span></h1><p><img data-src="/2025/0110201917/va_auto_upgrade.png"></p>
 <span id="more"></span>
-<p><img data-src="/2020/0103201917/va_auto_upgrade.png"></p>
-<h2><span id="heartbeat">Heartbeat</span></h2><p>appliance断连一小段时间后，连接又恢复正常<br>appliances长时间断连，如何检测<br>receive response</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update heartbeat iot task to db</span><br></pre></td></tr></table></figure>
 
+<h1><span id="overview">Overview</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">frontend -------&gt;  backend ---------&gt; MQ -----------&gt;  VA(On-premise)</span><br><span class="line">                       /|\                             |  </span><br><span class="line">                        |------------------------------|</span><br><span class="line">						</span><br><span class="line">peter.backend.com:443  backend</span><br><span class="line">peter.channel.com:5672 MQ</span><br><span class="line">peter.frontend.com     frontend</span><br></pre></td></tr></table></figure>
 
-<p>check heartbeat per 5 minutes</p>
-<ul>
-<li>find all applinace in ApplianceInfo Table.</li>
-</ul>
 <h1><span id="test-api">Test API</span></h1><h2><span id="api-for-frontend">API for frontend</span></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">curl -H &quot;x-customer-id: 77a1c9561c8d47fb8036c970a4f2ee73&quot; &quot;https://peter.backend.com/ui/appliances/?start=0&amp;applianceId=974bf535-7930-474e-8da6-780cafff284d&quot;</span><br><span class="line">curl -H &quot;x-customer-id: 77a1c9561c8d47fb8036c970a4f2ee73&quot; &quot;https://peter.backend.com/ui/appliances/?start=1736680946&quot;</span><br><span class="line">curl https://peter.backend.com/ui/appliances/image/</span><br><span class="line">curl -X DELETE https://peter.backend.com/ui/appliances/974bf535-7930-474e-8da6-780cafff284d/</span><br><span class="line">curl -X POST https://peter.backend.com/ui/appliances/974bf535-7930-474e-8da6-780cafff284d/upgrade/</span><br><span class="line">curl https://peter.backend.com/ui/appliances/974bf535-7930-474e-8da6-780cafff284d/settings/</span><br><span class="line">curl -H &quot;x-customer-id: 77a1c9561c8d47fb8036c970a4f2ee73&quot; -X POST https://peter.backend.com/ui/appliances/974bf535-7930-474e-8da6-780cafff284d/settings/</span><br><span class="line">curl https://peter.backend.com/ui/appliances/974bf535-7930-474e-8da6-780cafff284d/storage/</span><br><span class="line">curl -X POST https://peter.backend.com/ui/appliances/974bf535-7930-474e-8da6-780cafff284d/storage/</span><br><span class="line">curl -X POST https://peter.backend.com/ui/appliances/974bf535-7930-474e-8da6-780cafff284d/log/</span><br><span class="line">curl https://peter.backend.com/ui/appliances/974bf535-7930-474e-8da6-780cafff284d/services/</span><br><span class="line"></span><br><span class="line">curl -X POST https://peter.backend.com/ui/services/squid/install/</span><br><span class="line">curl -X POST https://peter.backend.com/ui/services/squid/974bf535-7930-474e-8da6-780cafff284d/toggle/</span><br><span class="line">curl https://peter.backend.com/ui/services/squid/974bf535-7930-474e-8da6-780cafff284d/settings/</span><br><span class="line">curl -X POST https://peter.backend.com/ui/services/squid/974bf535-7930-474e-8da6-780cafff284d/settings/</span><br><span class="line"></span><br><span class="line">curl https://peter.backend.com/ui/tasks/12345/</span><br></pre></td></tr></table></figure>
 
 <h2><span id="api-for-va">API for VA</span></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST -H &quot;Authorization: Bearer $token&quot; -i https://peter.backend.com/va/register/</span><br><span class="line">curl -X POST https://peter.backend.com/va/register/</span><br><span class="line">curl -X POST https://peter.backend.com/va/974bf535-7930-474e-8da6-780cafff284d/tasks/</span><br><span class="line">curl https://peter.backend.com/va/974bf535-7930-474e-8da6-780cafff284d/healthz/</span><br><span class="line">curl -X POST https://peter.backend.com/va/974bf535-7930-474e-8da6-780cafff284d/log/</span><br><span class="line">curl -X POST https://peter.backend.com/va/974bf535-7930-474e-8da6-780cafff284d/squid/metrics/</span><br></pre></td></tr></table></figure>
@@ -612,26 +586,6 @@
 
 <p><strong>Test</strong></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -H &quot;x-customer-id: 77a1c956-1c8d-47fb-8036-c970a4f2ee73&quot; \</span><br><span class="line">&quot;https://peter.backend.com/ui/tasks/0c5b000b68ad4d3faedded836e92f24b/&quot;</span><br></pre></td></tr></table></figure>
-
-
-<h1><span id="iotrabbitmq">IOT(RabbitMQ)</span></h1><h2><span id="rabbitmq命令行操作">RabbitMQ命令行操作</span></h2><p>查看队列</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># rabbitmqadmin --username=admin --password=V2SG@xdr list queues name messages</span><br><span class="line">+---------------+----------+----------+</span><br><span class="line">|     name      | messages | va_12345 |</span><br><span class="line">+---------------+----------+----------+</span><br><span class="line">| va_task_12345 | 2        |          |</span><br><span class="line">+---------------+----------+----------+</span><br></pre></td></tr></table></figure>
-<p>删除队列</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rabbitmqadmin --username=admin --password=V2SG@xdr delete queue name=va_task_12345</span><br></pre></td></tr></table></figure>
-<p>删除交换机</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rabbitmqadmin --username=admin --password=V2SG@xdr delete exchange name=va_task --vhost=/</span><br></pre></td></tr></table></figure>
-
-
-<p>HeartbeatIotTask(不删除), 每个va只有一个<br>IotTask要删除 (不能立刻删除, frontend需要查询task得到执行结果)</p>
-<p>定时任务:</p>
-<h2><span id></span></h2><p>token过期怎么办?</p>
-<ul>
-<li>定时任务检查30天内到期的token</li>
-<li>请求SP拿到新的tokn</li>
-<li>通过upgradeApplianceConfig iotTask通知到va</li>
-<li>va更新token</li>
-</ul>
-
     </div>
 
     
@@ -666,7 +620,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://pcj600.github.io/2020/0103201917.html" title="VA backend Design">https://pcj600.github.io/2020/0103201917.html</a>
+    <a href="https://pcj600.github.io/2025/0110201917.html" title="Service Gateway 项目设计">https://pcj600.github.io/2025/0110201917.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
@@ -686,12 +640,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/0102175630.html" rel="prev" title="项目问题梳理">
-      <i class="fa fa-chevron-left"></i> 项目问题梳理
+    <a href="/2025/0106201917.html" rel="prev" title="LeetCode cheetsheet for C++">
+      <i class="fa fa-chevron-left"></i> LeetCode cheetsheet for C++
     </a></div>
       <div class="post-nav-item">
-    <a href="/2020/0228210741.html" rel="next" title="Linux下生成core dump文件">
-      Linux下生成core dump文件 <i class="fa fa-chevron-right"></i>
+    <a href="/2025/0118124850.html" rel="next" title="2024年各类资产近十年收益率">
+      2024年各类资产近十年收益率 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -751,7 +705,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Design</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Auto-upgrade</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Heartbeat</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Test API</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">API for frontend</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">API for VA</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">backend Design</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Database Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Customer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Appliance</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">IOT Task</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Service</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">IotTask Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">HeartBeat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Upgrade Appliance</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Install Services</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Uninstall Services</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Collect log</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Collect Appliance Metrics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Unregister VA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Update Appliance Settings</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Extend Appliance Storage</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">backend API design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">API for VA</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">VA register</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Update IOT Task Results</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">IOT Health Check</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Upload Service Metrics</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Upload Audit Log</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">API for frontend</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Appliance Image Info</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">List Appliance</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Delete Appliance</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Upgrade Appliance</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Appliance Settings</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Modify Appliance Settings</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Storage Details</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Extend Storage</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Appliance Metrics</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Collect Appliance Log</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">List Service</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Install&#x2F;Uninstall&#x2F;Upgrade Service</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link"><span class="nav-text">Install Service</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Enable&#x2F;Disable Service</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Service Settings</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Configure Service Settings</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Query Task result</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">IOT(RabbitMQ)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">RabbitMQ命令行操作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text"></span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Virtual Appliance Design</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">heartbeart</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Test API</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">API for frontend</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">API for VA</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">backend Design</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Database Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Customer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Appliance</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">IOT Task</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Service</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">IotTask Design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">HeartBeat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Upgrade Appliance</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Install Services</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Uninstall Services</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Collect log</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Collect Appliance Metrics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Unregister VA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Update Appliance Settings</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Extend Appliance Storage</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">backend API design</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">API for VA</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">VA register</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Update IOT Task Results</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">IOT Health Check</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Upload Service Metrics</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Upload Audit Log</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">API for frontend</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Appliance Image Info</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">List Appliance</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Delete Appliance</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Upgrade Appliance</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Appliance Settings</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Modify Appliance Settings</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Storage Details</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Extend Storage</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Appliance Metrics</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Collect Appliance Log</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">List Service</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Install&#x2F;Uninstall&#x2F;Upgrade Service</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link"><span class="nav-text">Install Service</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Enable&#x2F;Disable Service</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Get Service Settings</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Configure Service Settings</span></a></li><li class="nav-item nav-level-4"><a class="nav-link"><span class="nav-text">Query Task result</span></a></li></ol></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -823,12 +777,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">791k</span>
+    <span title="站点总字数">805k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">11:59</span>
+    <span title="站点阅读时长">12:12</span>
 </div>
 
 <!--
