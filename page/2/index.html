@@ -123,7 +123,7 @@
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">37</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">38</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
@@ -133,7 +133,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">181</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">180</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -196,7 +196,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0302174142.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0303201100.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -210,7 +210,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2025/0302174142.html" class="post-title-link" itemprop="url">Linux开机流程</a>
+            <a href="/2025/0303201100.html" class="post-title-link" itemprop="url">Microk8s Ingress实现七层负载均衡</a>
         </h2>
 
         <div class="post-meta">
@@ -220,7 +220,16 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2025-03-02 17:41:42" itemprop="dateCreated datePublished" datetime="2025-03-02T17:41:42+08:00">2025-03-02</time>
+              <time title="创建时间：2025-03-03 20:11:00" itemprop="dateCreated datePublished" datetime="2025-03-03T20:11:00+08:00">2025-03-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/kubernetes/" itemprop="url" rel="index"><span itemprop="name">kubernetes</span></a>
+                </span>
             </span>
 
           <br>
@@ -229,14 +238,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>249</span>
+              <span>8.1k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>7 分钟</span>
             </span>
 
         </div>
@@ -248,9 +257,25 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>POST 上电自检<br>GRUB 控制权交给引导加载器(GRUB2), 加载&#x2F;boot下的内核和initrd<br>Kernel 内核加载到内存, 初始化硬件驱动程序<br>Initrd 临时根文件系统, 加载必要的模块, 挂载真正根文件系统<br>RootFS 实际根文件系统挂载完成, 控制权交给&#x2F;sbin&#x2F;init<br>Systemd 初始化系统启动服务<br>Login 用户登录界面启动, 完成系统启动 </p>
-<h2><span id="bios阶段">BIOS阶段</span></h2><p>BIOS是按下开机键后第一个运行程序, 硬件检测, 从排在第一位的启动设备中读取MBR</p>
-
+          <h1 id="Microk8s-Ingress是什么"><a href="#Microk8s-Ingress是什么" class="headerlink" title="Microk8s Ingress是什么"></a>Microk8s Ingress是什么</h1><p>Ingress是k8s的一种资源对象，用于管理外部对集群内服务的访问, 它通过提供一个统一的入口点，将外部流量路由到集群内部的不同服务。</p>
+<h1 id="Microk8s-Ingress用于解决什么问题"><a href="#Microk8s-Ingress用于解决什么问题" class="headerlink" title="Microk8s Ingress用于解决什么问题"></a>Microk8s Ingress用于解决什么问题</h1><p>k8s集群中服务默认只能在集群内访问。 如果需要从外部访问服务，通常需要使用NodePort或LoadBalancer类型服务，这两个服务都存在一些问题</p>
+<ul>
+<li>NodePort会占用节点端口，可能导致端口冲突</li>
+<li>LoadBalancer需要云提供商支持, 不适合本地环境</li>
+<li>Ingress提供一种灵活的方式暴露服务，允许通过域名或路径规则将流量路由到不同的服务</li>
+</ul>
+<h1 id="Microk8s-Ingress基本原理"><a href="#Microk8s-Ingress基本原理" class="headerlink" title="Microk8s Ingress基本原理"></a>Microk8s Ingress基本原理</h1><ul>
+<li>Microk8s内置了一个Nginx的Ingress Controller, 负责监听k8s中的Ingress资源，当检测到Ingress资源更新时, 动态更新Nginx配置文件</li>
+<li>外部流量先到达Nginx, 再基于域名和URL将请求转发到Service, Service再将流量分发到Pod</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0303201100.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -523,6 +548,95 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0228201917.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0228201917.html" class="post-title-link" itemprop="url">Service Gateway 项目设计</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-02-28 20:19:17" itemprop="dateCreated datePublished" datetime="2025-02-28T20:19:17+08:00">2025-02-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Project/" itemprop="url" rel="index"><span itemprop="name">Project</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>25k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>23 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Virtual-Appliance-Design"><a href="#Virtual-Appliance-Design" class="headerlink" title="Virtual Appliance Design"></a>Virtual Appliance Design</h1><p><img data-src="/va_design.png"></p>
+<h1 id="heartbeart"><a href="#heartbeart" class="headerlink" title="heartbeart"></a>heartbeart</h1><p><img data-src="/va_auto_upgrade.png"></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0228201917.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0207224807.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -713,98 +827,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0118124850.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0118124850.html" class="post-title-link" itemprop="url">2024年各类资产近十年收益率</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-01-18 12:48:50" itemprop="dateCreated datePublished" datetime="2025-01-18T12:48:50+08:00">2025-01-18</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/investment/" itemprop="url" rel="index"><span itemprop="name">investment</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>540</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>同花顺做了一张2024年度资产收益图，大家可以看看</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/0118124850.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/30/">30</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -872,14 +898,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">181</span>
+          <span class="site-state-item-count">180</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">38</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
@@ -928,12 +954,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">805k</span>
+    <span title="站点总字数">808k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12:12</span>
+    <span title="站点阅读时长">12:15</span>
 </div>
 
 <!--
