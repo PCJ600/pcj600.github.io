@@ -13001,9 +13001,9 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li><a href="#%E5%86%8D%E4%BB%8E%E4%B8%BB%E8%8A%82%E7%82%B9%E4%B8%8A%E8%8E%B7%E5%8F%96-discovery-token-ca-cert-hash%E7%9A%84%E5%80%BC">再从主节点上获取–discovery-token-ca-cert-hash的值</a></li>
 <li><a href="#%E6%9C%80%E5%90%8E-%E4%BB%8E%E8%8A%82%E7%82%B9%E6%89%A7%E8%A1%8Ckubeadm-join%E5%91%BD%E4%BB%A4%E5%B0%86%E4%BB%8E%E8%8A%82%E7%82%B9%E5%8A%A0%E5%85%A5%E9%9B%86%E7%BE%A4">最后, 从节点执行kubeadm join命令，将从节点加入集群:</a></li>
 <li><a href="#%E6%9F%A5%E7%9C%8B%E4%BB%8E%E8%8A%82%E7%82%B9%E6%98%AF%E5%90%A6%E5%8A%A0%E5%85%A5%E6%88%90%E5%8A%9F">查看从节点是否加入成功</a></li>
-<li><a href="#4-%E7%AE%80%E5%8D%95%E6%B5%8B%E8%AF%95%E4%B8%80%E4%B8%BB%E4%B8%80%E4%BB%8E%E9%9B%86%E7%BE%A4%E5%9C%A8%E9%9B%86%E7%BE%A4%E4%B8%8A%E9%83%A8%E7%BD%B2nginx">4. 简单测试一主一从集群，在集群上部署Nginx</a></li>
 </ul>
 </li>
+<li><a href="#4-%E7%AE%80%E5%8D%95%E6%B5%8B%E8%AF%95%E4%B8%80%E4%B8%BB%E4%B8%80%E4%BB%8E%E9%9B%86%E7%BE%A4%E5%9C%A8%E9%9B%86%E7%BE%A4%E4%B8%8A%E9%83%A8%E7%BD%B2nginx">4. 简单测试一主一从集群，在集群上部署Nginx</a></li>
 </ul>
 </li>
 <li><a href="#%E4%BA%8C-%E9%85%8D%E7%BD%AE%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1">二、 配置负载均衡</a><ul>
@@ -13149,7 +13149,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <p>可以查到主, 从节点已经Ready</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl get nodes</span><br><span class="line">NAME         STATUS   ROLES           AGE     VERSION</span><br><span class="line">k8s-master   Ready    control-plane   5h33m   v1.28.2</span><br><span class="line">k8s-node1    Ready    &lt;none&gt;          11m     v1.28.2</span><br><span class="line">k8s-node2    Ready    &lt;none&gt;          11m     v1.28.2</span><br><span class="line"></span><br><span class="line"># calicoctl node status</span><br><span class="line">Calico process is running.</span><br><span class="line"></span><br><span class="line">IPv4 BGP status</span><br><span class="line">+----------------+-------------------+-------+----------+-------------+</span><br><span class="line">|  PEER ADDRESS  |     PEER TYPE     | STATE |  SINCE   |    INFO     |</span><br><span class="line">+----------------+-------------------+-------+----------+-------------+</span><br><span class="line">| 192.168.52.101 | node-to-node mesh | up    | 14:38:07 | Established |</span><br><span class="line">+----------------+-------------------+-------+----------+-------------+</span><br><span class="line"></span><br><span class="line">IPv6 BGP status</span><br><span class="line">No IPv6 peers found.</span><br><span class="line"></span><br><span class="line"># calicoctl get nodes</span><br><span class="line">NAME</span><br><span class="line">k8s-master1</span><br><span class="line">k8s-slave1</span><br></pre></td></tr></table></figure>
 
-<h3><span id="4-简单测试一主一从集群在集群上部署nginx">4. 简单测试一主一从集群，在集群上部署Nginx</span></h3><p>创建Nginx deployment(nginx-deployment.yaml), 设置副本数为2</p>
+<h2><span id="4-简单测试一主一从集群在集群上部署nginx">4. 简单测试一主一从集群，在集群上部署Nginx</span></h2><p>创建Nginx deployment(nginx-deployment.yaml), 设置副本数为2</p>
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-deployment</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: nginx</span><br><span class="line">  replicas: 3 # 副本数设置为3，假设集群中有三个节点，每个节点上会尝试运行一个Nginx实例（但k8s会根据资源情况和调度策略来实际分配）</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx</span><br><span class="line">        image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nginx:1.19-alpine</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br></pre></td></tr></table></figure>
 
 <p>创建Service(nginx-service.yaml), NodePort暴露服务</p>
@@ -13235,6 +13235,230 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl 192.168.52.88</span><br><span class="line">200 OK</span><br><span class="line">curl https://192.168.52.88:6443/healthz -k</span><br><span class="line">ok</span><br></pre></td></tr></table></figure>
 <p>到此, 高可用集群搭建完成</p>
 <h1><span id="参考">参考</span></h1><p><a href="https://kubesphere.io/zh/docs/v3.4/installing-on-linux/high-availability-configurations/set-up-ha-cluster-using-keepalived-haproxy/">https://kubesphere.io/zh/docs/v3.4/installing-on-linux/high-availability-configurations/set-up-ha-cluster-using-keepalived-haproxy/</a></p>
+]]></content>
+      <categories>
+        <category>kubernetes</category>
+      </categories>
+      <tags>
+        <tag>kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>手把手教你搭建Docker私有仓库</title>
+    <url>/2025/0102171058.html</url>
+    <content><![CDATA[<!-- toc -->
+
+<ul>
+<li><a href="#%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83">测试环境</a></li>
+<li><a href="#%E6%90%AD%E5%BB%BA%E6%AD%A5%E9%AA%A4">搭建步骤</a><ul>
+<li><a href="#%E5%AE%89%E8%A3%85docker">安装Docker</a></li>
+<li><a href="#%E6%8B%89%E5%8F%96registry%E5%AE%B9%E5%99%A8">拉取Registry容器</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AEhttps">配置HTTPS</a></li>
+<li><a href="#%E6%89%80%E6%9C%89%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%BF%A1%E4%BB%BB%E8%AF%81%E4%B9%A6">所有客户端信任证书</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AEbasic%E8%AE%A4%E8%AF%81">配置Basic认证</a></li>
+<li><a href="#%E5%90%AF%E5%8A%A8registry%E5%AE%B9%E5%99%A8">启动Registry容器</a></li>
+<li><a href="#%E6%B5%8B%E8%AF%95%E7%A7%81%E6%9C%89registry">测试私有Registry</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+<!-- tocstop -->
+
+<span id="more"></span>
+
+<h1><span id="测试环境">测试环境</span></h1><p>Rocky Linux 9.5 x86_64</p>
+<h1><span id="搭建步骤">搭建步骤</span></h1><h2><span id="安装docker">安装Docker</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker</span><br><span class="line">systemctl start docker</span><br><span class="line">systemctl enable docker</span><br><span class="line">docker --version</span><br><span class="line">Docker version 27.4.0, build bde2b89</span><br></pre></td></tr></table></figure>
+
+<h2><span id="拉取registry容器">拉取Registry容器</span></h2><p>Docker官方提供了一个名为registry的容器镜像，可直接用来运行私有仓库. 先拉取registry镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull registry:2</span><br></pre></td></tr></table></figure>
+
+<h2><span id="配置https">配置HTTPS</span></h2><p>生成一个包含SANs的自签名证书. 先创建一个OpenSSL配置文件(openssl.cnf), 指定CN为你的域名(mydockerregistry.com)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ req ]</span><br><span class="line">default_bits       = 2048</span><br><span class="line">distinguished_name = req_distinguished_name</span><br><span class="line">req_extensions     = req_ext</span><br><span class="line">prompt             = no</span><br><span class="line"></span><br><span class="line">[ req_distinguished_name ]</span><br><span class="line">C  = CN</span><br><span class="line">ST = State</span><br><span class="line">L  = City</span><br><span class="line">O  = Organization</span><br><span class="line">OU = Organizational Unit</span><br><span class="line">CN = mydockerregistry.com</span><br><span class="line"></span><br><span class="line">[ req_ext ]</span><br><span class="line">subjectAltName = @alt_names</span><br><span class="line"></span><br><span class="line">[ alt_names ]</span><br><span class="line">DNS.1 = mydockerregistry.com</span><br><span class="line">DNS.2 = localhost</span><br><span class="line">IP.1 = 127.0.0.1</span><br></pre></td></tr></table></figure>
+<p>生成证书和密钥</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir -p /mnt/certs</span><br><span class="line">openssl req -x509 -config openssl.cnf -extensions &#x27;req_ext&#x27; -nodes -days 365 -newkey rsa:2048 -keyout /mnt/certs/domain.key -out /mnt/certs/domain.crt</span><br></pre></td></tr></table></figure>
+<p>按照提示填写信息，确保Common Name(CN)设置私有Registry的域名或IP</p>
+<h2><span id="所有客户端信任证书">所有客户端信任证书</span></h2><p>在所有docker客户端机器上执行如下命令, 信任证书</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo mkdir -p /etc/docker/certs.d/mydockerregistry.com:5000/</span><br><span class="line">sudo cp /mnt/certs/domain.crt /etc/docker/certs.d/mydockerregistry.com:5000/ca.crt</span><br></pre></td></tr></table></figure>
+
+<h2><span id="配置basic认证">配置Basic认证</span></h2><p>为了保护私有Registry，可以启用基本的用户名密码验证</p>
+<p>创建密码文件, 使用htpasswd工具创建一个用户名和密码文件(用户名:dockeruser, 密码:123456)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install httpd-tools -y</span><br><span class="line">mkdir -p /mnt/auth</span><br><span class="line">htpasswd -Bc /mnt/auth/htpasswd dockeruser</span><br></pre></td></tr></table></figure>
+
+<h2><span id="启动registry容器">启动Registry容器</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart docker</span><br><span class="line">docker run -d \</span><br><span class="line">  --name private-registry \</span><br><span class="line">  -p 5000:5000 \</span><br><span class="line">  --restart=always \</span><br><span class="line">  -v /mnt/registry:/var/lib/registry \</span><br><span class="line">  -v /mnt/certs:/certs \</span><br><span class="line">  -v /mnt/auth:/auth \</span><br><span class="line">  -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \</span><br><span class="line">  -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \</span><br><span class="line">  -e REGISTRY_AUTH=htpasswd \</span><br><span class="line">  -e REGISTRY_AUTH_HTPASSWD_REALM=&quot;Registry Realm&quot; \</span><br><span class="line">  -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \</span><br><span class="line">  registry:2</span><br></pre></td></tr></table></figure>
+<p>说明：</p>
+<ul>
+<li><code>-d</code>：后台运行容器</li>
+<li><code>-p 5000:5000</code>：将宿主机的 5000 端口映射到容器的 5000 端口</li>
+<li><code>-v /mnt/registry:/var/lib/registry</code>：将本地目录<code>/mnt/registry</code>挂载到容器内的<code>/var/lib/registry</code>目录，用于存储镜像数据（请确保该目录存在）</li>
+<li><code>--restart=always</code>: 保证容器在主机重启或意外停止后自动启动</li>
+</ul>
+<h2><span id="测试私有registry">测试私有Registry</span></h2><p>假设我本地有个镜像flask-app:1.0, 需要推送到私有registry, 操作如下：</p>
+<p>登录私有Docker registry</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker login -u dockeruser -p 123456 mydockerregistry.com:5000</span><br></pre></td></tr></table></figure>
+<p>给镜像打标签</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker tag flask-app:1.0 mydockerregistry.com:5000/flask-app:1.0</span><br></pre></td></tr></table></figure>
+<p>再推送镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker push mydockerregistry.com:5000/flask-app:1.0</span><br></pre></td></tr></table></figure>
+<p>最后, 在所有客户端机器上测试拉取镜像功能OK</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 信任证书</span><br><span class="line">mkdir -p /etc/docker/certs.d/mydockerregistry.com:5000/</span><br><span class="line">scp root@mydockerregistry.com:/mnt/certs/domain.crt /etc/docker/certs.d/mydockerregistry.com:5000/ca.crt</span><br><span class="line"></span><br><span class="line"># 登录</span><br><span class="line">docker login -u dockeruser -p 123456 mydockerregistry.com:5000</span><br><span class="line"></span><br><span class="line"># 测试拉取镜像</span><br><span class="line">docker pull mydockerregistry.com:5000/flask-app:1.0</span><br><span class="line">1.0: Pulling from flask-app</span><br><span class="line">486dbf987c66: Pull complete</span><br><span class="line">1da0723265ec: Pull complete</span><br><span class="line">4f4cb1a24c66: Pull complete</span><br><span class="line">c876ae22765e: Pull complete</span><br><span class="line">577bd6ae1def: Pull complete</span><br><span class="line">c9ecf2eab7f4: Pull complete</span><br><span class="line">a0bf88afd1f2: Pull complete</span><br><span class="line">Digest: sha256:5e7112644017b0713e4529de43868fc498c1d2dbdefab236e3d64cc11cd036e0</span><br><span class="line">Status: Downloaded newer image for mydockerregistry.com:5000/flask-app:1.0</span><br><span class="line">mydockerregistry.com:5000/flask-app:1.0</span><br></pre></td></tr></table></figure>
+
+<h1><span id="参考">参考</span></h1><p><a href="https://yeasy.gitbook.io/docker_practice/repository/registry">https://yeasy.gitbook.io/docker_practice&#x2F;repository&#x2F;registry</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Kubernetes集群安装ingress-nginx</title>
+    <url>/2025/0320212856.html</url>
+    <content><![CDATA[<p>下载yaml文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml</span><br><span class="line">l</span><br></pre></td></tr></table></figure>
+
+<p>查看镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat deploy.yaml | grep image</span><br><span class="line">        image: registry.k8s.io/ingress-nginx/controller:v1.12.0@sha256:e6b8de175acda6ca913891f0f727bca4527e797d52688cbe9fec9040d6f6b6fa</span><br><span class="line">        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.0@sha256:aaafd456bda110628b2d4ca6296f38731a3aaf0bf7581efae824a41c770a8fc4</span><br><span class="line">        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.0@sha256:aaafd456bda110628b2d4ca6296f38731a3aaf0bf7581efae824a41c770a8fc4</span><br></pre></td></tr></table></figure>
+<p>修改deploy.yaml, 把镜像替换为国内源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.12.0</span><br><span class="line">image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.0</span><br><span class="line">image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.0</span><br></pre></td></tr></table></figure>
+
+<p>修改Deployment, 指定副本数为3, hostNetwork&#x3D;true </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  # ...</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3 # 设置副本数</span><br><span class="line">  # ...</span><br><span class="line">    spec:</span><br><span class="line">      hostNetwork: true	# 设置宿主机网络</span><br><span class="line">      # ...</span><br></pre></td></tr></table></figure>
+
+<p>给每个工作节点打上标签，允许Ingress调度到工作节点</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl get nodes</span><br><span class="line">NAME          STATUS   ROLES           AGE     VERSION</span><br><span class="line">k8s-master1   Ready    control-plane   5d23h   v1.28.2</span><br><span class="line">k8s-master2   Ready    control-plane   5d22h   v1.28.2</span><br><span class="line">k8s-master3   Ready    control-plane   5d22h   v1.28.2</span><br><span class="line">k8s-slave1    Ready    &lt;none&gt;          5d22h   v1.28.2</span><br><span class="line">k8s-slave2    Ready    &lt;none&gt;          5d22h   v1.28.2</span><br><span class="line">k8s-slave3    Ready    &lt;none&gt;          5d22h   v1.28.2</span><br><span class="line"></span><br><span class="line">kubectl label nodes k8s-slave1 ingress-ready=true kubernetes.io/os=linux</span><br><span class="line">kubectl label nodes k8s-slave2 ingress-ready=true kubernetes.io/os=linux</span><br><span class="line">kubectl label nodes k8s-slave3 ingress-ready=true kubernetes.io/os=linux</span><br></pre></td></tr></table></figure>
+
+<p>安装Ingress</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl apply -f ingress-nginx.yaml</span><br></pre></td></tr></table></figure>
+
+<p>查看ingress Pod启动成功</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n ingress-nginx get pods</span><br><span class="line">NAME                                        READY   STATUS      RESTARTS   AGE</span><br><span class="line">ingress-nginx-admission-create-cz5h4        0/1     Completed   0          82s</span><br><span class="line">ingress-nginx-admission-patch-pxvd5         0/1     Completed   2          82s</span><br><span class="line">ingress-nginx-controller-7fd85d4496-294nk   1/1     Running     0          82s</span><br><span class="line">ingress-nginx-controller-7fd85d4496-97x8w   1/1     Running     0          82s</span><br><span class="line">ingress-nginx-controller-7fd85d4496-9fk2l   1/1     Running     0          82s</span><br></pre></td></tr></table></figure>
+
+<p>测试OK</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl k8s-slave1</span><br><span class="line">404</span><br><span class="line">curl k8s-slave2</span><br><span class="line">404</span><br><span class="line">curl k8s-slave3</span><br><span class="line">404 </span><br></pre></td></tr></table></figure>
+
+<p>添加haproxy配置, 通过LB的80端口访问</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">frontend http-in</span><br><span class="line">    bind *:80</span><br><span class="line">    default_backend http-servers</span><br><span class="line"></span><br><span class="line">backend http-servers</span><br><span class="line">    balance roundrobin</span><br><span class="line">    server node1 k8s-slave1:80 check</span><br><span class="line">    server node2 k8s-slave2:80 check</span><br><span class="line">    server node3 k8s-slave3:80 check</span><br></pre></td></tr></table></figure>
+
+<p>创建两个namespace, 部署三个服务</p>
+<p>Service A (service-a)<br>Service B (service-b)<br>Service C (service-c)</p>
+<h2><span id="制作charts">制作charts</span></h2><p>我们平时在日常生活中会经常在不同的平台上与各种各样的应用打交道，比如从苹果的 App Store 里下载的淘宝、高德、支付宝等应用，或者是在 PC 端安装的Word、Photoshop、Steam。这些各类平台上的应用程序，对用户而言，大多只需要点击安装就可使用。<br>然而，在云（Kubernetes）上，部署一个应用往往却不是那么简单。如果想要部署一个应用程序到云上，首先要准备好它所需要的环境，打包成 Docker 镜像。进而把镜像放在部署文件（Deployment）中、配置服务（Service）、应用所需的账户（ServiceAccount）及权限（Role）、命名空间（Namespace）、密钥信息（Secret）、可持久化存储（PersistentVolumes）等资源。也就是编写一系列互相相关的 YAML 配置文件，将它们部署在 Kubernetes 集群上。<br>但是即便应用的开发者可以把这些Docker镜像存放在公共仓库中，并且将部署所需的 YAML 资源文件提供给用户，用户仍然需要自己去寻找这些资源文件，并把它们一一部署。倘若用户希望修改开发者提供的默认资源，比如使用更多的副本（Replicas）或是修改服务端口（Port），他还需要自己去查应该在这些资源文件的哪些地方修改，更不用提版本变更与维护会给开发者和用户造成多少麻烦了。可见最原始的 Kubernetes 应用形态并不便利。<br><a href="https://developer.aliyun.com/article/718387">https://developer.aliyun.com/article/718387</a></p>
+<p>TODO: </p>
+<ul>
+<li>利用helm制作charts包, 滚动更新, 做一个最简单的包 (TODO)</li>
+<li>测试coredns (服务之前如何通信的)</li>
+</ul>
+]]></content>
+      <categories>
+        <category>kubernetes</category>
+      </categories>
+      <tags>
+        <tag>kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>[k8s实践] 使用Helm安装k8s应用, 搭建私有Helm仓库, 自定义Helm Chart</title>
+    <url>/2025/0322171058.html</url>
+    <content><![CDATA[<h1><span id="前言">前言</span></h1><p>【交代自己项目]<br>官方文档: <a href="https://helm.sh/">https://helm.sh/</a></p>
+<ul>
+<li>什么是Helm, 解决什么问题</li>
+<li>Helm快速上手, 安装官方应用</li>
+<li>自定义helm chart, 升级, 回滚</li>
+<li>创建私有helm repo</li>
+</ul>
+<span id="more"></span>
+
+<h1><span id="什么是helm-helm解决了哪些问题">什么是Helm, Helm解决了哪些问题</span></h1><p>Helm是Kubernetes的包管理工具, 方便用户快速发现、共享和使用Kubernetes构建的应用</p>
+<p>Helm出现之前, 部署k8s应用存在如下几个问题:</p>
+<h2><span id="1-yaml配置复杂-部署和管理k8s应用不方便">1. YAML配置复杂, 部署和管理k8s应用不方便</span></h2><p>需要编写大量YAML文件定义k8s资源. 随着项目规模增长, 维护这些配置文件变得困难，尤其是需要对同一组资源进行重复部署的时候(如开发, 测试, 生产环境)<br><strong>helm解决方案</strong><br>通过Helm模板功能, 开发者可以创建一个Chart, 包含所有必要k8s资源定义, 并使用变量代替硬编码值<br>例如，在values.yaml中定义默认值，然后在模板中引用这些值。这样，只需修改values.yaml中的几个参数，就可以轻松适应不同的环境或需求，大大减少了出错的可能性并简化了维护工作。</p>
+<h2><span id="2-更新或回滚到特定版本较为困难">2. 更新或回滚到特定版本较为困难</span></h2><p>缺乏版本控制功能, 难以更新或回滚到指定版本. 如果使用直接修改线上YAML文件的方式, 可能导致问题, 难以恢复到稳定状态<br><strong>helm解决方案</strong><br>Helm通过其Release概念支持版本控制, 每次部署或更新应用时, 都创建一个新的Release版本, 如果新版本出现问题, 通过helm rollback可以回滚到之前的稳定版本<br>此外, helm支持查看每个Release的历史记录, 便于审计和故障排查</p>
+<h2><span id="3-难以共享或复用k8s配置-不利于多团队协作">3. 难以共享或复用k8s配置, 不利于多团队协作</span></h2><p>在一个团队内部, 不同项目可能有相似需求, 比如都需要部署同一套系统. 然而, 由于缺少有效的共享机制, 每个项目需要从头开始配置, 浪费了大量时间精力<br><strong>helm解决方案</strong><br>Helm Charts可以通过仓库(Repository)共享, 每个人可以从仓库中下载官方或其他团队成员发布的Charts, 也可以上传自己的Charts, 实现了k8s配置的共享和复用</p>
+<h1><span id="快速上手helm">快速上手Helm</span></h1><h2><span id="helm的三个基本概念chart-repository-release">Helm的三个基本概念(Chart, Repository, Release)</span></h2><ul>
+<li>Chart, 一个Helm安装包，包含了运行一个应用所需要的镜像、依赖和资源定义等</li>
+<li>Release, 在Kubernetes集群上运行的一个Chart实例</li>
+<li>Repository, 发布和存储Chart的仓库</li>
+</ul>
+<h2><span id="安装helm">安装Helm</span></h2><p>首先安装Kubernetes集群, 可以参考: <a href="https://blog.csdn.net/pcj_888/article/details/144240636">https://blog.csdn.net/pcj_888&#x2F;article&#x2F;details&#x2F;144240636</a></p>
+<p>查看kubernetes版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl version</span><br><span class="line">Server Version: v1.28.2</span><br></pre></td></tr></table></figure>
+
+<p>再查看<a href="https://helm.sh/docs/topics/version_skew/">官方文档</a>, 找到匹配的Helm版本进行安装</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Helm Version	Supported Kubernetes Versions</span><br><span class="line">3.17.x	1.32.x - 1.29.x</span><br><span class="line">3.16.x	1.31.x - 1.28.x</span><br><span class="line">3.15.x	1.30.x - 1.27.x</span><br><span class="line">3.14.x	1.29.x - 1.26.x</span><br><span class="line">3.13.x	1.28.x - 1.25.x</span><br></pre></td></tr></table></figure>
+<p>我的Kubernetes版本是1.28.2, 我选择安装Helm 3.16, 方法如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -fsSL -o helm-v3.16.0-linux-amd64.tar.gz https://get.helm.sh/helm-v3.16.0-linux-amd64.tar.gz</span><br><span class="line">tar -zxvf helm-v3.16.0-linux-amd64.tar.gz</span><br><span class="line">mv linux-amd64/helm /usr/local/bin/helm</span><br><span class="line">helm version</span><br><span class="line">version.BuildInfo&#123;Version:&quot;v3.16.0&quot;, GitCommit:&quot;0d439e1a09683f21a0ab9401eb661401f185b00b&quot;, GitTreeState:&quot;clean&quot;, GoVersion:&quot;go1.22.6&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<h2><span id="安装应用">安装应用</span></h2><p>以安装nginx-ingress为例, 首先添加ingress-nginx的官方repo </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo add my-ingress https://kubernetes.github.io/ingress-nginx</span><br></pre></td></tr></table></figure>
+<p>查看repo</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm repo list</span><br><span class="line">NAME            URL</span><br><span class="line">my-ingress      https://kubernetes.github.io/ingress-nginx</span><br></pre></td></tr></table></figure>
+<p>更新软件源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm repo update</span><br><span class="line">Hang tight while we grab the latest from your chart repositories...</span><br><span class="line">...Successfully got an update from the &quot;my-ingress&quot; chart repository</span><br><span class="line">Update Complete. ⎈Happy Helming!⎈</span><br></pre></td></tr></table></figure>
+<p>查看ingress-nginx的版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm search repo ingress-nginx</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-ingress/ingress-nginx        4.12.0          1.12.0          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line"></span><br><span class="line">[root@k8s-master1 ~]# helm search repo ingress-nginx --versions | head -n 4</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-ingress/ingress-nginx        4.12.0          1.12.0          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line">my-ingress/ingress-nginx        4.11.4          1.11.4          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line">my-ingress/ingress-nginx        4.11.3          1.11.3          Ingress controller for Kubernetes using NGINX a...</span><br></pre></td></tr></table></figure>
+
+<p>查阅<a href="https://github.com/kubernetes/ingress-nginx">ingress-nginx官方文档</a>, 确认与Kubernetes 1.28匹配的Ingress版本: v1.9.0 - v1.12.0, 我选择安装v1.11.4<br>下载1.11.4版本的ingress-nginx软件包, 这里没有使用helm install直接安装, 因为我们需要修改一些配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm pull my-ingress/ingress-nginx --version 4.11.4</span><br></pre></td></tr></table></figure>
+<p>注: 如果下载失败, 可以尝试配系统代理, 让VMware虚拟机走主机代理, 参考<a href="https://blog.xzr.moe/archives/124/">https://blog.xzr.moe/archives/124/</a></p>
+<p>解压tgz包, 修改配置文件values.yaml</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tar xf ingress-nginx-4.11.4.tgz</span><br><span class="line"></span><br><span class="line"># 修改配置文件values.yaml</span><br><span class="line">sed -i &#x27;/registry:/s#registry.k8s.io#swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io#g&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -ri &#x27;/digest:/s@^@#@&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i &#x27;/hostNetwork:/s#false#true#&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i  &#x27;/dnsPolicy/s#ClusterFirst#ClusterFirstWithHostNet#&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i &#x27;/kind/s#Deployment#DaemonSet#&#x27; ingress-nginx/values.yaml </span><br><span class="line">sed -i &#x27;s/type: LoadBalancer/type: NodePort/&#x27; ingress-nginx/values.yaml</span><br><span class="line"></span><br><span class="line">说明:</span><br><span class="line">* 镜像改成国内的, 国内由于网络问题无法下载海外镜像</span><br><span class="line">* 注释掉digest, 因为国内镜像可能被重新构建过, digest并不相同</span><br><span class="line">* hostNetwork设为true, 直接监听宿主机80和443端口 （不设置也可以, 通过NodePort访问)</span><br><span class="line">* 如果设置了hostNetwork为true, dnsPolicy建议也改成ClusterFirstWithHostNet, 可以使用k8s内部的service名称解析</span><br><span class="line">* Deployment改成DaemonSet类型, 每个节点部署一个Pod (这一步不是必须的, 你可以用Deployment+nodeSelector调度到指定节点)</span><br><span class="line">* 本地测试, 没有云服务商提供负载均衡服务，LoadBalancer类型改成NodePort</span><br></pre></td></tr></table></figure>
+
+<p>为ingress-nginx创建namespace</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl create namespace ingress-nginx</span><br></pre></td></tr></table></figure>
+
+<p>使用helm安装ingress-nginx</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm install my-ingress-nginx ./ingress-nginx --namespace ingress-nginx</span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n ingress-nginx get pods  -o wide</span><br><span class="line">NAME                                READY   STATUS    RESTARTS   AGE   IP               NODE         NOMINATED NODE   READINESS GATES</span><br><span class="line">my-ingress-nginx-controller-2pj8h   1/1     Running   0          51s   192.168.52.102   k8s-slave2   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">my-ingress-nginx-controller-bjp7z   1/1     Running   0          51s   192.168.52.103   k8s-slave3   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">my-ingress-nginx-controller-lk9xj   1/1     Running   0          51s   192.168.52.101   k8s-slave1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line"></span><br><span class="line"># kubectl -n ingress-nginx get svc</span><br><span class="line">NAME                                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE</span><br><span class="line">my-ingress-nginx-controller             NodePort    10.110.172.220   &lt;none&gt;        80:31481/TCP,443:32374/TCP   63s</span><br><span class="line">my-ingress-nginx-controller-admission   ClusterIP   10.98.166.222    &lt;none&gt;        443/TCP                      63s</span><br><span class="line"></span><br><span class="line">从集群内部访问, OK</span><br><span class="line"># curl 10.110.172.220:80</span><br><span class="line">404 Not Found (404是OK的, 说明80端口已LISTEN, Nginx响应了请求) </span><br><span class="line"></span><br><span class="line">访问从节点80端口 OK, 访问主节点80端口显示connection refused</span><br><span class="line"># curl k8s-master1:80</span><br><span class="line">curl: (7) Failed to connect to k8s-master1 port 80: Connection refused</span><br><span class="line"># curl k8s-slave1:80</span><br><span class="line">404 Not Found</span><br><span class="line"></span><br><span class="line">通过NodePort访问任意节点, 都是OK的</span><br><span class="line">curl k8s-master1:31481</span><br><span class="line">404 Not Found</span><br><span class="line">curl k8s-slave1:31481</span><br><span class="line">404 Not Found</span><br></pre></td></tr></table></figure>
+
+<h2><span id="卸载应用">卸载应用</span></h2><p>首先查看需要卸载的应用</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm -n ingress-nginx list</span><br><span class="line">NAME                    NAMESPACE       REVISION        UPDATED                                 STATUS          CHART                   APP VERSION</span><br><span class="line">my-ingress-nginx        ingress-nginx   1               2025-03-22 15:45:56.455495532 +0800 CST deployed        ingress-nginx-4.11.4    1.11.4</span><br></pre></td></tr></table></figure>
+<p>再使用helm uninstall卸载</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm -n ingress-nginx uninstall my-ingress-nginx</span><br></pre></td></tr></table></figure>
+
+<h1><span id="搭建私有helm-repo">搭建私有Helm Repo</span></h1><p>准备一台Linux机器(我用的是Rocky Linux 9.5)，用于快速搭建Helm Repo<br>使用简单的HTTP服务器托管Chart, 实现基本的身份验证, 以下使用Nginx+htpasswd实现</p>
+<h2><span id="安装必要软件">安装必要软件</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install nginx httpd-tools -y</span><br></pre></td></tr></table></figure>
+
+<h2><span id="使用htpasswd常见一个包含用户名和密码的文件-添加认证用户helmuser-password123456">使用htpasswd常见一个包含用户名和密码的文件, 添加认证用户helmuser (password:123456)</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">htpasswd -c /etc/nginx/charts.htpasswd helmuser</span><br></pre></td></tr></table></figure>
+
+<h2><span id="配置nginx">配置Nginx</span></h2><p>本地测试环境, 为myhelmrepo.com生成一个自签名证书</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo mkdir -p /etc/nginx/ssl/myhelmrepo.com</span><br><span class="line">cd /etc/nginx/ssl/myhelmrepo.com</span><br></pre></td></tr></table></figure>
+<p>生成私钥和证书签名请求</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo openssl req -new -newkey rsa:2048 -nodes -keyout myhelmrepo.com.key -out myhelmrepo.com.csr</span><br></pre></td></tr></table></figure>
+<p>填写CSR表单时, Common Name(CN)应设置为 myhelmrepo.com</p>
+<p>使用该CSR生成自签名证书</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo openssl x509 -req -days 365 -in myhelmrepo.com.csr -signkey myhelmrepo.com.key -out myhelmrepo.com.crt</span><br></pre></td></tr></table></figure>
+
+<p>创建Nginx配置文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir -p /etc/nginx/sites-available</span><br><span class="line">vim /etc/nginx/sites-available/helmrepo</span><br></pre></td></tr></table></figure>
+<p>加入如下内容, 使用HTTPS, Basic认证</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    server_name myhelmrepo.com; # 替换为您的服务器域名或IP地址</span><br><span class="line"></span><br><span class="line">    ssl_certificate /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.crt;</span><br><span class="line">    ssl_certificate_key /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.key;</span><br><span class="line">    ssl_protocols TLSv1.2 TLSv1.3;</span><br><span class="line">    ssl_prefer_server_ciphers on;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        auth_basic &quot;Restricted Area&quot;;</span><br><span class="line">        auth_basic_user_file /etc/nginx/charts.htpasswd;</span><br><span class="line"></span><br><span class="line">        root /var/www/html/charts/;</span><br><span class="line">        autoindex on;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># HTTP请求重定向到 HTTPS</span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name myhelmrepo.com;</span><br><span class="line">    return 301 https://$host$request_uri;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Nginx主配置文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">user nginx;</span><br><span class="line">worker_processes auto;</span><br><span class="line">error_log /var/log/nginx/error.log;</span><br><span class="line">pid /run/nginx.pid;</span><br><span class="line"></span><br><span class="line">include /usr/share/nginx/modules/*.conf;</span><br><span class="line"></span><br><span class="line">events &#123;</span><br><span class="line">    worker_connections 1024;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    log_format  main  &#x27;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#x27;</span><br><span class="line">                      &#x27;$status $body_bytes_sent &quot;$http_referer&quot; &#x27;</span><br><span class="line">                      &#x27;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#x27;;</span><br><span class="line"></span><br><span class="line">    access_log  /var/log/nginx/access.log  main;</span><br><span class="line"></span><br><span class="line">    sendfile            on;</span><br><span class="line">    tcp_nopush          on;</span><br><span class="line">    tcp_nodelay         on;</span><br><span class="line">    keepalive_timeout   65;</span><br><span class="line">    types_hash_max_size 4096;</span><br><span class="line"></span><br><span class="line">    include             /etc/nginx/mime.types;</span><br><span class="line">    default_type        application/octet-stream;</span><br><span class="line"></span><br><span class="line">    include /etc/nginx/conf.d/*.conf;</span><br><span class="line">    include /etc/nginx/sites-enabled/*;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>启用配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir -p /etc/nginx/sites-enabled/</span><br><span class="line">ln -s /etc/nginx/sites-available/helmrepo /etc/nginx/sites-enabled/helmrepo</span><br></pre></td></tr></table></figure>
+
+<p>检查Nginx配置并重启</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nginx -t</span><br><span class="line">systemctl restart nginx</span><br><span class="line">ss -antp | grep 80</span><br><span class="line">LISTEN    0      511           0.0.0.0:80           0.0.0.0:*     users:((&quot;nginx&quot;,pid=2596,fd=7),(&quot;nginx&quot;,pid=2595,fd=7))</span><br></pre></td></tr></table></figure>
+<p>测试</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl https://myhelmrepo.com -k</span><br><span class="line">401 Authorization Required</span><br><span class="line">curl --user helmuser:123456 https://myhelmrepo.com -k</span><br><span class="line">404 Not Found </span><br></pre></td></tr></table></figure>
+
+<p>上传chart<br>在开发机器上打包Chart</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm package simple-flask-app/</span><br></pre></td></tr></table></figure>
+<p>把tgz传到&#x2F;var&#x2F;www&#x2F;html&#x2F;charts&#x2F;目录下</p>
+<p>更新helm repo的索引文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo index /var/www/html/charts/ --merge /var/www/html/charts/index.yaml</span><br></pre></td></tr></table></figure>
+<p>如果是第一次添加chart, 直接运行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo index /var/www/html/charts</span><br></pre></td></tr></table></figure>
+
+<p>测试:</p>
+<h1><span id="自定义helm-chart">自定义Helm Chart</span></h1><h1><span id="发布流程">发布流程</span></h1><ul>
+<li>部署应用 helm install</li>
+<li>升级应用 helm upgrade</li>
+<li>回滚机制 helm rollback</li>
+</ul>
+<h1><span id="参考">参考</span></h1><p>【1】 <a href="https://docs.daocloud.io/kpanda/user-guide/helm/">https://docs.daocloud.io/kpanda/user-guide/helm/</a><br>【2】 <a href="https://jimmysong.io/kubernetes-handbook/practice/helm.html">使用Helm管理kubernetes应用</a><br>【3】 <a href="https://www.cnblogs.com/yinzhengjie/p/17975829">Ingress-Nginx使用指南</a></p>
 ]]></content>
       <categories>
         <category>kubernetes</category>
