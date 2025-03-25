@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言在我之前做的项目里，我们对Microk8s微服务的更新是通过自制tar包的方式做的, tar包存储了镜像和YAML文件。 每次升级时，我们需要先删除所有的YAML资源，然后重新创建新的资源。 这种方式存在以下问题：  服务中断：由于需要先删除旧资源再创建新资源，这会导致短暂的服务中断，影响用户体验 复杂的回滚逻辑：如果升级失败，回滚到之前的版本变得非常复杂，需要手动恢复旧的YAML文件，并且容">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用Helm安装、 升级、 回滚Kubernetes应用">
+<meta property="og:url" content="https://pcj600.github.io/2025/0323210500.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="前言在我之前做的项目里，我们对Microk8s微服务的更新是通过自制tar包的方式做的, tar包存储了镜像和YAML文件。 每次升级时，我们需要先删除所有的YAML资源，然后重新创建新的资源。 这种方式存在以下问题：  服务中断：由于需要先删除旧资源再创建新资源，这会导致短暂的服务中断，影响用户体验 复杂的回滚逻辑：如果升级失败，回滚到之前的版本变得非常复杂，需要手动恢复旧的YAML文件，并且容">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-03-23T13:05:00.000Z">
+<meta property="article:modified_time" content="2025-03-25T15:16:00.978Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Kubernetes">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://pcj600.github.io/2025/0323210500.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>使用Helm安装、 升级、 回滚Kubernetes应用 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">38</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">51</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">183</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0323210500.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用Helm安装、 升级、 回滚Kubernetes应用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-03-23 21:05:00" itemprop="dateCreated datePublished" datetime="2025-03-23T21:05:00+08:00">2025-03-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>13k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>12 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1><span id="前言">前言</span></h1><p>在我之前做的项目里，我们对Microk8s微服务的更新是通过自制tar包的方式做的, tar包存储了镜像和YAML文件。 每次升级时，我们需要先删除所有的YAML资源，然后重新创建新的资源。 这种方式存在以下问题：</p>
+<ul>
+<li>服务中断：由于需要先删除旧资源再创建新资源，这会导致短暂的服务中断，影响用户体验</li>
+<li>复杂的回滚逻辑：如果升级失败，回滚到之前的版本变得非常复杂，需要手动恢复旧的YAML文件，并且容易出错</li>
+</ul>
+<p>了解到Helm可以有效解决以上问题, Helm是Kubernetes 的包管理工具，方便用户快速发现、 共享和使用Kubernetes构建的应用。 以下举例演示如何使用Helm实现安装、升级、回滚操作</p>
+<span id="more"></span>
+
+<h1><span id="环境准备">环境准备</span></h1><ul>
+<li>Docker私有仓库 (<a target="_blank" rel="noopener external nofollow noreferrer" href="https://mydockerregistry.com:5000/">https://mydockerregistry.com:5000</a>), 参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/pcj_888/article/details/146445826">搭建Docker私有仓库</a></li>
+<li>Helm私有仓库 (<a target="_blank" rel="noopener external nofollow noreferrer" href="https://myhelmrepo.com/">https://myhelmrepo.com</a>)  参考：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/pcj_888/article/details/146458002">搭建私有 Helm Chart 仓库</a></li>
+<li>Kubernetes集群 v1.28.x, Helm版本 v3.16.0 参考: <a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/pcj_888/article/details/144240636">kubeadm+keepalived+HAproxy搭建高可用kubernetes集群</a></li>
+<li>为了使外部流量能访问集群内的服务，需要安装一个Ingress控制器, 参考： <a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/pcj_888/article/details/146460834">Helm快速上手，使用Helm安装nginx-ingress</a></li>
+</ul>
+<h1><span id="创建一个flask应用">创建一个Flask应用</span></h1><p>创建一个简单的 Flask 应用，并准备两个版本：</p>
+<ul>
+<li>1.0版本, 输出 “Hello, foo!”</li>
+<li>2.0版本, 输出 “Hello, foo v2!”</li>
+</ul>
+<p>文件结构</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">flask-app/</span><br><span class="line">├── app.py</span><br><span class="line">├── requirements.txt</span><br><span class="line">└── Dockerfile</span><br></pre></td></tr></table></figure>
+
+<p>app.py</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/&#x27;</span>, methods=[<span class="string">&#x27;GET&#x27;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">root</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;hello foo&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    app.run(host=<span class="string">&#x27;0.0.0.0&#x27;</span>, port=<span class="number">8000</span>)</span><br></pre></td></tr></table></figure>
+
+<p>requirements.txt</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Flask</span><br></pre></td></tr></table></figure>
+
+<p>Dockerfile</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">RUN dnf install -y python3 python3-pip</span><br><span class="line"></span><br><span class="line">WORKDIR /app</span><br><span class="line"></span><br><span class="line">COPY requirements.txt .</span><br><span class="line">RUN pip install -r requirements.txt</span><br><span class="line"></span><br><span class="line">COPY app.py .</span><br><span class="line"></span><br><span class="line">CMD [&quot;python3&quot;, &quot;app.py&quot;]</span><br></pre></td></tr></table></figure>
+
+<h2><span id="构建并测试镜像">构建并测试镜像</span></h2><p>构建镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t mydockerregistry.com:5000/flask-app:1.0 .</span><br></pre></td></tr></table></figure>
+<p>本地运行容器测试</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -p 8000:8000 mydockerregistry.com:5000/flask-app:1.0</span><br><span class="line">curl localhost:8000/</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
+<p>测试OK后, 推送镜像到repo</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker push mydockerregistry.com:5000/flask-app:1.0</span><br></pre></td></tr></table></figure>
+
+<h1><span id="配置kubernetes环境">配置Kubernetes环境</span></h1><h2><span id="创建secret存储私有镜像仓库认证信息">创建secret存储私有镜像仓库认证信息</span></h2><p>为了从私有镜像仓库拉取镜像，我们需要在Kubernetes集群中创建一个Secret，用于存储认证信息。 这一步是必要的，因为Kubernetes默认无法直接访问需要认证的私有镜像仓库<br>执行以下命令创建Secret</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kubectl create secret docker-registry my-registry-secret \</span><br><span class="line">  --docker-server=mydockerregistry.com:5000 \</span><br><span class="line">  --docker-username=dockeruser \</span><br><span class="line">  --docker-password=123456 \</span><br><span class="line">  --namespace flask-app</span><br></pre></td></tr></table></figure>
+<p>说明：</p>
+<ul>
+<li>该 Secret 将被 Helm Chart 中的 imagePullSecrets 引用，确保 Kubernetes 能够从私有镜像仓库拉取镜像。</li>
+</ul>
+<h2><span id="配置-containerd-忽略证书验证仅限测试环境">配置 Containerd 忽略证书验证（仅限测试环境）</span></h2><p>在每个节点上，编辑 &#x2F;etc&#x2F;containerd&#x2F;config.toml 文件，添加以下配置以忽略私有镜像仓库的证书验证</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[plugins.&quot;io.containerd.grpc.v1.cri&quot;.registry]</span><br><span class="line">  [plugins.&quot;io.containerd.grpc.v1.cri&quot;.registry.configs]</span><br><span class="line">    [plugins.&quot;io.containerd.grpc.v1.cri&quot;.registry.configs.&quot;mydockerregistry.com:5000&quot;.tls]</span><br><span class="line">      insecure_skip_verify = true</span><br></pre></td></tr></table></figure>
+<p>重启 containerd 服务以应用更改</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart containerd</span><br></pre></td></tr></table></figure>
+
+<h1><span id="创建helm-chart">创建Helm Chart</span></h1><p>Helm Chart 是 Helm 的核心组件，它允许我们以模板化的方式定义 Kubernetes 资源。下面我们创建一个名为 flask-app-chart 的 Chart。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm create flask-app-chart</span><br></pre></td></tr></table></figure>
+<p>生成的文件结构如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">flask-app-chart/</span><br><span class="line">├── charts</span><br><span class="line">├── Chart.yaml</span><br><span class="line">├── templates</span><br><span class="line">│   ├── deployment.yaml</span><br><span class="line">│   ├── _helpers.tpl</span><br><span class="line">│   ├── hpa.yaml</span><br><span class="line">│   ├── ingress.yaml</span><br><span class="line">│   ├── NOTES.txt</span><br><span class="line">│   ├── serviceaccount.yaml</span><br><span class="line">│   ├── service.yaml</span><br><span class="line">└── values.yaml</span><br></pre></td></tr></table></figure>
+
+<p><strong>修改Chart文件</strong><br>逐个修改以下文件, 或者直接使用: <a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/PCJ600/helm-chart-demo/tree/main/charts/v1.0/flask-app-chart">https://github.com/PCJ600/helm-chart-demo/tree/main/charts/v1.0/flask-app-chart</a></p>
+<p>Chart.yaml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v2</span><br><span class="line">name: flask-app-chart</span><br><span class="line">description: A Helm chart for deploying a simple Flask app</span><br><span class="line">type: application</span><br><span class="line">version: 1.0.0 # Chart 版本</span><br><span class="line">appVersion: &quot;1.0&quot; # 应用版本</span><br></pre></td></tr></table></figure>
+
+<p>values.yaml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"># 全局名称覆盖</span><br><span class="line">fullnameOverride: &quot;&quot;</span><br><span class="line">nameOverride: &quot;&quot;</span><br><span class="line"></span><br><span class="line"># 副本数</span><br><span class="line">replicaCount: 6</span><br><span class="line"></span><br><span class="line"># 镜像配置</span><br><span class="line">image:</span><br><span class="line">  repository: &quot;mydockerregistry.com:5000/flask-app&quot;</span><br><span class="line">  tag: &quot;1.0&quot;</span><br><span class="line">  pullPolicy: &quot;IfNotPresent&quot;</span><br><span class="line">  pullSecrets:</span><br><span class="line">    - my-registry-secret</span><br><span class="line"></span><br><span class="line"># 资源限制</span><br><span class="line">resources:</span><br><span class="line">  limits:</span><br><span class="line">    cpu: &quot;500m&quot;</span><br><span class="line">    memory: &quot;512Mi&quot;</span><br><span class="line">  requests:</span><br><span class="line">    cpu: &quot;250m&quot;</span><br><span class="line">    memory: &quot;256Mi&quot;</span><br><span class="line"></span><br><span class="line"># 环境变量</span><br><span class="line">env:</span><br><span class="line">  ENV_VAR_1: &quot;value1&quot;</span><br><span class="line">  ENV_VAR_2: &quot;value2&quot;</span><br><span class="line"></span><br><span class="line"># Ingress 配置</span><br><span class="line">ingress:</span><br><span class="line">  enabled: true</span><br><span class="line">  host: &quot;flask-app.example.com&quot;</span><br><span class="line">  path: &quot;/foo(/|$)(.*)&quot;</span><br><span class="line">  pathType: &quot;ImplementationSpecific&quot;</span><br><span class="line"></span><br><span class="line"># Service 配置</span><br><span class="line">service:</span><br><span class="line">  port: 8000</span><br><span class="line"></span><br><span class="line">serviceAccount:</span><br><span class="line">  create: false</span><br><span class="line">  name: &quot;&quot;</span><br><span class="line"></span><br><span class="line">autoscaling:</span><br><span class="line"> enabled: false</span><br></pre></td></tr></table></figure>
+
+<p>templates&#x2F;deployment.yaml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: &#123;&#123; include &quot;flask-app-chart.fullname&quot; . &#125;&#125;</span><br><span class="line">  labels:</span><br><span class="line">    app: &#123;&#123; include &quot;flask-app-chart.name&quot; . &#125;&#125;</span><br><span class="line">    chart: &#123;&#123; .Chart.Name &#125;&#125;</span><br><span class="line">    release: &#123;&#123; .Release.Name &#125;&#125;</span><br><span class="line">    heritage: &#123;&#123; .Release.Service &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  replicas: &#123;&#123; .Values.replicaCount | default 1 &#125;&#125;</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: &#123;&#123; include &quot;flask-app-chart.name&quot; . &#125;&#125;</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: &#123;&#123; include &quot;flask-app-chart.name&quot; . &#125;&#125;</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">        - name: &#123;&#123; .Chart.Name &#125;&#125;</span><br><span class="line">          image: &quot;&#123;&#123; .Values.image.repository &#125;&#125;:&#123;&#123; .Values.image.tag | default &quot;latest&quot; &#125;&#125;&quot;</span><br><span class="line">          imagePullPolicy: &#123;&#123; .Values.image.pullPolicy | default &quot;IfNotPresent&quot; &#125;&#125;</span><br><span class="line">          ports:</span><br><span class="line">            - containerPort: 8000</span><br><span class="line">              protocol: TCP</span><br><span class="line">          resources:</span><br><span class="line">            &#123;&#123;- toYaml .Values.resources | nindent 12 &#125;&#125;</span><br><span class="line">          env:</span><br><span class="line">            &#123;&#123;- if .Values.env &#125;&#125;</span><br><span class="line">            &#123;&#123;- range $key, $value := .Values.env &#125;&#125;</span><br><span class="line">            - name: &#123;&#123; $key &#125;&#125;</span><br><span class="line">              value: &#123;&#123; $value | quote &#125;&#125;</span><br><span class="line">            &#123;&#123;- end &#125;&#125;</span><br><span class="line">            &#123;&#123;- end &#125;&#125;</span><br><span class="line">      imagePullSecrets:</span><br><span class="line">        &#123;&#123;- if .Values.image.pullSecrets &#125;&#125;</span><br><span class="line">        &#123;&#123;- range .Values.image.pullSecrets &#125;&#125;</span><br><span class="line">        - name: &#123;&#123; . &#125;&#125;</span><br><span class="line">        &#123;&#123;- end &#125;&#125;</span><br><span class="line">        &#123;&#123;- else &#125;&#125;</span><br><span class="line">        - name: my-registry-secret</span><br><span class="line">        &#123;&#123;- end &#125;&#125;</span><br></pre></td></tr></table></figure>
+<p>注: 配置了imagePullSecrets, 支持从私有仓库拉取镜像</p>
+<p>template&#x2F;service.yaml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: &#123;&#123; include &quot;flask-app-chart.fullname&quot; . &#125;&#125;</span><br><span class="line">  namespace: &#123;&#123; .Release.Namespace &#125;&#125;</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: &#123;&#123; include &quot;flask-app-chart.name&quot; . &#125;&#125;</span><br><span class="line">  ports:</span><br><span class="line">  - port: &#123;&#123; .Values.service.port | default 8000 &#125;&#125;</span><br><span class="line">    targetPort: &#123;&#123; .Values.service.port | default 8000 &#125;&#125;</span><br><span class="line">  type: ClusterIP</span><br></pre></td></tr></table></figure>
+
+<p>template&#x2F;ingress.yaml<br>定义ingress模板, 支持集群外部访问</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: &#123;&#123; include &quot;flask-app-chart.fullname&quot; . &#125;&#125;-ingress</span><br><span class="line">  namespace: &#123;&#123; .Release.Namespace &#125;&#125;</span><br><span class="line">  annotations:</span><br><span class="line">    nginx.ingress.kubernetes.io/rewrite-target: /$2 # 将 /foo/(.*) 重写为 /$1</span><br><span class="line">spec:</span><br><span class="line">  ingressClassName: nginx # 指定 IngressClass 名称</span><br><span class="line">  rules:</span><br><span class="line">  - host: &#123;&#123; .Values.ingress.host | quote &#125;&#125;</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: &#123;&#123; .Values.ingress.path | default &quot;/foo(/|$)(.*)&quot; &#125;&#125;</span><br><span class="line">        pathType: &#123;&#123; .Values.ingress.pathType | default &quot;ImplementationSpecific&quot; &#125;&#125;</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: &#123;&#123; include &quot;flask-app-chart.fullname&quot; . &#125;&#125;</span><br><span class="line">            port:</span><br><span class="line">              number: &#123;&#123; .Values.service.port | default 8000 &#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>templates&#x2F;_helpers.tpl</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#123;&#123;/*</span><br><span class="line">Create a default fully qualified app name.</span><br><span class="line">We truncate at 63 characters because some Kubernetes name fields are limited to this (by the DNS naming spec).</span><br><span class="line">*/&#125;&#125;</span><br><span class="line">&#123;&#123;- define &quot;flask-app-chart.fullname&quot; -&#125;&#125;</span><br><span class="line">&#123;&#123;- if .Values.fullnameOverride -&#125;&#125;</span><br><span class="line">&#123;&#123;- .Values.fullnameOverride | trunc 63 | trimSuffix &quot;-&quot; -&#125;&#125;</span><br><span class="line">&#123;&#123;- else -&#125;&#125;</span><br><span class="line">&#123;&#123;- printf &quot;%s-%s&quot; .Chart.Name .Release.Name | trunc 63 | trimSuffix &quot;-&quot; -&#125;&#125;</span><br><span class="line">&#123;&#123;- end -&#125;&#125;</span><br><span class="line">&#123;&#123;- end -&#125;&#125;</span><br><span class="line"></span><br><span class="line">&#123;&#123;/*</span><br><span class="line">Create a default name for the chart.</span><br><span class="line">*/&#125;&#125;</span><br><span class="line">&#123;&#123;- define &quot;flask-app-chart.name&quot; -&#125;&#125;</span><br><span class="line">&#123;&#123;- default .Chart.Name .Values.nameOverride -&#125;&#125;</span><br><span class="line">&#123;&#123;- end -&#125;&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>本地测试部署</strong><br>在正式发布 Chart 到仓库之前，可以先在本地进行测试部署</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl create ns flask-app</span><br><span class="line">helm install flask-app ./flask-app-chart --namespace flask-app</span><br></pre></td></tr></table></figure>
+<p>验证OK</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># curl flask-app.example.com/foo</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
+
+<p>测试完成后，可以卸载Chart, 后面准备发布Chart到仓库</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm -n flask-app uninstall flask-app</span><br></pre></td></tr></table></figure>
+
+<h1><span id="发布chart到仓库">发布Chart到仓库</span></h1><p>检查Chart的正确性</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">helm lint flask-app-chart</span><br><span class="line"># helm lint flask-app-chart/</span><br><span class="line">==&gt; Linting flask-app-chart/</span><br><span class="line">[INFO] Chart.yaml: icon is recommended</span><br></pre></td></tr></table></figure>
+<p>打包Chart</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># helm package flask-app-chart</span><br><span class="line">Successfully packaged chart and saved it to: /path/to/flask-app-chart-1.0.0.tgz</span><br></pre></td></tr></table></figure>
+<p>上传 Chart 到私有 Helm 仓库</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -u &quot;helmuser:123456&quot; --data-binary &quot;@flask-app-chart-1.0.0.tgz&quot; https://myhelmrepo.com/api/charts -k</span><br></pre></td></tr></table></figure>
+<p>如果需要删除旧版本的 Chart，使用以下命令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -X DELETE &quot;https://myhelmrepo.com/api/charts/flask-app-chart/0.1.0&quot; -u &quot;helmuser:123456&quot;</span><br></pre></td></tr></table></figure>
+
+<h1><span id="通过helm-repo安装chart">通过Helm Repo安装Chart</span></h1><p>添加私有 Helm 仓库</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">helm repo add my-private-repo https://myhelmrepo.com \</span><br><span class="line">  --ca-file ~/.helm/certs/myhelmrepo.com.crt \</span><br><span class="line">  --username helmuser \</span><br><span class="line">  --password 123456</span><br></pre></td></tr></table></figure>
+
+<p>更新仓库缓存并查看可用的 Charts</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">helm repo update</span><br><span class="line">helm search repo -l flask</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-private-repo/flask-app-chart 1.0.0           1.0             A Helm chart for deploying a simple Flask app</span><br></pre></td></tr></table></figure>
+
+<p>安装Chart到指定命名空间flask-app</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm install flask-app my-private-repo/flask-app-chart --namespace flask-app --version 1.0.0</span><br></pre></td></tr></table></figure>
+<p>验证安装是否成功</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># curl flask-app.example.com/foo</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
+
+<h1><span id="再发布20版本的chart-用于测试升级和回滚功能">再发布2.0版本的Chart, 用于测试升级和回滚功能</span></h1><p>改下app.py, 返回’hello foo v2’</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/&#x27;</span>, methods=[<span class="string">&#x27;GET&#x27;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">root</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;hello foo v2&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    app.run(host=<span class="string">&#x27;0.0.0.0&#x27;</span>, port=<span class="number">8000</span>)</span><br></pre></td></tr></table></figure>
+
+<p>构建并推送新版本镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker build -t mydockerregistry.com:5000/flask-app:2.0 .</span><br><span class="line">docker push mydockerregistry.com:5000/flask-app:2.0</span><br></pre></td></tr></table></figure>
+
+<p>更新Chart配置, 修改Chart.yaml和values.yaml</p>
+<p>Chart.yaml<br>更新版本号为2.0.0, 并设置appVersion为2.0</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># cat Chart.yaml</span><br><span class="line">apiVersion: v2</span><br><span class="line">name: flask-app-chart</span><br><span class="line">description: A Helm chart for deploying a simple Flask app</span><br><span class="line">type: application</span><br><span class="line">version: 2.0.0</span><br><span class="line">appVersion: &quot;2.0&quot;</span><br></pre></td></tr></table></figure>
+
+<p>改下values.yaml, 将镜像版本从1.0更新为2.0</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">image:</span><br><span class="line">  repository: &quot;mydockerregistry.com:5000/flask-app&quot;</span><br><span class="line">  tag: &quot;2.0&quot;</span><br></pre></td></tr></table></figure>
+
+<p>打包并上传新的Chart</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">helm package flask-app-chart</span><br><span class="line">curl -u &quot;helmuser:123456&quot; --data-binary &quot;@flask-app-chart-2.0.0.tgz&quot; https://myhelmrepo.com/api/charts -k</span><br></pre></td></tr></table></figure>
+
+<h1><span id="使用helm升级到新版本">使用Helm升级到新版本</span></h1><p>使用<code>helm upgrade</code>将应用从1.0版本升级到2.0版本</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">helm upgrade flask-app my-private-repo/flask-app-chart --version 2.0.0 --namespace flask-app --atomic</span><br></pre></td></tr></table></figure>
+<p>注: Helm支持通过–atomic参数实现原子性操作。如果升级失败，Helm会自动回滚到之前的版本</p>
+<p>验证升级是否成功</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># curl flask-app.example.com/foo</span><br><span class="line">hello foo v2</span><br></pre></td></tr></table></figure>
+
+<p>watch观察升级过程, 可以看出是滚动更新方式</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">watch &quot;kubectl get pods -n flask-app&quot;</span><br><span class="line">NAMESPACE          NAME                                         READY   STATUS        RESTARTS         AGE</span><br><span class="line">flask-app          flask-app-chart-flask-app-5c86b6ffdf-4jlqb   1/1     Running       0                31s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5c86b6ffdf-kkw57   1/1     Running       0                30s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5c86b6ffdf-qlnhv   1/1     Running       0                30s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5c86b6ffdf-s9tr5   1/1     Running       0                31s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5c86b6ffdf-w6776   1/1     Running       0                30s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5c86b6ffdf-xwgtp   1/1     Running       0                31s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5d44b77c54-72mhg   0/1     Terminating   0                3m17s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5d44b77c54-gvgv7   0/1     Terminating   0                3m17s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5d44b77c54-mrj5h   0/1     Terminating   0                3m17s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5d44b77c54-r2bdp   1/1     Terminating   0                3m17s</span><br><span class="line">flask-app          flask-app-chart-flask-app-5d44b77c54-w7v67   1/1     Terminating   0                3m17s</span><br></pre></td></tr></table></figure>
+
+<h1><span id="使用helm回滚到旧版本">使用Helm回滚到旧版本</span></h1><p>查看历史记录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">helm history flask-app -n flask-app</span><br><span class="line">REVISION        UPDATED                         STATUS          CHART                   APP VERSION     DESCRIPTION</span><br><span class="line">1               Sun Mar 23 19:15:11 2025        superseded      flask-app-chart-1.0.0   1.0             Install complete</span><br><span class="line">2               Sun Mar 23 19:17:57 2025        deployed        flask-app-chart-2.0.0   2.0             Upgrade complete</span><br></pre></td></tr></table></figure>
+<ul>
+<li>REVISION 1: 最初安装的1.0的版本</li>
+<li>REVISION 2: 升级到2.0的版本</li>
+</ul>
+<p>执行回滚命令, 回滚到1.0版本</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">helm rollback flask-app 1 -n flask-app</span><br><span class="line">Rollback was a success! Happy Helming!</span><br></pre></td></tr></table></figure>
+
+<p>验证回滚成功</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># helm list -n flask-app</span><br><span class="line">NAME            NAMESPACE       REVISION        UPDATED                                 STATUS          CHART                   APP VERSION</span><br><span class="line">flask-app       flask-app       3               2025-03-23 19:20:54.762690061 +0800 CST deployed        flask-app-chart-1.0.0   1.0</span><br><span class="line"># curl flask-app.example.com/foo</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
+
+<h1><span id="总结">总结</span></h1><p>Helm vs 传统方式的对比</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>传统方式</th>
+<th>Helm</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>版本管理</strong></td>
+<td>手动维护多个 YAML 文件，容易混乱。</td>
+<td>版本化管理，清晰记录每个版本的变化。</td>
+</tr>
+<tr>
+<td><strong>升级操作</strong></td>
+<td>需要手动删除旧版本并应用新版本，可能导致服务中断。</td>
+<td>智能化更新，仅更改必要的部分，避免服务中断。</td>
+</tr>
+<tr>
+<td><strong>回滚操作</strong></td>
+<td>需要手动恢复旧版本的 YAML 文件，操作复杂且容易出错。</td>
+<td>一键回滚到任意历史版本，简单高效。</td>
+</tr>
+<tr>
+<td><strong>差异追踪</strong></td>
+<td>难以知道两个版本之间的具体差异，容易遗漏更改。</td>
+<td>Helm 自动计算差异，确保所有更改都被正确应用。</td>
+</tr>
+<tr>
+<td><strong>配置灵活性</strong></td>
+<td>需要手动编辑多个 YAML 文件，难以适应不同环境（如 dev、staging、prod）。</td>
+<td>支持参数化配置，通过 <code>values.yaml</code> 动态调整，适应不同环境需求。</td>
+</tr>
+<tr>
+<td><strong>依赖管理</strong></td>
+<td>需要手动管理依赖关系，容易遗漏或冲突。</td>
+<td>自动管理依赖关系，确保所有组件协同工作。</td>
+</tr>
+</tbody></table>
+<h1><span id="参考">参考</span></h1><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://helm.sh/docs/topics/charts/">https://helm.sh/docs/topics/charts/</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2025/0323210500.html" title="使用Helm安装、 升级、 回滚Kubernetes应用">https://pcj600.github.io/2025/0323210500.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kubernetes/" rel="tag"><i class="fa fa-tag"></i> Kubernetes</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/0323165015.html" rel="prev" title="使用 ChartMuseum 容器搭建私有 Helm Chart 仓库">
+      <i class="fa fa-chevron-left"></i> 使用 ChartMuseum 容器搭建私有 Helm Chart 仓库
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/0325230650.html" rel="next" title="理解Kubernetes中CoreDNS域名解析与DNS策略">
+      理解Kubernetes中CoreDNS域名解析与DNS策略 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">环境准备</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">创建一个Flask应用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">构建并测试镜像</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">配置Kubernetes环境</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">创建secret存储私有镜像仓库认证信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置 Containerd 忽略证书验证（仅限测试环境）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">创建Helm Chart</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">发布Chart到仓库</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">通过Helm Repo安装Chart</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">再发布2.0版本的Chart, 用于测试升级和回滚功能</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">使用Helm升级到新版本</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">使用Helm回滚到旧版本</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description">PC的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">183</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">841k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">12:45</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>

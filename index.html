@@ -128,7 +128,7 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">50</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">51</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
@@ -196,7 +196,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0322171058.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0325230650.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -210,7 +210,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2025/0322171058.html" class="post-title-link" itemprop="url">[k8s实践] 使用Helm安装k8s应用, 搭建私有Helm仓库, 自定义Helm Chart</a>
+            <a href="/2025/0325230650.html" class="post-title-link" itemprop="url">理解Kubernetes中CoreDNS域名解析与DNS策略</a>
         </h2>
 
         <div class="post-meta">
@@ -220,7 +220,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2025-03-22 17:10:58" itemprop="dateCreated datePublished" datetime="2025-03-22T17:10:58+08:00">2025-03-22</time>
+              <time title="创建时间：2025-03-25 23:06:50" itemprop="dateCreated datePublished" datetime="2025-03-25T23:06:50+08:00">2025-03-25</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -228,7 +228,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/kubernetes/" itemprop="url" rel="index"><span itemprop="name">kubernetes</span></a>
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
                 </span>
             </span>
 
@@ -238,14 +238,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>9.3k</span>
+              <span>6.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>8 分钟</span>
+              <span>6 分钟</span>
             </span>
 
         </div>
@@ -257,16 +257,206 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>【交代自己项目]<br>官方文档: <a target="_blank" rel="noopener external nofollow noreferrer" href="https://helm.sh/">https://helm.sh/</a></p>
+          <h1 id="CoreDNS是什么"><a href="#CoreDNS是什么" class="headerlink" title="CoreDNS是什么"></a>CoreDNS是什么</h1><p>CoreDNS是一个灵活可扩展的DNS服务器，使用Go语言编写，旨在提供快速、灵活的DNS服务</p>
+<h1 id="为什么需要CoreDNS"><a href="#为什么需要CoreDNS" class="headerlink" title="为什么需要CoreDNS"></a>为什么需要CoreDNS</h1><p>CoreDNS为Kubernetes集群内部的DNS解析提供服务，使得服务之间能够通过域名互相通信<br>Kubernetes集群中, CoreDNS是运行在kube-system这个namespace下的Pod</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n kube-system get pod coredns-66f779496c-b7mmz</span><br><span class="line">NAME                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-66f779496c-b7mmz   1/1     Running   4 (28m ago)   4d23h</span><br></pre></td></tr></table></figure>
+
+<h1 id="k8s集群中的域名是如何解析的"><a href="#k8s集群中的域名是如何解析的" class="headerlink" title="k8s集群中的域名是如何解析的"></a>k8s集群中的域名是如何解析的</h1><p>比如服务a访问服务b:</p>
 <ul>
-<li>什么是Helm, 解决什么问题</li>
-<li>Helm快速上手, 安装官方应用</li>
-<li>自定义helm chart, 升级, 回滚</li>
-<li>创建私有helm repo</li>
+<li>如果a和b在同一个namespace下, 可以直接在pod a中, 通过<code>curl b</code>来访问b</li>
+<li>如果a和b不在同一个namespace下, 在pod a中需要通过<code>curl b.namespaceb</code>来访问b</li>
 </ul>
+<p>以下动手测试</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2025/0322171058.html#more" rel="contents">
+              <a class="btn" href="/2025/0325230650.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0323210500.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0323210500.html" class="post-title-link" itemprop="url">使用Helm安装、 升级、 回滚Kubernetes应用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-03-23 21:05:00" itemprop="dateCreated datePublished" datetime="2025-03-23T21:05:00+08:00">2025-03-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>13k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>12 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>在我之前做的项目里，我们对Microk8s微服务的更新是通过自制tar包的方式做的, tar包存储了镜像和YAML文件。 每次升级时，我们需要先删除所有的YAML资源，然后重新创建新的资源。 这种方式存在以下问题：</p>
+<ul>
+<li>服务中断：由于需要先删除旧资源再创建新资源，这会导致短暂的服务中断，影响用户体验</li>
+<li>复杂的回滚逻辑：如果升级失败，回滚到之前的版本变得非常复杂，需要手动恢复旧的YAML文件，并且容易出错</li>
+</ul>
+<p>了解到Helm可以有效解决以上问题, Helm是Kubernetes 的包管理工具，方便用户快速发现、 共享和使用Kubernetes构建的应用。 以下举例演示如何使用Helm实现安装、升级、回滚操作</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0323210500.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0323165015.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0323165015.html" class="post-title-link" itemprop="url">使用 ChartMuseum 容器搭建私有 Helm Chart 仓库</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-03-23 16:50:15" itemprop="dateCreated datePublished" datetime="2025-03-23T16:50:15+08:00">2025-03-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>本文介绍如何在 Rocky Linux 9.5 上使用 ChartMuseum 搭建一个私有的 Helm Chart 仓库，并启用 HTTPS 和 Basic 认证以提高安全性</p>
+<h1 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h1><ul>
+<li>一台Rocky Linux 9.5 x86_64, 作为Helm Repo, 安装Docker, 域名: <code>myhelmrepo.com</code></li>
+<li>Kubernetes 集群 v1.28.x, Helm v3.16.0</li>
+</ul>
+<h1 id="1-安装并启动-ChartMuseum"><a href="#1-安装并启动-ChartMuseum" class="headerlink" title="1. 安装并启动 ChartMuseum"></a>1. 安装并启动 ChartMuseum</h1><p>(1) 启动 ChartMuseum 容器</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">docker run -d \</span><br><span class="line">  --name private-helm-repo \</span><br><span class="line">  -p 8080:8080 \</span><br><span class="line">  --restart=always \</span><br><span class="line">  -e STORAGE=local \</span><br><span class="line">  -e STORAGE_LOCAL_ROOTDIR=/charts \</span><br><span class="line">  -v /charts:/charts \</span><br><span class="line">  --user root \</span><br><span class="line">  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/helm/chartmuseum:v0.16.2</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0323165015.html#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -322,7 +512,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/kubernetes/" itemprop="url" rel="index"><span itemprop="name">kubernetes</span></a>
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
                 </span>
             </span>
 
@@ -339,7 +529,7 @@
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>35 分钟</span>
+              <span>34 分钟</span>
             </span>
 
         </div>
@@ -351,69 +541,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <!-- toc -->
-
-<ul>
-<li><a href="#%E9%9B%86%E7%BE%A4%E8%A7%84%E5%88%92">集群规划</a></li>
-<li><a href="#%E4%B8%80-%E6%90%AD%E5%BB%BA%E4%B8%80%E4%B8%BB%E4%B8%80%E4%BB%8E%E9%9B%86%E7%BE%A4">一、搭建一主一从集群</a><ul>
-<li><a href="#0-%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C">0. 准备工作</a><ul>
-<li><a href="#%E6%9B%B4%E6%96%B0%E7%B3%BB%E7%BB%9F%E8%BD%AF%E4%BB%B6%E5%8C%85">更新系统软件包</a></li>
-<li><a href="#%E4%BF%AE%E6%94%B9%E4%B8%BB%E6%9C%BA%E5%90%8D">修改主机名</a></li>
-<li><a href="#%E4%BF%AE%E6%94%B9hosts%E6%96%87%E4%BB%B6">修改hosts文件</a></li>
-<li><a href="#%E5%85%B3%E9%97%AD%E9%98%B2%E7%81%AB%E5%A2%99">关闭防火墙</a></li>
-<li><a href="#%E5%85%B3%E9%97%ADselinux">关闭SELINUX</a></li>
-<li><a href="#%E7%A6%81%E7%94%A8%E4%BA%A4%E6%8D%A2%E5%88%86%E5%8C%BA">禁用交换分区</a></li>
-<li><a href="#%E5%8A%A0%E8%BD%BD%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97-%E5%86%8D%E8%AE%BE%E7%BD%AE%E5%86%85%E6%A0%B8%E5%8F%82%E6%95%B0">加载内核模块, 再设置内核参数</a></li>
-</ul>
-</li>
-<li><a href="#1-%E5%AE%89%E8%A3%85containerd-kubeadm-kubelet-kubectl">1. 安装containerd, kubeadm, kubelet, kubectl</a><ul>
-<li><a href="#%E5%AE%89%E8%A3%85containerd">安装containerd</a></li>
-<li><a href="#%E9%85%8D%E7%BD%AEcontainerd">配置containerd</a></li>
-<li><a href="#%E5%90%AF%E5%8A%A8containerd">启动containerd</a></li>
-<li><a href="#%E5%AE%89%E8%A3%85kubeadm-kubelet-kubectl">安装kubeadm, kubelet, kubectl</a></li>
-</ul>
-</li>
-<li><a href="#2-%E5%88%9D%E5%A7%8B%E5%8C%96k8s%E9%9B%86%E7%BE%A4">2. 初始化k8s集群</a><ul>
-<li><a href="#%E5%9C%A8%E4%B8%BB%E8%8A%82%E7%82%B9%E6%89%A7%E8%A1%8Ckubeadm-init">在主节点执行kubeadm init</a></li>
-<li><a href="#%E5%9C%A8%E4%B8%BB%E8%8A%82%E7%82%B9%E5%AE%89%E8%A3%85calico%E7%BD%91%E7%BB%9C%E6%8F%92%E4%BB%B6">在主节点安装calico网络插件</a></li>
-<li><a href="#%E5%AE%89%E8%A3%85calicoctl">安装calicoctl</a></li>
-</ul>
-</li>
-<li><a href="#3-%E6%8A%8A%E4%BB%8E%E8%8A%82%E7%82%B9%E5%8A%A0%E5%85%A5%E9%9B%86%E7%BE%A4">3. 把从节点加入集群</a><ul>
-<li><a href="#%E5%85%88%E5%9C%A8master%E8%8A%82%E7%82%B9%E4%B8%8A%E8%8E%B7%E5%8F%96token">先在Master节点上获取token</a></li>
-<li><a href="#%E5%86%8D%E4%BB%8E%E4%B8%BB%E8%8A%82%E7%82%B9%E4%B8%8A%E8%8E%B7%E5%8F%96-discovery-token-ca-cert-hash%E7%9A%84%E5%80%BC">再从主节点上获取–discovery-token-ca-cert-hash的值</a></li>
-<li><a href="#%E6%9C%80%E5%90%8E-%E4%BB%8E%E8%8A%82%E7%82%B9%E6%89%A7%E8%A1%8Ckubeadm-join%E5%91%BD%E4%BB%A4%E5%B0%86%E4%BB%8E%E8%8A%82%E7%82%B9%E5%8A%A0%E5%85%A5%E9%9B%86%E7%BE%A4">最后, 从节点执行kubeadm join命令，将从节点加入集群:</a></li>
-<li><a href="#%E6%9F%A5%E7%9C%8B%E4%BB%8E%E8%8A%82%E7%82%B9%E6%98%AF%E5%90%A6%E5%8A%A0%E5%85%A5%E6%88%90%E5%8A%9F">查看从节点是否加入成功</a></li>
-</ul>
-</li>
-<li><a href="#4-%E7%AE%80%E5%8D%95%E6%B5%8B%E8%AF%95%E4%B8%80%E4%B8%BB%E4%B8%80%E4%BB%8E%E9%9B%86%E7%BE%A4%E5%9C%A8%E9%9B%86%E7%BE%A4%E4%B8%8A%E9%83%A8%E7%BD%B2nginx">4. 简单测试一主一从集群，在集群上部署Nginx</a></li>
-</ul>
-</li>
-<li><a href="#%E4%BA%8C-%E9%85%8D%E7%BD%AE%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1">二、 配置负载均衡</a><ul>
-<li><a href="#%E5%AE%89%E8%A3%85keepalived%E5%92%8Chaproxy">安装keepalived和HAproxy</a></li>
-<li><a href="#%E9%85%8D%E7%BD%AEhaproxy">配置HAproxy</a></li>
-<li><a href="#%E9%85%8D%E7%BD%AEkeepalived">配置keepalived</a></li>
-<li><a href="#%E9%AA%8C%E8%AF%81%E9%AB%98%E5%8F%AF%E7%94%A8">验证高可用</a></li>
-</ul>
-</li>
-<li><a href="#%E4%B8%89-%E6%90%AD%E5%BB%BA%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4%E4%B8%89%E4%B8%BB%E4%B8%89%E4%BB%8E%E4%B8%A4lb">三、搭建高可用集群(三主三从两LB)</a><ul>
-<li><a href="#%E9%87%8D%E7%BD%AE%E4%B9%8B%E5%89%8D%E7%9A%84k8s%E8%8A%82%E7%82%B9">重置之前的k8s节点</a></li>
-<li><a href="#%E7%94%A8vip%E9%87%8D%E6%96%B0%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%BB%E8%8A%82%E7%82%B9">用VIP重新初始化主节点</a></li>
-<li><a href="#%E5%8A%A0%E5%85%A5%E5%85%B6%E4%BD%99%E4%B8%A4%E4%B8%AA%E4%B8%BB%E8%8A%82%E7%82%B9">加入其余两个主节点</a></li>
-<li><a href="#%E5%8A%A0%E5%85%A5%E5%85%B6%E4%BD%99%E4%B8%A4%E4%B8%AA%E4%BB%8E%E8%8A%82%E7%82%B9">加入其余两个从节点</a></li>
-<li><a href="#%E6%B5%8B%E8%AF%95%E9%9B%86%E7%BE%A4">测试集群</a><ul>
-<li><a href="#%E5%AE%89%E8%A3%85etcdctl-%E6%A3%80%E6%9F%A5etcd%E7%8A%B6%E6%80%81">安装etcdctl, 检查etcd状态</a></li>
-<li><a href="#%E9%AB%98%E5%8F%AF%E7%94%A8%E9%85%8D%E7%BD%AE">高可用配置</a></li>
-<li><a href="#%E6%B5%8B%E8%AF%95%E9%AB%98%E5%8F%AF%E7%94%A8">测试高可用</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
-</ul>
-<!-- tocstop -->
-
-<h1 id="集群规划"><a href="#集群规划" class="headerlink" title="集群规划"></a>集群规划</h1><p>8台Linux虚拟机, Rocky Linux 9.5 x86_64 </p>
+          <h1 id="集群规划"><a href="#集群规划" class="headerlink" title="集群规划"></a>集群规划</h1><p>8台Linux虚拟机, Rocky Linux 9.5 x86_64 </p>
 <ul>
 <li>主节点(3个): 2CPU, 3G内存, 20G硬盘</li>
 <li>工作节点(2个): 2CPU, 3G内存, 20G硬盘</li>
@@ -469,7 +597,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2025/0320212856.html" class="post-title-link" itemprop="url">Kubernetes集群安装ingress-nginx</a>
+            <a href="/2025/0320212856.html" class="post-title-link" itemprop="url">Helm快速上手: 使用Helm安装nginx-ingress</a>
         </h2>
 
         <div class="post-meta">
@@ -487,7 +615,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/kubernetes/" itemprop="url" rel="index"><span itemprop="name">kubernetes</span></a>
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
                 </span>
             </span>
 
@@ -497,14 +625,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3.5k</span>
+              <span>5.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>3 分钟</span>
+              <span>5 分钟</span>
             </span>
 
         </div>
@@ -516,41 +644,35 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>下载yaml文件</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml</span><br><span class="line">l</span><br></pre></td></tr></table></figure>
-
-<p>查看镜像</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">cat deploy.yaml | grep image</span><br><span class="line">        image: registry.k8s.io/ingress-nginx/controller:v1.12.0@sha256:e6b8de175acda6ca913891f0f727bca4527e797d52688cbe9fec9040d6f6b6fa</span><br><span class="line">        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.0@sha256:aaafd456bda110628b2d4ca6296f38731a3aaf0bf7581efae824a41c770a8fc4</span><br><span class="line">        image: registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.0@sha256:aaafd456bda110628b2d4ca6296f38731a3aaf0bf7581efae824a41c770a8fc4</span><br></pre></td></tr></table></figure>
-<p>修改deploy.yaml, 把镜像替换为国内源</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/controller:v1.12.0</span><br><span class="line">image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.0</span><br><span class="line">image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.5.0</span><br></pre></td></tr></table></figure>
-
-<p>修改Deployment, 指定副本数为3, hostNetwork&#x3D;true </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  # ...</span><br><span class="line">spec:</span><br><span class="line">  replicas: 3 # 设置副本数</span><br><span class="line">  # ...</span><br><span class="line">    spec:</span><br><span class="line">      hostNetwork: true	# 设置宿主机网络</span><br><span class="line">      # ...</span><br></pre></td></tr></table></figure>
-
-<p>给每个工作节点打上标签，允许Ingress调度到工作节点</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># kubectl get nodes</span><br><span class="line">NAME          STATUS   ROLES           AGE     VERSION</span><br><span class="line">k8s-master1   Ready    control-plane   5d23h   v1.28.2</span><br><span class="line">k8s-master2   Ready    control-plane   5d22h   v1.28.2</span><br><span class="line">k8s-master3   Ready    control-plane   5d22h   v1.28.2</span><br><span class="line">k8s-slave1    Ready    &lt;none&gt;          5d22h   v1.28.2</span><br><span class="line">k8s-slave2    Ready    &lt;none&gt;          5d22h   v1.28.2</span><br><span class="line">k8s-slave3    Ready    &lt;none&gt;          5d22h   v1.28.2</span><br><span class="line"></span><br><span class="line">kubectl label nodes k8s-slave1 ingress-ready=true kubernetes.io/os=linux</span><br><span class="line">kubectl label nodes k8s-slave2 ingress-ready=true kubernetes.io/os=linux</span><br><span class="line">kubectl label nodes k8s-slave3 ingress-ready=true kubernetes.io/os=linux</span><br></pre></td></tr></table></figure>
-
-<p>安装Ingress</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f ingress-nginx.yaml</span><br></pre></td></tr></table></figure>
-
-<p>查看ingress Pod启动成功</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># kubectl -n ingress-nginx get pods</span><br><span class="line">NAME                                        READY   STATUS      RESTARTS   AGE</span><br><span class="line">ingress-nginx-admission-create-cz5h4        0/1     Completed   0          82s</span><br><span class="line">ingress-nginx-admission-patch-pxvd5         0/1     Completed   2          82s</span><br><span class="line">ingress-nginx-controller-7fd85d4496-294nk   1/1     Running     0          82s</span><br><span class="line">ingress-nginx-controller-7fd85d4496-97x8w   1/1     Running     0          82s</span><br><span class="line">ingress-nginx-controller-7fd85d4496-9fk2l   1/1     Running     0          82s</span><br></pre></td></tr></table></figure>
-
-<p>测试OK</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">curl k8s-slave1</span><br><span class="line">404</span><br><span class="line">curl k8s-slave2</span><br><span class="line">404</span><br><span class="line">curl k8s-slave3</span><br><span class="line">404 </span><br></pre></td></tr></table></figure>
-
-<p>添加haproxy配置, 通过LB的80端口访问</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">frontend http-in</span><br><span class="line">    bind *:80</span><br><span class="line">    default_backend http-servers</span><br><span class="line"></span><br><span class="line">backend http-servers</span><br><span class="line">    balance roundrobin</span><br><span class="line">    server node1 k8s-slave1:80 check</span><br><span class="line">    server node2 k8s-slave2:80 check</span><br><span class="line">    server node3 k8s-slave3:80 check</span><br></pre></td></tr></table></figure>
-
-<p>创建两个namespace, 部署三个服务</p>
-<p>Service A (service-a)<br>Service B (service-b)<br>Service C (service-c)</p>
-<h2><span id="制作charts">制作charts</span></h2><p>我们平时在日常生活中会经常在不同的平台上与各种各样的应用打交道，比如从苹果的 App Store 里下载的淘宝、高德、支付宝等应用，或者是在 PC 端安装的Word、Photoshop、Steam。这些各类平台上的应用程序，对用户而言，大多只需要点击安装就可使用。<br>然而，在云（Kubernetes）上，部署一个应用往往却不是那么简单。如果想要部署一个应用程序到云上，首先要准备好它所需要的环境，打包成 Docker 镜像。进而把镜像放在部署文件（Deployment）中、配置服务（Service）、应用所需的账户（ServiceAccount）及权限（Role）、命名空间（Namespace）、密钥信息（Secret）、可持久化存储（PersistentVolumes）等资源。也就是编写一系列互相相关的 YAML 配置文件，将它们部署在 Kubernetes 集群上。<br>但是即便应用的开发者可以把这些Docker镜像存放在公共仓库中，并且将部署所需的 YAML 资源文件提供给用户，用户仍然需要自己去寻找这些资源文件，并把它们一一部署。倘若用户希望修改开发者提供的默认资源，比如使用更多的副本（Replicas）或是修改服务端口（Port），他还需要自己去查应该在这些资源文件的哪些地方修改，更不用提版本变更与维护会给开发者和用户造成多少麻烦了。可见最原始的 Kubernetes 应用形态并不便利。<br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://developer.aliyun.com/article/718387">https://developer.aliyun.com/article/718387</a></p>
-<p>TODO: </p>
+          <h1 id="什么是Helm-Helm解决了哪些问题"><a href="#什么是Helm-Helm解决了哪些问题" class="headerlink" title="什么是Helm? Helm解决了哪些问题?"></a>什么是Helm? Helm解决了哪些问题?</h1><p>Helm是Kubernetes的包管理工具，类似于Linux中的apt或yum. Helm通过模板化和版本控制等机制, 帮助用户快速发现、共享和使用Kubernetes应用</p>
+<p>在Helm出现之前，部署Kubernetes应用存在以下问题:<br><strong>1. YAML配置复杂，部署和管理Kubernetes应用不方便</strong></p>
 <ul>
-<li>利用helm制作charts包, 滚动更新, 做一个最简单的包 (TODO)</li>
-<li>测试coredns (服务之前如何通信的)</li>
+<li>问题：需要编写大量YAML文件定义Kubernetes资源。 随着项目规模增长, 维护这些配置文件变得困难, 尤其是在多环境部署时</li>
+<li>Helm解决方案: 通过Helm模板功能，开发者可以创建一个Chart, 包含所有必要的Kubernetes资源定义, 并使用变量代替硬编码值</li>
 </ul>
-
+<p><strong>2. 更新或回滚到特定版本较为困难</strong></p>
+<ul>
+<li>问题：缺乏版本控制功能，难以更新或回滚到指定版本。如果直接修改线上 YAML 文件，可能导致问题且难以恢复到稳定状态</li>
+<li>Helm解决方案: Helm 通过Release概念支持版本控制，每次部署或更新应用时都会创建一个新的Release. 如果新版本出现问题, 可以通过helm rollback快速回滚到之前的稳定版本</li>
+</ul>
+<p><strong>3. 难以共享或复用k8s配置, 不利于多团队协作</strong></p>
+<ul>
+<li>问题：在一个团队内部，不同项目可能有相似需求（如都需要部署同一套系统）。然而，由于缺少有效的共享机制，每个项目需要从头开始配置，浪费了大量时间精力</li>
+<li>Helm解决方案: Helm Charts 可以通过仓库共享，每个人可以从仓库中下载官方或其他团队成员发布的Charts，也可以上传自己的Charts，实现了Kubernetes配置的共享和复用</li>
+</ul>
+<h1 id="快速上手Helm"><a href="#快速上手Helm" class="headerlink" title="快速上手Helm"></a>快速上手Helm</h1><h2 id="Helm的三个基本概念"><a href="#Helm的三个基本概念" class="headerlink" title="Helm的三个基本概念"></a>Helm的三个基本概念</h2><ul>
+<li>Chart, 一个Helm安装包，包含了运行一个应用所需要的镜像、依赖和资源定义等</li>
+<li>Release, 在Kubernetes集群上运行的一个Chart实例</li>
+<li>Repository, 发布和存储Chart的仓库</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0320212856.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -663,158 +785,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0312210853.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0312210853.html" class="post-title-link" itemprop="url">2025-03-12-docker-network-communication</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-03-12 21:08:53" itemprop="dateCreated datePublished" datetime="2025-03-12T21:08:53+08:00">2025-03-12</time>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>0</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0308200607.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0308200607.html" class="post-title-link" itemprop="url">Kubernetes集群中使用Prometheus和Grafana</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-03-08 20:06:07" itemprop="dateCreated datePublished" datetime="2025-03-08T20:06:07+08:00">2025-03-08</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/kubernetes/" itemprop="url" rel="index"><span itemprop="name">kubernetes</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>11</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>k8s集群(三主三从)</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -899,7 +869,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-count">51</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -942,12 +912,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">824k</span>
+    <span title="站点总字数">841k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12:29</span>
+    <span title="站点阅读时长">12:45</span>
 </div>
 
 <!--
