@@ -1,29 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Linux下生成core dump文件</title>
-    <url>/2020/0228210741.html</url>
-    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
-<span id="more"></span>
-
-<h2><span id="生成core文件步骤">生成core文件步骤</span></h2><ol>
-<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
-<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
-<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
-</ol>
-<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
-<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
-<p><strong>指定core文件的输出格式和路径</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>IT人事面试题</title>
     <url>/2020/0102171050.html</url>
     <content><![CDATA[<!-- toc -->
@@ -224,205 +201,6 @@
       </categories>
       <tags>
         <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>标准IO库的缓冲模式</title>
-    <url>/2020/0322220956.html</url>
-    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
-<p>写文件的时候，明明成功执行了fwrite, fprintf语句，文件却没有写入相应的内容。</p>
-<p>想搞清楚这些问题产生的原因，需要了解标准I&#x2F;O库的缓冲模式。</p>
-<span id="more"></span>
-
-<h2><span id="标准ix2fo与unbuffered-ix2fo">标准I&#x2F;O与unbuffered I&#x2F;O</span></h2><p>linux对I&#x2F;O文件操作分为不带缓存I&#x2F;O(unbuffered I&#x2F;O)和带缓存I&#x2F;O(即标准I&#x2F;O)</p>
-<p>《APUE》中对术语unbuffered的定义: “The term <em>unbuffered</em> means that each read or write invokes a system call in the kernel”</p>
-<p><a href="https://blog.csdn.net/qq_33366098/article/details/77923722">这篇文章</a>讲了unbuffered I&#x2F;O和标准I&#x2F;O的区别，以下引用其中的描述：</p>
-<p>不带缓存I&#x2F;O，是指每次read, write都会进入内核，执行一次系统调用，不带缓存不是指直接对磁盘进行读写。比如read,write函数，它们属于系统调用，在用户态没有缓存，但是在内核是有缓存器的。如内核缓存未满，写入的数据还是在内核缓存，并没有真正写入硬盘。需要等待缓存写满或者内核需要重用该缓存以存放其他磁盘块数据时，才进行实际硬盘读写，这种方式被称为延迟写(delayed write)</p>
-<p>带缓存I&#x2F;O也叫标准I&#x2F;O。标准I&#x2F;O会在用户态建立一个缓存区，以尽可能减少read和write调用的次数，提高效率。</p>
-<p>unbuffered I&#x2F;O操作数据流向：数据-&gt;内核缓存区-&gt;磁盘</p>
-<p>标准I&#x2F;O操作数据流向：数据-&gt;流缓存区-&gt;内核缓存区-&gt;磁盘</p>
-<h2><span id="缓冲">缓冲</span></h2><p>标准I&#x2F;O库提供三种模式的缓冲: 全缓冲、行缓冲、不带缓冲</p>
-<h3><span id="全缓冲fully-buffered">全缓冲(fully buffered)</span></h3><p>这种情况下，在填满标准I&#x2F;O缓冲区后才进行实际I&#x2F;O操作。对于驻留在磁盘上的文件通常用全缓冲。</p>
-<h3><span id="行缓冲line-buffered">行缓冲(line buffered)</span></h3><p>这种情况下，当输入或输出遇到换行符，或者缓冲区已满时进行实际I&#x2F;O操作。当流涉及一个终端时，通常使用行缓冲。</p>
-<h3><span id="不带缓冲unbuffered">不带缓冲(unbuffered)</span></h3><p>这种情况下，标准I&#x2F;O库不对字符进行缓冲存储。例如标准出错流stderr通常是不带缓冲的，这使得出错信息可以尽快显示。</p>
-<h3><span id="注">注：</span></h3><p>1.这里的实际I&#x2F;O操作不是指读写硬盘操作，而是指执行read, write系统调用。</p>
-<p>2.缓冲类型与具体的标准I&#x2F;O函数无关，与读写的文件类型有关。</p>
-<h2><span id="举例说明">举例说明</span></h2><h3><span id="例1-全缓冲">例1 全缓冲</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	char str[] = &quot;hello world&quot;;</span><br><span class="line">	FILE *fp = fopen(&quot;./text&quot;, &quot;w+&quot;);	// 省略了判空操作^_^</span><br><span class="line">	fprintf(fp, &quot;%s\n&quot;, str);</span><br><span class="line">    // fflush(fp);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译并运行程序，进入死循环后，观察text文件发现内容为空，hello world字符串并没有写入。</p>
-<p>这是因为对于磁盘上的文件默认是全缓冲的。因为写入的字符串长度小于缓冲区大小(我的ubuntu机器上，为4096字节)，所以不会直接写入文件。</p>
-<p>如需要立即输出，可以在for循环之前调用fflush函数，将缓冲区的内容写入磁盘。</p>
-<p>这解释了为什么有时明明成功执行了fwrite,fprintf语句，文件却没有写入相应的内容。</p>
-<h3><span id="例2-行缓冲">例2 行缓冲</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	fprintf(stdout, &quot;hello world&quot;);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译并运行程序，发现终端没有输出，即使fprintf已经执行。</p>
-<p>这是因为涉及终端的流默认是行缓冲的，当输入或输出遇到换行符时才进行实际I&#x2F;O操作。</p>
-<p>如果需要执行fprintf后立即打印，只需在”hello world”后添加换行符’\n’</p>
-<p>这个例子解释了为什么有时代码中执行了printf语句打印到终端，却没有看到输出的内容。</p>
-<h3><span id="例3-无缓冲">例3 无缓冲</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	fprintf(stderr, &quot;hello world&quot;);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译并运行程序,  终端立即输出hello world。可以看出标准错误是不带缓冲的。目的是使出错信息可以尽快显示。</p>
-<h3><span id="例4-缓冲类型与读写的文件类型有关">例4 缓冲类型与读写的文件类型有关</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;stdlib.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">#include&lt;sys/wait.h&gt;</span><br><span class="line"></span><br><span class="line">int main()</span><br><span class="line">&#123;</span><br><span class="line">	pid_t pid;</span><br><span class="line">	printf(&quot;before fork\n&quot;);</span><br><span class="line"></span><br><span class="line">	if((pid = fork()) &lt; 0) &#123;	// fork失败直接返回-1</span><br><span class="line">		exit(-1);</span><br><span class="line">	&#125; else if(pid &gt; 0) &#123;		// 父进程</span><br><span class="line">		wait(NULL);</span><br><span class="line">	&#125;</span><br><span class="line">	printf(&quot;pid = %d, hello\n&quot;, getpid());</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译并执行程序, 得到：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ./a.out</span><br><span class="line">before fork</span><br><span class="line">pid = 6033, hello</span><br><span class="line">pid = 6032, hello</span><br><span class="line">$ ./a.out &gt; output.txt		#将输出重定向到output.txt文件</span><br><span class="line">$ cat output.txt</span><br><span class="line">before fork</span><br><span class="line">pid = 6077, hello</span><br><span class="line">before fork</span><br><span class="line">pid = 6076, hello</span><br></pre></td></tr></table></figure>
-
-<p>发现两次输出的内容不同，将输出重定向到文件时，会多打印一行”before fork”，原因如下：</p>
-<p><strong>如果标准输出连到终端设备，默认是行缓冲的</strong>。”before fork”只输出一次，原因是调用第一个printf后，标准输出缓冲区由换行符冲洗，“before fork”被立即打印。</p>
-<p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
-<p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
-<h2><span id="参考资料">参考资料</span></h2><p>【1】<a href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/0329142613.html</url>
-    <content><![CDATA[<h3><span id="问题描述">问题描述</span></h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3><span id="解决过程">解决过程</span></h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4><span id="总结">总结：</span></h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>隐式函数声明[-Wimplicit-function-declaration]</title>
-    <url>/2020/0411143310.html</url>
-    <content><![CDATA[<h2><span id="什么是隐式函数声明">什么是隐式函数声明</span></h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
-<span id="more"></span>
-
-<h2><span id="忽略隐式函数声明警告的危害">忽略隐式函数声明警告的危害</span></h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img data-src="/2020/0411143310/image1.png"></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ldd -r libadd.so</span><br><span class="line">undefined symbol: ad (./libadd.so)</span><br></pre></td></tr></table></figure>
-
-<p>此时写一个main程序，调用libadd.so中的sum方法求三数之和</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>编译main程序出错，错误原因在于<strong>编写add.c时将符号add错写成了ad，由于忽视隐式函数声明警告，导致该错误没有在编译add.c的时候及时发现。</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -L. -ladd</span><br><span class="line">./libadd.so: undefined reference to `ad&#x27;</span><br><span class="line">collect2: error: ld returned 1 exit status</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>对于用dlopen动态加载该so库的程序，如指定RTLD_NOW，dlopen立即失败；如指定RTLD_LAZY延迟绑定，则dlopen成功，但dlsym加载引用了未定义符号的函数(如sum函数)会出错，示例main程序如下：</li>
-</ul>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;dlfcn.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">void</span> *handle = dlopen(<span class="string">&quot;./libadd.so&quot;</span>, RTLD_LAZY);</span><br><span class="line">	<span class="keyword">if</span>(handle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, dlerror());</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="type">int</span> (*add)(<span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line">	<span class="type">int</span> (*sum)(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line"></span><br><span class="line">	add = dlsym(handle, <span class="string">&quot;add&quot;</span>);	<span class="comment">// add方法正常执行</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 = %d\n&quot;</span>, add(<span class="number">1</span>, <span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">	sum = dlsym(handle, <span class="string">&quot;sum&quot;</span>);	<span class="comment">// 出错，报未定义符号ad</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 + 3 = %d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -ldl</span><br><span class="line">$ ./a.out</span><br><span class="line">1 + 2 = 3</span><br><span class="line">./a.out: symbol lookup error: ./libadd.so: undefined symbol: ad</span><br></pre></td></tr></table></figure>
-<p>虽然编译成功，libadd.so可以加载，add函数可以执行，但执行sum函数时报未定义符号错。如及时处理隐式函数声明警告，可以在编译add.c的时候就发现该问题。</p>
-<h2><span id="总结">总结</span></h2><ul>
-<li><p>函数先声明再使用，包含必要的头文件。</p>
-</li>
-<li><p>重视编译器的隐式函数声明警告, 可开启-Werror选项检查, 不要简单使用-Wno忽略该编译告警。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>C</category>
-      </categories>
-      <tags>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Git常用命令</title>
-    <url>/2020/0502171005.html</url>
-    <content><![CDATA[<h3><span id="0-git帮助">0. git帮助</span></h3><ul>
-<li><p>git help命令</p>
-</li>
-<li><p>git原理和命令可参考《Pro Git》，中文版链接:<a href="https://www.progit.cn"> https://www.progit.cn</a></p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3><span id="1-git配置">1. git配置</span></h3><p>通过git config命令配置。–global选项指定读写的配置文件路径为~&#x2F;.gitconfig，只针对当前用户。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config --global user.name  &quot;user&quot; 		  #设置用户名</span><br><span class="line">git config --global user.email &quot;user@163.com&quot; #设置邮箱</span><br><span class="line">git config --global core.editor emacs 		  #设置默认文本编译器为emacs</span><br><span class="line">git config --list 							  #检查所有git配置</span><br><span class="line">git config &lt;key&gt; 							  #检查git某一项配置，如user.name</span><br></pre></td></tr></table></figure>
-
-<h4><span id="忽略文件-gitignore">忽略文件 —— .gitignore</span></h4><ul>
-<li><p>.gitginore文件作用: 忽略无需纳入git管理的文件。</p>
-</li>
-<li><p>各种语言的.gitignore写法可参考: <a href="https://github.com/github/gitignore">https://github.com/github/gitignore</a></p>
-</li>
-</ul>
-<h3><span id="2-获取与创建git仓">2. 获取与创建git仓</span></h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git init        		#将当前目录初始化为git仓</span><br><span class="line">git clone [url]  		#克隆现有仓库</span><br></pre></td></tr></table></figure>
-
-<h3><span id="3-添加x2f删除文件">3. 添加&#x2F;删除文件</span></h3><h4><span id="跟踪文件">跟踪文件</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git add &lt;file&gt;	 		#跟踪某个新文件，将内容从工作目录添加到暂存区</span><br><span class="line">git add .		 		#跟踪所有新文件</span><br></pre></td></tr></table></figure>
-
-<h4><span id="移除文件">移除文件</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git rm    				#从git中移除文件，并连带从工作目录中删除指定文件</span><br><span class="line">git rm -f 				#如删除之前有修改并已放到暂存区，必须指定-f选项，防止误删还没有添加到快照的数据不能被git恢复</span><br><span class="line">git rm --cached         #把文件从git暂存区删除，但在工作目录保留该文件</span><br><span class="line">git mv &lt;file1&gt; &lt;file2&gt;  #移动文件，相当于执行以下三条命令</span><br><span class="line">					    #mv file1 file2, git rm file1, git add file2</span><br></pre></td></tr></table></figure>
-
-<h4><span id="提交更新">提交更新</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git commit       		#提交更新</span><br></pre></td></tr></table></figure>
-
-<h3><span id="4-查看信息">4. 查看信息</span></h3><h4><span id="查看当前文件状态">查看当前文件状态</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git status       		#检查当前文件状态</span><br></pre></td></tr></table></figure>
-
-<h4><span id="查看提交历史">查看提交历史</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git log --pretty=oneline #将每个提交放在一行显示</span><br><span class="line">git log -p -2 			 #-p用来显示每次提交的内容差异, -2表示显示最近两次提交</span><br><span class="line">git log --stat 			 #查看每次提交的简略信息</span><br><span class="line">git reflog				 #显示最近的提交记录</span><br></pre></td></tr></table></figure>
-
-<h4><span id="查看修改和差异">查看修改和差异</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git diff 						 #比较工作目录中当前文件和暂存区快照之间差异，即修改后未暂存的变化</span><br><span class="line">git diff --cached [file] 		 #查看暂存区与上一个commit的差异</span><br><span class="line">git diff --staged [file]		 #等同于--cached</span><br><span class="line">git diff HEAD					 #显示工作区与当前分支最新commit的差异</span><br><span class="line">git diff [commitID1] [commitID2] #比较两次提交记录的差异，比如HEAD和HEAD~1</span><br></pre></td></tr></table></figure>
-
-<h3><span id="5-分支">5. 分支</span></h3><h4><span id="查看分支">查看分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch								 #列出所有本地分支</span><br><span class="line">git branch -a							 #列出所有本地分支和远程分支</span><br></pre></td></tr></table></figure>
-
-<h4><span id="新建分支">新建分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch [branch_name]				 #创建新分支，但仍然停留在当前分支</span><br><span class="line">git branch [branch_name] [commitID]		 #创建新分支，并指向指定commit</span><br><span class="line">git checkout -b [branch_name] [tag_name] #在特定标签上创建一个分支</span><br></pre></td></tr></table></figure>
-
-<h4><span id="切换分支">切换分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git checkout [branch_name] 				 #切换分支</span><br><span class="line">git checkout -b [branch_name]			 #创建并切换分支</span><br></pre></td></tr></table></figure>
-
-<h4><span id="删除分支">删除分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch -d [branch_name]				 #删除分支</span><br><span class="line">git branch -D [branch_name]				 #强制删除分支</span><br></pre></td></tr></table></figure>
-
-<h4><span id="合并分支">合并分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git merge  [branch]			   #将branch分支内容合并到当前分支</span><br><span class="line">git rebase [branch]			   #将branch分支内容变基到当前分支</span><br><span class="line">git rebase [branch1] [branch2] #将branch2分支变基到目标分支branch1，省去切换分支的步骤</span><br></pre></td></tr></table></figure>
-
-<h5><span id="merge和rebase的区别">merge和rebase的区别</span></h5><ul>
-<li>merge —— 把两个分支的最新快照及二者最近的共同祖先进行三方合并。</li>
-<li>rebase —— 变基，将提交到某一个分支所有修改移到另一个分支。</li>
-</ul>
-<p><font color="red"><strong>注：只对从未推送至公共仓库的提交执行变基命令</strong></font>，只把变基命令用作推送前清理提交使之整洁的工具。</p>
-<h3><span id="6-撤销-清理-重写">6. 撤销、清理、重写</span></h3><h4><span id="撤销操作">撤销操作</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git reset HEAD &lt;file&gt; 	 		#取消暂存的文件</span><br><span class="line">git checkout -- &lt;file&gt;   		#撤销文件修改，将文件还原成上次提交的状态</span><br><span class="line">git reset --hard &lt;commitID&gt;		#回退到具体版本号</span><br></pre></td></tr></table></figure>
-
-<h4><span id="清理工作目录">清理工作目录</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git clean -df 				# 移除工作目录中没有忽略的未追踪文件及空的子目录, -d表示删除,-f表示强制</span><br><span class="line">git clean -dn 				# -n查看将会删除哪些文件,不会真正删除</span><br><span class="line">git clean -xdf 	   			# 指定-x额外移除已忽略的未追踪文件</span><br></pre></td></tr></table></figure>
-
-<h4><span id="重写历史">重写历史</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git commit --amend  		#修改最后一次提交</span><br><span class="line">git rebase -i [commitID]    #修改多个历史提交</span><br></pre></td></tr></table></figure>
-
-<h3><span id="7-项目共享与更新">7. 项目共享与更新</span></h3><h4><span id="远程仓库">远程仓库</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git remote -v 					 #查看远程仓库</span><br><span class="line">git remote add &lt;shortname&gt; &lt;url&gt; #添加新的远程git仓库</span><br><span class="line">git remote rm &lt;shortname&gt;        #移除远程仓库</span><br></pre></td></tr></table></figure>
-
-<h4><span id="抓取-推送">抓取、推送</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git fetch [remote] 		 		    #拉取远程仓库数据到本地，但不会自动合并</span><br><span class="line">git pull [remote] [branch]		    #相当于git fetch和git merge命令的组合</span><br><span class="line">git push [remote] [branch]		    #推送本地分支到远程, -f强制推送</span><br><span class="line">git push [remote] –-delete [branch] #删除远程分支</span><br></pre></td></tr></table></figure>
-
-<h3><span id="8-git设置别名">8. git设置别名</span></h3><p>通过git config为git命令创建别名后，无需每次输入完整的git命令，简化了操作</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config --global alias.co checkout</span><br><span class="line">git config --global alias.br branch</span><br><span class="line">git config --global alias.ci commit</span><br><span class="line">git config --global alias.st status</span><br><span class="line">git config --global alias.unstage &#x27;reset HEAD --&#x27;</span><br><span class="line">git config --global alias.last &#x27;log -1 HEAD&#x27;</span><br></pre></td></tr></table></figure>
-
-<h3><span id="参考资料">参考资料</span></h3><p>《Pro Git》第2版： <a href="https://www.progit.cn">https://www.progit.cn</a></p>
-]]></content>
-      <categories>
-        <category>Git</category>
-      </categories>
-      <tags>
-        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -784,6 +562,228 @@
       </tags>
   </entry>
   <entry>
+    <title>Linux下生成core dump文件</title>
+    <url>/2020/0228210741.html</url>
+    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>Linux上运行C程序发生段错误后，没有core文件生成，调试不便。</p>
+<span id="more"></span>
+
+<h2><span id="生成core文件步骤">生成core文件步骤</span></h2><ol>
+<li>敲ulimit -a，查看系统core文件大小限制，如第一行core file size值为0，表示没打开core文件设置<br><img data-src="/2020/0228210741/image1.png"></li>
+<li>敲ulimit -c [kbytes], 设置系统允许生成的core文件大小, 如： <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">ulimit -c 1024        设置core文件最大为1024K</span><br><span class="line">ulimit -c unlimited   不限制core文件大小</span><br><span class="line">ulimit -c 0           不生成core文件</span><br></pre></td></tr></table></figure></li>
+<li>运行C程序，段错误后，在当前目录生成core文件。<br><img data-src="/2020/0228210741/image2.png"></li>
+</ol>
+<p><strong>问题:</strong><br>多次运行程序发生段错误后，新生成的core文件会把旧的core文件覆盖，怎么区分并保留多个core文件?</p>
+<p><strong>解决方法:</strong><br>敲 echo 1 &gt; &#x2F;proc&#x2F;sys&#x2F;kernel&#x2F;core_uses_pid, 将每次产生的core文件的文件名中是否添加pid作为扩展。如果添加则文件内容为1，反之为0。<br><img data-src="/2020/0228210741/image3.png"><br>如上图，两次coredump后，会根据pid生成不同的core文件。</p>
+<p><strong>指定core文件的输出格式和路径</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo /path/to/core.%t.%e.%p &gt; /proc/sys/kernel/core_pattern</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>标准IO库的缓冲模式</title>
+    <url>/2020/0322220956.html</url>
+    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
+<p>写文件的时候，明明成功执行了fwrite, fprintf语句，文件却没有写入相应的内容。</p>
+<p>想搞清楚这些问题产生的原因，需要了解标准I&#x2F;O库的缓冲模式。</p>
+<span id="more"></span>
+
+<h2><span id="标准ix2fo与unbuffered-ix2fo">标准I&#x2F;O与unbuffered I&#x2F;O</span></h2><p>linux对I&#x2F;O文件操作分为不带缓存I&#x2F;O(unbuffered I&#x2F;O)和带缓存I&#x2F;O(即标准I&#x2F;O)</p>
+<p>《APUE》中对术语unbuffered的定义: “The term <em>unbuffered</em> means that each read or write invokes a system call in the kernel”</p>
+<p><a href="https://blog.csdn.net/qq_33366098/article/details/77923722">这篇文章</a>讲了unbuffered I&#x2F;O和标准I&#x2F;O的区别，以下引用其中的描述：</p>
+<p>不带缓存I&#x2F;O，是指每次read, write都会进入内核，执行一次系统调用，不带缓存不是指直接对磁盘进行读写。比如read,write函数，它们属于系统调用，在用户态没有缓存，但是在内核是有缓存器的。如内核缓存未满，写入的数据还是在内核缓存，并没有真正写入硬盘。需要等待缓存写满或者内核需要重用该缓存以存放其他磁盘块数据时，才进行实际硬盘读写，这种方式被称为延迟写(delayed write)</p>
+<p>带缓存I&#x2F;O也叫标准I&#x2F;O。标准I&#x2F;O会在用户态建立一个缓存区，以尽可能减少read和write调用的次数，提高效率。</p>
+<p>unbuffered I&#x2F;O操作数据流向：数据-&gt;内核缓存区-&gt;磁盘</p>
+<p>标准I&#x2F;O操作数据流向：数据-&gt;流缓存区-&gt;内核缓存区-&gt;磁盘</p>
+<h2><span id="缓冲">缓冲</span></h2><p>标准I&#x2F;O库提供三种模式的缓冲: 全缓冲、行缓冲、不带缓冲</p>
+<h3><span id="全缓冲fully-buffered">全缓冲(fully buffered)</span></h3><p>这种情况下，在填满标准I&#x2F;O缓冲区后才进行实际I&#x2F;O操作。对于驻留在磁盘上的文件通常用全缓冲。</p>
+<h3><span id="行缓冲line-buffered">行缓冲(line buffered)</span></h3><p>这种情况下，当输入或输出遇到换行符，或者缓冲区已满时进行实际I&#x2F;O操作。当流涉及一个终端时，通常使用行缓冲。</p>
+<h3><span id="不带缓冲unbuffered">不带缓冲(unbuffered)</span></h3><p>这种情况下，标准I&#x2F;O库不对字符进行缓冲存储。例如标准出错流stderr通常是不带缓冲的，这使得出错信息可以尽快显示。</p>
+<h3><span id="注">注：</span></h3><p>1.这里的实际I&#x2F;O操作不是指读写硬盘操作，而是指执行read, write系统调用。</p>
+<p>2.缓冲类型与具体的标准I&#x2F;O函数无关，与读写的文件类型有关。</p>
+<h2><span id="举例说明">举例说明</span></h2><h3><span id="例1-全缓冲">例1 全缓冲</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	char str[] = &quot;hello world&quot;;</span><br><span class="line">	FILE *fp = fopen(&quot;./text&quot;, &quot;w+&quot;);	// 省略了判空操作^_^</span><br><span class="line">	fprintf(fp, &quot;%s\n&quot;, str);</span><br><span class="line">    // fflush(fp);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译并运行程序，进入死循环后，观察text文件发现内容为空，hello world字符串并没有写入。</p>
+<p>这是因为对于磁盘上的文件默认是全缓冲的。因为写入的字符串长度小于缓冲区大小(我的ubuntu机器上，为4096字节)，所以不会直接写入文件。</p>
+<p>如需要立即输出，可以在for循环之前调用fflush函数，将缓冲区的内容写入磁盘。</p>
+<p>这解释了为什么有时明明成功执行了fwrite,fprintf语句，文件却没有写入相应的内容。</p>
+<h3><span id="例2-行缓冲">例2 行缓冲</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	fprintf(stdout, &quot;hello world&quot;);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译并运行程序，发现终端没有输出，即使fprintf已经执行。</p>
+<p>这是因为涉及终端的流默认是行缓冲的，当输入或输出遇到换行符时才进行实际I&#x2F;O操作。</p>
+<p>如果需要执行fprintf后立即打印，只需在”hello world”后添加换行符’\n’</p>
+<p>这个例子解释了为什么有时代码中执行了printf语句打印到终端，却没有看到输出的内容。</p>
+<h3><span id="例3-无缓冲">例3 无缓冲</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">int main() &#123;</span><br><span class="line">	fprintf(stderr, &quot;hello world&quot;);</span><br><span class="line">	for( ; ; ) &#123;</span><br><span class="line">		sleep(10);</span><br><span class="line">	&#125;</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译并运行程序,  终端立即输出hello world。可以看出标准错误是不带缓冲的。目的是使出错信息可以尽快显示。</p>
+<h3><span id="例4-缓冲类型与读写的文件类型有关">例4 缓冲类型与读写的文件类型有关</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">#include&lt;stdio.h&gt;</span><br><span class="line">#include&lt;stdlib.h&gt;</span><br><span class="line">#include&lt;unistd.h&gt;</span><br><span class="line">#include&lt;sys/wait.h&gt;</span><br><span class="line"></span><br><span class="line">int main()</span><br><span class="line">&#123;</span><br><span class="line">	pid_t pid;</span><br><span class="line">	printf(&quot;before fork\n&quot;);</span><br><span class="line"></span><br><span class="line">	if((pid = fork()) &lt; 0) &#123;	// fork失败直接返回-1</span><br><span class="line">		exit(-1);</span><br><span class="line">	&#125; else if(pid &gt; 0) &#123;		// 父进程</span><br><span class="line">		wait(NULL);</span><br><span class="line">	&#125;</span><br><span class="line">	printf(&quot;pid = %d, hello\n&quot;, getpid());</span><br><span class="line">	return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译并执行程序, 得到：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ./a.out</span><br><span class="line">before fork</span><br><span class="line">pid = 6033, hello</span><br><span class="line">pid = 6032, hello</span><br><span class="line">$ ./a.out &gt; output.txt		#将输出重定向到output.txt文件</span><br><span class="line">$ cat output.txt</span><br><span class="line">before fork</span><br><span class="line">pid = 6077, hello</span><br><span class="line">before fork</span><br><span class="line">pid = 6076, hello</span><br></pre></td></tr></table></figure>
+
+<p>发现两次输出的内容不同，将输出重定向到文件时，会多打印一行”before fork”，原因如下：</p>
+<p><strong>如果标准输出连到终端设备，默认是行缓冲的</strong>。”before fork”只输出一次，原因是调用第一个printf后，标准输出缓冲区由换行符冲洗，“before fork”被立即打印。</p>
+<p><strong>如果将标准输出重定向到文件，默认是全缓冲的</strong>。”befork fork”会输出两次，原因是调用第一个printf后数据“before fork”仍旧在缓冲区，然后调用fork函数，将父进程数据空间复制到子进程，此时该缓冲区也被复制到子进程。最后当父子进程终止时，各自冲洗其缓冲区的副本。</p>
+<p>这个例子说明，缓冲类型与读写的文件类型有关，与具体I&#x2F;O函数无关。</p>
+<h2><span id="参考资料">参考资料</span></h2><p>【1】<a href="https://blog.csdn.net/qq_33366098/article/details/77923722">https://blog.csdn.net/qq_33366098&#x2F;article&#x2F;details&#x2F;77923722</a><br>【2】<a href="https://www.yanbinghu.com/2019/12/01/27836.html">https://www.yanbinghu.com/2019/12/01/27836.html</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/0329142613.html</url>
+    <content><![CDATA[<h3><span id="问题描述">问题描述</span></h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3><span id="解决过程">解决过程</span></h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4><span id="总结">总结：</span></h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git常用命令</title>
+    <url>/2020/0502171005.html</url>
+    <content><![CDATA[<h3><span id="0-git帮助">0. git帮助</span></h3><ul>
+<li><p>git help命令</p>
+</li>
+<li><p>git原理和命令可参考《Pro Git》，中文版链接:<a href="https://www.progit.cn"> https://www.progit.cn</a></p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3><span id="1-git配置">1. git配置</span></h3><p>通过git config命令配置。–global选项指定读写的配置文件路径为~&#x2F;.gitconfig，只针对当前用户。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config --global user.name  &quot;user&quot; 		  #设置用户名</span><br><span class="line">git config --global user.email &quot;user@163.com&quot; #设置邮箱</span><br><span class="line">git config --global core.editor emacs 		  #设置默认文本编译器为emacs</span><br><span class="line">git config --list 							  #检查所有git配置</span><br><span class="line">git config &lt;key&gt; 							  #检查git某一项配置，如user.name</span><br></pre></td></tr></table></figure>
+
+<h4><span id="忽略文件-gitignore">忽略文件 —— .gitignore</span></h4><ul>
+<li><p>.gitginore文件作用: 忽略无需纳入git管理的文件。</p>
+</li>
+<li><p>各种语言的.gitignore写法可参考: <a href="https://github.com/github/gitignore">https://github.com/github/gitignore</a></p>
+</li>
+</ul>
+<h3><span id="2-获取与创建git仓">2. 获取与创建git仓</span></h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git init        		#将当前目录初始化为git仓</span><br><span class="line">git clone [url]  		#克隆现有仓库</span><br></pre></td></tr></table></figure>
+
+<h3><span id="3-添加x2f删除文件">3. 添加&#x2F;删除文件</span></h3><h4><span id="跟踪文件">跟踪文件</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git add &lt;file&gt;	 		#跟踪某个新文件，将内容从工作目录添加到暂存区</span><br><span class="line">git add .		 		#跟踪所有新文件</span><br></pre></td></tr></table></figure>
+
+<h4><span id="移除文件">移除文件</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git rm    				#从git中移除文件，并连带从工作目录中删除指定文件</span><br><span class="line">git rm -f 				#如删除之前有修改并已放到暂存区，必须指定-f选项，防止误删还没有添加到快照的数据不能被git恢复</span><br><span class="line">git rm --cached         #把文件从git暂存区删除，但在工作目录保留该文件</span><br><span class="line">git mv &lt;file1&gt; &lt;file2&gt;  #移动文件，相当于执行以下三条命令</span><br><span class="line">					    #mv file1 file2, git rm file1, git add file2</span><br></pre></td></tr></table></figure>
+
+<h4><span id="提交更新">提交更新</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git commit       		#提交更新</span><br></pre></td></tr></table></figure>
+
+<h3><span id="4-查看信息">4. 查看信息</span></h3><h4><span id="查看当前文件状态">查看当前文件状态</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git status       		#检查当前文件状态</span><br></pre></td></tr></table></figure>
+
+<h4><span id="查看提交历史">查看提交历史</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git log --pretty=oneline #将每个提交放在一行显示</span><br><span class="line">git log -p -2 			 #-p用来显示每次提交的内容差异, -2表示显示最近两次提交</span><br><span class="line">git log --stat 			 #查看每次提交的简略信息</span><br><span class="line">git reflog				 #显示最近的提交记录</span><br></pre></td></tr></table></figure>
+
+<h4><span id="查看修改和差异">查看修改和差异</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git diff 						 #比较工作目录中当前文件和暂存区快照之间差异，即修改后未暂存的变化</span><br><span class="line">git diff --cached [file] 		 #查看暂存区与上一个commit的差异</span><br><span class="line">git diff --staged [file]		 #等同于--cached</span><br><span class="line">git diff HEAD					 #显示工作区与当前分支最新commit的差异</span><br><span class="line">git diff [commitID1] [commitID2] #比较两次提交记录的差异，比如HEAD和HEAD~1</span><br></pre></td></tr></table></figure>
+
+<h3><span id="5-分支">5. 分支</span></h3><h4><span id="查看分支">查看分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch								 #列出所有本地分支</span><br><span class="line">git branch -a							 #列出所有本地分支和远程分支</span><br></pre></td></tr></table></figure>
+
+<h4><span id="新建分支">新建分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch [branch_name]				 #创建新分支，但仍然停留在当前分支</span><br><span class="line">git branch [branch_name] [commitID]		 #创建新分支，并指向指定commit</span><br><span class="line">git checkout -b [branch_name] [tag_name] #在特定标签上创建一个分支</span><br></pre></td></tr></table></figure>
+
+<h4><span id="切换分支">切换分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git checkout [branch_name] 				 #切换分支</span><br><span class="line">git checkout -b [branch_name]			 #创建并切换分支</span><br></pre></td></tr></table></figure>
+
+<h4><span id="删除分支">删除分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git branch -d [branch_name]				 #删除分支</span><br><span class="line">git branch -D [branch_name]				 #强制删除分支</span><br></pre></td></tr></table></figure>
+
+<h4><span id="合并分支">合并分支</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git merge  [branch]			   #将branch分支内容合并到当前分支</span><br><span class="line">git rebase [branch]			   #将branch分支内容变基到当前分支</span><br><span class="line">git rebase [branch1] [branch2] #将branch2分支变基到目标分支branch1，省去切换分支的步骤</span><br></pre></td></tr></table></figure>
+
+<h5><span id="merge和rebase的区别">merge和rebase的区别</span></h5><ul>
+<li>merge —— 把两个分支的最新快照及二者最近的共同祖先进行三方合并。</li>
+<li>rebase —— 变基，将提交到某一个分支所有修改移到另一个分支。</li>
+</ul>
+<p><font color="red"><strong>注：只对从未推送至公共仓库的提交执行变基命令</strong></font>，只把变基命令用作推送前清理提交使之整洁的工具。</p>
+<h3><span id="6-撤销-清理-重写">6. 撤销、清理、重写</span></h3><h4><span id="撤销操作">撤销操作</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git reset HEAD &lt;file&gt; 	 		#取消暂存的文件</span><br><span class="line">git checkout -- &lt;file&gt;   		#撤销文件修改，将文件还原成上次提交的状态</span><br><span class="line">git reset --hard &lt;commitID&gt;		#回退到具体版本号</span><br></pre></td></tr></table></figure>
+
+<h4><span id="清理工作目录">清理工作目录</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git clean -df 				# 移除工作目录中没有忽略的未追踪文件及空的子目录, -d表示删除,-f表示强制</span><br><span class="line">git clean -dn 				# -n查看将会删除哪些文件,不会真正删除</span><br><span class="line">git clean -xdf 	   			# 指定-x额外移除已忽略的未追踪文件</span><br></pre></td></tr></table></figure>
+
+<h4><span id="重写历史">重写历史</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git commit --amend  		#修改最后一次提交</span><br><span class="line">git rebase -i [commitID]    #修改多个历史提交</span><br></pre></td></tr></table></figure>
+
+<h3><span id="7-项目共享与更新">7. 项目共享与更新</span></h3><h4><span id="远程仓库">远程仓库</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git remote -v 					 #查看远程仓库</span><br><span class="line">git remote add &lt;shortname&gt; &lt;url&gt; #添加新的远程git仓库</span><br><span class="line">git remote rm &lt;shortname&gt;        #移除远程仓库</span><br></pre></td></tr></table></figure>
+
+<h4><span id="抓取-推送">抓取、推送</span></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git fetch [remote] 		 		    #拉取远程仓库数据到本地，但不会自动合并</span><br><span class="line">git pull [remote] [branch]		    #相当于git fetch和git merge命令的组合</span><br><span class="line">git push [remote] [branch]		    #推送本地分支到远程, -f强制推送</span><br><span class="line">git push [remote] –-delete [branch] #删除远程分支</span><br></pre></td></tr></table></figure>
+
+<h3><span id="8-git设置别名">8. git设置别名</span></h3><p>通过git config为git命令创建别名后，无需每次输入完整的git命令，简化了操作</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config --global alias.co checkout</span><br><span class="line">git config --global alias.br branch</span><br><span class="line">git config --global alias.ci commit</span><br><span class="line">git config --global alias.st status</span><br><span class="line">git config --global alias.unstage &#x27;reset HEAD --&#x27;</span><br><span class="line">git config --global alias.last &#x27;log -1 HEAD&#x27;</span><br></pre></td></tr></table></figure>
+
+<h3><span id="参考资料">参考资料</span></h3><p>《Pro Git》第2版： <a href="https://www.progit.cn">https://www.progit.cn</a></p>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>隐式函数声明[-Wimplicit-function-declaration]</title>
+    <url>/2020/0411143310.html</url>
+    <content><![CDATA[<h2><span id="什么是隐式函数声明">什么是隐式函数声明</span></h2><p>C语言中，函数调用前不一定要声明。如果没有声明，编译器会自动按照一种隐式声明规则，为调用函数的C代码产生汇编代码。</p>
+<span id="more"></span>
+
+<h2><span id="忽略隐式函数声明警告的危害">忽略隐式函数声明警告的危害</span></h2><p>编译so库时会出现未定义符号，导致加载该so的程序执行出错。举例如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// add.c</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b, <span class="type">int</span> c)</span> &#123; <span class="comment">// 调用add方法，求三数和</span></span><br><span class="line">	retunr <span class="title function_">ad</span><span class="params">(a, b)</span> + c; <span class="comment">// 这里本意调用add(a, b)，笔误写成ad(a, b)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>将add.c编译成libadd.so，编译不报错，仅提示隐式函数声明警告，用ldd -r查看该so, 发现未定义符号ad。<br><img data-src="/2020/0411143310/image1.png"></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ ldd -r libadd.so</span><br><span class="line">undefined symbol: ad (./libadd.so)</span><br></pre></td></tr></table></figure>
+
+<p>此时写一个main程序，调用libadd.so中的sum方法求三数之和</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">extern</span> <span class="type">int</span> <span class="title function_">sum</span><span class="params">(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>)</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译main程序出错，错误原因在于<strong>编写add.c时将符号add错写成了ad，由于忽视隐式函数声明警告，导致该错误没有在编译add.c的时候及时发现。</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -L. -ladd</span><br><span class="line">./libadd.so: undefined reference to `ad&#x27;</span><br><span class="line">collect2: error: ld returned 1 exit status</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对于用dlopen动态加载该so库的程序，如指定RTLD_NOW，dlopen立即失败；如指定RTLD_LAZY延迟绑定，则dlopen成功，但dlsym加载引用了未定义符号的函数(如sum函数)会出错，示例main程序如下：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;dlfcn.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span><span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">void</span> *handle = dlopen(<span class="string">&quot;./libadd.so&quot;</span>, RTLD_LAZY);</span><br><span class="line">	<span class="keyword">if</span>(handle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">		<span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, dlerror());</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="type">int</span> (*add)(<span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line">	<span class="type">int</span> (*sum)(<span class="type">int</span>, <span class="type">int</span>, <span class="type">int</span>);</span><br><span class="line"></span><br><span class="line">	add = dlsym(handle, <span class="string">&quot;add&quot;</span>);	<span class="comment">// add方法正常执行</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 = %d\n&quot;</span>, add(<span class="number">1</span>, <span class="number">2</span>));</span><br><span class="line"></span><br><span class="line">	sum = dlsym(handle, <span class="string">&quot;sum&quot;</span>);	<span class="comment">// 出错，报未定义符号ad</span></span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;1 + 2 + 3 = %d\n&quot;</span>, sum(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>));</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">$ gcc main.c -ldl</span><br><span class="line">$ ./a.out</span><br><span class="line">1 + 2 = 3</span><br><span class="line">./a.out: symbol lookup error: ./libadd.so: undefined symbol: ad</span><br></pre></td></tr></table></figure>
+<p>虽然编译成功，libadd.so可以加载，add函数可以执行，但执行sum函数时报未定义符号错。如及时处理隐式函数声明警告，可以在编译add.c的时候就发现该问题。</p>
+<h2><span id="总结">总结</span></h2><ul>
+<li><p>函数先声明再使用，包含必要的头文件。</p>
+</li>
+<li><p>重视编译器的隐式函数声明警告, 可开启-Werror选项检查, 不要简单使用-Wno忽略该编译告警。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>C</category>
+      </categories>
+      <tags>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>tmux常用操作</title>
     <url>/2020/0504172127.html</url>
     <content><![CDATA[<h3><span id="简介">简介</span></h3><p>TMUX指<strong>terminal multiplexer</strong>，即终端复用软件。tmux结构包含以下三个部分：</p>
@@ -949,24 +949,6 @@
       </categories>
       <tags>
         <tag>GDB</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>源码编译并安装CMake</title>
-    <url>/2020/0726174432.html</url>
-    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<p>查看cmake版本，检查是否安装成功</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>CMake</category>
-      </categories>
-      <tags>
-        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -1221,6 +1203,24 @@
       <tags>
         <tag>Assembly</tag>
         <tag>CSAPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>源码编译并安装CMake</title>
+    <url>/2020/0726174432.html</url>
+    <content><![CDATA[<p>从官网安装指定版本， 以<code>3.12.1</code>版本为例：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">wget https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz</span><br><span class="line">tar -zxvf cmake-3.12.1.tar.gz</span><br><span class="line">cd cmake-3.12.1</span><br><span class="line">./bootstrap</span><br><span class="line">make -j8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<p>查看cmake版本，检查是否安装成功</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cmake --version</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>CMake</category>
+      </categories>
+      <tags>
+        <tag>CMake</tag>
       </tags>
   </entry>
   <entry>
@@ -1592,37 +1592,6 @@
       </tags>
   </entry>
   <entry>
-    <title>sem_open打开信号量失败案例分析</title>
-    <url>/2020/1114192034.html</url>
-    <content><![CDATA[<h3><span id="问题描述">问题描述</span></h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
-<h3><span id="原因分析">原因分析</span></h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
-<p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
-<span id="more"></span>
-
-<h4><span id="为什么sem_open中mode参数指定的权限0666和创建文件的实际权限0644不一致">为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</span></h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
-<ul>
-<li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
-<li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
-</ul>
-<h3><span id="解决方法">解决方法</span></h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
-<p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
-
-<p>写法参考如下：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3><span id="参考资料">参考资料</span></h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>CSAPP malloc实验</title>
     <url>/2020/0926191511.html</url>
     <content><![CDATA[<h3><span id="实验简介">实验简介</span></h3><p>实现自己的动态内存分配器（<code>malloc</code>、<code>free</code>、<code>realloc</code>）。</p>
@@ -1849,6 +1818,37 @@
       </categories>
       <tags>
         <tag>CSAPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>sem_open打开信号量失败案例分析</title>
+    <url>/2020/1114192034.html</url>
+    <content><![CDATA[<h3><span id="问题描述">问题描述</span></h3><p>root进程调<code>sem_open(XXX, O_CREAT, 0666, 1)</code>创建信号量后，非root进程使用<code>sem_open</code>打开同一个信号量失败，报<code>Permission Denied</code>错</p>
+<h3><span id="原因分析">原因分析</span></h3><p>非root进程调用<code>sem_open</code>， 以<code>O_CREAT</code>方式打开信号量，需要同时有对该信号量文件的读权限 + 写权限。</p>
+<p><code>ll /dev/shm/sem.semname</code> 查看信号量文件权限，发现权限为0644，缺少其他用户写权限。这个权限与sem_open中指定的权限值0666不一致。</p>
+<span id="more"></span>
+
+<h4><span id="为什么sem_open中mode参数指定的权限0666和创建文件的实际权限0644不一致">为什么sem_open中mode参数指定的权限(0666)和创建文件的实际权限(0644)不一致？</span></h4><p>首先了解Linux中umask的概念。umask为用户文件创建掩码，是一种进程属性。当进程创建文件或目录时，该属性用于指明应屏蔽的权限位。大多数Linux系统的默认掩码为022，可在shell中通过umask命令查看。umask作用如下：</p>
+<ul>
+<li>若没有文件掩码，则创建文件的默认权限为0666, 创建目录的默认权限为0777</li>
+<li>若使用默认掩码022, 则创建文件的权限为0666 - 0022 &#x3D; 0644, 创建目录的权限为 0777 - 0022 &#x3D; 0755</li>
+</ul>
+<h3><span id="解决方法">解决方法</span></h3><p>可以在进程调用<code>sem_open</code>之前，修改umask值为0，再创建有其他用户写权限的信号量即可。</p>
+<p>系统调用umask()可以将进程的umask值改为mask参数所指定的值</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/stat.h&gt;</span></span></span><br><span class="line"><span class="type">mode_t</span> <span class="title function_">umask</span><span class="params">(<span class="type">mode_t</span> mask)</span>; <span class="comment">//调用总是成功，返回值为进程的前一个umask的值</span></span><br></pre></td></tr></table></figure>
+
+<p>写法参考如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">sem_t</span> *<span class="title function_">SemOpen</span><span class="params">()</span> &#123;</span><br><span class="line">	<span class="type">mode_t</span> mask = umask(<span class="number">0</span>);							<span class="comment">// 取消屏蔽的权限位</span></span><br><span class="line">	<span class="type">sem_t</span> *sem = sem_open(XXX, O_CREAT, <span class="number">0666</span>, <span class="number">1</span>);	<span class="comment">// 创建权限0666的二值有名信号量</span></span><br><span class="line">	umask(mask);									<span class="comment">// 恢复umask的值</span></span><br><span class="line">	<span class="keyword">return</span> sem;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3><span id="参考资料">参考资料</span></h3><p>《Linux&#x2F;UNIX系统编程手册(上)》 —— 15.4.6 进程的文件模式创建掩码</p>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -4399,168 +4399,6 @@
       </tags>
   </entry>
   <entry>
-    <title>2022 Trend Micro 社招面经</title>
-    <url>/2022/0320205239.html</url>
-    <content><![CDATA[<h2><span id="个人信息">个人信息</span></h2><ul>
-<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
-<li>2022-02-25 官网投递简历，职位：Linux开发</li>
-</ul>
-<h2><span id="面试流程">面试流程</span></h2><span id="more"></span>
-
-<h3><span id="机试">机试</span></h3><p>时间：2022-02-27 19:00:00</p>
-<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
-<ul>
-<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
-</li>
-<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
-</li>
-</ul>
-<h3><span id="技术一面">技术一面</span></h3><p>时间：2022-03-03 12:00:00</p>
-<p>线上面试，用的微软Teams，二对一，80min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>问项目（30min）</p>
-<ul>
-<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
-<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
-<li>举一个项目中你遇到的难题，如何解决的</li>
-<li>你的项目中为什么用Redis，不用MySQL</li>
-<li>……</li>
-</ul>
-</li>
-<li><p>1道编程题 （15min）</p>
-<ul>
-<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
-</ul>
-</li>
-<li><p>技术问题（25min）</p>
-<ul>
-<li>给每个中国人分一个IP地址，够分吗</li>
-<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
-<li>后台服务变慢，谈谈你的定位思路</li>
-<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
-<li>Redis过期键的实现原理，过期时间怎么存储的</li>
-<li>Redis缓存逐出策略</li>
-<li>全中国人的数据能放到一张MySQL表里吗</li>
-<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
-<li>Linux下如何定时备份一个文件</li>
-</ul>
-</li>
-<li><p>其它问题（10min）</p>
-<ul>
-<li>同事对你的评价</li>
-<li>你的缺点是什么</li>
-<li>同事觉得你有什么阴暗面</li>
-<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
-</ul>
-</li>
-</ul>
-<h3><span id="技术二面">技术二面</span></h3><p>时间：2022-03-04 12:15:00</p>
-<p>现场面试，二对一，50min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>简单问项目（10min）</p>
-</li>
-<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
-</li>
-<li><p>你在项目组里还负责了哪些项目和工作</p>
-</li>
-<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
-</li>
-<li><p>你平时用到的开发工具和编程语言</p>
-</li>
-<li><p>说下你的团队成员组成</p>
-</li>
-<li><p>说说你最近在看的书</p>
-</li>
-<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
-<ul>
-<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
-</ul>
-</li>
-<li><p>项目中遇到别人不配合你的工作怎么办</p>
-</li>
-<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
-</li>
-<li><p>评价你同事的水平</p>
-</li>
-<li><p>有没有感觉有技术能力比较弱的同事</p>
-</li>
-<li><p>你还有什么问题（问团队成员组成）</p>
-</li>
-</ul>
-<h3><span id="hr面">HR面</span></h3><p>时间：2022-03-04 13:30:00</p>
-<p>现场面试，一对一，30min</p>
-<ul>
-<li><p>自我介绍</p>
-</li>
-<li><p>为什么选择我们公司，选择这个职位</p>
-</li>
-<li><p>你为什么离职</p>
-</li>
-<li><p>你当初考虑XX公司的原因是什么</p>
-</li>
-<li><p>你有考虑过内部转岗吗</p>
-</li>
-<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
-</li>
-<li><p>你同事对你的评价</p>
-</li>
-<li><p>说说你的优点</p>
-</li>
-<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
-</li>
-</ul>
-<h2><span id="面试感受">面试感受</span></h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
-<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
-<h2><span id="总结和反思">总结和反思</span></h2><ul>
-<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
-<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
-<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
-<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
-</ul>
-<h2><span id="参考资料">参考资料</span></h2><p>以下是准备面试过程中的一些参考资料：</p>
-<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
-<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
-<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
-<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
-<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
-<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
-<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
-<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
-<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>tar打包时去掉目录前缀的方法</title>
-    <url>/2022/0604205633.html</url>
-    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
-<h2><span id="如果我打包时不想带上文件路径怎么操作">如果我打包时不想带上文件路径，怎么操作？</span></h2><span id="more"></span>
-
-<p>利用-C参数，方法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
-
-<p>tar用法参考手册：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>tar</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/0129204852.html</url>
     <content><![CDATA[<h2><span id="前言">前言</span></h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -4816,6 +4654,168 @@
       </tags>
   </entry>
   <entry>
+    <title>2022 Trend Micro 社招面经</title>
+    <url>/2022/0320205239.html</url>
+    <content><![CDATA[<h2><span id="个人信息">个人信息</span></h2><ul>
+<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
+<li>2022-02-25 官网投递简历，职位：Linux开发</li>
+</ul>
+<h2><span id="面试流程">面试流程</span></h2><span id="more"></span>
+
+<h3><span id="机试">机试</span></h3><p>时间：2022-02-27 19:00:00</p>
+<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
+<ul>
+<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
+</li>
+<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
+</li>
+</ul>
+<h3><span id="技术一面">技术一面</span></h3><p>时间：2022-03-03 12:00:00</p>
+<p>线上面试，用的微软Teams，二对一，80min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>问项目（30min）</p>
+<ul>
+<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
+<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
+<li>举一个项目中你遇到的难题，如何解决的</li>
+<li>你的项目中为什么用Redis，不用MySQL</li>
+<li>……</li>
+</ul>
+</li>
+<li><p>1道编程题 （15min）</p>
+<ul>
+<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
+</ul>
+</li>
+<li><p>技术问题（25min）</p>
+<ul>
+<li>给每个中国人分一个IP地址，够分吗</li>
+<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
+<li>后台服务变慢，谈谈你的定位思路</li>
+<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
+<li>Redis过期键的实现原理，过期时间怎么存储的</li>
+<li>Redis缓存逐出策略</li>
+<li>全中国人的数据能放到一张MySQL表里吗</li>
+<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
+<li>Linux下如何定时备份一个文件</li>
+</ul>
+</li>
+<li><p>其它问题（10min）</p>
+<ul>
+<li>同事对你的评价</li>
+<li>你的缺点是什么</li>
+<li>同事觉得你有什么阴暗面</li>
+<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
+</ul>
+</li>
+</ul>
+<h3><span id="技术二面">技术二面</span></h3><p>时间：2022-03-04 12:15:00</p>
+<p>现场面试，二对一，50min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>简单问项目（10min）</p>
+</li>
+<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
+</li>
+<li><p>你在项目组里还负责了哪些项目和工作</p>
+</li>
+<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
+</li>
+<li><p>你平时用到的开发工具和编程语言</p>
+</li>
+<li><p>说下你的团队成员组成</p>
+</li>
+<li><p>说说你最近在看的书</p>
+</li>
+<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
+<ul>
+<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
+</ul>
+</li>
+<li><p>项目中遇到别人不配合你的工作怎么办</p>
+</li>
+<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
+</li>
+<li><p>评价你同事的水平</p>
+</li>
+<li><p>有没有感觉有技术能力比较弱的同事</p>
+</li>
+<li><p>你还有什么问题（问团队成员组成）</p>
+</li>
+</ul>
+<h3><span id="hr面">HR面</span></h3><p>时间：2022-03-04 13:30:00</p>
+<p>现场面试，一对一，30min</p>
+<ul>
+<li><p>自我介绍</p>
+</li>
+<li><p>为什么选择我们公司，选择这个职位</p>
+</li>
+<li><p>你为什么离职</p>
+</li>
+<li><p>你当初考虑XX公司的原因是什么</p>
+</li>
+<li><p>你有考虑过内部转岗吗</p>
+</li>
+<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
+</li>
+<li><p>你同事对你的评价</p>
+</li>
+<li><p>说说你的优点</p>
+</li>
+<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
+</li>
+</ul>
+<h2><span id="面试感受">面试感受</span></h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
+<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
+<h2><span id="总结和反思">总结和反思</span></h2><ul>
+<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
+<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
+<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
+<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
+</ul>
+<h2><span id="参考资料">参考资料</span></h2><p>以下是准备面试过程中的一些参考资料：</p>
+<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
+<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
+<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
+<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
+<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
+<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
+<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
+<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
+<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>tar打包时去掉目录前缀的方法</title>
+    <url>/2022/0604205633.html</url>
+    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
+<h2><span id="如果我打包时不想带上文件路径怎么操作">如果我打包时不想带上文件路径，怎么操作？</span></h2><span id="more"></span>
+
+<p>利用-C参数，方法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
+
+<p>tar用法参考手册：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>tar</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Kubernetes删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/1106205828.html</url>
     <content><![CDATA[<h2><span id="先尝试强制删除deployment和pod等资源">先尝试强制删除deployment和pod等资源</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n $&#123;ns&#125; delete deployment --all --force</span><br><span class="line">kubectl -n $&#123;ns&#125; delete pod --all --force</span><br></pre></td></tr></table></figure>
@@ -5027,6 +5027,24 @@
       </tags>
   </entry>
   <entry>
+    <title>RockyLinux9 docker中安装python2方法</title>
+    <url>/2023/0508213215.html</url>
+    <content><![CDATA[<p>新增Dockerfile, 内容如下：</p>
+<span id="more"></span>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.1</span><br><span class="line"></span><br><span class="line">RUN yum -y install gcc zlib openssl openssl-devel zlib-devel wget</span><br><span class="line"></span><br><span class="line">RUN mkdir /py2 &amp;&amp; mkdir /usr/local/python2.7</span><br><span class="line"></span><br><span class="line">RUN wget -O /py2/Python-2.7.14.tgz https://www.python.org/ftp/python/2.7.14/Python-2.7.14.tgz \</span><br><span class="line">    &amp;&amp; tar -xzf /py2/Python-2.7.14.tgz -C /py2/</span><br><span class="line"></span><br><span class="line">RUN cd /py2/Python-2.7.14 &amp;&amp; ./configure --prefix=/usr/local/python2.7/ --enable-shared \</span><br><span class="line">    &amp;&amp; sed -i &#x27;219,221 s/^.//&#x27; /py2/Python-2.7.14/Modules/Setup \</span><br><span class="line">    &amp;&amp; make -j4 &amp;&amp; make install</span><br><span class="line"></span><br><span class="line">RUN echo &quot;/lib&quot; &gt;&gt; /etc/ld.so.conf &amp;&amp; ldconfig \</span><br><span class="line">    &amp;&amp; ln -s /usr/local/python2.7/lib/libpython2.7.so.1.0 /lib/libpython2.7.so.1.0 \</span><br><span class="line">    &amp;&amp; ln -s /usr/local/python2.7/bin/python /usr/bin/python \</span><br><span class="line">    &amp;&amp; rm -rf /py2</span><br></pre></td></tr></table></figure>
+<p>使用docker build命令构建镜像</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker build -t [image_repo:image_tag] -f Dockerfile .</span><br></pre></td></tr></table></figure>
+
+<h2><span id="参考">参考</span></h2><p><a href="https://www.jianshu.com/p/bcfaa5ff1cfc">https://www.jianshu.com/p/bcfaa5ff1cfc</a></p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Microk8s calico-kube-controller not running, Failed to initialize Calico datastore error... 解决方法</title>
     <url>/2023/0508212859.html</url>
     <content><![CDATA[<h2><span id="运行环境">运行环境</span></h2><p>Rocky Linux 9</p>
@@ -5049,24 +5067,6 @@
       <tags>
         <tag>troubleshooting</tag>
         <tag>Kubernetes</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RockyLinux9 docker中安装python2方法</title>
-    <url>/2023/0508213215.html</url>
-    <content><![CDATA[<p>新增Dockerfile, 内容如下：</p>
-<span id="more"></span>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.1</span><br><span class="line"></span><br><span class="line">RUN yum -y install gcc zlib openssl openssl-devel zlib-devel wget</span><br><span class="line"></span><br><span class="line">RUN mkdir /py2 &amp;&amp; mkdir /usr/local/python2.7</span><br><span class="line"></span><br><span class="line">RUN wget -O /py2/Python-2.7.14.tgz https://www.python.org/ftp/python/2.7.14/Python-2.7.14.tgz \</span><br><span class="line">    &amp;&amp; tar -xzf /py2/Python-2.7.14.tgz -C /py2/</span><br><span class="line"></span><br><span class="line">RUN cd /py2/Python-2.7.14 &amp;&amp; ./configure --prefix=/usr/local/python2.7/ --enable-shared \</span><br><span class="line">    &amp;&amp; sed -i &#x27;219,221 s/^.//&#x27; /py2/Python-2.7.14/Modules/Setup \</span><br><span class="line">    &amp;&amp; make -j4 &amp;&amp; make install</span><br><span class="line"></span><br><span class="line">RUN echo &quot;/lib&quot; &gt;&gt; /etc/ld.so.conf &amp;&amp; ldconfig \</span><br><span class="line">    &amp;&amp; ln -s /usr/local/python2.7/lib/libpython2.7.so.1.0 /lib/libpython2.7.so.1.0 \</span><br><span class="line">    &amp;&amp; ln -s /usr/local/python2.7/bin/python /usr/bin/python \</span><br><span class="line">    &amp;&amp; rm -rf /py2</span><br></pre></td></tr></table></figure>
-<p>使用docker build命令构建镜像</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker build -t [image_repo:image_tag] -f Dockerfile .</span><br></pre></td></tr></table></figure>
-
-<h2><span id="参考">参考</span></h2><p><a href="https://www.jianshu.com/p/bcfaa5ff1cfc">https://www.jianshu.com/p/bcfaa5ff1cfc</a></p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
       </tags>
   </entry>
   <entry>
@@ -5121,6 +5121,38 @@
       </tags>
   </entry>
   <entry>
+    <title>Traceroute简介和抓包</title>
+    <url>/2023/0515214351.html</url>
+    <content><![CDATA[<h2><span id="traceroute原理">traceroute原理</span></h2><p>Traceroute 是一种网络诊断工具，用于确定数据包从一个源到达目的地所经过的路径。它通过发送一系列的数据包，并观察每个数据包经过的路由器（或称为跃点）来实现这一目的。</p>
+<span id="more"></span>
+
+<p><strong>工作原理：</strong></p>
+<ul>
+<li>Traceroute 发送一系列的 UDP 数据包，每个数据包都具有不同的 TTL（Time to Live）值。TTL 值表示数据包在网络中可经过的最大跃点数。</li>
+<li>当第一个数据包离开源设备时，它的 TTL 值被设置为 1。当该数据包到达网络中的第一个路由器时，路由器会将 TTL 值减 1，并转发该数据包。如果 TTL 值减为 0，路由器将丢弃该数据包并向源设备发送 ICMP 时间超时报文。</li>
+<li>源设备收到 ICMP 时间超时报文后，就知道了到达第一个路由器的路径。然后，源设备增加 TTL 值并发送第二个数据包，以便确定下一个路由器。</li>
+<li>这个过程不断重复，每次 TTL 值增加，直到数据包到达目的地。目的设备将收到数据包并向源设备发送 ICMP 端口不可达报文，从而终止 Traceroute 进程。</li>
+<li>Traceroute 将记录每个数据包的路径，包括每个跃点的 IP 地址和响应时间。最终将呈现给用户一张路由跟踪表，显示了数据包从源到目的地经过的所有路由器。</li>
+</ul>
+<p>总的来说，Traceroute 通过探测数据包的路径和响应时间，帮助网络管理员诊断网络连接问题，定位潜在的瓶颈或故障点。</p>
+<h2><span id="traceroute用法">traceroute用法</span></h2><p>Linux系统下，traceroute用法：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">traceroute hostname</span><br></pre></td></tr></table></figure>
+<p>Windows系统使用tracert命令:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tracert hostname</span><br></pre></td></tr></table></figure>
+<h2><span id="traceroute抓包">traceroute抓包</span></h2><p>在宿主机10.206.216.95上执行<code>traceroute www.baidu.com</code>，通过<code>tcpdump</code>抓包，如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ifconfig ens192</span><br><span class="line">ens192: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 10.206.216.95  netmask 255.255.255.0  broadcast 10.206.216.255</span><br><span class="line">route</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">default         gateway         0.0.0.0         UG    100    0        0 ens192</span><br><span class="line">10.206.216.0    0.0.0.0         255.255.255.0   U     100    0        0 ens192</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 1</span></span><br><span class="line">$ tcpdump -i ens192 icmp and host 10.206.216.95 -w traceroute.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 2</span></span><br><span class="line">$ traceroute  www.baidu.com</span><br><span class="line">traceroute to www.baidu.com (36.155.132.55), 30 hops max, 60 byte packets</span><br><span class="line"> 1  gateway (10.206.216.254)  0.239 ms  0.152 ms  0.147 ms</span><br><span class="line"> 2  10.206.2.254 (10.206.2.254)  0.265 ms  0.274 ms  0.241 ms</span><br><span class="line"> 3  192.168.200.1 (192.168.200.1)  0.545 ms  0.506 ms  0.825 ms</span><br><span class="line"> 4  36.152.113.193 (36.152.113.193)  2.837 ms  3.182 ms  3.552 ms</span><br><span class="line"> 5  221.178.162.185 (221.178.162.185)  2.632 ms * *</span><br><span class="line"> 6  * * 183.207.54.161 (183.207.54.161)  3.116 ms</span><br><span class="line"> 7  183.207.67.106 (183.207.67.106)  3.576 ms 183.207.22.130 (183.207.22.130)  3.195 ms 183.207.66.102 (183.207.66.102)  3.638 ms</span><br><span class="line"> 8  * 36.155.156.46 (36.155.156.46)  3.884 ms 36.155.156.54 (36.155.156.54)  4.690 ms</span><br><span class="line"> 9  36.155.157.174 (36.155.157.174)  4.197 ms 36.155.157.170 (36.155.157.170)  4.344 ms  3.964 ms</span><br><span class="line">10  * * *</span><br><span class="line">11  * * *</span><br><span class="line">12  * * *</span><br><span class="line">13  * * *</span><br><span class="line">14  * * *</span><br><span class="line">15  * * *</span><br><span class="line">16  * * *</span><br><span class="line">17  * * *</span><br><span class="line">18  * * *</span><br><span class="line">19  * * *</span><br><span class="line">20  * * *</span><br><span class="line">21  * * *</span><br><span class="line">22  * * *</span><br><span class="line">23  * * *</span><br><span class="line">24  * * *</span><br><span class="line">25  * * *</span><br><span class="line">26  * * *</span><br><span class="line">27  * * *</span><br><span class="line">28  * * *</span><br><span class="line">29  * * *</span><br><span class="line">30  * * *</span><br></pre></td></tr></table></figure>
+<p>wireshark分析结果：<br><img data-src="/2023/0515214351/image1.png"></p>
+]]></content>
+      <categories>
+        <category>Network</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>Traceroute</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>pip基础用法示例</title>
     <url>/2023/0525214525.html</url>
     <content><![CDATA[<h2><span id="配置国内源">配置国内源</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[global]</span><br><span class="line">index-url = https://pypi.tuna.tsinghua.edu.cn/simple</span><br><span class="line">[install]</span><br><span class="line">trusted-host = https://pypi.tuna.tsinghua.edu.cn</span><br></pre></td></tr></table></figure>
@@ -5153,38 +5185,6 @@
       </categories>
       <tags>
         <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Traceroute简介和抓包</title>
-    <url>/2023/0515214351.html</url>
-    <content><![CDATA[<h2><span id="traceroute原理">traceroute原理</span></h2><p>Traceroute 是一种网络诊断工具，用于确定数据包从一个源到达目的地所经过的路径。它通过发送一系列的数据包，并观察每个数据包经过的路由器（或称为跃点）来实现这一目的。</p>
-<span id="more"></span>
-
-<p><strong>工作原理：</strong></p>
-<ul>
-<li>Traceroute 发送一系列的 UDP 数据包，每个数据包都具有不同的 TTL（Time to Live）值。TTL 值表示数据包在网络中可经过的最大跃点数。</li>
-<li>当第一个数据包离开源设备时，它的 TTL 值被设置为 1。当该数据包到达网络中的第一个路由器时，路由器会将 TTL 值减 1，并转发该数据包。如果 TTL 值减为 0，路由器将丢弃该数据包并向源设备发送 ICMP 时间超时报文。</li>
-<li>源设备收到 ICMP 时间超时报文后，就知道了到达第一个路由器的路径。然后，源设备增加 TTL 值并发送第二个数据包，以便确定下一个路由器。</li>
-<li>这个过程不断重复，每次 TTL 值增加，直到数据包到达目的地。目的设备将收到数据包并向源设备发送 ICMP 端口不可达报文，从而终止 Traceroute 进程。</li>
-<li>Traceroute 将记录每个数据包的路径，包括每个跃点的 IP 地址和响应时间。最终将呈现给用户一张路由跟踪表，显示了数据包从源到目的地经过的所有路由器。</li>
-</ul>
-<p>总的来说，Traceroute 通过探测数据包的路径和响应时间，帮助网络管理员诊断网络连接问题，定位潜在的瓶颈或故障点。</p>
-<h2><span id="traceroute用法">traceroute用法</span></h2><p>Linux系统下，traceroute用法：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">traceroute hostname</span><br></pre></td></tr></table></figure>
-<p>Windows系统使用tracert命令:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tracert hostname</span><br></pre></td></tr></table></figure>
-<h2><span id="traceroute抓包">traceroute抓包</span></h2><p>在宿主机10.206.216.95上执行<code>traceroute www.baidu.com</code>，通过<code>tcpdump</code>抓包，如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ ifconfig ens192</span><br><span class="line">ens192: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 10.206.216.95  netmask 255.255.255.0  broadcast 10.206.216.255</span><br><span class="line">route</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">default         gateway         0.0.0.0         UG    100    0        0 ens192</span><br><span class="line">10.206.216.0    0.0.0.0         255.255.255.0   U     100    0        0 ens192</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 1</span></span><br><span class="line">$ tcpdump -i ens192 icmp and host 10.206.216.95 -w traceroute.pcap</span><br><span class="line"></span><br><span class="line"><span class="comment"># tmux pane 2</span></span><br><span class="line">$ traceroute  www.baidu.com</span><br><span class="line">traceroute to www.baidu.com (36.155.132.55), 30 hops max, 60 byte packets</span><br><span class="line"> 1  gateway (10.206.216.254)  0.239 ms  0.152 ms  0.147 ms</span><br><span class="line"> 2  10.206.2.254 (10.206.2.254)  0.265 ms  0.274 ms  0.241 ms</span><br><span class="line"> 3  192.168.200.1 (192.168.200.1)  0.545 ms  0.506 ms  0.825 ms</span><br><span class="line"> 4  36.152.113.193 (36.152.113.193)  2.837 ms  3.182 ms  3.552 ms</span><br><span class="line"> 5  221.178.162.185 (221.178.162.185)  2.632 ms * *</span><br><span class="line"> 6  * * 183.207.54.161 (183.207.54.161)  3.116 ms</span><br><span class="line"> 7  183.207.67.106 (183.207.67.106)  3.576 ms 183.207.22.130 (183.207.22.130)  3.195 ms 183.207.66.102 (183.207.66.102)  3.638 ms</span><br><span class="line"> 8  * 36.155.156.46 (36.155.156.46)  3.884 ms 36.155.156.54 (36.155.156.54)  4.690 ms</span><br><span class="line"> 9  36.155.157.174 (36.155.157.174)  4.197 ms 36.155.157.170 (36.155.157.170)  4.344 ms  3.964 ms</span><br><span class="line">10  * * *</span><br><span class="line">11  * * *</span><br><span class="line">12  * * *</span><br><span class="line">13  * * *</span><br><span class="line">14  * * *</span><br><span class="line">15  * * *</span><br><span class="line">16  * * *</span><br><span class="line">17  * * *</span><br><span class="line">18  * * *</span><br><span class="line">19  * * *</span><br><span class="line">20  * * *</span><br><span class="line">21  * * *</span><br><span class="line">22  * * *</span><br><span class="line">23  * * *</span><br><span class="line">24  * * *</span><br><span class="line">25  * * *</span><br><span class="line">26  * * *</span><br><span class="line">27  * * *</span><br><span class="line">28  * * *</span><br><span class="line">29  * * *</span><br><span class="line">30  * * *</span><br></pre></td></tr></table></figure>
-<p>wireshark分析结果：<br><img data-src="/2023/0515214351/image1.png"></p>
-]]></content>
-      <categories>
-        <category>Network</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>Traceroute</tag>
-        <tag>Network</tag>
       </tags>
   </entry>
   <entry>
@@ -6326,6 +6326,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
+    <url>/2024/0421203823.html</url>
+    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
+<span id="more"></span>
+<p><img data-src="/2024/0421203823/image1.png"></p>
+<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
+<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
+<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
+<p><img data-src="/2024/0421203823/image2.png"></p>
+<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>掌握夜市委托，出货快人一步</title>
     <url>/2024/0519204136.html</url>
     <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
@@ -6346,25 +6365,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 </ul>
 <h2><span id="2-选择不拥挤的券商人多的地方你别去">2. 选择不拥挤的券商，人多的地方你别去</span></h2><p>某些网红券商因为聚集了大量的套利用户，交易通道极其拥堵，出货机会渺茫。根据朋友们的反馈，用了华B的很多都顺利出货了，而用了YH的很多都没跑掉。如果你没有跑掉，那再高的溢价都是镜花水月，你的所有操作，就是白忙活，纯纯给券商贡献利润。</p>
 <h2><span id="最后做个交易记录小结">最后做个交易记录小结</span></h2><p>4.22日起连续申购3天，到4.29日全部卖出，盈利合计252元。<br><img data-src="/2024/0519204136/image2.png"></p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>又来！黄金主题LOF溢价40个点开放申购，拖拉机都开冒烟了！</title>
-    <url>/2024/0421203823.html</url>
-    <content><![CDATA[<p>查看基金公告，黄金主题LOF(161116)下周一(4月22号)开放申购，限额100元，目前溢价40%，可以一拖七套利。</p>
-<span id="more"></span>
-<p><img data-src="/2024/0421203823/image1.png"></p>
-<p>这熟悉的配方，这熟悉的套路！一个月前的今天，我好像在标普500LOF上见过。又是易方达这个狗基，又是限额100元溢价40%，历史总是惊人的相似！</p>
-<p>目前全球股市暴跌，中东战乱纷飞，避险情绪强烈，黄金的热度怕是一时半会下不去喽。我算了下，40%的溢价可以扛住3个跌停，限购100元出货压力不大，仓位很低，这个胜率和赔率值得参与。</p>
-<p>还记得一周前，我写了篇文章，表示自己不会买黄金这种博傻玩意，现在只能说脸被打的有点疼！架不住易方达这么会玩，场内的雷锋这么热情，我只能说两个字，真香！</p>
-<p><img data-src="/2024/0421203823/image2.png"></p>
-<p>不明白什么是一拖七的朋友，可以看我的历史文章。<strong>凡是能够赚钱的手艺，我建议大家要花点时间去自学一下的。几个小时就可以学会的东西，一年捡个几千块钱，不香吗？</strong></p>
 ]]></content>
       <categories>
         <category>investment</category>
@@ -13072,177 +13072,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Helm快速上手: 使用Helm安装nginx-ingress</title>
-    <url>/2025/0320212856.html</url>
-    <content><![CDATA[<h1><span id="什么是helm-helm解决了哪些问题">什么是Helm? Helm解决了哪些问题?</span></h1><p>Helm是Kubernetes的包管理工具，类似于Linux中的apt或yum. Helm通过模板化和版本控制等机制, 帮助用户快速发现、共享和使用Kubernetes应用</p>
-<p>在Helm出现之前，部署Kubernetes应用存在以下问题:<br><strong>1. YAML配置复杂，部署和管理Kubernetes应用不方便</strong></p>
-<ul>
-<li>问题：需要编写大量YAML文件定义Kubernetes资源。 随着项目规模增长, 维护这些配置文件变得困难, 尤其是在多环境部署时</li>
-<li>Helm解决方案: 通过Helm模板功能，开发者可以创建一个Chart, 包含所有必要的Kubernetes资源定义, 并使用变量代替硬编码值</li>
-</ul>
-<p><strong>2. 更新或回滚到特定版本较为困难</strong></p>
-<ul>
-<li>问题：缺乏版本控制功能，难以更新或回滚到指定版本。如果直接修改线上 YAML 文件，可能导致问题且难以恢复到稳定状态</li>
-<li>Helm解决方案: Helm 通过Release概念支持版本控制，每次部署或更新应用时都会创建一个新的Release. 如果新版本出现问题, 可以通过helm rollback快速回滚到之前的稳定版本</li>
-</ul>
-<p><strong>3. 难以共享或复用k8s配置, 不利于多团队协作</strong></p>
-<ul>
-<li>问题：在一个团队内部，不同项目可能有相似需求（如都需要部署同一套系统）。然而，由于缺少有效的共享机制，每个项目需要从头开始配置，浪费了大量时间精力</li>
-<li>Helm解决方案: Helm Charts 可以通过仓库共享，每个人可以从仓库中下载官方或其他团队成员发布的Charts，也可以上传自己的Charts，实现了Kubernetes配置的共享和复用</li>
-</ul>
-<h1><span id="快速上手helm">快速上手Helm</span></h1><h2><span id="helm的三个基本概念">Helm的三个基本概念</span></h2><ul>
-<li>Chart, 一个Helm安装包，包含了运行一个应用所需要的镜像、依赖和资源定义等</li>
-<li>Release, 在Kubernetes集群上运行的一个Chart实例</li>
-<li>Repository, 发布和存储Chart的仓库</li>
-</ul>
-<span id="more"></span>
-
-<h2><span id="安装helm">安装Helm</span></h2><p>首先安装Kubernetes集群, 参考: <a href="https://blog.csdn.net/pcj_888/article/details/144240636">kubeadm+keepalived+HAproxy搭建高可用kubernetes集群</a></p>
-<p>查看kubernetes版本</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl version</span><br><span class="line">Server Version: v1.28.2</span><br></pre></td></tr></table></figure>
-
-<p>根据<a href="https://helm.sh/docs/topics/version_skew/">官方文档</a>找到匹配的 Helm 版本进行安装。例如，我的 Kubernetes 版本是 v1.28.2，因此选择安装 Helm v3.16.0：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Helm Version	Supported Kubernetes Versions</span><br><span class="line">3.17.x	1.32.x - 1.29.x</span><br><span class="line">3.16.x	1.31.x - 1.28.x</span><br></pre></td></tr></table></figure>
-<p>安装Helm方法如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -fsSL -o helm-v3.16.0-linux-amd64.tar.gz https://get.helm.sh/helm-v3.16.0-linux-amd64.tar.gz</span><br><span class="line">tar -zxvf helm-v3.16.0-linux-amd64.tar.gz</span><br><span class="line">mv linux-amd64/helm /usr/local/bin/helm</span><br><span class="line">helm version</span><br><span class="line">version.BuildInfo&#123;Version:&quot;v3.16.0&quot;, GitCommit:&quot;0d439e1a09683f21a0ab9401eb661401f185b00b&quot;, GitTreeState:&quot;clean&quot;, GoVersion:&quot;go1.22.6&quot;&#125;</span><br></pre></td></tr></table></figure>
-
-<h1><span id="使用helm安装nginx-ingress">使用Helm安装Nginx Ingress</span></h1><p><strong>步骤1: 添加官方Helm仓库</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo add my-ingress https://kubernetes.github.io/ingress-nginx</span><br></pre></td></tr></table></figure>
-<p>查看已添加的仓库</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo list</span><br><span class="line">NAME            URL</span><br><span class="line">my-ingress      https://kubernetes.github.io/ingress-nginx</span><br></pre></td></tr></table></figure>
-<p>更新软件源</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm repo update</span><br><span class="line">Hang tight while we grab the latest from your chart repositories...</span><br><span class="line">...Successfully got an update from the &quot;my-ingress&quot; chart repository</span><br><span class="line">Update Complete. ⎈Happy Helming!⎈</span><br></pre></td></tr></table></figure>
-
-<p><strong>步骤2: 查找合适的Nginx Ingress版本</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm search repo ingress-nginx</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-ingress/ingress-nginx        4.12.0          1.12.0          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line"></span><br><span class="line">[root@k8s-master1 ~]# helm search repo ingress-nginx --versions | head -n 4</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-ingress/ingress-nginx        4.12.0          1.12.0          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line">my-ingress/ingress-nginx        4.11.4          1.11.4          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line">my-ingress/ingress-nginx        4.11.3          1.11.3          Ingress controller for Kubernetes using NGINX a...</span><br></pre></td></tr></table></figure>
-
-<p>查阅<a href="https://github.com/kubernetes/ingress-nginx">ingress-nginx官方文档</a>, 确认与Kubernetes 1.28匹配的Ingress版本范围为v1.9.0 - v1.12.0, 我选择安装v1.11.4</p>
-<p><strong>步骤3: 下载Nginx Ingress, 并修改配置</strong><br>下载指定版本的Chart</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm pull my-ingress/ingress-nginx --version 4.11.4</span><br></pre></td></tr></table></figure>
-<p>解压并修改配置文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tar xf ingress-nginx-4.11.4.tgz</span><br><span class="line"></span><br><span class="line"># 修改配置文件values.yaml</span><br><span class="line">sed -i &#x27;/registry:/s#registry.k8s.io#swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io#g&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -ri &#x27;/digest:/s@^@#@&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i &#x27;/hostNetwork:/s#false#true#&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i  &#x27;/dnsPolicy/s#ClusterFirst#ClusterFirstWithHostNet#&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i &#x27;/kind/s#Deployment#DaemonSet#&#x27; ingress-nginx/values.yaml </span><br><span class="line">sed -i &#x27;s/type: LoadBalancer/type: NodePort/&#x27; ingress-nginx/values.yaml</span><br></pre></td></tr></table></figure>
-<p>说明:</p>
-<ul>
-<li>镜像改成国内的, 国内由于网络问题无法下载海外镜像</li>
-<li>注释掉digest, 因为国内镜像可能被重新构建过, digest并不相同</li>
-<li>hostNetwork设为true, 直接监听宿主机80和443端口 (可选)</li>
-<li>如果设置了hostNetwork为true, 建议将dnsPolicy改为ClusterFirstWithHostNet, 以便使用k8s内部的service名称解析</li>
-<li>Deployment改成DaemonSet类型, 每个节点部署一个Pod (可选)</li>
-<li>将LoadBalancer类型改为NodePort, 适用于本地测试环境</li>
-</ul>
-<p><strong>步骤4: 创建Namespace并安装Nginx Ingress</strong><br>为ingress-nginx创建namespace</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl create namespace ingress-nginx</span><br></pre></td></tr></table></figure>
-
-<p>使用helm安装ingress-nginx</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm install ingress-nginx ./ingress-nginx --namespace ingress-nginx</span><br></pre></td></tr></table></figure>
-
-<p><strong>步骤5: 验证</strong><br>检查Pod状态</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n ingress-nginx get pods  -o wide</span><br><span class="line">NAME                             READY   STATUS    RESTARTS   AGE   IP               NODE         NOMINATED NODE   READINESS GATES</span><br><span class="line">ingress-nginx-controller-bst66   1/1     Running   0          38s   192.168.52.101   k8s-slave1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">ingress-nginx-controller-g6b2t   1/1     Running   0          38s   192.168.52.103   k8s-slave3   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">ingress-nginx-controller-hsm5d   1/1     Running   0          38s   192.168.52.102   k8s-slave2   &lt;none&gt;           &lt;none&gt;</span><br></pre></td></tr></table></figure>
-<p>检查Service状态</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n ingress-nginx get svc</span><br><span class="line">NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE</span><br><span class="line">ingress-nginx-controller             NodePort    10.98.244.186   &lt;none&gt;        80:30158/TCP,443:30756/TCP   48s</span><br><span class="line">ingress-nginx-controller-admission   ClusterIP   10.99.235.151   &lt;none&gt;        443/TCP                      48s</span><br></pre></td></tr></table></figure>
-<p>访问测试</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">从集群内部访问</span><br><span class="line"># curl 10.110.172.220:80</span><br><span class="line">404 Not Found (404是OK的, 说明80端口已LISTEN, Nginx响应了请求) </span><br><span class="line"></span><br><span class="line"># 从节点访问</span><br><span class="line">curl k8s-slave1:80</span><br><span class="line"></span><br><span class="line"># 通过 NodePort 访问</span><br><span class="line">curl k8s-master1:31481</span><br></pre></td></tr></table></figure>
-
-<p><strong>卸载应用</strong><br>查看当前安装的应用</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm -n ingress-nginx list</span><br><span class="line">NAME            NAMESPACE       REVISION        UPDATED                                 STATUS          CHART                   APP VERSION</span><br><span class="line">ingress-nginx   ingress-nginx   1               2025-03-23 13:14:28.226951332 +0800 CST deployed        ingress-nginx-4.11.4    1.11.4</span><br></pre></td></tr></table></figure>
-<p>使用<code>helm uninstall</code>卸载应用</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm -n ingress-nginx uninstall ingress-nginx</span><br></pre></td></tr></table></figure>
-
-<h1><span id="ingress配置ssl证书">Ingress配置SSL证书</span></h1><p>TODO</p>
-<h1><span id="参考">参考</span></h1><p>【1】 <a href="https://docs.daocloud.io/kpanda/user-guide/helm/">https://docs.daocloud.io/kpanda/user-guide/helm/</a><br>【2】 <a href="https://jimmysong.io/kubernetes-handbook/practice/helm.html">使用Helm管理kubernetes应用</a><br>【3】 <a href="https://www.cnblogs.com/yinzhengjie/p/17975829">Ingress-Nginx使用指南</a><br>【4】 <a href="https://wiki.opskumu.com/kubernetes/helm/helm-quickstart">Helm 快速上手</a></p>
-]]></content>
-      <categories>
-        <category>Kubernetes</category>
-      </categories>
-      <tags>
-        <tag>Kubernetes</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用 ChartMuseum 容器搭建私有 Helm Chart 仓库</title>
-    <url>/2025/0323165015.html</url>
-    <content><![CDATA[<h1><span id="前言">前言</span></h1><p>本文介绍如何在 Rocky Linux 9.5 上使用 ChartMuseum 搭建一个私有的 Helm Chart 仓库，并启用 HTTPS 和 Basic 认证以提高安全性</p>
-<h1><span id="环境准备">环境准备</span></h1><ul>
-<li>一台Rocky Linux 9.5 x86_64, 作为Helm Repo, 安装Docker, 域名: <code>myhelmrepo.com</code></li>
-<li>Kubernetes 集群 v1.28.x, Helm v3.16.0</li>
-</ul>
-<h1><span id="1-安装并启动-chartmuseum">1. 安装并启动 ChartMuseum</span></h1><p>(1) 启动 ChartMuseum 容器</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -d \</span><br><span class="line">  --name private-helm-repo \</span><br><span class="line">  -p 8080:8080 \</span><br><span class="line">  --restart=always \</span><br><span class="line">  -e STORAGE=local \</span><br><span class="line">  -e STORAGE_LOCAL_ROOTDIR=/charts \</span><br><span class="line">  -v /charts:/charts \</span><br><span class="line">  --user root \</span><br><span class="line">  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/helm/chartmuseum:v0.16.2</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<p>(2) 验证 ChartMuseum 是否正常运行</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl http://myhelmrepo.com:8080/index.yaml</span><br></pre></td></tr></table></figure>
-
-<p>如果返回类似以下内容，则说明服务已成功启动：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">entries: &#123;&#125;</span><br><span class="line">generated: &quot;2025-03-23T07:32:46Z&quot;</span><br><span class="line">serverInfo: &#123;&#125;</span><br></pre></td></tr></table></figure>
-
-<h1><span id="2-上传-helm-chart-到仓库">2. 上传 Helm Chart 到仓库</span></h1><p>(1) 上传 Chart<br>假设你有一个名为 <a href="https://github.com/PCJ600/helm-chart-demo/blob/main/charts/flask-app-chart-0.1.0.tgz">flask-app-chart-0.1.0.tgz</a> 的 Helm Chart，可以通过以下命令将其上传到仓库：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl --data-binary &quot;@flask-app-chart-0.1.0.tgz&quot; http://myhelmrepo.com:8080/api/charts</span><br></pre></td></tr></table></figure>
-<p>如果返回以下内容，则表示上传成功：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;&quot;saved&quot;:true&#125;</span><br></pre></td></tr></table></figure>
-<p>(2) 验证上传结果<br>再次检查 index.yaml 文件以确认 Chart 成功添加</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl http://myhelmrepo.com:8080/index.yaml</span><br><span class="line">apiVersion: v1</span><br><span class="line">entries:</span><br><span class="line">  flask-app-chart:</span><br><span class="line">  - apiVersion: v2</span><br><span class="line">    appVersion: &quot;1.0&quot;</span><br><span class="line">    created: &quot;2025-03-23T07:38:06.252423409Z&quot;</span><br><span class="line">    description: A Helm chart for deploying a simple Flask app</span><br><span class="line">    digest: c6ad11cf3c0b9c2068b5cb3502c8faabc700646b4a7fe9d1c3e779827658a474</span><br><span class="line">    name: flask-app-chart</span><br><span class="line">    type: application</span><br><span class="line">    urls:</span><br><span class="line">    - charts/flask-app-chart-0.1.0.tgz</span><br><span class="line">    version: 0.1.0</span><br><span class="line">generated: &quot;2025-03-23T07:38:06Z&quot;</span><br><span class="line">serverInfo: &#123;&#125;</span><br></pre></td></tr></table></figure>
-
-<h1><span id="3-添加私有-helm-仓库">3. 添加私有 Helm 仓库</span></h1><p>(1) 添加私有仓库</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo add my-private-repo http://myhelmrepo.com:8080</span><br></pre></td></tr></table></figure>
-<p>更新仓库缓存：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo update</span><br></pre></td></tr></table></figure>
-<p>如果返回以下内容，则表示仓库添加成功：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Hang tight while we grab the latest from your chart repositories...</span><br><span class="line">...Successfully got an update from the &quot;my-private-repo&quot; chart repository</span><br><span class="line">Update Complete. ⎈Happy Helming!⎈</span><br></pre></td></tr></table></figure>
-<p>(2) 查看仓库列表</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo list</span><br><span class="line"></span><br><span class="line">NAME            URL</span><br><span class="line">my-private-repo http://myhelmrepo.com:8080</span><br></pre></td></tr></table></figure>
-<p>(3) 查看仓库中的 Charts</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm search repo -l flask</span><br><span class="line"></span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-private-repo/flask-app-chart 0.1.0           1.0             A Helm chart for deploying a simple Flask app</span><br></pre></td></tr></table></figure>
-
-<h1><span id="4-下载或安装-chart">4. 下载或安装 Chart</span></h1><p>(1) 下载 Chart<br>下载刚才上传的 Chart：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm pull my-private-repo/flask-app-chart</span><br></pre></td></tr></table></figure>
-<p>解压并查看内容：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tar -tvf flask-app-chart-0.1.0.tgz</span><br></pre></td></tr></table></figure>
-<p>(2) 安装 Chart<br>通过以下命令安装 Chart：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm install flask-app my-private-repo/flask-app-chart --namespace flask-app</span><br></pre></td></tr></table></figure>
-<p>参数说明：</p>
-<ul>
-<li>flask-app: 指定本次安装的 Release 名称。</li>
-<li>my-private-repo&#x2F;flask-app-chart: 指定 Chart 的完整路径。</li>
-<li>–namespace flask-app: 指定安装的目标命名空间。</li>
-</ul>
-<h1><span id="5-启用-https-和-basic-认证">5. 启用 HTTPS 和 Basic 认证</span></h1><p>为了提高安全性，在生产环境中需要启用 HTTPS 和 Basic 认证。</p>
-<p>(1) 安装相关软件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install nginx httpd-tools -y</span><br></pre></td></tr></table></figure>
-<p>(2) 启用 Basic 认证<br>重新启动 ChartMuseum 容器并启用认证：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -d \</span><br><span class="line">  --name private-helm-repo \</span><br><span class="line">  -p 127.0.0.1:8080:8080 \</span><br><span class="line">  --restart=always \</span><br><span class="line">  -e STORAGE=local \</span><br><span class="line">  -e STORAGE_LOCAL_ROOTDIR=/charts \</span><br><span class="line">  -v /charts:/charts \</span><br><span class="line">  -e AUTH_ANONYMOUS_GET=false \</span><br><span class="line">  -e BASIC_AUTH_USER=helmuser \</span><br><span class="line">  -e BASIC_AUTH_PASS=123456 \</span><br><span class="line">  --user root \</span><br><span class="line">  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/helm/chartmuseum:v0.16.2</span><br></pre></td></tr></table></figure>
-<p>测试认证是否生效：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 不带认证访问</span><br><span class="line">curl localhost:8080</span><br><span class="line"># 返回 &#123;&quot;error&quot;:&quot;unauthorized&quot;&#125;</span><br><span class="line"></span><br><span class="line"># 带认证访问</span><br><span class="line">curl -u helmuser:123456 localhost:8080</span><br><span class="line"># 返回 200 OK</span><br></pre></td></tr></table></figure>
-<p>(3) 启用 HTTPS<br>生成自签名证书, 创建目录并生成自签名 SANs 证书：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo mkdir -p /etc/nginx/ssl/myhelmrepo.com</span><br><span class="line">cd /etc/nginx/ssl/myhelmrepo.com</span><br></pre></td></tr></table></figure>
-<p>创建 OpenSSL 配置文件（openssl.cnf）：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ req ]</span><br><span class="line">default_bits       = 2048</span><br><span class="line">distinguished_name = req_distinguished_name</span><br><span class="line">req_extensions     = req_ext</span><br><span class="line">prompt             = no</span><br><span class="line"></span><br><span class="line">[ req_distinguished_name ]</span><br><span class="line">C  = CN</span><br><span class="line">ST = State</span><br><span class="line">L  = City</span><br><span class="line">O  = Organization</span><br><span class="line">OU = Organizational Unit</span><br><span class="line">CN = myhelmrepo.com</span><br><span class="line"></span><br><span class="line">[ req_ext ]</span><br><span class="line">subjectAltName = @alt_names</span><br><span class="line"></span><br><span class="line">[ alt_names ]</span><br><span class="line">DNS.1 = myhelmrepo.com</span><br><span class="line">DNS.2 = localhost</span><br><span class="line">IP.1 = 127.0.0.1</span><br></pre></td></tr></table></figure>
-<p>生成证书和密钥：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl req -x509 -config openssl.cnf -extensions &#x27;req_ext&#x27; -nodes -days 365 -newkey rsa:2048 \</span><br><span class="line">  -keyout /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.key \</span><br><span class="line">  -out /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.crt</span><br></pre></td></tr></table></figure>
-<p>编辑 Nginx 主配置文件(&#x2F;etc&#x2F;nginx&#x2F;nginx.conf)：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    server_name myhelmrepo.com;</span><br><span class="line"></span><br><span class="line">    ssl_certificate /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.crt;</span><br><span class="line">    ssl_certificate_key /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.key;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        proxy_pass http://localhost:8080;</span><br><span class="line">        proxy_set_header Host $host;</span><br><span class="line">        proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header X-Forwarded-Proto $scheme;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>重启 Nginx：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>
-<p>测试 HTTPS</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl https://myhelmrepo.com/index.yaml -k</span><br><span class="line"># 返回 401 Authorization Required</span><br><span class="line"></span><br><span class="line">curl -u helmuser:123456 https://myhelmrepo.com/index.yaml -k</span><br><span class="line"># 返回 200 OK</span><br></pre></td></tr></table></figure>
-<p>(4) 配置 Helm 使用 HTTPS<br>由于使用的是自签名证书，Helm默认无法信任。将证书复制到本地并配置 Helm</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir -p ~/.helm/certs</span><br><span class="line">scp root@myhelmrepo.com:/etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.crt ~/.helm/certs/</span><br></pre></td></tr></table></figure>
-<p>重新添加仓库：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo rm my-private-repo</span><br><span class="line">helm repo add my-private-repo https://myhelmrepo.com \</span><br><span class="line">  --ca-file ~/.helm/certs/myhelmrepo.com.crt \</span><br><span class="line">  --username helmuser \</span><br><span class="line">  --password 123456</span><br></pre></td></tr></table></figure>
-<p>更新仓库缓存并查看Chart</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo update</span><br><span class="line">helm search repo -l flask</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-private-repo/flask-app-chart 0.1.0           1.0             A Helm chart for deploying a simple Flask app</span><br></pre></td></tr></table></figure>
-<p>安装Chart, 测试OK</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm install flask-app my-private-repo/flask-app-chart --namespace flask-app</span><br></pre></td></tr></table></figure>
-
-<h1><span id="参考">参考</span></h1><p>【1】<a href="https://chartmuseum.com/docs/">https://chartmuseum.com/docs/</a></p>
-]]></content>
-      <categories>
-        <category>Kubernetes</category>
-      </categories>
-      <tags>
-        <tag>Kubernetes</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>kubeadm+keepalived+HAproxy搭建高可用kubernetes集群(三主三从两LB)</title>
     <url>/2025/0320222352.html</url>
     <content><![CDATA[<h1><span id="集群规划">集群规划</span></h1><p>8台Linux虚拟机, Rocky Linux 9.5 x86_64 </p>
@@ -13450,6 +13279,177 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl 192.168.52.88</span><br><span class="line">200 OK</span><br><span class="line">curl https://192.168.52.88:6443/healthz -k</span><br><span class="line">ok</span><br></pre></td></tr></table></figure>
 <p>到此, 高可用集群搭建完成</p>
 <h1><span id="参考">参考</span></h1><p><a href="https://kubesphere.io/zh/docs/v3.4/installing-on-linux/high-availability-configurations/set-up-ha-cluster-using-keepalived-haproxy/">https://kubesphere.io/zh/docs/v3.4/installing-on-linux/high-availability-configurations/set-up-ha-cluster-using-keepalived-haproxy/</a></p>
+]]></content>
+      <categories>
+        <category>Kubernetes</category>
+      </categories>
+      <tags>
+        <tag>Kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Helm快速上手: 使用Helm安装nginx-ingress</title>
+    <url>/2025/0320212856.html</url>
+    <content><![CDATA[<h1><span id="什么是helm-helm解决了哪些问题">什么是Helm? Helm解决了哪些问题?</span></h1><p>Helm是Kubernetes的包管理工具，类似于Linux中的apt或yum. Helm通过模板化和版本控制等机制, 帮助用户快速发现、共享和使用Kubernetes应用</p>
+<p>在Helm出现之前，部署Kubernetes应用存在以下问题:<br><strong>1. YAML配置复杂，部署和管理Kubernetes应用不方便</strong></p>
+<ul>
+<li>问题：需要编写大量YAML文件定义Kubernetes资源。 随着项目规模增长, 维护这些配置文件变得困难, 尤其是在多环境部署时</li>
+<li>Helm解决方案: 通过Helm模板功能，开发者可以创建一个Chart, 包含所有必要的Kubernetes资源定义, 并使用变量代替硬编码值</li>
+</ul>
+<p><strong>2. 更新或回滚到特定版本较为困难</strong></p>
+<ul>
+<li>问题：缺乏版本控制功能，难以更新或回滚到指定版本。如果直接修改线上 YAML 文件，可能导致问题且难以恢复到稳定状态</li>
+<li>Helm解决方案: Helm 通过Release概念支持版本控制，每次部署或更新应用时都会创建一个新的Release. 如果新版本出现问题, 可以通过helm rollback快速回滚到之前的稳定版本</li>
+</ul>
+<p><strong>3. 难以共享或复用k8s配置, 不利于多团队协作</strong></p>
+<ul>
+<li>问题：在一个团队内部，不同项目可能有相似需求（如都需要部署同一套系统）。然而，由于缺少有效的共享机制，每个项目需要从头开始配置，浪费了大量时间精力</li>
+<li>Helm解决方案: Helm Charts 可以通过仓库共享，每个人可以从仓库中下载官方或其他团队成员发布的Charts，也可以上传自己的Charts，实现了Kubernetes配置的共享和复用</li>
+</ul>
+<h1><span id="快速上手helm">快速上手Helm</span></h1><h2><span id="helm的三个基本概念">Helm的三个基本概念</span></h2><ul>
+<li>Chart, 一个Helm安装包，包含了运行一个应用所需要的镜像、依赖和资源定义等</li>
+<li>Release, 在Kubernetes集群上运行的一个Chart实例</li>
+<li>Repository, 发布和存储Chart的仓库</li>
+</ul>
+<span id="more"></span>
+
+<h2><span id="安装helm">安装Helm</span></h2><p>首先安装Kubernetes集群, 参考: <a href="https://blog.csdn.net/pcj_888/article/details/144240636">kubeadm+keepalived+HAproxy搭建高可用kubernetes集群</a></p>
+<p>查看kubernetes版本</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl version</span><br><span class="line">Server Version: v1.28.2</span><br></pre></td></tr></table></figure>
+
+<p>根据<a href="https://helm.sh/docs/topics/version_skew/">官方文档</a>找到匹配的 Helm 版本进行安装。例如，我的 Kubernetes 版本是 v1.28.2，因此选择安装 Helm v3.16.0：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Helm Version	Supported Kubernetes Versions</span><br><span class="line">3.17.x	1.32.x - 1.29.x</span><br><span class="line">3.16.x	1.31.x - 1.28.x</span><br></pre></td></tr></table></figure>
+<p>安装Helm方法如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -fsSL -o helm-v3.16.0-linux-amd64.tar.gz https://get.helm.sh/helm-v3.16.0-linux-amd64.tar.gz</span><br><span class="line">tar -zxvf helm-v3.16.0-linux-amd64.tar.gz</span><br><span class="line">mv linux-amd64/helm /usr/local/bin/helm</span><br><span class="line">helm version</span><br><span class="line">version.BuildInfo&#123;Version:&quot;v3.16.0&quot;, GitCommit:&quot;0d439e1a09683f21a0ab9401eb661401f185b00b&quot;, GitTreeState:&quot;clean&quot;, GoVersion:&quot;go1.22.6&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<h1><span id="使用helm安装nginx-ingress">使用Helm安装Nginx Ingress</span></h1><p><strong>步骤1: 添加官方Helm仓库</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo add my-ingress https://kubernetes.github.io/ingress-nginx</span><br></pre></td></tr></table></figure>
+<p>查看已添加的仓库</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo list</span><br><span class="line">NAME            URL</span><br><span class="line">my-ingress      https://kubernetes.github.io/ingress-nginx</span><br></pre></td></tr></table></figure>
+<p>更新软件源</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm repo update</span><br><span class="line">Hang tight while we grab the latest from your chart repositories...</span><br><span class="line">...Successfully got an update from the &quot;my-ingress&quot; chart repository</span><br><span class="line">Update Complete. ⎈Happy Helming!⎈</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤2: 查找合适的Nginx Ingress版本</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm search repo ingress-nginx</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-ingress/ingress-nginx        4.12.0          1.12.0          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line"></span><br><span class="line">[root@k8s-master1 ~]# helm search repo ingress-nginx --versions | head -n 4</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-ingress/ingress-nginx        4.12.0          1.12.0          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line">my-ingress/ingress-nginx        4.11.4          1.11.4          Ingress controller for Kubernetes using NGINX a...</span><br><span class="line">my-ingress/ingress-nginx        4.11.3          1.11.3          Ingress controller for Kubernetes using NGINX a...</span><br></pre></td></tr></table></figure>
+
+<p>查阅<a href="https://github.com/kubernetes/ingress-nginx">ingress-nginx官方文档</a>, 确认与Kubernetes 1.28匹配的Ingress版本范围为v1.9.0 - v1.12.0, 我选择安装v1.11.4</p>
+<p><strong>步骤3: 下载Nginx Ingress, 并修改配置</strong><br>下载指定版本的Chart</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm pull my-ingress/ingress-nginx --version 4.11.4</span><br></pre></td></tr></table></figure>
+<p>解压并修改配置文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tar xf ingress-nginx-4.11.4.tgz</span><br><span class="line"></span><br><span class="line"># 修改配置文件values.yaml</span><br><span class="line">sed -i &#x27;/registry:/s#registry.k8s.io#swr.cn-north-4.myhuaweicloud.com/ddn-k8s/registry.k8s.io#g&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -ri &#x27;/digest:/s@^@#@&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i &#x27;/hostNetwork:/s#false#true#&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i  &#x27;/dnsPolicy/s#ClusterFirst#ClusterFirstWithHostNet#&#x27; ingress-nginx/values.yaml</span><br><span class="line">sed -i &#x27;/kind/s#Deployment#DaemonSet#&#x27; ingress-nginx/values.yaml </span><br><span class="line">sed -i &#x27;s/type: LoadBalancer/type: NodePort/&#x27; ingress-nginx/values.yaml</span><br></pre></td></tr></table></figure>
+<p>说明:</p>
+<ul>
+<li>镜像改成国内的, 国内由于网络问题无法下载海外镜像</li>
+<li>注释掉digest, 因为国内镜像可能被重新构建过, digest并不相同</li>
+<li>hostNetwork设为true, 直接监听宿主机80和443端口 (可选)</li>
+<li>如果设置了hostNetwork为true, 建议将dnsPolicy改为ClusterFirstWithHostNet, 以便使用k8s内部的service名称解析</li>
+<li>Deployment改成DaemonSet类型, 每个节点部署一个Pod (可选)</li>
+<li>将LoadBalancer类型改为NodePort, 适用于本地测试环境</li>
+</ul>
+<p><strong>步骤4: 创建Namespace并安装Nginx Ingress</strong><br>为ingress-nginx创建namespace</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl create namespace ingress-nginx</span><br></pre></td></tr></table></figure>
+
+<p>使用helm安装ingress-nginx</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm install ingress-nginx ./ingress-nginx --namespace ingress-nginx</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤5: 验证</strong><br>检查Pod状态</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n ingress-nginx get pods  -o wide</span><br><span class="line">NAME                             READY   STATUS    RESTARTS   AGE   IP               NODE         NOMINATED NODE   READINESS GATES</span><br><span class="line">ingress-nginx-controller-bst66   1/1     Running   0          38s   192.168.52.101   k8s-slave1   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">ingress-nginx-controller-g6b2t   1/1     Running   0          38s   192.168.52.103   k8s-slave3   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">ingress-nginx-controller-hsm5d   1/1     Running   0          38s   192.168.52.102   k8s-slave2   &lt;none&gt;           &lt;none&gt;</span><br></pre></td></tr></table></figure>
+<p>检查Service状态</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n ingress-nginx get svc</span><br><span class="line">NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE</span><br><span class="line">ingress-nginx-controller             NodePort    10.98.244.186   &lt;none&gt;        80:30158/TCP,443:30756/TCP   48s</span><br><span class="line">ingress-nginx-controller-admission   ClusterIP   10.99.235.151   &lt;none&gt;        443/TCP                      48s</span><br></pre></td></tr></table></figure>
+<p>访问测试</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">从集群内部访问</span><br><span class="line"># curl 10.110.172.220:80</span><br><span class="line">404 Not Found (404是OK的, 说明80端口已LISTEN, Nginx响应了请求) </span><br><span class="line"></span><br><span class="line"># 从节点访问</span><br><span class="line">curl k8s-slave1:80</span><br><span class="line"></span><br><span class="line"># 通过 NodePort 访问</span><br><span class="line">curl k8s-master1:31481</span><br></pre></td></tr></table></figure>
+
+<p><strong>卸载应用</strong><br>查看当前安装的应用</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># helm -n ingress-nginx list</span><br><span class="line">NAME            NAMESPACE       REVISION        UPDATED                                 STATUS          CHART                   APP VERSION</span><br><span class="line">ingress-nginx   ingress-nginx   1               2025-03-23 13:14:28.226951332 +0800 CST deployed        ingress-nginx-4.11.4    1.11.4</span><br></pre></td></tr></table></figure>
+<p>使用<code>helm uninstall</code>卸载应用</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm -n ingress-nginx uninstall ingress-nginx</span><br></pre></td></tr></table></figure>
+
+<h1><span id="ingress配置ssl证书">Ingress配置SSL证书</span></h1><p>TODO</p>
+<h1><span id="参考">参考</span></h1><p>【1】 <a href="https://docs.daocloud.io/kpanda/user-guide/helm/">https://docs.daocloud.io/kpanda/user-guide/helm/</a><br>【2】 <a href="https://jimmysong.io/kubernetes-handbook/practice/helm.html">使用Helm管理kubernetes应用</a><br>【3】 <a href="https://www.cnblogs.com/yinzhengjie/p/17975829">Ingress-Nginx使用指南</a><br>【4】 <a href="https://wiki.opskumu.com/kubernetes/helm/helm-quickstart">Helm 快速上手</a></p>
+]]></content>
+      <categories>
+        <category>Kubernetes</category>
+      </categories>
+      <tags>
+        <tag>Kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用 ChartMuseum 容器搭建私有 Helm Chart 仓库</title>
+    <url>/2025/0323165015.html</url>
+    <content><![CDATA[<h1><span id="前言">前言</span></h1><p>本文介绍如何在 Rocky Linux 9.5 上使用 ChartMuseum 搭建一个私有的 Helm Chart 仓库，并启用 HTTPS 和 Basic 认证以提高安全性</p>
+<h1><span id="环境准备">环境准备</span></h1><ul>
+<li>一台Rocky Linux 9.5 x86_64, 作为Helm Repo, 安装Docker, 域名: <code>myhelmrepo.com</code></li>
+<li>Kubernetes 集群 v1.28.x, Helm v3.16.0</li>
+</ul>
+<h1><span id="1-安装并启动-chartmuseum">1. 安装并启动 ChartMuseum</span></h1><p>(1) 启动 ChartMuseum 容器</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -d \</span><br><span class="line">  --name private-helm-repo \</span><br><span class="line">  -p 8080:8080 \</span><br><span class="line">  --restart=always \</span><br><span class="line">  -e STORAGE=local \</span><br><span class="line">  -e STORAGE_LOCAL_ROOTDIR=/charts \</span><br><span class="line">  -v /charts:/charts \</span><br><span class="line">  --user root \</span><br><span class="line">  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/helm/chartmuseum:v0.16.2</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<p>(2) 验证 ChartMuseum 是否正常运行</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl http://myhelmrepo.com:8080/index.yaml</span><br></pre></td></tr></table></figure>
+
+<p>如果返回类似以下内容，则说明服务已成功启动：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">entries: &#123;&#125;</span><br><span class="line">generated: &quot;2025-03-23T07:32:46Z&quot;</span><br><span class="line">serverInfo: &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<h1><span id="2-上传-helm-chart-到仓库">2. 上传 Helm Chart 到仓库</span></h1><p>(1) 上传 Chart<br>假设你有一个名为 <a href="https://github.com/PCJ600/helm-chart-demo/blob/main/charts/flask-app-chart-0.1.0.tgz">flask-app-chart-0.1.0.tgz</a> 的 Helm Chart，可以通过以下命令将其上传到仓库：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl --data-binary &quot;@flask-app-chart-0.1.0.tgz&quot; http://myhelmrepo.com:8080/api/charts</span><br></pre></td></tr></table></figure>
+<p>如果返回以下内容，则表示上传成功：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&#123;&quot;saved&quot;:true&#125;</span><br></pre></td></tr></table></figure>
+<p>(2) 验证上传结果<br>再次检查 index.yaml 文件以确认 Chart 成功添加</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl http://myhelmrepo.com:8080/index.yaml</span><br><span class="line">apiVersion: v1</span><br><span class="line">entries:</span><br><span class="line">  flask-app-chart:</span><br><span class="line">  - apiVersion: v2</span><br><span class="line">    appVersion: &quot;1.0&quot;</span><br><span class="line">    created: &quot;2025-03-23T07:38:06.252423409Z&quot;</span><br><span class="line">    description: A Helm chart for deploying a simple Flask app</span><br><span class="line">    digest: c6ad11cf3c0b9c2068b5cb3502c8faabc700646b4a7fe9d1c3e779827658a474</span><br><span class="line">    name: flask-app-chart</span><br><span class="line">    type: application</span><br><span class="line">    urls:</span><br><span class="line">    - charts/flask-app-chart-0.1.0.tgz</span><br><span class="line">    version: 0.1.0</span><br><span class="line">generated: &quot;2025-03-23T07:38:06Z&quot;</span><br><span class="line">serverInfo: &#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<h1><span id="3-添加私有-helm-仓库">3. 添加私有 Helm 仓库</span></h1><p>(1) 添加私有仓库</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo add my-private-repo http://myhelmrepo.com:8080</span><br></pre></td></tr></table></figure>
+<p>更新仓库缓存：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo update</span><br></pre></td></tr></table></figure>
+<p>如果返回以下内容，则表示仓库添加成功：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Hang tight while we grab the latest from your chart repositories...</span><br><span class="line">...Successfully got an update from the &quot;my-private-repo&quot; chart repository</span><br><span class="line">Update Complete. ⎈Happy Helming!⎈</span><br></pre></td></tr></table></figure>
+<p>(2) 查看仓库列表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo list</span><br><span class="line"></span><br><span class="line">NAME            URL</span><br><span class="line">my-private-repo http://myhelmrepo.com:8080</span><br></pre></td></tr></table></figure>
+<p>(3) 查看仓库中的 Charts</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm search repo -l flask</span><br><span class="line"></span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-private-repo/flask-app-chart 0.1.0           1.0             A Helm chart for deploying a simple Flask app</span><br></pre></td></tr></table></figure>
+
+<h1><span id="4-下载或安装-chart">4. 下载或安装 Chart</span></h1><p>(1) 下载 Chart<br>下载刚才上传的 Chart：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm pull my-private-repo/flask-app-chart</span><br></pre></td></tr></table></figure>
+<p>解压并查看内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tar -tvf flask-app-chart-0.1.0.tgz</span><br></pre></td></tr></table></figure>
+<p>(2) 安装 Chart<br>通过以下命令安装 Chart：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm install flask-app my-private-repo/flask-app-chart --namespace flask-app</span><br></pre></td></tr></table></figure>
+<p>参数说明：</p>
+<ul>
+<li>flask-app: 指定本次安装的 Release 名称。</li>
+<li>my-private-repo&#x2F;flask-app-chart: 指定 Chart 的完整路径。</li>
+<li>–namespace flask-app: 指定安装的目标命名空间。</li>
+</ul>
+<h1><span id="5-启用-https-和-basic-认证">5. 启用 HTTPS 和 Basic 认证</span></h1><p>为了提高安全性，在生产环境中需要启用 HTTPS 和 Basic 认证。</p>
+<p>(1) 安装相关软件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install nginx httpd-tools -y</span><br></pre></td></tr></table></figure>
+<p>(2) 启用 Basic 认证<br>重新启动 ChartMuseum 容器并启用认证：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -d \</span><br><span class="line">  --name private-helm-repo \</span><br><span class="line">  -p 127.0.0.1:8080:8080 \</span><br><span class="line">  --restart=always \</span><br><span class="line">  -e STORAGE=local \</span><br><span class="line">  -e STORAGE_LOCAL_ROOTDIR=/charts \</span><br><span class="line">  -v /charts:/charts \</span><br><span class="line">  -e AUTH_ANONYMOUS_GET=false \</span><br><span class="line">  -e BASIC_AUTH_USER=helmuser \</span><br><span class="line">  -e BASIC_AUTH_PASS=123456 \</span><br><span class="line">  --user root \</span><br><span class="line">  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/helm/chartmuseum:v0.16.2</span><br></pre></td></tr></table></figure>
+<p>测试认证是否生效：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 不带认证访问</span><br><span class="line">curl localhost:8080</span><br><span class="line"># 返回 &#123;&quot;error&quot;:&quot;unauthorized&quot;&#125;</span><br><span class="line"></span><br><span class="line"># 带认证访问</span><br><span class="line">curl -u helmuser:123456 localhost:8080</span><br><span class="line"># 返回 200 OK</span><br></pre></td></tr></table></figure>
+<p>(3) 启用 HTTPS<br>生成自签名证书, 创建目录并生成自签名 SANs 证书：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo mkdir -p /etc/nginx/ssl/myhelmrepo.com</span><br><span class="line">cd /etc/nginx/ssl/myhelmrepo.com</span><br></pre></td></tr></table></figure>
+<p>创建 OpenSSL 配置文件（openssl.cnf）：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">[ req ]</span><br><span class="line">default_bits       = 2048</span><br><span class="line">distinguished_name = req_distinguished_name</span><br><span class="line">req_extensions     = req_ext</span><br><span class="line">prompt             = no</span><br><span class="line"></span><br><span class="line">[ req_distinguished_name ]</span><br><span class="line">C  = CN</span><br><span class="line">ST = State</span><br><span class="line">L  = City</span><br><span class="line">O  = Organization</span><br><span class="line">OU = Organizational Unit</span><br><span class="line">CN = myhelmrepo.com</span><br><span class="line"></span><br><span class="line">[ req_ext ]</span><br><span class="line">subjectAltName = @alt_names</span><br><span class="line"></span><br><span class="line">[ alt_names ]</span><br><span class="line">DNS.1 = myhelmrepo.com</span><br><span class="line">DNS.2 = localhost</span><br><span class="line">IP.1 = 127.0.0.1</span><br></pre></td></tr></table></figure>
+<p>生成证书和密钥：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">openssl req -x509 -config openssl.cnf -extensions &#x27;req_ext&#x27; -nodes -days 365 -newkey rsa:2048 \</span><br><span class="line">  -keyout /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.key \</span><br><span class="line">  -out /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.crt</span><br></pre></td></tr></table></figure>
+<p>编辑 Nginx 主配置文件(&#x2F;etc&#x2F;nginx&#x2F;nginx.conf)：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    server_name myhelmrepo.com;</span><br><span class="line"></span><br><span class="line">    ssl_certificate /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.crt;</span><br><span class="line">    ssl_certificate_key /etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.key;</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">        proxy_pass http://localhost:8080;</span><br><span class="line">        proxy_set_header Host $host;</span><br><span class="line">        proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header X-Forwarded-Proto $scheme;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重启 Nginx：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>
+<p>测试 HTTPS</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl https://myhelmrepo.com/index.yaml -k</span><br><span class="line"># 返回 401 Authorization Required</span><br><span class="line"></span><br><span class="line">curl -u helmuser:123456 https://myhelmrepo.com/index.yaml -k</span><br><span class="line"># 返回 200 OK</span><br></pre></td></tr></table></figure>
+<p>(4) 配置 Helm 使用 HTTPS<br>由于使用的是自签名证书，Helm默认无法信任。将证书复制到本地并配置 Helm</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir -p ~/.helm/certs</span><br><span class="line">scp root@myhelmrepo.com:/etc/nginx/ssl/myhelmrepo.com/myhelmrepo.com.crt ~/.helm/certs/</span><br></pre></td></tr></table></figure>
+<p>重新添加仓库：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo rm my-private-repo</span><br><span class="line">helm repo add my-private-repo https://myhelmrepo.com \</span><br><span class="line">  --ca-file ~/.helm/certs/myhelmrepo.com.crt \</span><br><span class="line">  --username helmuser \</span><br><span class="line">  --password 123456</span><br></pre></td></tr></table></figure>
+<p>更新仓库缓存并查看Chart</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm repo update</span><br><span class="line">helm search repo -l flask</span><br><span class="line">NAME                            CHART VERSION   APP VERSION     DESCRIPTION</span><br><span class="line">my-private-repo/flask-app-chart 0.1.0           1.0             A Helm chart for deploying a simple Flask app</span><br></pre></td></tr></table></figure>
+<p>安装Chart, 测试OK</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">helm install flask-app my-private-repo/flask-app-chart --namespace flask-app</span><br></pre></td></tr></table></figure>
+
+<h1><span id="参考">参考</span></h1><p>【1】<a href="https://chartmuseum.com/docs/">https://chartmuseum.com/docs/</a></p>
 ]]></content>
       <categories>
         <category>Kubernetes</category>
