@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="目标基于Rocky9官方ISO做定制，构建自己的ISO  可以添加非官方预装的RPM包 实现Kickstart自动化安装, 完成分区等操作 ISO安装后，可以执行自定义脚本，比如安装你手动添加的RPM包  Rocky9 官方ISO内容分析挂载Rocky9 ISO，得到如下内容: 1234567BaseOS&#x2F;EFI&#x2F;images&#x2F;isolinux&#x2F;LICENSEmedia.repominimal&#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何定制RockyLinux ISO">
+<meta property="og:url" content="https://pcj600.github.io/2024/1105202802.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="目标基于Rocky9官方ISO做定制，构建自己的ISO  可以添加非官方预装的RPM包 实现Kickstart自动化安装, 完成分区等操作 ISO安装后，可以执行自定义脚本，比如安装你手动添加的RPM包  Rocky9 官方ISO内容分析挂载Rocky9 ISO，得到如下内容: 1234567BaseOS&#x2F;EFI&#x2F;images&#x2F;isolinux&#x2F;LICENSEmedia.repominimal&#x2F;">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-11-05T12:28:02.000Z">
+<meta property="article:modified_time" content="2025-03-09T11:12:40.128Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="Project">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://pcj600.github.io/2024/1105202802.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>如何定制RockyLinux ISO | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">38</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">51</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">183</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1105202802.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          如何定制RockyLinux ISO
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-11-05 20:28:02" itemprop="dateCreated datePublished" datetime="2024-11-05T20:28:02+08:00">2024-11-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>8.2k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1><span id="目标">目标</span></h1><p>基于Rocky9官方ISO做定制，构建自己的ISO</p>
+<ul>
+<li>可以添加非官方预装的RPM包</li>
+<li>实现Kickstart自动化安装, 完成分区等操作</li>
+<li>ISO安装后，可以执行自定义脚本，比如安装你手动添加的RPM包</li>
+</ul>
+<h1><span id="rocky9-官方iso内容分析">Rocky9 官方ISO内容分析</span></h1><p>挂载Rocky9 ISO，得到如下内容:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">BaseOS/</span><br><span class="line">EFI/</span><br><span class="line">images/</span><br><span class="line">isolinux/</span><br><span class="line">LICENSE</span><br><span class="line">media.repo</span><br><span class="line">minimal/</span><br></pre></td></tr></table></figure>
+<p>ISO各个目录&#x2F;文件的作用：</p>
+<span id="more"></span>
+<ul>
+<li>BaseOS&#x2F;：这个目录包含了Rocky Linux的基础操作系统环境。它提供了操作系统的核心组件和必要的软件包，用于构建和运行基本的系统</li>
+<li>EFI&#x2F;：这个目录包含了用于UEFI（统一可扩展固件接口）启动的文件。这些文件使得系统能够在支持UEFI的硬件上启动</li>
+<li>images&#x2F;：这个目录包含了用于云环境的Rocky Linux镜像。这些镜像可以被用于各种云服务提供商，以便于在云中部署Rocky Linux</li>
+<li>isolinux&#x2F;：这个目录包含了启动Rocky Linux安装介质所需的引导装载器文件。这些文件负责在系统启动时加载Linux内核和初始化RAM磁盘</li>
+<li>minimal&#x2F;：这个目录包含了用于最小化安装的Rocky Linux环境。它通常用于安装一个最小化的Rocky Linux系统，不包括完整的DVD镜像或者通过网络安装</li>
+<li>media.repo：这个文件是一个YUM仓库配置文件，它允许用户直接从安装介质（如DVD或USB驱动器）安装软件包。这个文件指定了安装介质中软件包的位置，使得系统能够从本地介质而不是网络仓库安装软件</li>
+<li>LICENSE：这个文件包含了Rocky Linux发行版的许可证信息。它说明了用户可以如何使用和分发Rocky Linux</li>
+</ul>
+<h1><span id="定制iso的流程简述">定制ISO的流程简述</span></h1><ul>
+<li>准备一台Rocky9.X编译机, 安装必要编译依赖, 下载Rocky官方的ISO, 挂载ISO。</li>
+<li>把自定义的RPM包复制到Packages&#x2F;目录下, 调用createrepo更新RPM信息。</li>
+<li>编写ks.cfg,实现kickstart定制化的自动安装</li>
+<li>调用genisoimage生成VA的ISO, 调用implantisomd5校验ISO的md5</li>
+</ul>
+<h1><span id="定制iso的具体步骤">定制ISO的具体步骤</span></h1><h2><span id="0准备一台rockylinux9x编译机安装必要的编译依赖">0.准备一台RockyLinux9.X编译机，安装必要的编译依赖</span></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dnf install -y epel-release genisoimage isomd5sum anaconda \</span><br><span class="line">createrepo mkisofs rsync yum-utils squashfs-tools rpm-build \</span><br><span class="line">glibc-devel krb5-devel autoconf automake pykickstart</span><br></pre></td></tr></table></figure>
+
+<h2><span id="1下载rocky94-minimal官方iso-挂载iso">1.下载Rocky9.4 minimal官方ISO, 挂载ISO</span></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">wget https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.4-x86_64-minimal.iso</span><br><span class="line">mkdir tmp ISO</span><br><span class="line">mount -o loop Rocky-9.4-x86_64-minimal.iso tmp/</span><br><span class="line">cp -a tmp/* ISO/</span><br></pre></td></tr></table></figure>
+
+<h2><span id="2-添加非预装的rpm包到iso">2. 添加非预装的RPM包到ISO</span></h2><p>添加RPM包的原理是：</p>
+<ul>
+<li>启动一台新安装的Rocky 9.4的虚拟机或容器, 执行<code>rpm -qa &gt; old_rpm_list</code>记录当前系统的所有RPM包</li>
+<li>执行yum install安装RPM包, 安装成功后, 再次执行<code>rpm -qa &gt; new_rpm_list</code></li>
+<li>通过diff命令比较new_rpm_list和old_rpm_list的差异, 得到这个RPM包依赖的所有RPM包, 把所有RPM包下载到本地</li>
+<li>最后把RPM包都传到ISO的Packages目录, 调用createrepo更新RPM信息</li>
+</ul>
+<p>	</p>
+<p><strong>以安装Squid这个非预装的RPM包为例, 给出具体操作步骤:</strong></p>
+<p>新安装一台Rocky9.4的VM，或者启动一个新的Rocky9.4容器，执行如下操作:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">rpm -qa &gt; old_rpm_list</span><br><span class="line">yum install -y squid </span><br><span class="line">rpm -qa &gt; new_rpm_list</span><br><span class="line">diff old_rpm_list new_rpm_list</span><br><span class="line">&gt; perl-English-1.11-481.el9.noarch</span><br><span class="line">&gt; perl-Math-Complex-1.59-481.el9.noarch</span><br><span class="line">&gt; perl-Math-BigInt-1.9998.18-460.el9.noarch</span><br><span class="line">&gt; perl-DBI-1.643-9.el9.x86_64</span><br><span class="line">&gt; libecap-1.0.1-10.el9.x86_64</span><br><span class="line">&gt; perl-Digest-SHA-6.02-461.el9.x86_64</span><br><span class="line">&gt; httpd-filesystem-2.4.57-11.el9_4.1.noarch</span><br><span class="line">&gt; squid-5.5-13.el9_4.x86_64</span><br><span class="line"></span><br><span class="line"># 逐一下载上面的RPM包</span><br><span class="line">yum reinstall -y [RPM包] --downloadonly --downloaddir=./</span><br><span class="line"></span><br><span class="line"># 把所有RPM包传到ISO/minimal/Packages目录下</span><br><span class="line"></span><br><span class="line"># 调用createrepo更新RPM信息, 删掉原来的xml</span><br><span class="line">cd ISO/minimal/</span><br><span class="line">createrepo -g repodata/*.xml ./</span><br><span class="line"></span><br><span class="line">执行成功后，查看repodata目录, 可以手动把旧的文件(*.xml.gz,*.bz2)删掉</span><br><span class="line"># ll -rt</span><br><span class="line">-rw-r--r-- 1 root root  223063 May  6  2024 b293fe7dc4f43936b010f1e39498d1c1914ec9b64b239ca295a99024469ad291-other.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  639692 May  6  2024 910d1caf3c2f6f2be8ec8d1690ade00b3ca742ff265c58bfe8e09564907c7b1f-primary.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  432959 May  6  2024 6727bfc392a5f0d542bfa33e2e7c66c0acfac68ca643a815ff142eceb83c14eb-filelists.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  277890 May  6  2024 4844662615d6cdbd59e187e2ff1f4d3aa7fbc153dd28b6024c7eef14e9e14c94-other.sqlite.bz2</span><br><span class="line">-rw-r--r-- 1 root root  546603 May  6  2024 33df6249457b6e40f26bcee5eee9fbecbdb8026b50c9ce3a354001ea04fcaa9d-filelists.sqlite.bz2</span><br><span class="line">-rw-r--r-- 1 root root 1338121 May  6  2024 bd201f63f99e67d65f859f38ab472022f055238d74c78c6dd407ef57c4f0f90d-primary.sqlite.bz2</span><br><span class="line"></span><br><span class="line">-rw-r--r-- 1 root root  288689 Nov  5 22:04 7ec709b6d42da53e7fb35b426e69414a518151eb4814b1fe1703b7b18d519e33-x86_64.xml</span><br><span class="line">-rw-r--r-- 1 root root  644366 Nov  5 22:04 aa896d64b33075d63a1a150b45f78069845b6ba23e1d9b6914028c89d3444343-primary.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  446349 Nov  5 22:04 96bac81c16728c9c33f8a7da9388ceaeb8fa19a0d173fd3220ca34f5e91e5966-filelists.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  225673 Nov  5 22:04 4b548eb44fe93e0561e5c451d5d26ae93033ba268276eb953c2a88f3d898d554-other.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root   71732 Nov  5 22:04 d250f7f881bb991be3648c021fb305dd6085b902321b26f52033500ebff7cae1-x86_64.xml.gz</span><br><span class="line">-rw-r--r-- 1 root root  279932 Nov  5 22:04 35a6d5480475ae34480bd0b8eeeeb4954135b980d7585f645f92adc563af724b-other.sqlite.bz2</span><br><span class="line">-rw-r--r-- 1 root root  554441 Nov  5 22:04 131a105582b0b396b43bfe2085074488ec256b9901e115f1699d9ef40f0cbfce-filelists.sqlite.bz2</span><br><span class="line">-rw-r--r-- 1 root root 1352325 Nov  5 22:04 fb6353f4de5dacf439dd366b2caf0d7f8fff4da3dca132dbbd86b820bbed0e28-primary.sqlite.bz2</span><br></pre></td></tr></table></figure>
+
+<h2><span id="3-添加kscfg实现kickstart自动化安装iso">3. 添加ks.cfg，实现Kickstart自动化安装ISO</span></h2><p>比如说我想在ks.cfg中做如下配置:</p>
+<ul>
+<li>自定义分区。使用LVM分区，添加逻辑卷组(命名为VA)，再分三个区分别挂载到路径(&#x2F; &#x2F;data &#x2F;back)</li>
+<li>设置root密码为password@123</li>
+<li>设置hostname为localhost.localdomain</li>
+<li>把主网卡名称设置为eth0, static IP 192.168.192.3, 掩码255.255.255.252, 网关192.168.192.2, DNS 8.8.8.8</li>
+<li>禁用firewall, 关闭selinux</li>
+<li>安装自定义的RPM包(Squid)</li>
+<li>安装完成后执行一些自定义指令(比如启动Squid,设置Squid开机自启动)</li>
+</ul>
+<p>注意，我们不需要从零编写ks.cfg，这样太麻烦了。更好的做法是用官方ISO装一台RockyLinux9.4 VM，在图形界面手动完成以上配置，等安装完成后把&#x2F;root&#x2F;anaconda-ks.cfg拷出来，重命名为ks.cfg，再做简单修改即可。<br>ks.cfg内容可以参考：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"># Generated by Anaconda 34.25.4.9</span><br><span class="line"># Generated by pykickstart v3.32</span><br><span class="line">#version=RHEL9</span><br><span class="line"># Use graphical install</span><br><span class="line">graphical</span><br><span class="line">repo --name=&quot;minimal&quot; --baseurl=file:///run/install/sources/mount-0000-cdrom/minimal</span><br><span class="line"></span><br><span class="line"># Run the Setup Agent on first boot</span><br><span class="line">firstboot --enable</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># Keyboard layouts</span><br><span class="line">keyboard --xlayouts=&#x27;us&#x27;</span><br><span class="line"># System language</span><br><span class="line">lang en_US.UTF-8</span><br><span class="line"></span><br><span class="line"># Network information</span><br><span class="line">network  --bootproto=static --device=eth0 --gateway=192.168.192.2 --ip=192.168.192.3 --nameserver=8.8.8.8 --netmask=255.255.255.252 --ipv6=auto --activate</span><br><span class="line">network  --hostname=localhost.localdomain</span><br><span class="line"></span><br><span class="line"># Use CDROM installation media</span><br><span class="line">cdrom</span><br><span class="line"></span><br><span class="line"># System timezone</span><br><span class="line">timezone Asia/Shanghai --utc</span><br><span class="line"></span><br><span class="line"># Root password</span><br><span class="line">rootpw --iscrypted --allow-ssh $6$TUP1uudnSI9B7Z6W$LyM66VXooostM4L8gU1D8Vwh1Si7fnocLA7EdLbpYI8sWvDcf2qS5gu4drGfajfwYMLh6pvXOV/G5A4BFWaxe0</span><br><span class="line"></span><br><span class="line"># System bootloader configuration</span><br><span class="line">bootloader --append=&quot; crashkernel=auto rootdelay=300 systemd.unified_cgroup_hierarchy=1 biosdevname=0 net.ifnames=0&quot; --location=mbr --boot-drive=sda</span><br><span class="line"></span><br><span class="line"># Generated using Blivet version 3.6.0</span><br><span class="line">ignoredisk --only-use=sda</span><br><span class="line"># Partition clearing information</span><br><span class="line">clearpart --none --initlabel</span><br><span class="line"># Disk partitioning information</span><br><span class="line">part /boot --fstype=&quot;ext4&quot; --ondisk=sda --size=1024</span><br><span class="line">part pv.881 --fstype=&quot;lvmpv&quot; --ondisk=sda --size=19450</span><br><span class="line">part biosboot --fstype=&quot;biosboot&quot; --ondisk=sda --size=2</span><br><span class="line">volgroup VA --pesize=4096 pv.881</span><br><span class="line">logvol swap --fstype=&quot;swap&quot; --size=2048 --name=swap --vgname=VA</span><br><span class="line">logvol /back --fstype=&quot;ext4&quot; --size=5120 --name=back --vgname=VA</span><br><span class="line">logvol /data --fstype=&quot;ext4&quot; --size=1024 --name=data --vgname=VA</span><br><span class="line">logvol / --fstype=&quot;ext4&quot; --percent=100 --name=root --vgname=VA</span><br><span class="line"></span><br><span class="line"># Disable SELinux</span><br><span class="line">selinux --disabled</span><br><span class="line"></span><br><span class="line"># # Reboot after installation</span><br><span class="line">reboot --eject</span><br><span class="line"></span><br><span class="line">%packages</span><br><span class="line">@^minimal-environment</span><br><span class="line">@standard</span><br><span class="line"></span><br><span class="line"># Add your RPM packages</span><br><span class="line">squid</span><br><span class="line"></span><br><span class="line">%end</span><br><span class="line"></span><br><span class="line">%addon com_redhat_kdump --enable --reserve-mb=&#x27;auto&#x27;</span><br><span class="line"></span><br><span class="line">%end</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">%post --logfile=/root/ks-post.log</span><br><span class="line"></span><br><span class="line">echo &quot;Post-Script for installation&quot;</span><br><span class="line"></span><br><span class="line">systemctl enable squid</span><br><span class="line">systemctl restart squid</span><br><span class="line"></span><br><span class="line">%end</span><br></pre></td></tr></table></figure>
+
+<p>使用ksvalidator检查ks.cfg语法, 再把ks.cfg拷贝到ISO目录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp ks.cfg isobuild/isolinux/ks.cfg</span><br></pre></td></tr></table></figure>
+
+<h2><span id="修改isolinuxcfg-grubcfg">修改isolinux.cfg, grub.cfg</span></h2><p><strong>修改ISO中的isolinux.cfg文件</strong><br>需要删掉文件末尾的默认启动菜单, 再添加你的启动菜单，通过inst.ks指定ks.cfg路径，如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">label kickstart</span><br><span class="line">  menu label ^Install My Custom ISO(Based on Rocky 9.4)</span><br><span class="line">  menu default</span><br><span class="line">  kernel vmlinuz</span><br><span class="line">  append initrd=initrd.img inst.stage2=hd:LABEL=VA quiet inst.ks=hd:LABEL=VA:/isolinux/ks.cfg inst.text selinux=0 biosdevname=0 net.ifnames=0</span><br></pre></td></tr></table></figure>
+
+<p><strong>修改ISO中的grub.cfg文件</strong><br>需要修改默认的menuentry, 通过inst.ks指定ks.cfg路径，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">### BEGIN /etc/grub.d/10_linux ###</span><br><span class="line">menuentry &#x27;Install My Custom ISO(Based on Rocky Linux 9.4)&#x27; --class fedora --class gnu-linux --class gnu --class os &#123;</span><br><span class="line">    linuxefi /images/pxeboot/vmlinuz inst.stage2=hd:LABEL=VA quiet inst.ks=hd:LABEL=VA:/isolinux/ks.cfg inst.text selinux=0 biosdevname=0 net.ifnames=0</span><br><span class="line">    initrdefi /images/pxeboot/initrd.img</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2><span id="构建iso">构建ISO</span></h2><p>调用genisoimage生成ISO, 调用implantisomd5校验ISO的md5</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">genisoimage -input-charset utf-8 -U -r -v -T -J -joliet-long -V &quot;VA&quot; -volset &quot;VA&quot; -A &quot;VA&quot; \</span><br><span class="line">-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table \</span><br><span class="line">-eltorito-alt-boot -e images/efiboot.img -no-emul-boot -o custom.iso ISO/</span><br><span class="line"></span><br><span class="line">implantisomd5 custom.iso</span><br></pre></td></tr></table></figure>
+
+<h2><span id="测试-安装iso">测试, 安装ISO</span></h2><p>最后安装ISO, 测试KickStart安装是否成功。</p>
+<h2><span id="参考资料">参考资料</span></h2><p><a target="_blank" rel="noopener external nofollow noreferrer" href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/automatically_installing_rhel/creating-kickstart-files_rhel-installer">https://docs.redhat.com/en/documentation/red_hat_enterprise_linux&#x2F;9&#x2F;html&#x2F;automatically_installing_rhel&#x2F;creating-kickstart-files_rhel-installer</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2024/1105202802.html" title="如何定制RockyLinux ISO">https://pcj600.github.io/2024/1105202802.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"><i class="fa fa-tag"></i> Linux</a>
+              <a href="/tags/Project/" rel="tag"><i class="fa fa-tag"></i> Project</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/1031225813.html" rel="prev" title="Docker配置国内源加速">
+      <i class="fa fa-chevron-left"></i> Docker配置国内源加速
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/1109151034.html" rel="next" title="Nginx入门">
+      Nginx入门 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">目标</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Rocky9 官方ISO内容分析</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">定制ISO的流程简述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">定制ISO的具体步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">0.准备一台RockyLinux9.X编译机，安装必要的编译依赖</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">1.下载Rocky9.4 minimal官方ISO, 挂载ISO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">2. 添加非预装的RPM包到ISO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">3. 添加ks.cfg，实现Kickstart自动化安装ISO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">修改isolinux.cfg, grub.cfg</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">构建ISO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试, 安装ISO</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description">PC的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">183</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">844k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">12:48</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>

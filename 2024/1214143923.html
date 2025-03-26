@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言k8s中的Pod由容器组成，容器运行的时候可能因为意外情况挂掉。为了保证服务的稳定性，在容器出现问题后能进行重启，k8s提供了3种探针 k8s的三种探针为了探测容器状态，k8s提供了两个探针: LivenessProbe和ReadinessProbe  LivenessProbe 存活性探针, 如果探测失败, 就根据Pod重启策略，判断是否要重启容器。 ReadinessProbe 就绪性探针">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes的三种探针ReadinessProbe、LivenessProbe和StartupProbe,以及使用示例">
+<meta property="og:url" content="https://pcj600.github.io/2024/1214143923.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="前言k8s中的Pod由容器组成，容器运行的时候可能因为意外情况挂掉。为了保证服务的稳定性，在容器出现问题后能进行重启，k8s提供了3种探针 k8s的三种探针为了探测容器状态，k8s提供了两个探针: LivenessProbe和ReadinessProbe  LivenessProbe 存活性探针, 如果探测失败, 就根据Pod重启策略，判断是否要重启容器。 ReadinessProbe 就绪性探针">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-12-14T06:39:23.000Z">
+<meta property="article:modified_time" content="2025-03-25T15:14:49.106Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Kubernetes">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://pcj600.github.io/2024/1214143923.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>kubernetes的三种探针ReadinessProbe、LivenessProbe和StartupProbe,以及使用示例 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">38</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">51</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">183</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1214143923.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          kubernetes的三种探针ReadinessProbe、LivenessProbe和StartupProbe,以及使用示例
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-12-14 14:39:23" itemprop="dateCreated datePublished" datetime="2024-12-14T14:39:23+08:00">2024-12-14</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2><span id="前言">前言</span></h2><p>k8s中的Pod由容器组成，容器运行的时候可能因为意外情况挂掉。为了保证服务的稳定性，在容器出现问题后能进行重启，k8s提供了3种探针</p>
+<h2><span id="k8s的三种探针">k8s的三种探针</span></h2><p>为了探测容器状态，k8s提供了两个探针: LivenessProbe和ReadinessProbe</p>
+<ul>
+<li>LivenessProbe 存活性探针, 如果探测失败, 就根据Pod重启策略，判断是否要重启容器。</li>
+<li>ReadinessProbe 就绪性探针，如果检测失败，将Pod的IP:Port从对应endpoint列表中删除，防止流量转发到不可用Pod上</li>
+</ul>
+<p>对于启动非常慢的应用, LivenessProbe和ReadinessProbe可能会一直检测失败，这会导致容器不停地重启。 所以k8s设计了第三种探针StartupProbe解决这个问题</p>
+<ul>
+<li>StartupProbe探针会阻塞LivenessProbe和ReadinessProbe, 直到满足StartupProbe(Pod完成启动)，再启用LivenessProbe和ReadinessProbe</li>
+</ul>
+<span id="more"></span>
+
+<h2><span id="livenessprobe和readinessprobe支持三种探测方法">LivenessProbe和ReadinessProbe支持三种探测方法</span></h2><ul>
+<li>ExecAction 容器中执行指定的命令，退出码为0表示探测成功。</li>
+<li>HTTPGetAction 通过HTTP GET请求容器，如果HTTP响应码在【200，400)，认为容器健康。</li>
+<li>TCPSocketAction 通过容器的IP地址和端口号执行TCP检查。如果建立TCP链接，则表明容器健康。</li>
+</ul>
+<p>可以给探针配置可选字段，用来更精确控制LivenessProbe和ReadinessProbe的行为</p>
+<ul>
+<li>initialDelaySeconds: 容器启动后等待多少秒后探针才开始工作，默认是0秒</li>
+<li>periodSeconds: 执行探测的时间间隔，默认为10秒</li>
+<li>timeoutSeconds: 探针执行检测请求后，等待响应的超时时间，默认为1秒</li>
+<li>failureThreshold: 探测失败的重试次数，重试一定次数后认为失败。</li>
+<li>successThreshold: 探针在失败后，被视为成功的最小连续成功数。默认值是 1。 存活和启动探测的这个值必须是 1。最小值是 1。</li>
+</ul>
+<h2><span id="实例-添加一个livenessprobe探针">实例: 添加一个LivenessProbe探针</span></h2><p>需求: 给Squid Pod添加一个livenessProbe, 每隔10秒检测一次Squid进程启动状态，如果连续3次检测进程异常, 就重启Pod</p>
+<p>首先创建一个Squid Pod, 参考: <a href="https://pcj600.github.io/2024/1208145435.html">【k8s实践】 部署Squid</a></p>
+<h3><span id="添加一个execaction类型的livenessprobe探针">添加一个ExecAction类型的livenessProbe探针</span></h3><p>可以通过<code>squid -k check</code>命令检测Squid进程运行状态，返回0说明正常, 返回非0值说明进程异常。<br>实例: 定义一个ExecAction类型的livenessProbe, deployment配置如下:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">squid</span></span><br><span class="line">    <span class="attr">livenessProbe:</span></span><br><span class="line">      <span class="attr">exec:</span></span><br><span class="line">        <span class="attr">command:</span> [<span class="string">&quot;squid&quot;</span>,<span class="string">&quot;-k&quot;</span>,<span class="string">&quot;check&quot;</span>]</span><br><span class="line">          <span class="attr">initialDelaySeconds:</span> <span class="number">5</span></span><br><span class="line">          <span class="attr">periodSeconds:</span> <span class="number">10</span></span><br><span class="line">          <span class="attr">failureThreshold:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure>
+
+<p>完整的squid-deployment.yaml如下:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">squid</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">squid</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">squid</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">1</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">app:</span> <span class="string">squid</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">app:</span> <span class="string">squid</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">volumes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">squid-volume</span></span><br><span class="line">          <span class="attr">persistentVolumeClaim:</span></span><br><span class="line">            <span class="attr">claimName:</span> <span class="string">squid-claim</span></span><br><span class="line">      <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br><span class="line">      <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">squid</span></span><br><span class="line">          <span class="attr">image:</span> <span class="string">squid:2.0</span></span><br><span class="line">          <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">          <span class="attr">livenessProbe:</span> <span class="comment"># 添加一个ExecAction类型的探针</span></span><br><span class="line">            <span class="attr">exec:</span></span><br><span class="line">              <span class="attr">command:</span> [<span class="string">&quot;squid&quot;</span>,<span class="string">&quot;-k&quot;</span>,<span class="string">&quot;check&quot;</span>] <span class="comment"># 如果Squid进程运行, `squid -k check`返回0; 否则返回非0值</span></span><br><span class="line">            <span class="attr">initialDelaySeconds:</span> <span class="number">5</span></span><br><span class="line">            <span class="attr">periodSeconds:</span> <span class="number">10</span></span><br><span class="line">            <span class="attr">failureThreshold:</span> <span class="number">3</span></span><br><span class="line">          <span class="attr">resources:</span></span><br><span class="line">            <span class="attr">limits:</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">&quot;4Gi&quot;</span></span><br><span class="line">          <span class="attr">volumeMounts:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="attr">mountPath:</span> <span class="string">/var/log/squid</span></span><br><span class="line">              <span class="attr">name:</span> <span class="string">squid-volume</span></span><br></pre></td></tr></table></figure>
+<p>重新部署deployment, 通过<code>kubectl -n squid get deploy squid -o yaml</code>, 确认探针已配置到deployment.</p>
+<p><strong>测试</strong><br><code>kubectl exec</code>进入容器, 使用<code>squid -k shutdown</code>手动停止Squid。 等30秒左右，可以观察到容器自动退出重启, 并且从日志中能看到健康检测失败结果:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[root@k8s-master ~]# kubectl -n squid exec -it squid-8674587b79-29mq8 -- /bin/bash</span><br><span class="line">[root@k8s-master /]# squid -k shutdown</span><br><span class="line">...</span><br><span class="line">[root@k8s-master /]# squid -k check</span><br><span class="line">2024/12/14 04:53:31| FATAL: failed to open /run/squid.pid: (2) No such file or directory</span><br><span class="line">    exception location: File.cc(190) open</span><br><span class="line">[root@k8s-master /]# echo $?</span><br><span class="line">1</span><br><span class="line"></span><br><span class="line"># 等待半分钟左右, 容器自动退出</span><br><span class="line">[root@k8s-master /]# command terminated with exit code 137</span><br><span class="line">[root@k8s-master ~]#</span><br><span class="line"></span><br><span class="line"># 此时宿主机上查看Pod，发现RESTARTS次数变为1</span><br><span class="line">[root@k8s-master /]# kubectl -n squid get pods  </span><br><span class="line">squid         squid-8674587b79-29mq8                     1/1     Running   1 (45s ago)     11m</span><br><span class="line"></span><br><span class="line"># 通过`kubectl describe`，可以查到探针检测失败的LOG</span><br><span class="line"> kubectl -n squid describe pod squid-8674587b79-29mq8 | grep Unhealthy</span><br><span class="line">  Warning  Unhealthy         2m49s  kubelet            Liveness probe failed: 2024/12/14 04:53:19| FATAL: failed to open /run/squid.pid: (2) No such file or directory</span><br><span class="line">  Warning  Unhealthy  2m39s  kubelet  Liveness probe failed: 2024/12/14 04:53:29| FATAL: failed to open /run/squid.pid: (2) No such file or directory</span><br><span class="line">  Warning  Unhealthy  2m29s  kubelet  Liveness probe failed: 2024/12/14 04:53:39| FATAL: failed to open /run/squid.pid: (2) No such file or directory</span><br></pre></td></tr></table></figure>
+
+<h3><span id="添加一个httpget类型的livenessprobe探针">添加一个HttpGet类型的livenessProbe探针</span></h3><p>HttpGet探针要求Pod里有一个HTTP的server。 例如：请求<code>http://localhost:5000/healthz</code> 探测Pod健康状态，deployment设置如下</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">livenessProbe:</span></span><br><span class="line">  <span class="attr">httpGet:</span></span><br><span class="line">    <span class="attr">path:</span> <span class="string">/healthz</span></span><br><span class="line">    <span class="attr">port:</span> <span class="number">5000</span></span><br><span class="line">  <span class="attr">initialDelaySeconds:</span> <span class="number">5</span></span><br><span class="line">  <span class="attr">periodSeconds:</span> <span class="number">10</span></span><br><span class="line">  <span class="attr">failureThreshold:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure>
+<p>在Pod里写一个HTTP的server, 我这里用的Flask</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python3</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># logging</span></span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line">logger = logging.getLogger(__name__)</span><br><span class="line">file_handler = logging.FileHandler(<span class="string">&#x27;/var/log/squid/agent.log&#x27;</span>)</span><br><span class="line">formatter = logging.Formatter(<span class="string">&#x27;%(asctime)s - %(name)s - %(levelname)s - %(message)s&#x27;</span>)</span><br><span class="line">file_handler.setFormatter(formatter)</span><br><span class="line">logger.addHandler(file_handler)</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> subprocess</span><br><span class="line"><span class="keyword">import</span> traceback</span><br><span class="line"></span><br><span class="line"><span class="comment"># Flask</span></span><br><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask, jsonify, request</span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/healthz&#x27;</span>, methods=[<span class="string">&#x27;GET&#x27;</span>]</span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">health_check</span>():</span><br><span class="line">    retCode = <span class="number">0</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        result = subprocess.run([<span class="string">&#x27;/usr/sbin/squid&#x27;</span>, <span class="string">&#x27;-k&#x27;</span>, <span class="string">&#x27;check&#x27;</span>])</span><br><span class="line">        retCode = result.returncode</span><br><span class="line">        <span class="keyword">if</span> retCode == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">return</span> (jsonify(&#123;<span class="string">&#x27;code&#x27;</span>: <span class="number">0</span>, <span class="string">&#x27;msg&#x27;</span>: <span class="string">&#x27;OK&#x27;</span>&#125;), <span class="number">200</span>)</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        logger.error(<span class="string">&quot;health_check %r&quot;</span>, traceback.format_exc())</span><br><span class="line">        <span class="keyword">return</span> (jsonify(&#123;<span class="string">&#x27;code&#x27;</span>: -<span class="number">1</span>, <span class="string">&#x27;msg&#x27;</span>: <span class="string">&#x27;Fail&#x27;</span>, <span class="string">&#x27;msg&#x27;</span>: <span class="string">&#x27;Service Unavailable&#x27;</span>&#125;), <span class="number">500</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> (jsonify(&#123;<span class="string">&#x27;code&#x27;</span>: retCode, <span class="string">&#x27;msg&#x27;</span>: <span class="string">&#x27;Fail&#x27;</span>&#125;), <span class="number">400</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    app.run(host=<span class="string">&#x27;0.0.0.0&#x27;</span>, port=<span class="number">5000</span>)</span><br></pre></td></tr></table></figure>
+<p>再把脚本做到镜像里，安装python3和pip依赖(flask,requests),重新打包部署</p>
+<p><strong>测试</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl localhost:5000/healthz</span><br><span class="line">&#123;&quot;code&quot;:0,&quot;msg&quot;:&quot;OK&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2><span id="参考">参考</span></h2><p>[1] <a target="_blank" rel="noopener external nofollow noreferrer" href="https://juejin-cn.translate.goog/post/7018950464964132877?_x_tr_sl=zh-CN&_x_tr_tl=en&_x_tr_hl=en&_x_tr_pto=sc&_x_tr_hist=true">Correct use of k8s probe</a><br>[2] <a target="_blank" rel="noopener external nofollow noreferrer" href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/">Configure Liveness, Readiness and Startup Probes</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2024/1214143923.html" title="kubernetes的三种探针ReadinessProbe、LivenessProbe和StartupProbe,以及使用示例">https://pcj600.github.io/2024/1214143923.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kubernetes/" rel="tag"><i class="fa fa-tag"></i> Kubernetes</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2024/1211220649.html" rel="prev" title="配置Nginx自签名SSL证书，支持HTTPS">
+      <i class="fa fa-chevron-left"></i> 配置Nginx自签名SSL证书，支持HTTPS
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2024/1214161118.html" rel="next" title="k8s的ConfigMap是什么, 为什么设计ConfigMap, 如何使用ConfigMap">
+      k8s的ConfigMap是什么, 为什么设计ConfigMap, 如何使用ConfigMap <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">k8s的三种探针</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">LivenessProbe和ReadinessProbe支持三种探测方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">实例: 添加一个LivenessProbe探针</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">添加一个ExecAction类型的livenessProbe探针</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">添加一个HttpGet类型的livenessProbe探针</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description">PC的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">183</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">844k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">12:48</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>

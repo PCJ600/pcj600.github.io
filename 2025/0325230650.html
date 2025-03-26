@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="CoreDNS是什么CoreDNS是一个灵活可扩展的DNS服务器，使用Go语言编写，旨在提供快速、灵活的DNS服务 为什么需要CoreDNSCoreDNS为Kubernetes集群内部的DNS解析提供服务，使得服务之间能够通过域名互相通信Kubernetes集群中, CoreDNS是运行在kube-system这个namespace下的Pod 123kubectl -n kube-system g">
+<meta property="og:type" content="article">
+<meta property="og:title" content="理解Kubernetes中CoreDNS域名解析与DNS策略">
+<meta property="og:url" content="https://pcj600.github.io/2025/0325230650.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="CoreDNS是什么CoreDNS是一个灵活可扩展的DNS服务器，使用Go语言编写，旨在提供快速、灵活的DNS服务 为什么需要CoreDNSCoreDNS为Kubernetes集群内部的DNS解析提供服务，使得服务之间能够通过域名互相通信Kubernetes集群中, CoreDNS是运行在kube-system这个namespace下的Pod 123kubectl -n kube-system g">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-03-25T15:06:50.000Z">
+<meta property="article:modified_time" content="2025-03-25T15:24:00.685Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Kubernetes">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://pcj600.github.io/2025/0325230650.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>理解Kubernetes中CoreDNS域名解析与DNS策略 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">38</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">51</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">183</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0325230650.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          理解Kubernetes中CoreDNS域名解析与DNS策略
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-03-25 23:06:50" itemprop="dateCreated datePublished" datetime="2025-03-25T23:06:50+08:00">2025-03-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1><span id="coredns是什么">CoreDNS是什么</span></h1><p>CoreDNS是一个灵活可扩展的DNS服务器，使用Go语言编写，旨在提供快速、灵活的DNS服务</p>
+<h1><span id="为什么需要coredns">为什么需要CoreDNS</span></h1><p>CoreDNS为Kubernetes集群内部的DNS解析提供服务，使得服务之间能够通过域名互相通信<br>Kubernetes集群中, CoreDNS是运行在kube-system这个namespace下的Pod</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n kube-system get pod coredns-66f779496c-b7mmz</span><br><span class="line">NAME                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-66f779496c-b7mmz   1/1     Running   4 (28m ago)   4d23h</span><br></pre></td></tr></table></figure>
+
+<h1><span id="k8s集群中的域名是如何解析的">k8s集群中的域名是如何解析的</span></h1><p>比如服务a访问服务b:</p>
+<ul>
+<li>如果a和b在同一个namespace下, 可以直接在pod a中, 通过<code>curl b</code>来访问b</li>
+<li>如果a和b不在同一个namespace下, 在pod a中需要通过<code>curl b.namespaceb</code>来访问b</li>
+</ul>
+<p>以下动手测试</p>
+<span id="more"></span>
+
+<h2><span id="测试同一个namespace下的服务间域名解析">测试同一个namespace下的服务间域名解析</span></h2><p>创建一个名为foo的namespace, 再创建两个Flask服务(svca, svcb)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">kubectl get all -n foo</span><br><span class="line">NAME                        READY   STATUS    RESTARTS   AGE</span><br><span class="line">pod/svca-78f6c85d4-sd97h    1/1     Running   0          43s</span><br><span class="line">pod/svcb-5fccb7d86b-mkqg7   1/1     Running   0          43s</span><br><span class="line"></span><br><span class="line">NAME           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE</span><br><span class="line">service/svca   ClusterIP   10.98.115.242    &lt;none&gt;        8000/TCP   24s</span><br><span class="line">service/svcb   ClusterIP   10.111.107.194   &lt;none&gt;        8000/TCP   23s</span><br><span class="line"></span><br><span class="line">NAME                   READY   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">deployment.apps/svca   1/1     1            1           24s</span><br><span class="line">deployment.apps/svcb   1/1     1            1           23s</span><br></pre></td></tr></table></figure>
+
+<p>进入pod a, 通过<code>curl http://svcb</code> 访问 b</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubectl exec -it pod/svca-78f6c85d4-sd97h -n foo -- sh</span><br><span class="line"></span><br><span class="line"># curl http://svcb:8000</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
+
+<h2><span id="测试不同namespace下的服务间域名解析">测试不同namespace下的服务间域名解析</span></h2><p>两个服务(svca, svcb), svca在foo命名空间, svcb在bar命名空间, 在pod a中访问b, 使用<code>curl http://svcb.bar</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl exec -it pod/svca-78f7c85d4-sd97h -n foo -- sh</span><br><span class="line"># curl http://svcb.bar:8000</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
+
+<h2><span id="为什么同一namespace下-直接访问服务名ltservice-namegt就可以-不同namespace下-必须带上namespaceltservice-namegtltnamespacegt">为什么同一Namespace下, 直接访问服务名<code>&lt;service-name&gt;</code>就可以, 不同Namespace下, 必须带上namespace(<code>&lt;service-name&gt;.&lt;namespace&gt;</code>) ?</span></h2><p>进入pod a, 查看<code>/etc/resolve.conf</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">search foo.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">nameserver 10.96.0.10</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+
+<p>这里的DNS Server(10.96.0.10)是kube-dns的ClusterIP</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># kubectl -n kube-system get svc</span><br><span class="line">NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE</span><br><span class="line">kube-dns   ClusterIP   10.96.0.10   &lt;none&gt;        53/UDP,53/TCP,9153/TCP   9d</span><br></pre></td></tr></table></figure>
+
+<p>查看<code>/etc/resolv.conf</code>, 其中的关键点在于search指令和ndots选项：</p>
+<ul>
+<li>search：这个指令定义了一系列的后缀，当DNS查询失败时，会依次尝试将这些后缀附加到原始查询域名后面，直到找到匹配项或所有后缀都已尝试过。</li>
+<li>ndots：如果一个域名中包含的点（.）数量小于ndots值，则该域名会被认为是“不完整”的域名。在这种情况下，DNS 客户端会尝试将 &#x2F;etc&#x2F;resolv.conf 中的 search 路径逐一追加到该域名后进行解析。如果域名中的点数大于或等于 ndots，则直接将其作为完整的域名进行查询。</li>
+</ul>
+<p>k8s集群中某个服务完整的域名格式是<code>&lt;service-name&gt;.&lt;namespace&gt;.svc.&lt;cluster-domain&gt;</code>, 验证一下:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># nslookup svcb.foo.svc.cluster.local 10.96.0.10</span><br><span class="line">Server:         10.96.0.10</span><br><span class="line">Address:        10.96.0.10#53</span><br><span class="line"></span><br><span class="line">Name:   svcb.foo.svc.cluster.local</span><br><span class="line">Address: 10.111.107.194</span><br></pre></td></tr></table></figure>
+
+<p><strong>同一命名空间下的服务访问</strong><br>CoreDNS会按照<code>svcb.foo.svc.cluster.local</code> -&gt; <code>svcb.svc.cluster.local</code> -&gt; <code>svcb.cluster.local</code>顺序解析, 可以看出第一次解析(<code>svcb.foo.svc.cluster.local</code>)就会成功</p>
+<p><strong>不同命名空间下的服务访问</strong><br>必须使用<code>&lt;service-name&gt;.&lt;namespace&gt;</code>的形式，例如<code>svcb.bar</code>, CoreDNS会按照 <code>svcb.bar.foo.svc.cluster.local</code> -&gt; <code>svcb.bar.svc.cluster.local</code> -&gt; <code>svcb.bar.cluster.local</code>, 可以看出第二次解析(<code>svcb.bar.svc.cluster.local</code>)就会成功</p>
+<h2><span id="访问外部域名是否走search域">访问外部域名是否走search域 ?</span></h2><p>测试一下, 进入pod, 使用nslookup指定coreDNS, 查询外部域名<code>www.trendmicro.com</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n bar exec -it svcb-5fccb7d86b-wj6nv -- sh</span><br><span class="line">sh-5.1# nslookup www.trendmicro.com 10.96.0.10</span><br><span class="line">Server:         10.96.0.10</span><br><span class="line">Address:        10.96.0.10#53</span><br><span class="line"></span><br><span class="line">Non-authoritative answer:</span><br><span class="line">www.trendmicro.com      canonical name = ion.trendmicro.com.edgekey.net.</span><br><span class="line">ion.trendmicro.com.edgekey.net  canonical name = e3576.a.akamaiedge.net.</span><br><span class="line">Name:   e3576.a.akamaiedge.net</span><br><span class="line">Address: 23.217.64.161</span><br><span class="line"></span><br><span class="line">抓包</span><br><span class="line"># tcpdump -i eth0 udp</span><br><span class="line">dropped privs to tcpdump</span><br><span class="line">tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span><br><span class="line">13:13:54.687483 IP svcb-5fccb7d86b-wj6nv.37345 &gt; kube-dns.kube-system.svc.cluster.local.domain: 44803+ A? www.trendmicro.com.bar.svc.cluster.local. (58)</span><br><span class="line">13:13:54.687791 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.37345: 44803 NXDomain*- 0/1/0 (151)</span><br><span class="line">13:13:54.688531 IP svcb-5fccb7d86b-wj6nv.47832 &gt; kube-dns.kube-system.svc.cluster.local.domain: 45213+ A? www.trendmicro.com.svc.cluster.local. (54)</span><br><span class="line">13:13:54.688671 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.47832: 45213 NXDomain*- 0/1/0 (147)</span><br><span class="line">13:13:54.688877 IP svcb-5fccb7d86b-wj6nv.56239 &gt; kube-dns.kube-system.svc.cluster.local.domain: 52750+ A? www.trendmicro.com.cluster.local. (50)</span><br><span class="line">13:13:54.689073 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.56239: 52750 NXDomain*- 0/1/0 (143)</span><br><span class="line">13:13:54.689225 IP svcb-5fccb7d86b-wj6nv.41094 &gt; kube-dns.kube-system.svc.cluster.local.domain: 46754+ A? www.trendmicro.com. (36)</span><br><span class="line">13:13:54.720336 IP svcb-5fccb7d86b-wj6nv.36285 &gt; kube-dns.kube-system.svc.cluster.local.domain: 55747+ PTR? 10.0.96.10.in-addr.arpa. (41)</span><br><span class="line">13:13:54.721011 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.36285: 55747*- 1/0/0 PTR kube-dns.kube-system.svc.cluster.local. (116)</span><br><span class="line">13:13:54.731442 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.41094: 46754 3/0/0 CNAME ion.trendmicro.com.edgekey.net., CNAME e3576.a.akamaiedge.net., A 23.208.168.135 (202)</span><br><span class="line">13:13:54.735385 IP svcb-5fccb7d86b-wj6nv.37844 &gt; kube-dns.kube-system.svc.cluster.local.domain: 29753+ AAAA? e3576.a.akamaiedge.net. (40)</span><br><span class="line">13:13:54.775441 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.37844: 29753 0/1/0 (131)</span><br><span class="line">————————————————</span><br></pre></td></tr></table></figure>
+<p>可以看出, 解析<code>www.trendmicro.com</code>走了search域, 有3次无用的DNS请求<br><code>www.trendmicro.com.bar.svc.cluster.local. -&gt; www.trendmicro.com.svc.cluster.local. -&gt;  www.trendmicro.com.cluster.local. -&gt; www.trendmicro.com.</code></p>
+<p>如果我们只用到了同namespace下的访问、或者跨namespace下的service访问, 可以把ndots默认值改成2, 减少DNS查询, 提高性能</p>
+<h1><span id="kubernetes-dns-策略">Kubernetes DNS 策略</span></h1><p>在Kubernetes中，dnsPolicy字段定义了Pod的DNS配置策略，提供了四种不同的策略：ClusterFirst、 ClusterFirstWithHostNet、 Default 和 None</p>
+<h3><span id="clusterfirst默认">ClusterFirst（默认）</span></h3><p>Kubernetes的默认DNS策略, Pod优先使用CoreDNS进行域名解析, 如果CoreDNS无法解析，回退到宿主机的DNS配置进行解析<br>这是最常见的配置, 适用于需要访问集群内其他服务的应用</p>
+<h3><span id="clusterfirstwithhostnet">ClusterFirstWithHostNet</span></h3><p>这个策略专为使用主机网络(hostNetwork: true）的Pod设计, 仍然优先使用CoreDNS进行解析<br>适用于需要直接监听宿主机上网络接口, 但仍需访问集群内其他服务的应用</p>
+<h3><span id="default">Default</span></h3><p>使用宿主机的DNS设置，完全不使用CoreDNS<br>适用于主要访问外部服务的应用, 避免CoreDNS解析外部域名带来的延迟问题</p>
+<h3><span id="none">None</span></h3><p>完全忽略Kubernetes和宿主机的DNS配置，要求用户自行指定DNS设置。 适用于对DNS配置有高度定制需求的应用. 配置示例如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: custom-dns-pod</span><br><span class="line">spec:</span><br><span class="line">  dnsPolicy: None</span><br><span class="line">  dnsConfig:</span><br><span class="line">    nameservers:</span><br><span class="line">      - 8.8.8.8</span><br><span class="line">      - 8.8.4.4</span><br><span class="line">    searches:</span><br><span class="line">      - ns1.svc.cluster.local</span><br><span class="line">      - mycompany.local</span><br><span class="line">    options:</span><br><span class="line">      - name: ndots</span><br><span class="line">        value: &quot;2&quot;</span><br><span class="line">      - name: edns0</span><br></pre></td></tr></table></figure>
+
+
+<h2><span id="参考">参考</span></h2><p>【1】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://coredns.io/manual/toc/">https://coredns.io/manual/toc/</a><br>【2】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://cloud.tencent.com/developer/article/2126510">https://cloud.tencent.com/developer/article/2126510</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2025/0325230650.html" title="理解Kubernetes中CoreDNS域名解析与DNS策略">https://pcj600.github.io/2025/0325230650.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kubernetes/" rel="tag"><i class="fa fa-tag"></i> Kubernetes</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/0323210500.html" rel="prev" title="使用Helm安装、 升级、 回滚Kubernetes应用">
+      <i class="fa fa-chevron-left"></i> 使用Helm安装、 升级、 回滚Kubernetes应用
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">CoreDNS是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">为什么需要CoreDNS</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">k8s集群中的域名是如何解析的</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试同一个namespace下的服务间域名解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试不同namespace下的服务间域名解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么同一Namespace下, 直接访问服务名&lt;service-name&gt;就可以, 不同Namespace下, 必须带上namespace(&lt;service-name&gt;.&lt;namespace&gt;) ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">访问外部域名是否走search域 ?</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Kubernetes DNS 策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">ClusterFirst（默认）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">ClusterFirstWithHostNet</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">Default</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">None</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description">PC的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">183</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">844k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">12:48</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Microk8s Ingress是什么Ingress是k8s的一种资源对象，用于管理外部对集群内服务的访问, 它通过提供一个统一的入口点，将外部流量路由到集群内部的不同服务。 Microk8s Ingress用于解决什么问题k8s集群中服务默认只能在集群内访问。 如果需要从外部访问服务，通常需要使用NodePort或LoadBalancer类型服务，这两个服务都存在一些问题  NodePort会占">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Microk8s Ingress实现七层负载均衡">
+<meta property="og:url" content="https://pcj600.github.io/2025/0303201100.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="Microk8s Ingress是什么Ingress是k8s的一种资源对象，用于管理外部对集群内服务的访问, 它通过提供一个统一的入口点，将外部流量路由到集群内部的不同服务。 Microk8s Ingress用于解决什么问题k8s集群中服务默认只能在集群内访问。 如果需要从外部访问服务，通常需要使用NodePort或LoadBalancer类型服务，这两个服务都存在一些问题  NodePort会占">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pcj600.github.io/2025/0303201100/image1.png">
+<meta property="article:published_time" content="2025-03-03T12:11:00.000Z">
+<meta property="article:modified_time" content="2025-03-25T15:15:15.790Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="Project">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pcj600.github.io/2025/0303201100/image1.png">
+
+<link rel="canonical" href="https://pcj600.github.io/2025/0303201100.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Microk8s Ingress实现七层负载均衡 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">38</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">51</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">183</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0303201100.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Microk8s Ingress实现七层负载均衡
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-03-03 20:11:00" itemprop="dateCreated datePublished" datetime="2025-03-03T20:11:00+08:00">2025-03-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>8.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1><span id="microk8s-ingress是什么">Microk8s Ingress是什么</span></h1><p>Ingress是k8s的一种资源对象，用于管理外部对集群内服务的访问, 它通过提供一个统一的入口点，将外部流量路由到集群内部的不同服务。</p>
+<h1><span id="microk8s-ingress用于解决什么问题">Microk8s Ingress用于解决什么问题</span></h1><p>k8s集群中服务默认只能在集群内访问。 如果需要从外部访问服务，通常需要使用NodePort或LoadBalancer类型服务，这两个服务都存在一些问题</p>
+<ul>
+<li>NodePort会占用节点端口，可能导致端口冲突</li>
+<li>LoadBalancer需要云提供商支持, 不适合本地环境</li>
+<li>Ingress提供一种灵活的方式暴露服务，允许通过域名或路径规则将流量路由到不同的服务</li>
+</ul>
+<h1><span id="microk8s-ingress基本原理">Microk8s Ingress基本原理</span></h1><ul>
+<li>Microk8s内置了一个Nginx的Ingress Controller, 负责监听k8s中的Ingress资源，当检测到Ingress资源更新时, 动态更新Nginx配置文件</li>
+<li>外部流量先到达Nginx, 再基于域名和URL将请求转发到Service, Service再将流量分发到Pod</li>
+</ul>
+<span id="more"></span>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># kubectl -n ingress get pod nginx-ingress-microk8s-controller-nrftt</span><br><span class="line">NAME                                      READY   STATUS    RESTARTS   AGE</span><br><span class="line">nginx-ingress-microk8s-controller-nrftt   1/1     Running   0          15m</span><br><span class="line"></span><br><span class="line"># ps axf </span><br><span class="line"> 860646 ?        Sl     0:00 /var/lib/snapd/snap/microk8s/7665/bin/containerd-shim-runc-v2 -namespace k8s.io -id 8fb71f54235bf26664240c8b9272b623a70d</span><br><span class="line"> 860668 ?        Ss     0:00  \_ /pause</span><br><span class="line"> 860700 ?        Ss     0:00  \_ /usr/bin/dumb-init -- /nginx-ingress-controller --configmap=ingress/nginx-load-balancer-microk8s-conf --tcp-services-configmap=ingress/nginx-ingress-tcp-microk8s-conf --udp-services-configmap=ingress/nginx-ingress-udp-microk8s-conf --ingress-class=public   --publish-status-address=127.0.0.1 --default-ssl-certificate=default/example-tls</span><br><span class="line"> 860712 ?        Ssl    0:00      \_ /nginx-ingress-controller --configmap=ingress/nginx-load-balancer-microk8s-conf --tcp-services-configmap=ingress/nginx-ingress-tcp-microk8s-conf --udp-services-configmap=ingress/nginx-ingress-udp-microk8s-conf --ingress-class=public   --publish-status-address=127.0.0.1 --default-ssl-certificate=default/example-tls</span><br><span class="line"> 860782 ?        S      0:00          \_ nginx: master process /usr/bin/nginx -c /etc/nginx/nginx.conf</span><br><span class="line"> 860786 ?        Sl     0:00              \_ nginx: worker process</span><br><span class="line"> 860787 ?        Sl     0:00              \_ nginx: worker process</span><br><span class="line"> 860788 ?        Sl     0:00              \_ nginx: worker process</span><br><span class="line"> 860789 ?        Sl     0:00              \_ nginx: worker process</span><br><span class="line"> 860790 ?        S      0:00              \_ nginx: cache manager process</span><br></pre></td></tr></table></figure>
+
+<h1><span id="实践-使用microk8s-ingress配置httpx2ftcp负载均衡">实践: 使用Microk8s Ingress配置HTTP&#x2F;TCP负载均衡</span></h1><p>首先安装并启动Microk8s和Ingress插件, 参考: <a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/pcj_888/article/details/144169716">在RockyLinux9.4上安装Microk8s</a><br>演示案例如下图:<br><img data-src="/2025/0303201100/image1.png"></p>
+<h2><span id="支持http负载均衡">支持HTTP负载均衡</span></h2><p>用Flask写两个简单的HTTP服务</p>
+<p>app.py</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">from flask import Flask</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line">@app.route(&#x27;/foo/&#x27;)</span><br><span class="line">def hello_world():</span><br><span class="line">    return &quot;Hello, foo!&quot;</span><br><span class="line"></span><br><span class="line">if __name__ == &#x27;__main__&#x27;:</span><br><span class="line">    app.run(host=&#x27;0.0.0.0&#x27;, port=8080)</span><br></pre></td></tr></table></figure>
+
+<p>Dockerfile</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">FROM python:3.9-slim</span><br><span class="line">WORKDIR /app</span><br><span class="line">COPY . /app</span><br><span class="line">RUN pip install flask</span><br><span class="line">EXPOSE 8080</span><br><span class="line">CMD [&quot;python&quot;, &quot;app.py&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>构建docker镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker build -t foo:1.0 -f Dockerfile .</span><br><span class="line">docker save foo:1.0 &gt; foo.tar</span><br></pre></td></tr></table></figure>
+
+<p>创建k8s资源, 创建Deployment</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: foo-deployment</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: foo</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: foo</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: foo</span><br><span class="line">        image: foo:1.0</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 8080</span><br></pre></td></tr></table></figure>
+
+<p>创建Service</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: foo-service</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: foo</span><br><span class="line">  ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      port: 80</span><br><span class="line">      targetPort: 8080</span><br><span class="line">  type: ClusterIP</span><br></pre></td></tr></table></figure>
+
+<p>在Microk8s环境上导入镜像, 创建yaml, 先在集群内部测试一下服务OK</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">microk8s.ctr image *.tar</span><br><span class="line">kubectl create -f *.yaml</span><br><span class="line"></span><br><span class="line"># kubectl get svc</span><br><span class="line">default       bar-service   ClusterIP   10.152.183.208   &lt;none&gt;        80/TCP                   11s</span><br><span class="line">default       foo-service   ClusterIP   10.152.183.189   &lt;none&gt;        80/TCP                   25m</span><br><span class="line"># curl 10.152.183.189:80/foo/</span><br><span class="line">Hello Foo!</span><br><span class="line"># curl 10.152.183.208/bar/</span><br><span class="line">Hello Bar!</span><br></pre></td></tr></table></figure>
+
+<p><strong>配置Ingress, 支持集群外访问</strong><br>默认情况下, Ingress Controller是通过NodePort类型暴露的, 这里我们改成监听宿主机的80端口, 通过修改Ingress的DaemonSet实现:<br>创建nginx-ingress-microk8s-controller-patch.yaml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: DaemonSet</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-ingress-microk8s-controller</span><br><span class="line">  namespace: ingress</span><br><span class="line">spec:</span><br><span class="line">  template:</span><br><span class="line">    spec:</span><br><span class="line">      hostNetwork: true</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx-ingress-microk8s</span><br><span class="line">        args:</span><br><span class="line">        # must list all others here?</span><br><span class="line">        - /nginx-ingress-controller</span><br><span class="line">        - --configmap=$(POD_NAMESPACE)/nginx-load-balancer-microk8s-conf</span><br><span class="line">        - --tcp-services-configmap=$(POD_NAMESPACE)/nginx-ingress-tcp-microk8s-conf</span><br><span class="line">        - --udp-services-configmap=$(POD_NAMESPACE)/nginx-ingress-udp-microk8s-conf</span><br><span class="line">        - --ingress-class=public</span><br><span class="line">        - &#x27; &#x27;</span><br><span class="line">        - --publish-status-address=127.0.0.1</span><br></pre></td></tr></table></figure>
+<p>修改Ingress的DaemonSet</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n ingress patch ds nginx-ingress-microk8s-controller --patch-file nginx-ingress-microk8s-controller-patch.yaml</span><br></pre></td></tr></table></figure>
+<p>确认宿主机80端口已经LISTEN</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ss -antp | grep &quot;:*80&quot;</span><br><span class="line">LISTEN    0      4096                  0.0.0.0:80                   0.0.0.0:*     users:((&quot;nginx&quot;,pid=741444,fd=17),(&quot;nginx&quot;,pid=741437,fd=17))</span><br></pre></td></tr></table></figure>
+
+<p>创建Ingress资源, 支持从集群外访问两个HTTP服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: networking.k8s.io/v1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: example-ingress</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: foo.example.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /foo/</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: foo-service</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br><span class="line">  - host: bar.example.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /bar/</span><br><span class="line">        pathType: Prefix</span><br><span class="line">        backend:</span><br><span class="line">          service:</span><br><span class="line">            name: bar-service</span><br><span class="line">            port:</span><br><span class="line">              number: 80</span><br></pre></td></tr></table></figure>
+
+<p>测试, 从集群外部访问成功</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl foo.example.com/foo/</span><br><span class="line">Hello Foo!</span><br><span class="line">curl bar.example.com/bar/</span><br><span class="line">Hello Bar!</span><br></pre></td></tr></table></figure>
+
+<h2><span id="支持tcp负载均衡">支持TCP负载均衡</span></h2><p>Ingress同时支持四层(TCP,UDP)的负载均衡, 例如:</p>
+<p>创建一个TCP服务, 监听8888端口 (tcp-service.yaml)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: tcp-server</span><br><span class="line">  namespace: service-foo</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: tcp-server</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: tcp-server</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: tcp-container</span><br><span class="line">        image: busybox</span><br><span class="line">        command: [&quot;nc&quot;, &quot;-lk&quot;, &quot;8888&quot;]</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 8888</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: tcp-service</span><br><span class="line">  namespace: service-foo</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: tcp-server</span><br><span class="line">  ports:</span><br><span class="line">    - protocol: TCP</span><br><span class="line">      port: 8888</span><br><span class="line">      targetPort: 8888</span><br><span class="line">  type: ClusterIP</span><br></pre></td></tr></table></figure>
+
+<p>配置Ingress的ConfigMap, 以支持TCP的暴露</p>
+<p>创建nginx-ingress-tcp-microk8s-conf-patch.yaml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">kind: ConfigMap</span><br><span class="line">apiVersion: v1</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-ingress-tcp-microk8s-conf</span><br><span class="line">  namespace: ingress</span><br><span class="line">data:</span><br><span class="line">  &quot;8888&quot;: tcp-service:8888</span><br></pre></td></tr></table></figure>
+<p>修改Ingress的ConfigMap</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n ingress patch cm nginx-ingress-tcp-microk8s-conf --patch-file nginx-ingress-tcp-microk8s-conf-patch.yaml</span><br></pre></td></tr></table></figure>
+
+<p>从集群外部测试, 访问成功</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># telnet foo.example.com 8888</span><br><span class="line">Connected to foo.example.com.</span><br><span class="line">Escape character is &#x27;^]&#x27;</span><br></pre></td></tr></table></figure>
+
+<h2><span id="ingress-支持https">Ingress 支持HTTPS</span></h2><p>生成证书和私钥</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj &quot;/CN=example.com/O=Example Company&quot;</span><br></pre></td></tr></table></figure>
+<p>创建kubernetes secret</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">microk8s kubectl create secret tls example-tls --cert=tls.crt --key=tls.key -n default</span><br></pre></td></tr></table></figure>
+<p>改一下Ingress的DaemonSet, 添加一行<code>--default-ssl-certificate</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: DaemonSet</span><br><span class="line">metadata:</span><br><span class="line">  name: nginx-ingress-microk8s-controller</span><br><span class="line">  namespace: ingress</span><br><span class="line">spec:</span><br><span class="line">  template:</span><br><span class="line">    spec:</span><br><span class="line">      hostNetwork: true</span><br><span class="line">      containers:</span><br><span class="line">      - name: nginx-ingress-microk8s</span><br><span class="line">        args:</span><br><span class="line">        # must list all others here?</span><br><span class="line">        - /nginx-ingress-controller</span><br><span class="line">        - --configmap=$(POD_NAMESPACE)/nginx-load-balancer-microk8s-conf</span><br><span class="line">        - --tcp-services-configmap=$(POD_NAMESPACE)/nginx-ingress-tcp-microk8s-conf</span><br><span class="line">        - --udp-services-configmap=$(POD_NAMESPACE)/nginx-ingress-udp-microk8s-conf</span><br><span class="line">        - --ingress-class=public</span><br><span class="line">        - &#x27; &#x27;</span><br><span class="line">        - --publish-status-address=127.0.0.1</span><br><span class="line">        - --default-ssl-certificate=default/example-tls</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl -n ingress patch ds nginx-ingress-microk8s-controller --patch-file nginx-ingress-microk8s-controller-patch.yaml</span><br></pre></td></tr></table></figure>
+
+<p>从集群外部测试, HTTP和HTTPS都可以访问</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># curl foo.example.com/foo/</span><br><span class="line">Hello Foo!</span><br><span class="line"># curl https://bar.example.com/bar/ -k</span><br><span class="line">Hello Bar!</span><br></pre></td></tr></table></figure>
+
+<h2><span id="问题">问题</span></h2><p>Q: 可能遇到导入Microk8s镜像失败, <code>microk8s.ctr image list</code>查询镜像类型为text&#x2F;html, 只有几百k<br>A: 原因一般是之前导入镜像前就创建了pod, Microk8s尝试从网络获取镜像失败; 解决方法是先<code>microk8s.ctr image rm</code>删除旧的镜像, 再重新导入即可</p>
+<h2><span id="参考">参考</span></h2><p>【1】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://microk8s.io/docs/addon-ingress">https://microk8s.io/docs/addon-ingress</a><br>【2】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://kubernetes.io/docs/concepts/services-networking/ingress/">https://kubernetes.io/docs/concepts/services-networking/ingress/</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2025/0303201100.html" title="Microk8s Ingress实现七层负载均衡">https://pcj600.github.io/2025/0303201100.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kubernetes/" rel="tag"><i class="fa fa-tag"></i> Kubernetes</a>
+              <a href="/tags/Project/" rel="tag"><i class="fa fa-tag"></i> Project</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/0302142701.html" rel="prev" title="使用tar备份Linux系统时需要添加--numeric-owner参数">
+      <i class="fa fa-chevron-left"></i> 使用tar备份Linux系统时需要添加--numeric-owner参数
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/0303215009.html" rel="next" title="基于Stunnel加密通信方案设计, 突破防火墙限制">
+      基于Stunnel加密通信方案设计, 突破防火墙限制 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Microk8s Ingress是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Microk8s Ingress用于解决什么问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Microk8s Ingress基本原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">实践: 使用Microk8s Ingress配置HTTP&#x2F;TCP负载均衡</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">支持HTTP负载均衡</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">支持TCP负载均衡</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Ingress 支持HTTPS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description">PC的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">183</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">844k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">12:48</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>
