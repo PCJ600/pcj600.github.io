@@ -196,283 +196,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0304214819.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0304214819.html" class="post-title-link" itemprop="url">Docker创建自定义网桥并指定网段</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-03-04 21:48:19" itemprop="dateCreated datePublished" datetime="2025-03-04T21:48:19+08:00">2025-03-04</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>5.2k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>5 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>docker0是Docker默认网络的核心组件, 通过虚拟网桥和NAT技术, 实现了容器间的通信以及容器与外部网络的交互。然而, docker0网段是固定的(通常是172.17.0.0&#x2F;16), 为了更灵活地管理容器网络，Docker支持创建自定义网桥，允许用户指定网段。<br>例如, 在我以前做的一个单板仿真项目里, 每个容器用来模拟一块板, 单板的IP需要设置为172.16.0.0&#x2F;16, 和docker0网段不一致。 由于这个项目部署在每个开发的工作机上, 我们决定不直接修改docker0配置, 选择了创建自定义网桥这种更灵活的方式。</p>
-<h1 id="Docker网桥的工作机制"><a href="#Docker网桥的工作机制" class="headerlink" title="Docker网桥的工作机制"></a>Docker网桥的工作机制</h1><p>Docker在主机上创建一个虚拟网桥(docker0), 每当启动一个容器，Docker会自动创建一对虚拟网卡(veth pair), 其中一端放在容器内部作为它的网络接口, 另一端则连接到主机上的这个虚拟网桥。 通过这种方式，容器之间可以通过网桥直接通信，数据包在网桥内转发，不经过主机的物理网络接口。<br>如果容器访问的是外部网络, 容器发出的数据包会先通过虚拟网桥到达主机, 然后主机通过NAT将容器的私有IP替换为自己的公网IP，从而让数据包能够顺利发送到外部网络。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/0304214819.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0303215009.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0303215009.html" class="post-title-link" itemprop="url">基于Stunnel加密通信方案设计, 突破防火墙限制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-03-03 21:50:09" itemprop="dateCreated datePublished" datetime="2025-03-03T21:50:09+08:00">2025-03-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Stunnel/" itemprop="url" rel="index"><span itemprop="name">Stunnel</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>6.2k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>6 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>我们在企业客户网络中部署了一些On-Premises的服务网关, 服务网关上部署了Squid代理软件, 为客户本地终端访问云服务提供正向代理<br>然而，对于使用较旧防火墙的客户来说，这些防火墙不支持基于FQDN(完全合格域名)的通配符匹配。这意味着当本地终端尝试访问云端资源时，用户必须逐一配置FQDN, 这种配置过程不仅繁琐，而且容易因为遗漏某些FQDN导致连接被防火墙阻止，造成网络中断，严重影响用户体验。<br>针对这个问题, 我们设计了一种基于Stunnel的加密通信方案, 绕过客户防火墙限制。 客户仅需配置Stunnel服务器的FQDN, 无需为每个目标服务器的FQDN进行单独设置, 从而简化了防火墙配置流程，提升了用户体验。</p>
-<h1 id="Stunnel是什么-被设计用来解决什么问题"><a href="#Stunnel是什么-被设计用来解决什么问题" class="headerlink" title="Stunnel是什么, 被设计用来解决什么问题"></a>Stunnel是什么, 被设计用来解决什么问题</h1><p>Stunnel是一款开源软件，其主要功能是为应用程序或服务提供TLS&#x2F;SSL加密支持。 它的设计初衷是为了增强那些本身不支持加密功能的传统应用程序或服务的安全性<br>通过Stunnel, 可以在严格的防火墙规则下实现安全的加密通信，同时有效绕过可能存在的网络访问限制。</p>
-<h1 id="为什么需要Stunnel"><a href="#为什么需要Stunnel" class="headerlink" title="为什么需要Stunnel ?"></a>为什么需要Stunnel ?</h1><h2 id="直接通过墙内的Squid代理出去不行吗？"><a href="#直接通过墙内的Squid代理出去不行吗？" class="headerlink" title="直接通过墙内的Squid代理出去不行吗？"></a>直接通过墙内的Squid代理出去不行吗？</h2><p><img data-src="/2025/0303215009/direct.png"></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/0303215009.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0303201100.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0303201100.html" class="post-title-link" itemprop="url">Microk8s Ingress实现七层负载均衡</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-03-03 20:11:00" itemprop="dateCreated datePublished" datetime="2025-03-03T20:11:00+08:00">2025-03-03</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>8.1k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>7 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Microk8s-Ingress是什么"><a href="#Microk8s-Ingress是什么" class="headerlink" title="Microk8s Ingress是什么"></a>Microk8s Ingress是什么</h1><p>Ingress是k8s的一种资源对象，用于管理外部对集群内服务的访问, 它通过提供一个统一的入口点，将外部流量路由到集群内部的不同服务。</p>
-<h1 id="Microk8s-Ingress用于解决什么问题"><a href="#Microk8s-Ingress用于解决什么问题" class="headerlink" title="Microk8s Ingress用于解决什么问题"></a>Microk8s Ingress用于解决什么问题</h1><p>k8s集群中服务默认只能在集群内访问。 如果需要从外部访问服务，通常需要使用NodePort或LoadBalancer类型服务，这两个服务都存在一些问题</p>
-<ul>
-<li>NodePort会占用节点端口，可能导致端口冲突</li>
-<li>LoadBalancer需要云提供商支持, 不适合本地环境</li>
-<li>Ingress提供一种灵活的方式暴露服务，允许通过域名或路径规则将流量路由到不同的服务</li>
-</ul>
-<h1 id="Microk8s-Ingress基本原理"><a href="#Microk8s-Ingress基本原理" class="headerlink" title="Microk8s Ingress基本原理"></a>Microk8s Ingress基本原理</h1><ul>
-<li>Microk8s内置了一个Nginx的Ingress Controller, 负责监听k8s中的Ingress资源，当检测到Ingress资源更新时, 动态更新Nginx配置文件</li>
-<li>外部流量先到达Nginx, 再基于域名和URL将请求转发到Service, Service再将流量分发到Pod</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/0303201100.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0302142701.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -547,119 +270,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2025/0302142701.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0301162419.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0301162419.html" class="post-title-link" itemprop="url">通过定制initramfs实现从单系统分区到双系统的无缝升级</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-03-01 16:24:19" itemprop="dateCreated datePublished" datetime="2025-03-01T16:24:19+08:00">2025-03-01</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>1.8k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>2 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>我们的客户有一些本地部署的网关设备(CentOS 7)需要做固件升级。 原有的单系统分区架构缺乏有效的回滚机制, 升级遇到故障后无法回滚, 导致服务中断, 用户体验差</p>
-<h1 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h1><p>设计一种解决方案, 自动将客户的网关设备从单系统分区平滑升级到双系统，同时保证用户配置(IP, DNS, 登录口令)不丢失<br>整个升级过程对客户完全透明, 无需客户进行额外操作(比如添加磁盘, 创建新机器)</p>
-<h1 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h1><p>设计如下方案:</p>
-<table>
-<thead>
-<tr>
-<th>方案</th>
-<th>描述</th>
-<th>优点</th>
-<th>缺点</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>定制initramfs</td>
-<td>通过定制initramfs进入紧急模式，预先加载升级包和配置文件到内存，再重建磁盘分区</td>
-<td>用户无感知, 且备份了旧的配置</td>
-<td>内存空间有限, 升级包+解压后系统文件需小于内存</td>
-</tr>
-<tr>
-<td>安装ISO</td>
-<td>下载并安装目标系统ISO</td>
-<td>不需要单独出一个升级包</td>
-<td>客户的配置很难同步, 升级后需要用户做一些手动配置</td>
-</tr>
-</tbody></table>
-<p>最终采用定制initramfs方案。 客户虚拟机内存最低配置是8G, 需保证initramfs阶段的升级包+解压后系统文件小于8G<br>测试结果: c7最小化镜像900M, 安装后磁盘占用1.3G; 安装Microk8s后磁盘占用3G左右, 升级包1.7G, initramfs用掉4G内存, 远小于8G, 可行</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/0301162419.html#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -768,10 +378,775 @@
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0207224807.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0207224807.html" class="post-title-link" itemprop="url">RabbitMQ学习记录</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-02-07 22:48:07" itemprop="dateCreated datePublished" datetime="2025-02-07T22:48:07+08:00">2025-02-07</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/RabbitMQ/" itemprop="url" rel="index"><span itemprop="name">RabbitMQ</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="什么是消息队列"><a href="#什么是消息队列" class="headerlink" title="什么是消息队列"></a>什么是消息队列</h1><p>消息队列是在消息传输过程中保存消息的容器。 通常有生产者和消费者两个角色:</p>
+<ul>
+<li>生产者只负责发送数据到消息队列，谁消费他不管</li>
+<li>消费者只负责从消息队列中取数据处理，谁发送数据他不管</li>
+</ul>
+<h1 id="常见消息队列中间件"><a href="#常见消息队列中间件" class="headerlink" title="常见消息队列中间件"></a>常见消息队列中间件</h1><ul>
+<li>Kafka 高吞吐量, 实时日志采集</li>
+<li>RabbitMQ Erlang语言, 灵活性和易用性，中小规模应用</li>
+<li>RocketMQ 阿里出品, Java开发, 国内市场有很高知名度和应用案例</li>
+</ul>
+<h1 id="为什么使用消息队列"><a href="#为什么使用消息队列" class="headerlink" title="为什么使用消息队列"></a>为什么使用消息队列</h1>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0207224807.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0205201812.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0205201812.html" class="post-title-link" itemprop="url">RabbitMQ入门教程</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-02-05 20:18:12" itemprop="dateCreated datePublished" datetime="2025-02-05T20:18:12+08:00">2025-02-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/RabbitMQ/" itemprop="url" rel="index"><span itemprop="name">RabbitMQ</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>19k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>17 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><a href="https://pcj600.github.io/2024/1218212631.html">Linux安装RabbitMQ</a><br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.rabbitmq.com/tutorials/tutorial-one-python">官方教程</a></p>
+<h2 id="1-Hello-RabbitMQ"><a href="#1-Hello-RabbitMQ" class="headerlink" title="1. Hello RabbitMQ"></a>1. Hello RabbitMQ</h2><p>使用Python pika客户端, 写一个简单的生产者和消费者</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Producer ------&gt; Queue -----&gt; Consumer</span><br></pre></td></tr></table></figure>
+<h3 id="编写Producer-send-py"><a href="#编写Producer-send-py" class="headerlink" title="编写Producer(send.py)"></a>编写Producer(send.py)</h3><p>先连接Broker, 建立connection和channel</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pika</span><br><span class="line"></span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(<span class="string">&#x27;localhost&#x27;</span>))</span><br><span class="line">channel = connection.channel()</span><br></pre></td></tr></table></figure>
+<p>接着声明一个队列; 在RabbitMQ中，消息不是直接发送到队列，而是先发送到交换机(exchange), 由交换机发送到队列。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">channel.queue_declare(queue=<span class="string">&#x27;hello&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>使用basic_publish发送消息。 这里使用默认交换机(‘’), routing_key参数指定为队列名称</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">channel.basic_publish(exchange=<span class="string">&#x27;&#x27;</span>, routing_key=<span class="string">&#x27;hello&#x27;</span>, body=<span class="string">&#x27;Hello World!&#x27;</span>)</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0205201812.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0118124850.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0118124850.html" class="post-title-link" itemprop="url">2024年各类资产近十年收益率</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-18 12:48:50" itemprop="dateCreated datePublished" datetime="2025-01-18T12:48:50+08:00">2025-01-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/investment/" itemprop="url" rel="index"><span itemprop="name">investment</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>540</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>同花顺做了一张2024年度资产收益图，大家可以看看</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0118124850.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0106201917.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0106201917.html" class="post-title-link" itemprop="url">LeetCode cheetsheet for C++</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-06 20:19:17" itemprop="dateCreated datePublished" datetime="2025-01-06T20:19:17+08:00">2025-01-06</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/LeetCode/" itemprop="url" rel="index"><span itemprop="name">LeetCode</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="数组-vector"><a href="#数组-vector" class="headerlink" title="数组(vector)"></a>数组(vector)</h1><h2 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vector&lt;int&gt; v(size);</span><br><span class="line">vector&lt;int&gt; v(size, init_value);</span><br><span class="line">v.emplace_back(a.begin(), a.begin() + 3); # 用另一个vector的某一区间初始化vector</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="遍历数组"><a href="#遍历数组" class="headerlink" title="遍历数组"></a>遍历数组</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">for (int i = 0; i &lt; vec.size(); ++i) &#123;</span><br><span class="line">	vec[i] = i;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="数组追加到另一个数组"><a href="#数组追加到另一个数组" class="headerlink" title="数组追加到另一个数组"></a>数组追加到另一个数组</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vec1.insert(vec1.end(), vec2.begin(), vec2.end());</span><br></pre></td></tr></table></figure>
+
+<h2 id="排序数组-去重"><a href="#排序数组-去重" class="headerlink" title="排序数组+去重"></a>排序数组+去重</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sort(nums.begin(), nums.end());</span><br><span class="line">nums.erase(unique(nums.begin(), nums.end()), nums.end());</span><br></pre></td></tr></table></figure>
+
+<h2 id="逆序排序"><a href="#逆序排序" class="headerlink" title="逆序排序"></a>逆序排序</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sort(nums.begin(), nums.end(), greater&lt;int&gt;());</span><br></pre></td></tr></table></figure>
+
+<h2 id="二维vector初始化"><a href="#二维vector初始化" class="headerlink" title="二维vector初始化"></a>二维vector初始化</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vector&lt;vector&lt;bool&gt;&gt; visited(rows, vector&lt;bool&gt;(cols, false));</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0106201917.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0102171058.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0102171058.html" class="post-title-link" itemprop="url">手把手教你搭建Docker私有仓库</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-02 17:10:58" itemprop="dateCreated datePublished" datetime="2025-01-02T17:10:58+08:00">2025-01-02</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.2k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <!-- toc -->
+
+<ul>
+<li><a href="#%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83">测试环境</a></li>
+<li><a href="#%E6%90%AD%E5%BB%BA%E6%AD%A5%E9%AA%A4">搭建步骤</a><ul>
+<li><a href="#%E5%AE%89%E8%A3%85docker">安装Docker</a></li>
+<li><a href="#%E6%8B%89%E5%8F%96registry%E5%AE%B9%E5%99%A8">拉取Registry容器</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AEhttps">配置HTTPS</a></li>
+<li><a href="#%E6%89%80%E6%9C%89%E5%AE%A2%E6%88%B7%E7%AB%AF%E4%BF%A1%E4%BB%BB%E8%AF%81%E4%B9%A6">所有客户端信任证书</a></li>
+<li><a href="#%E9%85%8D%E7%BD%AEbasic%E8%AE%A4%E8%AF%81">配置Basic认证</a></li>
+<li><a href="#%E5%90%AF%E5%8A%A8registry%E5%AE%B9%E5%99%A8">启动Registry容器</a></li>
+<li><a href="#%E6%B5%8B%E8%AF%95%E7%A7%81%E6%9C%89registry">测试私有Registry</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%82%E8%80%83">参考</a></li>
+</ul>
+<!-- tocstop -->
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0102171058.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0101215640.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0101215640.html" class="post-title-link" itemprop="url">Kubernetes滚动更新实践</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-01 21:56:40" itemprop="dateCreated datePublished" datetime="2025-01-01T21:56:40+08:00">2025-01-01</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>在我之前的项目中，对微服务升级采用的做法是删除整个namespace， 再重新应用所有yaml。 这种方式简单粗暴，但是不可避免的导致服务中断，影响了用户体验<br>为了解决更新服务导致的服务中断问题， Kubernetes提供了一种有效的服务升级方式 —— 滚动更新(Rolling Update)</p>
+<h1 id="什么是滚动更新-RollingUpdate"><a href="#什么是滚动更新-RollingUpdate" class="headerlink" title="什么是滚动更新(RollingUpdate)"></a>什么是滚动更新(RollingUpdate)</h1><p>滚动更新是一种部署策略。 允许用户逐步替换旧的Pod实例为新版本，而不是一次性替换所有Pod，从而实现零停机时间的部署更新。 解决了如下问题:</p>
+<ul>
+<li>最小化停机时间， 滚动更新可以在不完全停止服务情况下进行，提高用户体验</li>
+<li>故障恢复， 如果新版本出现问题，可以迅速回滚到之前的稳定版本</li>
+<li>平滑流量迁移， 避免瞬间全部更新导致的流量冲击和服务中断</li>
+</ul>
+<p>RollingUpdate策略有两个重要参数：</p>
+<ul>
+<li>maxUnavailable， 滚动更新时最多可以有多少个Pod不可用。 默认值为25%，这意味着如果有一个包含4个Pod的服务， 更新期间至少有3个Pod可用</li>
+<li>maxSurge， 滚动更新时可以临时超出期望副本数的额外Pod数， 默认值为25%</li>
+</ul>
+<p>说明: 对于关键业务， 可以用保守的设置， 比如maxUnavailable&#x3D;0， maxSurge&#x3D;1; 较大的maxSurge可以加快更新速度，但增加了集群压力; 根据实际情况调整这两个参数</p>
+<h2 id="实践案例"><a href="#实践案例" class="headerlink" title="实践案例"></a>实践案例</h2><p>写一个简单的微服务， Pod副本数设置为5， 观察Kubernetes滚动更新过程</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0101215640.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1229141431.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/1229141431.html" class="post-title-link" itemprop="url">过去15年A股的收益率如何?</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-12-29 14:14:31" itemprop="dateCreated datePublished" datetime="2024-12-29T14:14:31+08:00">2024-12-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/investment/" itemprop="url" rel="index"><span itemprop="name">investment</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>479</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>来看一张经典的图<br/></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/1229141431.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1218212631.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/1218212631.html" class="post-title-link" itemprop="url">Rocky Linux 9安装RabbitMQ</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-12-18 21:26:31" itemprop="dateCreated datePublished" datetime="2024-12-18T21:26:31+08:00">2024-12-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/RabbitMQ/" itemprop="url" rel="index"><span itemprop="name">RabbitMQ</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h1><p>Rocky Linux 9</p>
+<h1 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h1><h2 id="安装Signing-Keys-签名密钥"><a href="#安装Signing-Keys-签名密钥" class="headerlink" title="安装Signing Keys(签名密钥)"></a>安装Signing Keys(签名密钥)</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">rpm --import https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc</span><br><span class="line">rpm --import https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/gpg.E495BB49CC4BBE5B.key</span><br><span class="line">rpm --import https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/gpg.9F4587F226208342.key</span><br></pre></td></tr></table></figure>
+
+<h2 id="创建repo文件"><a href="#创建repo文件" class="headerlink" title="创建repo文件"></a>创建repo文件</h2><p>在&#x2F;etc&#x2F;yum.repos.d&#x2F;目录下创建一个名为rabbitmq.repo的文件，并添加以下内容：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/1218212631.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/">19</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
