@@ -13788,4 +13788,61 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>Docker</tag>
       </tags>
   </entry>
+  <entry>
+    <title>使用 Docker Compose 在单节点部署多容器</title>
+    <url>/2025/0104225437.html</url>
+    <content><![CDATA[<h1><span id="docker-compose-是什么">Docker Compose 是什么</span></h1><p>Docker Compose 是一个用于运行多容器应用的工具, 通过一个<code>docker-compose.yml</code>文件, 配置应用的服务、网络和卷，然后使用简单的命令启动或停止所有服务</p>
+<h1><span id="为什么需要-docker-compose">为什么需要 Docker Compose</span></h1><p>当你有一个包含多个相互依赖的容器应用时，手动管理每个服务的启动、停止以及配置会比较复杂且容易出错<br>Docker Compose 提供了一种更简便的方法, 在单节点部署多个容器, 使得开发测试环境的一致性得到保证，同时简化了部署过程</p>
+<h1><span id="示例-使用docker-compose-部署一个wordpress站点">示例: 使用Docker Compose 部署一个WordPress站点</span></h1><p>下面演示如何使用 Docker Compose 在单个节点上部署一个包含 WordPress 和 MySQL 的简单网站。</p>
+<h2><span id="1-安装docker-compose">1. 安装Docker Compose</span></h2><p>官网上查找匹配版本安装, 我直接取最新版本安装</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -L &quot;https://github.com/docker/compose/releases/download/v2.34.0/docker-compose-linux-x86_64&quot; -o /usr/local/bin/docker-compose</span><br><span class="line">chmod +x /usr/local/bin/docker-compose</span><br><span class="line">docker-compose version</span><br></pre></td></tr></table></figure>
+
+<h2><span id="2-创建docker-composeyml文件">2. 创建<code>docker-compose.yml</code>文件</span></h2><p>在你的项目目录下创建一个名为 docker-compose.yml 的文件，并添加如下内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">version: &#x27;3.8&#x27;</span><br><span class="line"></span><br><span class="line">services:</span><br><span class="line">  db:</span><br><span class="line">    image: mysql:5.7</span><br><span class="line">    environment:</span><br><span class="line">      MYSQL_ROOT_PASSWORD: example</span><br><span class="line">      MYSQL_DATABASE: wordpress</span><br><span class="line">      MYSQL_USER: wordpress</span><br><span class="line">      MYSQL_PASSWORD: wordpress</span><br><span class="line">    volumes:</span><br><span class="line">      - db_data:/var/lib/mysql</span><br><span class="line">    restart: always</span><br><span class="line"></span><br><span class="line">  wordpress:</span><br><span class="line">    depends_on:</span><br><span class="line">      - db</span><br><span class="line">    image: wordpress:latest</span><br><span class="line">    ports:</span><br><span class="line">      - &quot;8080:80&quot;</span><br><span class="line">    environment:</span><br><span class="line">      WORDPRESS_DB_HOST: db:3306</span><br><span class="line">      WORDPRESS_DB_USER: wordpress</span><br><span class="line">      WORDPRESS_DB_PASSWORD: wordpress</span><br><span class="line">      WORDPRESS_DB_NAME: wordpress</span><br><span class="line">    volumes:</span><br><span class="line">      - wordpress_data:/var/www/html</span><br><span class="line">    restart: always</span><br><span class="line"></span><br><span class="line">volumes:</span><br><span class="line">  db_data:</span><br><span class="line">  wordpress_data:</span><br></pre></td></tr></table></figure>
+<p>这个yaml文件定义了两个服务：一个是 MySQL 数据库，另一个是 WordPress 应用程序, 同时我们定义了两个存储卷来持久化数据</p>
+<h2><span id="3-启动服务">3. 启动服务</span></h2><p>在 docker-compose.yml 文件所在的目录中执行以下命令以启动服务</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker-compose up -d</span><br><span class="line">[+] Running 3/3</span><br><span class="line"> ✔ Network docker-compose_default        Created                                                                                                                                                                             0.1s</span><br><span class="line"> ✔ Container docker-compose-db-1         Started                                                                                                                                                                             0.3s</span><br><span class="line"> ✔ Container docker-compose-wordpress-1  Started</span><br></pre></td></tr></table></figure>
+<p>访问 <code>http://localhost:8080</code> 查看 WordPress 网站</p>
+<h2><span id="4-停止服务">4. 停止服务</span></h2><p>使用<code>docker-compose down</code>命令, 即可一键停止服务</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker-compose down</span><br><span class="line">[+] Running 3/3</span><br><span class="line"> ✔ Container docker-compose-wordpress-1  Removed                                                                                                                                                                             1.2s</span><br><span class="line"> ✔ Container docker-compose-db-1         Removed                                                                                                                                                                             1.7s</span><br><span class="line"> ✔ Network docker-compose_default        Removed</span><br></pre></td></tr></table></figure>
+
+<h1><span id="docker-compose-的优点">Docker Compose 的优点</span></h1><p>通过上述示例可以看出，Docker Compose 极大地简化了多容器应用的部署流程, 优点如下:</p>
+<table>
+<thead>
+<tr>
+<th align="left">特性</th>
+<th align="left">直接使用Docker</th>
+<th align="left">使用Docker Compose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">配置管理</td>
+<td align="left">每个容器的配置分散在多个命令中，容易出错且难以维护</td>
+<td align="left">配置集中在docker-compose.yml文件，便于维护和分享</td>
+</tr>
+<tr>
+<td align="left">一键操作</td>
+<td align="left">需要分别运行多条命令来启动、停止容器，效率低</td>
+<td align="left">使用一条命令(如 <code>docker-compose up</code> 或 <code>docker-compose down</code>) 即可完成整个应用的管理</td>
+</tr>
+<tr>
+<td align="left">依赖管理</td>
+<td align="left">需要手动指定容器之间的依赖关系(如–link)，容易出错</td>
+<td align="left">使用depends_on处理依赖关系</td>
+</tr>
+<tr>
+<td align="left">存储卷操作</td>
+<td align="left">需要手动创建和挂载存储卷</td>
+<td align="left">在 docker-compose.yml 中定义存储卷，自动管理持久化数据</td>
+</tr>
+</tbody></table>
+<h1><span id="参考">参考</span></h1><p><a href="https://juejin.cn/post/7042663735156015140">https://juejin.cn/post/7042663735156015140</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
 </search>
