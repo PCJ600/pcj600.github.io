@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="什么是Overlay网络, 用于解决什么问题 ?Overlay网络通过在现有网络之上创建一个虚拟网络层, 解决不同主机的容器之间相互通信的问题如果没有Overlay网络，实现跨主机的容器通信通常需要以下方法：  端口映射 使用宿主机网络模式  这些方法牺牲了容器网络隔离的优势, 并且可能导致端口冲突问题 以下搭建一个简易的Docker Swarm 集群(一主一从), 探究 Overlay 网络下不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过 Docker Swarm 集群探究 Overlay 网络跨主机通信原理">
+<meta property="og:url" content="https://pcj600.github.io/2025/0330154644.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="什么是Overlay网络, 用于解决什么问题 ?Overlay网络通过在现有网络之上创建一个虚拟网络层, 解决不同主机的容器之间相互通信的问题如果没有Overlay网络，实现跨主机的容器通信通常需要以下方法：  端口映射 使用宿主机网络模式  这些方法牺牲了容器网络隔离的优势, 并且可能导致端口冲突问题 以下搭建一个简易的Docker Swarm 集群(一主一从), 探究 Overlay 网络下不">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pcj600.github.io/2020/0102171050/y/image1.png">
+<meta property="og:image" content="https://pcj600.github.io/2020/0102171050/y/vxlan.png">
+<meta property="og:image" content="https://pcj600.github.io/2020/0102171050/y/image2.png">
+<meta property="og:image" content="https://pcj600.github.io/2020/0102171050/y/image3.png">
+<meta property="article:published_time" content="2025-03-30T07:46:44.000Z">
+<meta property="article:modified_time" content="2025-03-30T08:49:49.780Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pcj600.github.io/2020/0102171050/y/image1.png">
+
+<link rel="canonical" href="https://pcj600.github.io/2025/0330154644.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>通过 Docker Swarm 集群探究 Overlay 网络跨主机通信原理 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">37</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">49</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">186</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0330154644.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          通过 Docker Swarm 集群探究 Overlay 网络跨主机通信原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-03-30 15:46:44" itemprop="dateCreated datePublished" datetime="2025-03-30T15:46:44+08:00">2025-03-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>12k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>11 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1><span id="什么是overlay网络-用于解决什么问题">什么是Overlay网络, 用于解决什么问题 ?</span></h1><p>Overlay网络通过在现有网络之上创建一个虚拟网络层, 解决不同主机的容器之间相互通信的问题<br>如果没有Overlay网络，实现跨主机的容器通信通常需要以下方法：</p>
+<ul>
+<li>端口映射</li>
+<li>使用宿主机网络模式</li>
+</ul>
+<p>这些方法牺牲了容器网络隔离的优势, 并且可能导致端口冲突问题</p>
+<p>以下搭建一个简易的Docker Swarm 集群(一主一从), 探究 Overlay 网络下不同节点上的容器间互相通信的原理</p>
+<span id="more"></span>
+
+<h1><span id="搭建一主一从-docker-swarm-集群">搭建一主一从 Docker Swarm 集群</span></h1><h2><span id="0-准备环境">0. 准备环境</span></h2><p>准备两台Linux虚拟机(我使用Rocky Linux 9.5), 确保两台机器都安装了 Docker，并且能够通过网络互相访问。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">192.168.52.203 swarm-master1 </span><br><span class="line">192.168.52.204 swarm-slave1 </span><br></pre></td></tr></table></figure>
+
+<h2><span id="1-初始化-docker-swarm-集群">1. 初始化 Docker Swarm 集群</span></h2><p>在主节点 swarm-master1 上初始化 Swarm 集群</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker swarm init --advertise-addr 192.168.52.203</span><br></pre></td></tr></table></figure>
+<p>执行成功后, 看到如下输出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Swarm initialized: current node (kc5nui94soxcjxi2pbqml13ig) is now a manager.</span><br><span class="line"></span><br><span class="line">To add a worker to this swarm, run the following command:</span><br><span class="line"></span><br><span class="line">    docker swarm join --token SWMTKN-1-3t8jt95v04knqr2tvxqd0m1j0dspw3s5hqukcwgkskikulbxgv-bw8rbewoh80240tto2os0dwtv 192.168.52.203:2377</span><br><span class="line"></span><br><span class="line">To add a manager to this swarm, run &#x27;docker swarm join-token manager&#x27; and follow the instructions.</span><br></pre></td></tr></table></figure>
+<h2><span id="2-将从节点加入集群">2. 将从节点加入集群</span></h2><p>复制上述输出中的 <code>docker swarm join</code> 命令，在从节点 swarm-slave1 上执行该命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker swarm join --token SWMTKN-1-3t8jt95v04knqr2tvxqd0m1j0dspw3s5hqukcwgkskikulbxgv-bw8rbewoh80240tto2os0dwtv 192.168.52.203:2377</span><br></pre></td></tr></table></figure>
+<p>成功后, 看到如下提示</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">This node joined a swarm as a worker.</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证集群状态</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># docker node ls</span><br><span class="line">ID                            HOSTNAME                STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION</span><br><span class="line">kc5nui94soxcjxi2pbqml13ig *   localhost.localdomain   Ready     Active         Leader           28.0.2</span><br><span class="line">suzfvrhfn2d8g5digv7u05yz4     swarm-slave1            Ready     Active                          28.0.2</span><br></pre></td></tr></table></figure>
+
+<h2><span id="3-创建overlay网络">3. 创建overlay网络</span></h2><p>在主节点上创建一个 overlay 网络, 用于跨主机容器通信</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker network create -d overlay my-overlay-network</span><br></pre></td></tr></table></figure>
+<p>这将创建一个名为 my-overlay-network 的 overlay 网络</p>
+<h2><span id="4-每个节点部署一个rocky-linux容器">4. 每个节点部署一个Rocky Linux容器</span></h2><p>在主节点上运行以下命令，在主节点启动一个 Rocky Linux 容器，并将其连接到 my-overlay-network 网络中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker service create \</span><br><span class="line">  --name rocky-master \</span><br><span class="line">  --network my-overlay-network \</span><br><span class="line">  rockylinux:9.3 \</span><br><span class="line">  sleep infinity</span><br></pre></td></tr></table></figure>
+
+<p>在主节点上运行以下命令，指定容器运行在从节点上：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">docker service create \</span><br><span class="line">  --name rocky-slave \</span><br><span class="line">  --constraint &#x27;node.hostname == swarm-slave1&#x27; \</span><br><span class="line">  --network my-overlay-network \</span><br><span class="line">  rockylinux:9.3 \</span><br><span class="line">  sleep infinity</span><br></pre></td></tr></table></figure>
+
+<p>检查服务的状态，确保两个容器均已启动并正常运行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"># docker service ls</span><br><span class="line">ID             NAME           MODE         REPLICAS   IMAGE            PORTS</span><br><span class="line">1cd6vg54735o   rocky-master   replicated   1/1        rockylinux:9.3</span><br><span class="line">uh605ejlvsui   rocky-slave    replicated   1/1        rockylinux:9.3</span><br><span class="line"></span><br><span class="line"># docker service ps rocky-master</span><br><span class="line">ID             NAME             IMAGE            NODE            DESIRED STATE   CURRENT STATE         ERROR     PORTS</span><br><span class="line">g45cjkctal9c   rocky-master.1   rockylinux:9.3   swarm-master1   Running         Running 3 hours ago</span><br><span class="line"></span><br><span class="line"># docker service ps rocky-slave</span><br><span class="line">ID             NAME            IMAGE            NODE           DESIRED STATE   CURRENT STATE         ERROR     PORTS</span><br><span class="line">7kh81mby5ryd   rocky-slave.1   rockylinux:9.3   swarm-slave1   Running         Running 3 hours ago</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2><span id="5-验证容器通信">5. 验证容器通信</span></h2><p>进入主节点的容器，ping从节点容器, 我的从节点容器IP为 10.0.1.104</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># ping 10.0.1.104</span><br><span class="line">PING 10.0.1.104 (10.0.1.104) 56(84) bytes of data.</span><br><span class="line">64 bytes from 10.0.1.104: icmp_seq=1 ttl=64 time=0.306 ms</span><br></pre></td></tr></table></figure>
+
+<p>如需清理 Docker Swarm 环境, 使用如下命令:</p>
+<p>主节点停止集群</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker swarm leave --force</span><br></pre></td></tr></table></figure>
+<p>从节点离开集群</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker swarm leave --force</span><br></pre></td></tr></table></figure>
+<p>验证是否退出集群</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker info | grep &quot;Swarm&quot;</span><br></pre></td></tr></table></figure>
+<p>如果显示 Swarm: inactive，说明该节点已成功退出 Swarm。</p>
+<p>删除服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker service rm rocky_service</span><br></pre></td></tr></table></figure>
+<p>删除Overlay网络</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker network rm my_overlay_network</span><br></pre></td></tr></table></figure>
+
+<h1><span id="探究-overlay-网络原理">探究 Overlay 网络原理</span></h1><p>Docker Overlay 网络的工作流程图如下:</p>
+<p><img data-src="/2020/0102171050/y/image1.png"></p>
+<p>数据包发送流程说明:</p>
+<ul>
+<li>容器1发出ICMP请求报文, 目标地址10.0.1.103, 根据容器1的路由表, 该报文发送到容器1的eth0</li>
+<li>容器1的eth0是一个veth pair的一端, 另一端位于一个独立的network namespace中(不是宿主机的network namespace), 报文通过veth pair从容器1传送到这个独立的network namespace中的虚拟网卡(veth1)</li>
+<li>在独立命名空间中, veth1连接到虚拟网桥br0, br0根据MAC地址表, 把报文转发到vxlan0设备</li>
+<li>vxlan0设备对原始以太网帧进行VXLAN封装, 具体过程是:<ul>
+<li>加一个新的外层以太网头部, IP头部, UDP头部, 并添加VXLAN头部</li>
+<li>设置源IP为主机A的IP(192.168.52.203), 设置目标IP为主机B的IP(192.168.52.204), UDP目标端口设置为4789</li>
+<li>VXLAN头部中设置VNI(VXLAN Network Identifier), 一个24位字段, 用于标识当前的VXLAN网络</li>
+</ul>
+</li>
+<li>封装后的VXLAN报文通过主机A的物理网卡ens160发送出去</li>
+<li>主机B收到VXLAN报文后, 将其传递到独立命名空间中的 vxlan0 设备</li>
+<li>vxlan0对报文进行解封装，恢复原始的以太网帧, 解封后的数据包进入虚拟网桥br0, br0根据MAC地址表, 将报文转发到容器2的veth设备</li>
+<li>最终, 报文通过veth pair到达容器2的eth0, 容器2处理该ICMP请求并做出响应</li>
+</ul>
+<h2><span id="vxlan报文格式">VXLAN报文格式</span></h2><p><img data-src="/2020/0102171050/y/vxlan.png"></p>
+<p>VXLAN报文格式主要是将原始的以太网帧封装进一个UDP数据包中(“MAC in UDP”)，包括以下部分：</p>
+<ul>
+<li>外层以太网头部：包含目标MAC地址、源MAC地址和以太网类型（对于VXLAN通常是0x0800）</li>
+<li>外层IP头部：指定外部网络中的源IP地址和目标IP地址，用于跨网络传输</li>
+<li>外层UDP头部：标准UDP头部信息，包括源端口、目的端口（通常为4789）</li>
+<li>VXLAN头部：包含24位的VNI（VXLAN Network Identifier），用于区分不同的租户或逻辑网络</li>
+<li>原始以太网帧：被封装的数据</li>
+</ul>
+<h2><span id="对vxlan报文抓包">对VXLAN报文抓包</span></h2><p>用tcpdump抓包抓ens160的VXLAN报文</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># tcpdump -i ens160 port 4789 -nn -vv</span><br><span class="line">dropped privs to tcpdump</span><br><span class="line">tcpdump: listening on ens160, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span><br><span class="line">15:29:36.888607 IP (tos 0x0, ttl 64, id 43464, offset 0, flags [none], proto UDP (17), length 134)</span><br><span class="line">    192.168.52.203.35153 &gt; 192.168.52.204.4789: [bad udp cksum 0xeb6b -&gt; 0x4bbc!] VXLAN, flags [I] (0x08), vni 4097</span><br><span class="line">IP (tos 0x0, ttl 64, id 57583, offset 0, flags [DF], proto ICMP (1), length 84)</span><br><span class="line">    10.0.1.100 &gt; 10.0.1.103: ICMP echo request, id 20, seq 122, length 64</span><br><span class="line">15:29:36.888820 IP (tos 0x0, ttl 64, id 20056, offset 0, flags [none], proto UDP (17), length 134)</span><br><span class="line">    192.168.52.204.57523 &gt; 192.168.52.203.4789: [udp sum ok] VXLAN, flags [I] (0x08), vni 4097</span><br><span class="line">IP (tos 0x0, ttl 64, id 3391, offset 0, flags [none], proto ICMP (1), length 84)</span><br><span class="line">    10.0.1.103 &gt; 10.0.1.100: ICMP echo reply, id 20, seq 122, length 64</span><br></pre></td></tr></table></figure>
+<p>导出pcap文件, 再用wireshark分析 (我用的VMware NAT虚拟机, 直接在Windows物理机上用wireshark抓vmnet8的报文也可以)</p>
+<p><img data-src="/2020/0102171050/y/image2.png"></p>
+<p><img data-src="/2020/0102171050/y/image3.png"></p>
+<h1><span id="分析过程">分析过程</span></h1><p>查看主机A的网卡和路由表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"># ip addr</span><br><span class="line">2: ens160: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000</span><br><span class="line">    link/ether 00:0c:29:68:16:97 brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    altname enp3s0</span><br><span class="line">    inet 192.168.52.203/24 brd 192.168.52.255 scope global noprefixroute ens160</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 fe80::20c:29ff:fe68:1697/64 scope link noprefixroute</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">3: docker0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu 1500 qdisc noqueue state DOWN group default</span><br><span class="line">    link/ether ee:70:00:b9:06:99 brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">4: docker_gwbridge: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default</span><br><span class="line">    link/ether fe:d7:43:f4:5e:0a brd ff:ff:ff:ff:ff:ff</span><br><span class="line">    inet 172.18.0.1/16 brd 172.18.255.255 scope global docker_gwbridge</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 fe80::fcd7:43ff:fef4:5e0a/64 scope link</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">9: veth2c2d786@if8: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master docker_gwbridge state UP group default</span><br><span class="line">    link/ether f2:1d:db:39:8c:d7 brd ff:ff:ff:ff:ff:ff link-netnsid 1</span><br><span class="line">    inet6 fe80::f01d:dbff:fe39:8cd7/64 scope link</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">392: veth04de33f@if391: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master docker_gwbridge state UP group default</span><br><span class="line">    link/ether 5a:ac:6c:6b:55:4f brd ff:ff:ff:ff:ff:ff link-netnsid 4</span><br><span class="line">    inet6 fe80::58ac:6cff:fe6b:554f/64 scope link</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line"></span><br><span class="line"># route -n</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">0.0.0.0         192.168.52.2    0.0.0.0         UG    100    0        0 ens160</span><br><span class="line">172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0</span><br><span class="line">172.18.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker_gwbridge</span><br><span class="line">192.168.52.0    0.0.0.0         255.255.255.0   U     100    0        0 ens160</span><br></pre></td></tr></table></figure>
+
+<p>进入容器1, 查看容器1的网卡和路由表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># ip addr</span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000</span><br><span class="line">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span><br><span class="line">    inet 127.0.0.1/8 scope host lo</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">    inet6 ::1/128 scope host</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">389: eth0@if390: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1450 qdisc noqueue state UP group default</span><br><span class="line">    link/ether 02:42:0a:00:01:64 brd ff:ff:ff:ff:ff:ff link-netnsid 0</span><br><span class="line">    inet 10.0.1.100/24 brd 10.0.1.255 scope global eth0</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line">391: eth1@if392: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default</span><br><span class="line">    link/ether 5e:70:90:ab:28:6c brd ff:ff:ff:ff:ff:ff link-netnsid 1</span><br><span class="line">    inet 172.18.0.3/16 brd 172.18.255.255 scope global eth1</span><br><span class="line">       valid_lft forever preferred_lft forever</span><br><span class="line"></span><br><span class="line"># route -n</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">0.0.0.0         172.18.0.1      0.0.0.0         UG    0      0        0 eth1</span><br><span class="line">10.0.1.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0</span><br><span class="line">172.18.0.0      0.0.0.0         255.255.0.0     U     0      0        0 eth1</span><br></pre></td></tr></table></figure>
+<p>容器中ping 10.0.1.103, 查路由表, 数据包转发到eth0, 接下来查询veth pair另一端</p>
+<p>在宿主机<code>/var/run/docker/netns/</code>下找到容器eth0另一端的veth所在的网络命名空间</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># nsenter --net=/var/run/docker/netns/1-tic6vjs8d3 ip link show</span><br><span class="line">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000</span><br><span class="line">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span><br><span class="line">2: br0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1450 qdisc noqueue state UP mode DEFAULT group default</span><br><span class="line">    link/ether 06:12:52:c7:42:88 brd ff:ff:ff:ff:ff:ff</span><br><span class="line">386: vxlan0@if386: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1450 qdisc noqueue master br0 state UNKNOWN mode DEFAULT group default</span><br><span class="line">    link/ether 06:12:52:c7:42:88 brd ff:ff:ff:ff:ff:ff link-netnsid 0</span><br><span class="line">388: veth0@if387: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1450 qdisc noqueue master br0 state UP mode DEFAULT group default</span><br><span class="line">    link/ether 1e:09:a3:80:62:d9 brd ff:ff:ff:ff:ff:ff link-netnsid 1</span><br><span class="line">390: veth1@if389: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1450 qdisc noqueue master br0 state UP mode DEFAULT group default</span><br><span class="line">    link/ether 9a:7c:73:4e:a6:32 brd ff:ff:ff:ff:ff:ff link-netnsid 2</span><br></pre></td></tr></table></figure>
+
+<p>使用nsenter进入这个namespace, 查看网卡和路由表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">sudo nsenter --net=/var/run/docker/netns/1-tic6vjs8d3 bash</span><br><span class="line"># ifconfig</span><br><span class="line">br0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450</span><br><span class="line">        inet 10.0.1.1  netmask 255.255.255.0  broadcast 10.0.1.255</span><br><span class="line">        ether 06:12:52:c7:42:88  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 16  bytes 448 (448.0 B)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 2  bytes 108 (108.0 B)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">lo: flags=73&lt;UP,LOOPBACK,RUNNING&gt;  mtu 65536</span><br><span class="line">        inet 127.0.0.1  netmask 255.0.0.0</span><br><span class="line">        inet6 ::1  prefixlen 128  scopeid 0x10&lt;host&gt;</span><br><span class="line">        loop  txqueuelen 1000  (Local Loopback)</span><br><span class="line">        RX packets 0  bytes 0 (0.0 B)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 0  bytes 0 (0.0 B)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">veth0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450</span><br><span class="line">        ether 1e:09:a3:80:62:d9  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 64  bytes 5656 (5.5 KiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 74  bytes 6188 (6.0 KiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">veth1: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450</span><br><span class="line">        ether 9a:7c:73:4e:a6:32  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 273  bytes 25298 (24.7 KiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 266  bytes 25004 (24.4 KiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line">vxlan0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450</span><br><span class="line">        ether 06:12:52:c7:42:88  txqueuelen 0  (Ethernet)</span><br><span class="line">        RX packets 194  bytes 16296 (15.9 KiB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 194  bytes 16296 (15.9 KiB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br><span class="line"></span><br><span class="line"># route -n</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">10.0.1.0        0.0.0.0         255.255.255.0   U     0      0        0 br0</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这里的veth1和容器的eth0是一对veth pair, veth1收到ICMP报文, 查路由表, 把数据包转发给br0网桥</li>
+<li>br0网桥根据MAC地址表, 把数据包转发给vxlan0</li>
+<li>vxlan0将原始以太网帧封装进一个UDP报文(端口号4789), 把目的IP替换变成主机B的IP, 源IP变成主机A的IP, 将封装后数据包发送到宿主机的物理网卡ens160</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">容器network namespace |  vxlan0所在的network namespace  |  宿主机A的network namespace  </span><br><span class="line">容器eth0      -&gt;         veth1 -&gt;  br0  -&gt;  vxlan0 -&gt;     ens160</span><br></pre></td></tr></table></figure>
+
+<h1><span id="参考">参考</span></h1><p>【1】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://cloud.tencent.com/developer/article/2363140">Docker跨主机Overlay网络动手实验</a><br>【2】 <a target="_blank" rel="noopener external nofollow noreferrer" href="https://blog.csdn.net/u022812849/article/details/134898675">vxlan的原理与实验</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2025/0330154644.html" title="通过 Docker Swarm 集群探究 Overlay 网络跨主机通信原理">https://pcj600.github.io/2025/0330154644.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"><i class="fa fa-tag"></i> Docker</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/0329204106.html" rel="prev" title="使用Docker多阶段构建, 压缩镜像体积">
+      <i class="fa fa-chevron-left"></i> 使用Docker多阶段构建, 压缩镜像体积
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">什么是Overlay网络, 用于解决什么问题 ?</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">搭建一主一从 Docker Swarm 集群</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">0. 准备环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">1. 初始化 Docker Swarm 集群</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">2. 将从节点加入集群</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">3. 创建overlay网络</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">4. 每个节点部署一个Rocky Linux容器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">5. 验证容器通信</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">探究 Overlay 网络原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">VXLAN报文格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">对VXLAN报文抓包</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">分析过程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description">PC的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">186</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">864k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">13:05</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>
