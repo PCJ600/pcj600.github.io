@@ -13961,4 +13961,59 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
         <tag>Docker</tag>
       </tags>
   </entry>
+  <entry>
+    <title>Docker 端口映射原理</title>
+    <url>/2025/0330125855.html</url>
+    <content><![CDATA[<p>在 Docker 中，默认情况下容器无法直接与外部网络通信。 为了使外部网络能够访问容器内的服务，Docker 提供了端口映射功能，通过将宿主机的端口映射到容器内的端口，外部可以通过宿主机的IP和端口访问容器内的服务</p>
+<p>以下通过动手演示, 安装一个Flask容器, 解释端口映射从外部访问容器的原理</p>
+<h1><span id="安装一个flask容器">安装一个Flask容器</span></h1><h2><span id="文件结构">文件结构</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">.</span><br><span class="line">├── Dockerfile</span><br><span class="line">└── app.py</span><br></pre></td></tr></table></figure>
+
+<p>Dockerfile</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">FROM rockylinux:9.3</span><br><span class="line"></span><br><span class="line">RUN dnf update -y &amp;&amp; \</span><br><span class="line">    dnf install -y python3 python3-pip &amp;&amp; \</span><br><span class="line">    dnf clean all</span><br><span class="line"></span><br><span class="line">WORKDIR /app</span><br><span class="line"></span><br><span class="line">COPY app.py /app/app.py</span><br><span class="line"></span><br><span class="line">RUN pip3 install --no-cache-dir flask</span><br><span class="line"></span><br><span class="line">EXPOSE 5000</span><br><span class="line"></span><br><span class="line">CMD [&quot;python3&quot;, &quot;app.py&quot;]</span><br></pre></td></tr></table></figure>
+
+<p>app.py</p>
+<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/&#x27;</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">hello</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;Hello&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    app.run(host=<span class="string">&#x27;0.0.0.0&#x27;</span>, port=<span class="number">5000</span>)</span><br></pre></td></tr></table></figure>
+
+<p>构建镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker build -t flask-app:1.0 .</span><br></pre></td></tr></table></figure>
+<p>启动容器, 进行端口映射</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -d -p 80:5000 flask-app:1.0</span><br></pre></td></tr></table></figure>
+
+<p>从外部访问 (192.168.52.203是我的虚拟机IP)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># curl 192.168.52.203</span><br><span class="line">Hello</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h1><span id="端口映射原理">端口映射原理</span></h1><p>当执行<code>docker run -d -p 80:5000 flask-app:1.0</code>时, Docker会配置iptables规则来实现端口映射, 流程如下:</p>
+<h2><span id="1-iptables-prerouting-链处理-做dnat转换">1. iptables PREROUTING 链处理, 做DNAT转换</span></h2><p>外部请求到达宿主机时, iptables的PREROUTING链处理该请求, 根据DNAT规则将目标IP和端口(192.168.52.203:5000)替换为容器的IP和端口(172.17.0.2:5000)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># iptables -t nat -L PREROUTING</span><br><span class="line">Chain PREROUTING (policy ACCEPT)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">DOCKER     all  --  anywhere             anywhere             ADDRTYPE match dst-type LOCAL</span><br><span class="line"></span><br><span class="line"># iptables -t nat -L DOCKER</span><br><span class="line">Chain DOCKER (2 references)</span><br><span class="line">target     prot opt source               destination</span><br><span class="line">RETURN     all  --  anywhere             anywhere</span><br><span class="line">RETURN     all  --  anywhere             anywhere</span><br><span class="line">DNAT       tcp  --  anywhere             anywhere             tcp dpt:http to:172.17.0.2:5000</span><br></pre></td></tr></table></figure>
+
+<h2><span id="2-dnat转换后的数据包转发到容器">2. DNAT转换后的数据包转发到容器</span></h2><p>经过DNAT转换后的数据包会发送到虚拟网桥docker0, 再通过veth设备转发到容器的虚拟网络接口(eth0) </p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">宿主机的路由表</span><br><span class="line"># route -n</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">0.0.0.0         192.168.52.2    0.0.0.0         UG    100    0        0 ens160</span><br><span class="line">172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0</span><br><span class="line">192.168.52.0    0.0.0.0         255.255.255.0   U     100    0        0 ens160</span><br></pre></td></tr></table></figure>
+
+<h2><span id="3-容器接受请求并返回响应-响应报文通过iptables-postrouting链处理-做snat转换">3. 容器接受请求并返回响应, 响应报文通过iptables POSTROUTING链处理, 做SNAT转换</span></h2><p>容器接受请求并返回响应，响应报文先发送到 docker0, 再通过 SNAT（MASQUERADE）规则，将源IP和端口(172.17.0.2:5000)替换为宿主机的IP和端口，最后发送回客户端</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># iptables -t nat -L POSTROUTING -v</span><br><span class="line">Chain POSTROUTING (policy ACCEPT 2387 packets, 151K bytes)</span><br><span class="line"> pkts bytes target     prot opt in     out     source               destination</span><br><span class="line">   89  5558 MASQUERADE  all  --  any    !docker0  172.17.0.0/16        anywhere</span><br></pre></td></tr></table></figure>
+
+<h2><span id="附-wireshark抓包结果">附: wireshark抓包结果</span></h2><ul>
+<li>客户端IP: 192.168.52.202</li>
+<li>运行容器的宿主机IP: 192.168.52.203</li>
+<li>容器IP: 172.17.0.2</li>
+</ul>
+<p>抓宿主机网卡的包</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tcpdump -i ens160 -nn tcp and not port 22 -w ens160.pcap</span><br></pre></td></tr></table></figure>
+
+<p><img data-src="/2020/0102171050/png"></p>
+<p>抓docker0的包</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">tcpdump -i docker0 -nn tcp -w docker0.pcap</span><br></pre></td></tr></table></figure>
+
+<p><img data-src="/2020/0102171050/png"></p>
+<h1><span id="参考">参考</span></h1><p><a href="https://www.cnblogs.com/heian99/p/12585722.html">Docker容器访问外部世界 </a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
 </search>
