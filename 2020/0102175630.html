@@ -24,15 +24,15 @@
     var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="项目: Trend Micro - Service Gateway 简单介绍项目 1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及分区设计, 升级包构建, 系统配置同步, GRUB启动项配置等关键环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了40%维护成本 2. 通过定制initramfs进入紧急模式, 预先将升级包">
+  <meta name="description" content="项目: Trend Micro - Service Gateway 简单介绍项目 1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及升级包构建, 网络配置同步, GRUB启动项设置等环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了90%维护成本 2. 通过定制initramfs进入紧急模式, 预先将升级包备份到内存后再重">
 <meta property="og:type" content="article">
 <meta property="og:title" content="项目问题梳理">
 <meta property="og:url" content="https://pcj600.github.io/2020/0102175630.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
-<meta property="og:description" content="项目: Trend Micro - Service Gateway 简单介绍项目 1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及分区设计, 升级包构建, 系统配置同步, GRUB启动项配置等关键环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了40%维护成本 2. 通过定制initramfs进入紧急模式, 预先将升级包">
+<meta property="og:description" content="项目: Trend Micro - Service Gateway 简单介绍项目 1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及升级包构建, 网络配置同步, GRUB启动项设置等环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了90%维护成本 2. 通过定制initramfs进入紧急模式, 预先将升级包备份到内存后再重">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-01-02T09:56:30.000Z">
-<meta property="article:modified_time" content="2025-03-30T15:26:10.017Z">
+<meta property="article:modified_time" content="2025-04-08T13:17:06.328Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="interview">
 <meta name="twitter:card" content="summary">
@@ -247,14 +247,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>26k</span>
+              <span>19k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>24 分钟</span>
+              <span>17 分钟</span>
             </span>
 
         </div>
@@ -271,205 +271,126 @@
 <ul>
 <li><a href="#%E9%A1%B9%E7%9B%AE-trend-micro-service-gateway">项目: Trend Micro - Service Gateway</a><ul>
 <li><a href="#%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%E9%A1%B9%E7%9B%AE">简单介绍项目</a></li>
-<li><a href="#1%E4%B8%BAon-premises%E7%BD%91%E5%85%B3%E8%AE%BE%E5%A4%87%E8%AE%BE%E8%AE%A1%E4%BA%86%E5%9F%BA%E4%BA%8Elinux%E5%8F%8C%E7%B3%BB%E7%BB%9F%E5%88%86%E5%8C%BA%E7%9A%84%E5%8D%87%E7%BA%A7%E6%96%B9%E6%A1%88-%E6%B6%89%E5%8F%8A%E5%88%86%E5%8C%BA%E8%AE%BE%E8%AE%A1-%E5%8D%87%E7%BA%A7%E5%8C%85%E6%9E%84%E5%BB%BA-%E7%B3%BB%E7%BB%9F%E9%85%8D%E7%BD%AE%E5%90%8C%E6%AD%A5-grub%E5%90%AF%E5%8A%A8%E9%A1%B9%E9%85%8D%E7%BD%AE%E7%AD%89%E5%85%B3%E9%94%AE%E7%8E%AF%E8%8A%82-%E6%AD%A4%E6%96%B9%E6%A1%88%E8%A7%A3%E5%86%B3%E4%BA%86%E7%B3%BB%E7%BB%9F%E6%95%85%E9%9A%9C%E5%90%8E%E6%97%A0%E6%B3%95%E5%9B%9E%E6%BB%9A%E7%9A%84%E9%97%AE%E9%A2%98-%E5%B9%B6%E5%88%A0%E9%99%A4%E4%BA%861gb%E7%9A%84%E5%A2%9E%E9%87%8F%E5%8D%87%E7%BA%A7%E4%BB%A3%E7%A0%81-%E9%99%8D%E4%BD%8E%E4%BA%8640%E7%BB%B4%E6%8A%A4%E6%88%90%E6%9C%AC">1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及分区设计, 升级包构建, 系统配置同步, GRUB启动项配置等关键环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了40%维护成本</a></li>
+<li><a href="#1%E4%B8%BAon-premises%E7%BD%91%E5%85%B3%E8%AE%BE%E5%A4%87%E8%AE%BE%E8%AE%A1%E4%BA%86%E5%9F%BA%E4%BA%8Elinux%E5%8F%8C%E7%B3%BB%E7%BB%9F%E5%88%86%E5%8C%BA%E7%9A%84%E5%8D%87%E7%BA%A7%E6%96%B9%E6%A1%88-%E6%B6%89%E5%8F%8A%E5%8D%87%E7%BA%A7%E5%8C%85%E6%9E%84%E5%BB%BA-%E7%BD%91%E7%BB%9C%E9%85%8D%E7%BD%AE%E5%90%8C%E6%AD%A5-grub%E5%90%AF%E5%8A%A8%E9%A1%B9%E8%AE%BE%E7%BD%AE%E7%AD%89%E7%8E%AF%E8%8A%82-%E6%AD%A4%E6%96%B9%E6%A1%88%E8%A7%A3%E5%86%B3%E4%BA%86%E7%B3%BB%E7%BB%9F%E6%95%85%E9%9A%9C%E5%90%8E%E6%97%A0%E6%B3%95%E5%9B%9E%E6%BB%9A%E7%9A%84%E9%97%AE%E9%A2%98-%E5%B9%B6%E5%88%A0%E9%99%A4%E4%BA%861gb%E7%9A%84%E5%A2%9E%E9%87%8F%E5%8D%87%E7%BA%A7%E4%BB%A3%E7%A0%81-%E9%99%8D%E4%BD%8E%E4%BA%8690%E7%BB%B4%E6%8A%A4%E6%88%90%E6%9C%AC">1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及升级包构建, 网络配置同步, GRUB启动项设置等环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了90%维护成本</a></li>
 <li><a href="#2-%E9%80%9A%E8%BF%87%E5%AE%9A%E5%88%B6initramfs%E8%BF%9B%E5%85%A5%E7%B4%A7%E6%80%A5%E6%A8%A1%E5%BC%8F-%E9%A2%84%E5%85%88%E5%B0%86%E5%8D%87%E7%BA%A7%E5%8C%85%E5%A4%87%E4%BB%BD%E5%88%B0%E5%86%85%E5%AD%98%E5%90%8E%E5%86%8D%E9%87%8D%E5%BB%BA%E7%A3%81%E7%9B%98%E5%88%86%E5%8C%BA-%E5%AE%9E%E7%8E%B0%E4%BA%86%E4%BB%8E%E5%8D%95%E7%B3%BB%E7%BB%9F%E5%88%86%E5%8C%BA%E5%88%B0%E5%8F%8C%E7%B3%BB%E7%BB%9F%E7%9A%84%E6%97%A0%E7%BC%9D%E8%BF%81%E7%A7%BB-%E5%A4%A7%E5%B9%85%E6%8F%90%E5%8D%87%E4%BA%86%E7%94%A8%E6%88%B7%E4%BD%93%E9%AA%8C">2. 通过定制initramfs进入紧急模式, 预先将升级包备份到内存后再重建磁盘分区, 实现了从单系统分区到双系统的无缝迁移, 大幅提升了用户体验</a></li>
-<li><a href="#3-%E5%BC%80%E5%8F%91%E4%BA%86%E4%B8%80%E4%B8%AA%E6%8E%A7%E5%88%B6%E6%A8%A1%E5%9D%97%E9%80%9A%E8%BF%87%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%9C%A8%E7%BA%BF%E5%8D%87%E7%BA%A7%E5%8A%9F%E8%83%BD-%E5%BC%95%E5%85%A5%E5%BF%83%E8%B7%B3%E6%A3%80%E6%B5%8B%E8%A7%A3%E5%86%B3%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%90%8C%E6%AD%A5%E7%9A%84%E9%97%AE%E9%A2%98-%E8%AE%BE%E8%AE%A1%E4%BA%86%E9%A2%84%E4%B8%8B%E8%BD%BD%E6%9C%BA%E5%88%B6-%E7%94%A8%E6%88%B7%E7%AD%89%E5%BE%85%E6%97%B6%E9%97%B4%E5%87%8F%E5%B0%91%E4%BA%8690-%E5%90%8C%E6%97%B6%E6%8F%90%E5%8D%87%E4%BA%86%E5%8D%87%E7%BA%A7%E7%9A%84%E7%A8%B3%E5%AE%9A%E6%80%A7">3. 开发了一个控制模块，通过消息队列实现在线升级功能, 引入心跳检测解决微服务同步的问题; 设计了预下载机制, 用户等待时间减少了90%, 同时提升了升级的稳定性</a></li>
+<li><a href="#3-%E5%BC%80%E5%8F%91%E4%BA%86%E4%B8%80%E4%B8%AA%E8%BF%90%E8%A1%8C%E5%9C%A8%E7%BD%91%E5%85%B3%E8%AE%BE%E5%A4%87%E4%B8%8A%E7%9A%84%E6%8E%A7%E5%88%B6%E6%A8%A1%E5%9D%97-%E5%88%A9%E7%94%A8aws-iot%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%AE%9E%E7%8E%B0%E5%9C%A8%E7%BA%BF%E5%8D%87%E7%BA%A7%E7%AD%89%E5%8A%9F%E8%83%BD-%E5%B9%B6%E9%80%9A%E8%BF%87%E5%BF%83%E8%B7%B3%E6%A3%80%E6%B5%8B%E6%96%B9%E6%B3%95%E8%A7%A3%E5%86%B3%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%90%8C%E6%AD%A5%E7%9A%84%E9%97%AE%E9%A2%98-%E5%BC%95%E5%85%A5%E9%A2%84%E4%B8%8B%E8%BD%BD%E6%9C%BA%E5%88%B6%E6%8F%90%E9%AB%98%E5%8D%87%E7%BA%A7%E7%9A%84%E7%A8%B3%E5%AE%9A%E6%80%A7">3. 开发了一个运行在网关设备上的控制模块, 利用AWS IoT消息队列实现在线升级等功能, 并通过心跳检测方法解决微服务同步的问题; 引入预下载机制提高升级的稳定性</a></li>
 <li><a href="#4%E4%BC%98%E5%8C%96%E4%BA%86%E5%BE%AE%E6%9C%8D%E5%8A%A1%E7%9A%84%E9%9B%86%E6%88%90%E6%96%B9%E6%A1%88-%E5%B0%86%E5%BE%AE%E6%9C%8D%E5%8A%A1%E4%BB%8E%E8%99%9A%E6%8B%9F%E8%AE%BE%E5%A4%87%E5%9B%BA%E4%BB%B6%E4%B8%AD%E8%A7%A3%E8%80%A6-%E5%B9%B6%E4%BD%BF%E7%94%A8microk8s-ingress%E6%8F%90%E4%BE%9B%E7%BB%9F%E4%B8%80%E7%9A%84%E8%AE%BF%E9%97%AE%E5%85%A5%E5%8F%A3-%E5%B0%86%E8%99%9A%E6%8B%9F%E8%AE%BE%E5%A4%87%E9%95%9C%E5%83%8F%E4%BB%8E45g%E5%8E%8B%E7%BC%A9%E8%87%B327g-%E5%AE%A2%E6%88%B7%E5%AE%89%E8%A3%85%E6%97%B6%E9%97%B4%E7%BC%A9%E7%9F%AD%E4%BA%8640">4.优化了微服务的集成方案, 将微服务从虚拟设备固件中解耦, 并使用Microk8s Ingress提供统一的访问入口, 将虚拟设备镜像从4.5G压缩至2.7G, 客户安装时间缩短了40%</a></li>
-<li><a href="#5-%E5%9F%BA%E4%BA%8Ecisco-cli%E5%BC%80%E5%8F%91%E4%BA%86%E4%B8%80%E7%BB%84%E5%91%BD%E4%BB%A4-%E5%AE%9E%E7%8E%B0%E4%BA%86%E9%85%8D%E7%BD%AE%E7%AE%A1%E7%90%86%E5%8A%9F%E8%83%BD-%E9%80%9A%E8%BF%87%E8%AE%BE%E8%AE%A1%E8%AF%8A%E6%96%AD%E5%91%BD%E4%BB%A4-%E6%94%B6%E9%9B%86%E6%97%A5%E5%BF%97-%E6%98%BE%E8%91%97%E6%8F%90%E5%8D%87%E4%BA%86%E5%AE%A2%E6%88%B7%E6%9C%AC%E5%9C%B0%E7%8E%AF%E5%A2%83%E4%B8%AD%E5%AE%9A%E4%BD%8Dmicrok8s%E9%97%AE%E9%A2%98%E7%9A%84%E6%95%88%E7%8E%87">5. 基于CISCO CLI开发了一组命令, 实现了配置管理功能; 通过设计诊断命令, 收集日志, 显著提升了客户本地环境中定位Microk8s问题的效率</a></li>
-<li><a href="#%E5%85%B6%E4%BB%96%E9%97%AE%E9%A2%98">其他问题</a></li>
+<li><a href="#5-%E6%80%8E%E4%B9%88%E4%BD%BF%E7%94%A8%E8%AF%8A%E6%96%AD%E5%91%BD%E4%BB%A4%E5%AE%9A%E4%BD%8D%E7%BD%91%E7%BB%9C%E9%97%AE%E9%A2%98">5. 怎么使用诊断命令定位网络问题</a></li>
+<li><a href="#%E9%A1%B9%E7%9B%AE%E4%B8%AD%E8%BF%98%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8C%96%E7%9A%84">项目中还有什么优化的</a></li>
+<li><a href="#%E9%A1%B9%E7%9B%AE%E4%B8%AD%E5%9B%A2%E9%98%9F%E6%88%90%E5%91%98%E7%BB%84%E6%88%90">项目中团队成员组成</a></li>
+<li><a href="#%E4%BD%A0%E5%81%9A%E4%BA%86%E5%93%AA%E4%BA%9B%E9%83%A8%E5%88%86-%E5%93%AA%E4%BA%9B%E6%98%AF%E5%90%88%E4%BD%9C%E7%9A%84-%E5%A6%82%E4%BD%95%E5%90%88%E4%BD%9C">你做了哪些部分, 哪些是合作的, 如何合作</a></li>
 </ul>
 </li>
 <li><a href="#%E9%A1%B9%E7%9B%AE2-forward-proxy-service">项目2: Forward Proxy Service</a><ul>
-<li><a href="#%E5%9F%BA%E4%BA%8Esquid%E5%AE%9E%E7%8E%B0%E4%BA%86%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86-%E6%94%AF%E6%8C%81basic%E8%AE%A4%E8%AF%81%E5%92%8C%E7%99%BD%E5%90%8D%E5%8D%95%E9%85%8D%E7%BD%AE-%E9%80%9A%E8%BF%87acl%E9%99%90%E5%88%B6%E7%BB%88%E7%AB%AF%E8%AE%BF%E9%97%AE-%E6%98%BE%E8%91%97%E6%8F%90%E5%8D%87%E4%BA%86%E7%B3%BB%E7%BB%9F%E5%AE%89%E5%85%A8%E6%80%A7">基于Squid实现了正向代理, 支持Basic认证和白名单配置, 通过ACL限制终端访问, 显著提升了系统安全性</a></li>
-<li><a href="#%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90%E5%B9%B6%E8%BF%85%E9%80%9F%E8%A7%A3%E5%86%B3%E5%AE%A2%E6%88%B7%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%9A%84%E9%97%AE%E9%A2%98-%E6%B6%89%E5%8F%8Ahttp%E9%9A%A7%E9%81%93%E5%92%8Ctls%E6%8F%A1%E6%89%8B%E5%8E%9F%E7%90%86">深入分析并迅速解决客户网络不通的问题, 涉及HTTP隧道和TLS握手原理</a></li>
+<li><a href="#%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%E9%A1%B9%E7%9B%AE-1">简单介绍项目</a></li>
+<li><a href="#%E5%9F%BA%E4%BA%8Esquid%E6%90%AD%E5%BB%BA%E4%BA%86%E6%94%AF%E6%8C%81basic%E8%AE%A4%E8%AF%81%E5%92%8C%E7%99%BD%E5%90%8D%E5%8D%95%E9%85%8D%E7%BD%AE%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E6%9C%8D%E5%8A%A1-%E9%80%9A%E8%BF%87acl%E8%A7%84%E5%88%99%E6%8B%A6%E6%88%AA%E9%9D%9E%E6%B3%95%E8%AF%B7%E6%B1%82-%E5%A2%9E%E5%BC%BA%E4%BA%86%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%AE%89%E5%85%A8%E6%80%A7">基于Squid搭建了支持Basic认证和白名单配置的正向代理服务, 通过ACL规则拦截非法请求, 增强了系统的安全性</a><ul>
+<li><a href="#%E5%88%86%E6%9E%90%E5%B9%B6%E8%BF%85%E9%80%9F%E8%A7%A3%E5%86%B3%E5%AE%A2%E6%88%B7%E7%BD%91%E7%BB%9C%E4%B8%8D%E9%80%9A%E7%9A%84%E9%97%AE%E9%A2%98-%E6%B6%89%E5%8F%8Ahttp%E9%9A%A7%E9%81%93%E5%92%8Ctls%E6%8F%A1%E6%89%8B%E5%8E%9F%E7%90%86">分析并迅速解决客户网络不通的问题, 涉及HTTP隧道和TLS握手原理</a></li>
 <li><a href="#%E8%AE%BE%E8%AE%A1%E4%BA%86%E4%B8%80%E4%B8%AA%E5%9F%BA%E4%BA%8Estunnel%E7%9A%84%E5%8A%A0%E5%AF%86%E9%80%9A%E4%BF%A1%E6%96%B9%E6%A1%88-%E6%98%BE%E8%91%97%E5%87%8F%E5%B0%91%E4%BA%86%E5%9B%A0%E5%AE%A2%E6%88%B7%E9%98%B2%E7%81%AB%E5%A2%99%E9%85%8D%E7%BD%AE%E5%BC%82%E5%B8%B8%E5%AF%BC%E8%87%B4%E7%9A%84%E7%BD%91%E7%BB%9C%E9%97%AE%E9%A2%98-%E6%9E%81%E5%A4%A7%E6%8F%90%E5%8D%87%E4%BA%86%E7%94%A8%E6%88%B7%E4%BD%93%E9%AA%8C">设计了一个基于Stunnel的加密通信方案, 显著减少了因客户防火墙配置异常导致的网络问题, 极大提升了用户体验</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#%E9%A1%B9%E7%9B%AE3-matrix%E4%BB%BF%E7%9C%9F%E5%B9%B3%E5%8F%B0">项目3: Matrix仿真平台</a><ul>
 <li><a href="#%E9%80%9A%E8%BF%87redis%E9%94%AE%E7%A9%BA%E9%97%B4%E9%80%9A%E7%9F%A5%E6%9C%BA%E5%88%B6-%E6%A8%A1%E6%8B%9F%E4%BA%86%E5%8D%95%E6%9D%BF%E6%8F%92%E6%8B%94%E7%9A%84%E4%BB%BF%E7%9C%9F-%E5%B9%B6%E9%80%9A%E8%BF%87%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BD%91%E6%A1%A5%E6%A8%A1%E6%8B%9F%E6%A1%86%E5%BC%8F%E5%BD%A2%E6%80%81%E7%9A%84%E4%BB%BF%E7%9C%9F-%E6%89%A9%E5%B1%95%E4%BA%86%E4%BB%BF%E7%9C%9F%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%B5%8B%E8%AF%95%E8%8C%83%E5%9B%B4">通过Redis键空间通知机制, 模拟了单板插拔的仿真, 并通过自定义网桥模拟框式形态的仿真, 扩展了仿真平台的测试范围</a></li>
 <li><a href="#%E5%B0%86redis%E9%A9%B1%E5%8A%A8%E6%8E%A5%E5%8F%A3%E4%BB%8E%E7%9F%AD%E8%BF%9E%E6%8E%A5%E4%BC%98%E5%8C%96%E4%B8%BA%E9%95%BF%E8%BF%9E%E6%8E%A5-%E6%8E%A5%E5%8F%A3%E5%B9%B3%E5%9D%87%E8%AF%BB%E5%86%99%E6%97%B6%E9%97%B4%E4%BB%8E2ms%E7%BC%A9%E7%9F%AD%E4%B8%BA01ms-%E6%98%BE%E8%91%97%E6%8F%90%E5%8D%87%E4%BA%86%E6%B5%8B%E8%AF%95%E6%95%88%E7%8E%87">将Redis驱动接口从短连接优化为长连接, 接口平均读写时间从2ms缩短为0.1ms, 显著提升了测试效率</a></li>
-<li><a href="#%E5%85%B6%E4%BB%96%E9%97%AE%E9%A2%98-1">其他问题</a></li>
+<li><a href="#%E5%85%B6%E4%BB%96%E9%97%AE%E9%A2%98">其他问题</a></li>
 </ul>
 </li>
-<li><a href="#%E9%A1%B9%E7%9B%AE%E6%9C%80%E5%A4%A7%E9%9A%BE%E7%82%B9">项目最大难点</a></li>
-<li><a href="#%E4%B8%80%E4%BA%9B%E6%A6%82%E5%BF%B5">一些概念</a><ul>
-<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AF%E6%B7%B7%E5%90%88%E4%BA%91%E6%9E%B6%E6%9E%84">什么是混合云架构</a></li>
-<li><a href="#%E6%94%AF%E6%8C%81xx%E5%A4%9A%E5%B9%B3%E5%8F%B0%E9%83%A8%E7%BD%B2-%E8%BF%99%E4%BA%9B%E5%B9%B3%E5%8F%B0%E5%B7%AE%E5%BC%82%E6%98%AF%E4%BB%80%E4%B9%88-%E9%81%87%E5%88%B0%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98">支持XX多平台部署, 这些平台差异是什么, 遇到什么问题</a></li>
-<li><a href="#%E4%BD%A0%E4%BB%AC%E7%9A%84microk8s%E9%9B%86%E7%BE%A4%E6%98%AF%E6%8C%87%E4%BB%80%E4%B9%88-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%94%A8%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4-%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4%E6%98%AF%E4%BB%80%E4%B9%88%E6%A0%B7%E7%9A%84">你们的Microk8s集群是指什么? 为什么不用高可用集群? 高可用集群是什么样的?</a></li>
-<li><a href="#xdr%E6%98%AF%E4%BB%80%E4%B9%88%E6%84%8F%E6%80%9D">XDR是什么意思</a></li>
-<li><a href="#activeupdate">ActiveUpdate</a></li>
-<li><a href="#webreputation">WebReputation</a></li>
+<li><a href="#%E6%8A%80%E8%83%BD%E6%8F%8F%E8%BF%B0">技能描述</a><ul>
+<li><a href="#docker%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%BC%8F%E5%8F%8A%E5%AE%B9%E5%99%A8%E9%97%B4%E9%80%9A%E4%BF%A1%E7%9A%84%E5%8E%9F%E7%90%86">Docker网络模式及容器间通信的原理</a></li>
+<li><a href="#nginx-ingress">Nginx Ingress</a></li>
+<li><a href="#coredns%E5%8E%9F%E7%90%86">CoreDNS原理</a></li>
+<li><a href="#calico%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%BC%8F">Calico网络模式</a></li>
+</ul>
+</li>
+<li><a href="#%E5%85%B6%E4%BB%96%E9%A1%B9%E7%9B%AE%E9%97%AE%E9%A2%98">其他项目问题</a><ul>
+<li><a href="#%E8%AF%B4%E4%B8%8Blinux%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B">说下Linux启动流程</a></li>
+<li><a href="#grub%E4%BB%80%E4%B9%88%E5%8E%9F%E7%90%86">GRUB什么原理</a></li>
+<li><a href="#initramfs%E6%98%AF%E4%BB%80%E4%B9%88">initramfs是什么</a></li>
+<li><a href="#%E6%80%8E%E4%B9%88%E4%BF%9D%E8%AF%81%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E5%A4%B1">怎么保证消息不丢失</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%B6%88%E6%81%AF%E9%87%8D%E5%A4%8D%E6%B6%88%E8%B4%B9">如何避免消息重复消费</a></li>
+<li><a href="#%E5%A6%82%E6%9E%9C%E5%8D%87%E7%BA%A7%E7%89%88%E6%9C%AC%E6%9C%89%E9%97%AE%E9%A2%98-%E6%80%8E%E4%B9%88%E6%9C%80%E5%B0%8F%E5%8C%96%E7%94%A8%E6%88%B7%E5%BD%B1%E5%93%8D">如果升级版本有问题, 怎么最小化用户影响</a></li>
+<li><a href="#jwt%E6%B3%A8%E5%86%8C%E6%B5%81%E7%A8%8B">JWT注册流程</a></li>
+<li><a href="#jwt%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86%E6%98%AF%E4%BB%80%E4%B9%88">JWT工作原理是什么</a></li>
 <li><a href="#jwt%E5%92%8Csession">JWT和Session</a></li>
-<li><a href="#sg-introduction">SG introduction:</a></li>
+<li><a href="#cookie%E5%92%8Csession%E8%AE%A4%E8%AF%81%E9%97%AE%E9%A2%98">Cookie和Session认证问题</a></li>
 </ul>
 </li>
+<li><a href="#%E7%AE%80%E5%8E%86%E4%B8%AD%E7%9A%84%E6%8A%80%E6%9C%AF%E5%90%8D%E8%AF%8D">简历中的技术名词</a><ul>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E6%B7%B7%E5%90%88%E4%BA%91%E6%9E%B6%E6%9E%84">为什么采用混合云架构?</a></li>
+<li><a href="#microk8s%E9%9B%86%E7%BE%A4%E6%98%AF%E6%8C%87%E4%BB%80%E4%B9%88-%E4%BD%A0%E4%BB%AC%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E7%94%A8%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4">Microk8s集群是指什么? 你们为什么不用高可用集群?</a></li>
+<li><a href="#%E5%A6%82%E6%9E%9C%E6%98%AF%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4-%E4%BD%A0%E5%87%86%E5%A4%87%E6%80%8E%E4%B9%88%E9%83%A8%E7%BD%B2">如果是高可用集群, 你准备怎么部署?</a></li>
+<li><a href="#xdr%E6%98%AF%E4%BB%80%E4%B9%88%E6%84%8F%E6%80%9D">XDR是什么意思</a></li>
+<li><a href="#localactiveupdate">LocalActiveUpdate</a></li>
+<li><a href="#webreputation">WebReputation</a></li>
+<li><a href="#fps%E4%B8%AD-%E9%80%90%E4%B8%80%E4%B8%BA%E7%AB%AF%E7%82%B9%E9%85%8D%E7%BD%AE%E9%98%B2%E7%81%AB%E5%A2%99%E7%AD%96%E7%95%A5%E7%97%9B%E7%82%B9%E6%8C%87%E7%9A%84%E6%98%AF%E4%BB%80%E4%B9%88">FPS中, 逐一为端点配置防火墙策略痛点指的是什么</a></li>
+<li><a href="#air-gap%E6%98%AF%E5%95%A5%E6%84%8F%E6%80%9D">Air Gap是啥意思</a></li>
+<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AF%E4%BA%91%E8%AE%A1%E7%AE%97">什么是云计算</a></li>
+<li><a href="#%E5%85%AC%E6%9C%89%E4%BA%91%E5%92%8C%E7%A7%81%E6%9C%89%E4%BA%91">公有云和私有云</a></li>
+<li><a href="#%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD%E5%8D%B3%E6%9C%8D%E5%8A%A1iaas-%E5%B9%B3%E5%8F%B0%E5%8D%B3%E6%9C%8D%E5%8A%A1paas-%E8%BD%AF%E4%BB%B6%E5%8D%B3%E6%9C%8D%E5%8A%A1saas">基础设施即服务(IaaS), 平台即服务(PaaS),  软件即服务(SaaS)</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BA%91%E6%9C%8D%E5%8A%A1%E8%B4%B9%E7%94%A8">云服务费用</a></li>
 </ul>
 <!-- tocstop -->
 
 <span id="more"></span>
 
-<h1><span id="项目-trend-micro-service-gateway">项目: Trend Micro - Service Gateway</span></h1><h2><span id="简单介绍项目">简单介绍项目</span></h2><p>Service Gateway是一个部署在企业网络的服务网关, 采用混合云架构, 将云端服务转移到客户本地环境, 从而减少客户的带宽消耗.<br>该服务网关由一个云端的管理平台和一组本地的Rocky Linux虚拟设备组成, 支持VMware, AWS, Azure多平台部署;<br>并通过Microk8s集群方式部署虚拟设备, 提供了多种XDR关键服务, 支持5万个企业客户, 覆盖1亿台终端</p>
-<h2><span id="1为on-premises网关设备设计了基于linux双系统分区的升级方案-涉及分区设计-升级包构建-系统配置同步-grub启动项配置等关键环节-此方案解决了系统故障后无法回滚的问题-并删除了1gb的增量升级代码-降低了40维护成本">1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及分区设计, 升级包构建, 系统配置同步, GRUB启动项配置等关键环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了40%维护成本</span></h2><p>早期，客户的On-premises网关设备（基于CentOS 7）采用增量升级方案进行固件更新。 这种方案存在两个主要问题<br>一旦升级过程中出现问题，客户只能重新安装系统，严重影响用户体验。<br>部分客户未开启自动升级功能，为了支持所有客户的升级需求，升级包必须保存从初始版本到最新版本的所有增量文件。随着版本迭代，升级包变得越来越大，难以维护。</p>
-<p><strong>方案</strong><br>针对这些问题，我设计并实现了一个基于Linux双系统分区的全量升级方案, 像Android系统、 Chrome OS及许多嵌入式和IoT设备都采用双分区系统升级方法, 做到无缝更新和故障恢复.<br>全量升级方案中包含一些关键技术环节: 设计分区, 构建升级包, 同步系统配置, 配置GRUB启动项。 </p>
-<p>设计分区： 使用BIOS+GPT分区格式，兼容现有客户。分区方案包括：BIOS Boot分区、Boot分区和LVM分区, 在LVM分区上创建名为VA的逻辑卷组，并进一步创建四个逻辑卷：VA-root和VA-back作为两个系统分区，VA-data存储公共数据，VA-image存储镜像文件。<br>构建升级包： 通过ISO安装虚拟机, 导出虚拟机OVA文件, 解压OVA文件得到VMDK磁盘文件, 使用guestmount挂载VMDK文件，对整个根文件系统进行打包，注意打包时需保留UID（numeric-owner）和文件扩展属性（xattr），解包时同样需要声明UID和xattr。</p>
-<p><strong>难点</strong><br>目标系统的GRUB版本(OS版本)可能比当前系统更高, 如果用当前系统GRUB引导两个系统分区, 会存在兼容性问题. 针对这种情况，我采取了以下做法</p>
+<h1><span id="项目-trend-micro-service-gateway">项目: Trend Micro - Service Gateway</span></h1><h2><span id="简单介绍项目">简单介绍项目</span></h2><p>Service Gateway是一款部署在企业网络中的服务网关, 采用混合云架构, 降低客户的带宽消耗和云服务费用.<br>该服务网关由一个云端管理平台和一组基于Rocky Linux的虚拟网关设备组成, 支持VMware, Hyper-V, AWS多平台部署<br>网关设备通过Microk8s集群方式运行在客户本地环境, 提供多种XDR(扩展检测与响应)服务, 服务于5万家企业客户, 覆盖1亿台终端设备  </p>
+<h2><span id="1为on-premises网关设备设计了基于linux双系统分区的升级方案-涉及升级包构建-网络配置同步-grub启动项设置等环节-此方案解决了系统故障后无法回滚的问题-并删除了1gb的增量升级代码-降低了90维护成本">1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及升级包构建, 网络配置同步, GRUB启动项设置等环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了90%维护成本</span></h2><p><strong>主要难点是什么, 如何解决的</strong><br>在早期，客户的On-premises网关设备使用增量升级方案进行固件更新, 这个方案存在一些严重的问题, 比如:<br>升级到新版本后出现故障，无法回滚到之前的版本, 客户只能重装系统，用户体验差。<br>为了保证所有客户都能升级到最新版本, 升级包必须保存从初始版本到最新版本的所有增量文件;<br>我接手项目时升级包已经达到1G, 随着版本迭代，升级包变得越来越大，难以维护。</p>
+<p>为了解决这些问题, 我设计了一个基于双系统分区的全量升级方案, 难点包括升级包构建, 升级前后配置怎么同步, GRUB启动项怎么配置.</p>
+<p><strong>构建升级包</strong><br>难点1: 分区如何设计?<br>为了支持双系统, 需要对磁盘重新分区, 怎么保证两个分区独立运行互不干扰, 升级之后用户数据不会丢失.<br>我们的做法是, 用LVM逻辑卷将磁盘分出四个逻辑分区, root和back作为两个系统分区(50G)，data分区存储公共数据，image分区(20G)存储镜像<br>用逻辑卷是为了客户后期可以扩容.</p>
+<p>难点2: 构建升级包过程中, 如何保证文件系统完整性和一致性, 怎么样用最小代价<br>导出虚拟机OVA文件, 挂载VMDK, 再对整个文件系统打包, 计算sha256sum (直接在运行机器上打包会出现不一致的问题)<br>注意: 打包时保留numericID(目标系统新增用户时, 用户UID与当前系统可能不一致), 和文件扩展属性xattr(保留snap运行状态)</p>
+<p><strong>网络配置同步</strong>.<br>难点: 升级前后需要同步很多配置, 确保无缝升级, 其中网络配置的同步比较复杂, 通过简单复制文件方式难以实现同步<br>比如说某些客户的设备配置了双网卡, 这些设备从CentOS升级到Rocky, 概率出现网络不通问题, 升级后eth0和eth1两个网卡顺序错误, 导致网络不通</p>
+<p>原因: 现代Linux系统使用基于硬件信息（如PCI总线地址）的可预测网卡命名规则，保证OS升级后网卡顺序的正确性。<br>但是我们的网关设备采用的是传统的eth网卡命名规则，好处是客户配置网络时无需指定网卡名称, 但是这种规则并不能保证网卡顺序的正确性。<br>解决方法: 升级前用ethtool记录每个网卡的总线信息businfo, 如果升级后网卡的总线不正确, 用modprobe按正确顺序加载网卡驱动; (如果两个网卡驱动相同, 还需要修改udev规则)</p>
+<p><strong>GRUB启动项设置</strong><br>难点: 当两个分区的GRUB版本不一致的时候, 如何正确生成两个启动项<br>我们选择安装较新版本的GRUB, 因为新版本的引导程序可以兼容旧的CentOS 7, 步骤：</p>
 <ul>
+<li>先备份当前&#x2F;boot分区</li>
 <li>使用目标系统的&#x2F;boot引导两个系统的内核。</li>
-<li>通过chroot方式配置并重装GRUB。</li>
-<li>如果GRUB配置失败，回滚到升级前的状态。</li>
+<li>通过chroot进入目标系统, 配置并安装GRUB</li>
+<li>如果在这个过程中GRUB配置失败，通过之前备份的&#x2F;boot分区内容自动恢复到升级前状态</li>
 </ul>
-<p>为什么不直接把目标系统的&#x2F;boot放在LVM系统分区？</p>
+<p><strong>遇到了哪些问题</strong><br>问题1: 升级后用户无法登录, Microk8s启动失败 (打包时没有添加numeric-owner参数, 没有保留snap的xattr属性)<br>问题2: 升级后网络不通, 双网卡顺序颠倒<br>问题3: GRUB配置了10秒超时, 但是重启后启动菜单没有显示 (找了一份源码编译, 打印日志, 发现问题, 是menu_auto_hide环境变量问题</p>
+<h2><span id="2-通过定制initramfs进入紧急模式-预先将升级包备份到内存后再重建磁盘分区-实现了从单系统分区到双系统的无缝迁移-大幅提升了用户体验">2. 通过定制initramfs进入紧急模式, 预先将升级包备份到内存后再重建磁盘分区, 实现了从单系统分区到双系统的无缝迁移, 大幅提升了用户体验</span></h2><p><strong>主要难点是什么, 如何解决的</strong><br>我们设计了一个双分区的升级方案, 但是早期客户设备只有一个系统分区。 我们要解决一个问题: 如何让客户的网关设备从单分区无缝迁移到双分区. 它的难点在于:<br>如果直接在原系统上重新划分分区，会导致数据丢失, 因为根分区在系统启动后是挂载状态，无法直接卸载或修改</p>
+<p>为了解决这个问题, 我设计了一个基于initramfs的原地迁移方案<br>通过定制initramfs进入紧急模式，先挂载磁盘, 把升级包从磁盘复制到临时内存<br>再重新建立双分区, 解压临时内存中的升级包到根分区, 同步客户配置<br>最后重新配置和安装GRUB, 执行reboot完成OS迁移</p>
+<p>实施这个方案的时候, 遇到一个难点:<br>initramfs使用的是内存空间, 而客户机器内存是有限的, 最低内存只有8G, 必须保证升级包及其解压后文件远小于8G, 避免因为内存不足导致迁移失败. 我们采用了一些做法，比如:</p>
 <ul>
-<li>兼容性问题, 传统BIOS和某些UEFI固件不支持直接从LVM卷启动</li>
-<li>复杂性增加, 故障恢复困难</li>
+<li>使用CentOS 7 miminal ISO做升级包, 这个ISO只有900M</li>
+<li>导出虚拟机时, 只分配必要磁盘空间, 等客户机器迁移成功后再自动分配剩余空间</li>
+<li>清理临时文件, 日志文件, 禁用交换分区</li>
+<li>使用压缩比率高的算法, 我们选的xz<br>最终我们的升级包大小是1.7G, 实测运行内存在4G左右, 没有出现客户因内存不足导致的迁移失败</li>
 </ul>
-<p>为什么不划两个&#x2F;boot分区？</p>
-<ul>
-<li>手动修改风险：客户需要手动调整磁盘分区，这不仅增加了操作难度，还可能导致数据丢失或分区表损坏。</li>
-<li>实现复杂性：理论上划分两个&#x2F;boot分区是可行的，但实现起来较为复杂。实际上，GRUB的一个&#x2F;boot分区就可以引导多个版本的内核，支持向前兼容。</li>
-</ul>
-<p><strong>效果</strong><br>成功解决了系统故障后无法回滚的问题, 极大提升了客户体验. 基于双分区方案实现系统回滚非常容易, 只需配置GRUB默认启动项为上一个系统分区，再重启即可<br>同时移除了1G多的增量升级代码, 显著降低了维护成本</p>
-<p><strong>遇到的问题</strong><br>问题1: 升级后文件权限不对, admin用户无法登录<br>定位过程：后台查看发现admin用户的文件UID不正确，升级前后两个系统的用户配置不一致。同样的admin用户在两个系统上的UID不同。由于升级包是通过tar备份的，而tar解压文件的默认行为是根据当前系统用户名进行映射，而不是UID，因此升级后文件的UID不正确。<br>解决方法：在tar解压时添加–numeric-owner参数，保留文件的UID，解决了问题。</p>
-<p>问题2: 升级到Rocky Linux 9.4后, 客户设备启动故障, 报错: 虚拟机CPU不支持x86_64_v2<br>定位过程：查看&#x2F;proc&#x2F;cpuinfo，发现客户虚拟机不支持x86_64_v2指令集，但物理服务器支持该指令集。<br>解决方法：指导客户开启CPU虚拟化扩展，并在升级前验证虚拟机CPU是否支持所需指令集。如果不支持，则直接上报失败。</p>
-<p>问题3: 配置了双网卡的客户, 在升级到Rocky Linux 9.4后有概率出现网络不通, 网卡的IP,Gateway配置看上去是正确的<br>定位过程: 首先ping网关, 发现网关不可达, 通过ethtool查看网卡信息, 发现升级后eth0和eth1顺序反了, 导致网络不通<br>原因分析: 现代Linux系统通常使用基于硬件信息（如PCI总线ID）的可预测网卡命名规则，保证OS升级后网卡顺序也是正确的。 但是我们的网关设备采用的还是传统的eth命名规则，这种规则不能保证网卡顺序的正确性。<br>解决方法: 升级后用ethtool判断网卡顺序是否正确, 如果不正确, 用modprobe按正确顺序加载网卡驱动; (如果两个网卡驱动相同, 还需要修改udev规则)</p>
-<p><strong>其他问题</strong><br>讲下GRUB工作原理<br>GRUB（GRand Unified Bootloader), Linux系统中广泛使用的引导加载程序, 负责加载操作系统内核到内存并启动<br>划分3阶段, Stage 1, Stage 1.5, Stage 2, 其中Stage 2是GRUB的核心部分，包含用户界面、配置文件解析器以及加载内核和initrd的工具。<br>当选择了启动菜单中的某个条目后, GRUB会将指定的kernel和initrd加载到内存中, 内核被加载到内存后, 控制权转移给内核, 继续启动流程</p>
-<p>讲下Linux启动流程</p>
-<ul>
-<li>系统加电, BIOS开机自检</li>
-<li>按照BIOS设定启动的顺序, 查找可启动设备, 通常是硬盘, 把控制权交给GRUB</li>
-<li>GRUB把内核加载到内存，挂载initrd, 通过initrd加载真正的根文件系统</li>
-<li>内核启动完成后, 执行第一个用户空间进程init, init负责启动其他服务</li>
-</ul>
-<h2><span id="2-通过定制initramfs进入紧急模式-预先将升级包备份到内存后再重建磁盘分区-实现了从单系统分区到双系统的无缝迁移-大幅提升了用户体验">2. 通过定制initramfs进入紧急模式, 预先将升级包备份到内存后再重建磁盘分区, 实现了从单系统分区到双系统的无缝迁移, 大幅提升了用户体验</span></h2><p><strong>背景</strong><br>我们设计了一个Linux双系统分区的升级方案, 用于解决单分区方案中, 升级后出现故障无法回滚的问题。 但是早期客户的虚拟设备只有一个系统分区, 我们需要设计一种方案, 让客户的网关设备从分区无缝迁移到双分区<br>难点在于实现无感知的升级, 无需客户手动操作(比如添加磁盘, 创建机器, 配置设备).</p>
-<p><strong>方案</strong><br>通过定制initrd进入紧急模式，在initrd阶段把升级包和配置文件从磁盘读到内存，重新建立LVM磁盘分区,<br>再解压升级包到主系统分区, 同步客户配置和口令,<br>最后重新安装GRUB, 重启后迁移到新系统</p>
-<p><strong>难点</strong><br>方案中涉及到一个难点: initrd内存空间是有限的, 客户标准内存配置12G, 最低内存只有8G, 需要尽可能压缩升级包, 使得升级包+解压后文件远小于8G, 否则会因为内存不足迁移失败. 我设计的对策是:</p>
-<ul>
-<li>使用CentOS 7官方miminal ISO做镜像, 这个镜像只有900M</li>
-<li>只分配必要磁盘空间, 比如导出虚拟机时, 磁盘只分了8G, 等客户机器迁移成功后再自动分配剩余空间到LVM磁盘</li>
-<li>导出虚拟机前, 清理临时文件, 日志文件, 禁用交换分区</li>
-<li>使用压缩比率高的算法, 我们选的xz<br>最终我们的升级包大小是1.7G, 解压磁盘文件大小是3G左右, 实测运行内存在4-5G左右, 没有出现客户因内存不足导致的迁移失败</li>
-</ul>
-<p><strong>效果</strong><br>实现了从单系统分区到双系统的无缝迁移, 避免了客户重装机器, 扩容磁盘, 配置设备, 极大地提升了用户体验</p>
-<p><strong>遇到的问题</strong><br>仍然有少量客户(几十个）迁移失败, 比如:</p>
+<p><strong>为什么用这个方案, 有没有别的方案</strong><br>平行迁移, 部署一套全新的系统，然后将数据和配置从旧系统迁移到新系统。 我们没有采用, 因为需要客户手动安装配置设备, 做不到无缝迁移</p>
+<p><strong>遇到了哪些问题</strong><br>仍然有少量客户(几十个）迁移失败, 比如:</p>
 <ul>
 <li>磁盘有坏道, 这种只能建议重装</li>
-<li>客户网络问题, 升级后因为网络原因没有注册, 让客户手动注册解决问题</li>
+<li>客户网络问题, 升级后因为网络原因没有注册, 让客户手动注册解决问题<br>两万客户, 迁移失败的几十个, 迁移成功率99.5%以上</li>
 </ul>
-<p><strong>如何压缩全量升级包</strong></p>
-<ul>
-<li>使用Rocky官方minimal的镜像做定制, 这个镜像在1.7G左右</li>
-<li>只分配必要空间给镜像, 等客户安装成功后再动态分配剩余空间</li>
-<li>导出OVA前, 清理临时文件，日志文件, 禁用交换分区</li>
-<li>使用精简置备（thin provisioning）的虚拟磁盘格式，这仅分配实际使用的存储空间，而非预先分配整个磁盘容量。</li>
-<li>使用XZ压缩算法<br>效果: 最终导出的OVA在2.5G左右</li>
+<h2><span id="3-开发了一个运行在网关设备上的控制模块-利用aws-iot消息队列实现在线升级等功能-并通过心跳检测方法解决微服务同步的问题-引入预下载机制提高升级的稳定性">3. 开发了一个运行在网关设备上的控制模块, 利用AWS IoT消息队列实现在线升级等功能, 并通过心跳检测方法解决微服务同步的问题; 引入预下载机制提高升级的稳定性</span></h2><p><strong>主要难点是什么, 如何解决的</strong><br>为了实现虚拟设备的在线升级, 服务安装等功能, 我们开发了一个运行于网关设备上的控制模块, 控制模块包含一个Python的后台进程和cronjob脚本.<br>后台进程订阅AWS IoT消息队列, 接收云端的升级消息, 然后根据消息类型把任务发送到到相应的Python队列中, 由不同线程处理任务<br>对于固件升级, 服务安装这类耗时长任务, 我们生成一个taskfile到磁盘, 交给cronjob处理</p>
+<p>最大的难点是, 如何在客户设备完成固件升级后, 自动恢复客户之前安装的微服务, 从而实现无缝升级.<br>为了解决这个问题，我们引入了心跳检测机制: 让云端每5分钟通过消息队列给网关设备发送一次心跳消息, 设备完成升级后，会在心跳响应中带上版本号,<br>云端收到响应后通过检查版本号确认升级完成，再下发安装微服务的消息, 确保升级过程对用户来说是无感知的</p>
+<p><strong>为什么引入消息队列, 为什么选择AWS IoT</strong><br>实现云端和网关设备之间的解耦通信, 云端只需要把任务发送到消息队列, 无需和每个虚拟设备直接交互, 降低耦合度，提高可维护性<br>实现异步处理, 云端无需等待任务执行完成, 从而提高系统响应速度</p>
+<p>稳定性和可靠性, AWS IoT由Amazon提供的成熟方案, 我们后端也是基于AWS EKS部署的, 所以使用AWS IoT解决方案<br>易于部署和维护, AWS IoT是完全托管服务, 不需要部署实例<br>成本低, 费用就是消息传输费(每百万条价格1美元), 所有site每月300美金<br>不选择RabbitMQ和Kafka: 费用较高, 按照实例和存储收费, 增加复杂性, 有额外成本</p>
+<p><strong>预下载机制</strong><br>升级时候发现一个问题, 有很多用户会在同一个时间设置定时升级, 集中下载造成客户瞬时网络流量大, 增加升级失败概率<br>为了解决这个问题, 我们设计了预下载机制, 把下载升级包和执行升级两个过程分开, 对不同的客户设置随机的预下载时间，<br>定为发布前12小时的某一个时间点, 分散了客户下载行为，提高稳定性</p>
+<p><strong>遇到了哪些问题</strong><br>客户NTP不稳定, 系统时间不正确导致AWS IoT连接失败<br>解决方法: 控制模块通过一个线程，请求后端获取IoT连接状态, 如果是断连状态, 且系统时间差超过半小时, 立即设置系统时间</p>
+<h2><span id="4优化了微服务的集成方案-将微服务从虚拟设备固件中解耦-并使用microk8s-ingress提供统一的访问入口-将虚拟设备镜像从45g压缩至27g-客户安装时间缩短了40">4.优化了微服务的集成方案, 将微服务从虚拟设备固件中解耦, 并使用Microk8s Ingress提供统一的访问入口, 将虚拟设备镜像从4.5G压缩至2.7G, 客户安装时间缩短了40%</span></h2><p><strong>主要难点是什么, 如何解决的</strong><br>在早期版本中, 微服务是通过RPM包方式集成在网关设备固件中, 导致网关设备镜像非常大, 有4.5G左右, 客户安装很慢, 体验很差。<br>为了解决这个问题, 我们优化了微服务的集成方案, 将微服务从网关设备固件中解耦<br>首先设计了一个统一的部署标准, 要求每个微服务团队提供一个标准化的tar.gz的部署包, 包括Docker镜像和YAML资源两部分, 发布到AWS S3上<br>每个微服务分配了一个serviceCode，网关设备根据这个serviceCode创建同名的Namespace, 实现各微服务间的资源隔离<br>为了从集群外部访问服务, 我们使用Microk8s Ingress插件作为统一入口, 所有HTTP请求通过宿主机的80和443端口进入, 并基于URL路径进行路由, 避免端口冲突问题</p>
+<p><strong>为什么用Ingress</strong><br>Microk8s原生支持Ingress插件, 部署方便. Ingress可以实现基于路径的路由, 为外部访问集群内服务提供统一入口,<br>使用hostnetwork模式, 所有请求通过宿主机的80和443端口进入, 避免多个微服务端口冲突</p>
+<p><strong>遇到了哪些问题</strong><br>小概率出现升级失败, namespace不退出, workaround检测异常强制删除</p>
+<h2><span id="5-怎么使用诊断命令定位网络问题">5. 怎么使用诊断命令定位网络问题</span></h2><p>网络问题(SG断连):<br>ping测试, nslookup查DNS, 查看网卡配置, 路由表, iptables规则, curl -v查看输出, 检查代理</p>
+<h2><span id="项目中还有什么优化的">项目中还有什么优化的</span></h2><ul>
+<li>优化微服务的升级流程, 使用Helm Chart部署微服务, Helm Upgrade实现滚动更新</li>
+<li>精简微服务基础镜像, 使用轻量级基础镜像, 提升微服务安装速度</li>
 </ul>
-<h2><span id="3-开发了一个控制模块通过消息队列实现在线升级功能-引入心跳检测解决微服务同步的问题-设计了预下载机制-用户等待时间减少了90-同时提升了升级的稳定性">3. 开发了一个控制模块，通过消息队列实现在线升级功能, 引入心跳检测解决微服务同步的问题; 设计了预下载机制, 用户等待时间减少了90%, 同时提升了升级的稳定性</span></h2><p><strong>背景和方案</strong><br>为了实现虚拟设备的自动升级和微服务的安装，我们开发了一个运行于虚拟设备上的控制模块<br>控制模块包含一个Python后台进程, 该后台进程订阅AWS IoT消息队列, 接收云端的升级指令<br>当控制模块接收到消息时，会解析消息中的taskType字段, 将消息转发到相应的队列, 由对应的线程执行具体任务</p>
-<p><strong>难点</strong><br>这里有个问题: 完成固件升级后, 我们需要把客户在升级前安装的微服务重新装起来，更新到最新版本。<br>为了让云端知道固件升级是否完成, 我们引入了心跳检测机制, 云端每5分钟就会向消息队列发送一次心跳, 当虚拟设备完成固件升级后，会在心跳响应中带上固件版本号,<br>云端收到响应后检查版本号就能确认升级已完成，并下发安装微服务的任务, 完成微服务的同步</p>
-<p><strong>其他问题</strong></p>
-<p><strong>升级流程具体步骤</strong><br>客户在UI上手动升级, 或者定时任务触发升级<br>云端发送升级任务到消息队列<br>控制模块订阅消息, 生成一个task_file, 把升级任务交给cronjob处理<br>cronjob脚本解析task_file, 下载升级包, 执行升级任务</p>
-<p><strong>为什么引入消息队列</strong><br>实现解耦通信, 云端只需要把任务发送到消息队列, 无需和每个虚拟设备直接交互, 降低耦合度，提高可维护性<br>实现异步处理, 云端无需等待任务执行完成, 从而提高系统响应速度</p>
-<p>** 为什么选择AWS IoT, 有没有考虑其他MQ解决方案<br>稳定性和可靠性, AWS IoT由Amazon提供的成熟服务案, 经过了企业生产环境验证, 考虑到我们后端也是基于AWS EKS部署的, 使用AWS IoT实现无缝集成, 简化系统架构<br>易于部署, AWS IoT是完全托管服务, 不需要部署实例<br>带宽消耗低, AWS IoT支持MQTT协议，适合资源受限的设备间进行轻量级消息传输<br>成本低, 费用就是消息传输费(每百万条价格1美元), 所有site每月300美金<br>  不选择RabbitMQ: 费用较高, 按照实例和存储收费, 实现高可用需要部署多个实例, 使用更高; 有额外维护成本<br>  不选择Kafka: 对我们场景而言, 没有优势, 我们项目并发量不大, 采用Kafka导致资源过度配置, 花钱, 增加系统复杂性</p>
-<p><strong>消息格式怎么设计</strong><br>每个虚拟设备分配一个独一无二的topic, 消息采用JSON格式<br>设计taskId字段, 唯一表示某个任务, 用于云端跟踪任务的状态<br>设计taskType字段区分不同类型的任务, 例如固件升级, 微服务安装<br>设计body字段存放具体的内容</p>
-<p><strong>怎么保证消息不丢失</strong><br>生产者角度<br>  要有重试机制; 比如云端在业务代码中判断超时后重试发送多次<br>  另外有补偿机制, 发送消息前会将任务记录到数据库, 通过cronjob定时检查未收到响应的任务进行补偿(重试3次, 每次间隔5分钟)<br>中间件角度<br>  开启持久会话(cleanSession&#x3D;false), 客户端断开链接后消息不丢失<br>  设置Qos 1(确保至少一次传递), 消息会被保留直到确认或超时<br>消费端角度<br>  收到消息后发送ACK给消息队列, 让消息队列及时清除消息</p>
-<p><strong>如何避免消息重复消费</strong><br>幂等设计, 无论消息被处理多少次, 结果都是相同的<br>过期字典, 每次消费时先检查taskId是否在过期字典中; 如果ID存在说明消息重复; 否则消费消息之后，把taskId添加到过期字典。</p>
-<p><strong>为什么说MQTT带宽消耗低</strong><br>相比HTTP报文, MQTT报文更小, 消息头部通常只有2字节<br>MQTT使用持久化链接, 设备只需要一次TCP链接就能持续通信，避免频繁连接和断开带来额外开销</p>
-<p><strong>预下载机制</strong><br>升级时候发现一个问题, 有很多用户会在同一个时间设置定时升级, 集中下载造成客户瞬时网络流量大, 增加升级失败概率<br>为了解决这个问题, 我们设计了预下载机制, 对不同的客户设置了不同的预下载时间窗口，将预下载时间设定为发布前12小时的某一个时间点, 分散了客户下载行为，缓解了网络拥堵, 提高稳定性</p>
-<p><strong>如何判断回滚</strong><br>通过心跳检测, 虚拟设备在心跳响应中带上版本号, 云端用这个版本号和数据库中的对比，如果心跳中的版本号低于数据库里的，说明发生了回滚</p>
-<p><strong>网络配置变更怎么重连</strong><br>一个线程读取配置，更新到内存<br>另一个线程读到配置变化, 做重连</p>
-<p><strong>如果升级版本有问题, 怎么最小化用户影响</strong><br>设计灰度升级方案, 我们的服务网关部署在全球多个地区(比如日本,欧洲,新加坡)。 为了防止升级失败对所有客户造成影响, 我们首先选择客户数量较少的地区发布, 确认整个地区的升级没有问题，再逐步发布到其他地区。<br>对于同一个地区, 先指定少量客户升级(通过launchDarklyKey API), 只有这些客户升级成功，再让剩余客户升级<br>对于有多台虚拟设备的客户, 也是采用分批升级。 首次只升级一半设备, 等下一个周期后先判断这些设备是否升级成功,如果升级成功再升级剩余一半</p>
-<p><strong>在线升级遇到网络不稳定怎么处理的</strong></p>
-<ul>
-<li>升级时, 虚拟设备从云端获取升级包下载链接和sha256sum校验值。 使用wget -c下载, 支持断点续传。</li>
-<li>下载完成后, 通过sha256sum校验文件完整性。 如果校验失败，说明下载失败, 此时通知后端下载失败, 提示客户重试。</li>
-</ul>
-<p>controller线程<br>process iot task (common, metrics)<br>process heartbeart<br>monitor appliance config (从磁盘读最新配置，和内存比较，如果配置有更新就重连)</p>
-<p>iot health (请求backend获取连接状态, 如果是disconnect, 同步ntp时间, 如果是unregister, 去注册(补偿))</p>
-<ul>
-<li>定时call backend, 获取server时间， 如果时间误差在半小时以上，修改系统时间</li>
-</ul>
-<h2><span id="4优化了微服务的集成方案-将微服务从虚拟设备固件中解耦-并使用microk8s-ingress提供统一的访问入口-将虚拟设备镜像从45g压缩至27g-客户安装时间缩短了40">4.优化了微服务的集成方案, 将微服务从虚拟设备固件中解耦, 并使用Microk8s Ingress提供统一的访问入口, 将虚拟设备镜像从4.5G压缩至2.7G, 客户安装时间缩短了40%</span></h2><p><strong>背景和方法</strong><br>在早期版本中, 微服务是通过RPM包方式集成在虚拟设备固件中, 导致虚拟设备镜像非常大, 有4.5G左右, 客户安装很慢, 体验很差。<br>为了解决这个问题, 我们优化了微服务的集成方案, 将微服务从固件中解耦, 做了一些改进措施:</p>
-<ul>
-<li>比如资源隔离, 给每个微服务分配一个独一无二的serviceCode, 网关设备根据serviceCode创建同名的namespace, 实现了不同微服务之间的资源隔离</li>
-<li>标准化部署包, 每个微服务需提供一个tar.gz部署包, 内容包括镜像和yaml资源文件两部分, 各个微服务团队把部署包发布到AWS S3</li>
-<li>对于外部访问集群的问题, 我们使用Microk8s Ingress插件, 所有HTTP请求从宿主机的80和443端口进入, 基于URL路径进行路由, 避免端口冲突问题, 简化了微服务管理</li>
-</ul>
-<p><strong>效果</strong><br>虚拟设备镜像从4.5G压缩至2.7G, 客户安装时间缩短了40%m 提升了用户体验</p>
-<p><strong>其他问题</strong></p>
-<p><strong>为什么选Microk8s, 不选k3s, minukube</strong></p>
-<ul>
-<li>除了Microk8s, 还有minukube, k3s. Minikube只适合本地开发和学习，不是为企业生产环境设计的，缺乏高可用性，排除</li>
-<li>k3s有很多优点, 比如使用二进制文件, 依赖少，资源占用低，社区比Microk8s活跃</li>
-<li>Microk8s的缺点是社区活跃不足, 且安装依赖snapd, 但是这种影响可控。 且项目早期已选择Microk8s,为了保持一致性，减少迁移成本，最终仍然选择了Microk8s</li>
-</ul>
-<p><strong>微服务更新如何实现的</strong><br>虚拟设备通过云端下载部署包, 重新创建namespace, 导入新的yaml资源文件和镜像<br>实现简单, 但是会有服务中断</p>
-<p><strong>为啥选Ingress</strong><br>Microk8s自带Ingress插件，配置和部署都非常简便, NodePort类型每个服务都要暴露一个端口, 增加管理复杂度, 可能导致端口冲突</p>
-<p><strong>Ingress原理</strong><br>Ingress解决问题是从集群外部如何访问集群内的某个服务<br>它的原理是, 在Microk8s里运行了一个Nginx Ingress Controller, 负责监听k8s中的Ingress资源，当检测到Ingress资源更新时, 动态更新Nginx配置文件<br>外部流量先到达Nginx, 再基于域名和URL将请求转发到Service, 最终把请求转发到具体的Pod</p>
-<p><strong>SSL终止</strong><br>SSL终止（SSL Termination） 是指在负载均衡器、代理服务器或入口网关（如使用Microk8s Ingress时）上处理并解密传入的HTTPS请求，<br>而不是让这些请求直接到达后端服务。这意味着加密和解密的工作由前端设备完成，而后端服务接收到的是已经解密的HTTP请求。<br>虚拟设备注册时，云端会发送证书和私钥, 虚拟设备拿到证书和私钥, 配置在ingress-cert这个secret中</p>
-<p><strong>微服务之间如何通信的</strong><br>通过k8s内置的服务发现机制, 微服务间通过服务名称调用</p>
-<p><strong>如果需要回滚怎么办</strong><br>没有自动的回滚机制，需要客户retry<br>优化: 使用helm自动回滚</p>
-<p><strong>还有什么优化的</strong><br>通过helm进行管理, 每个微服务创建一个helm Chart并发布到仓库, 通过helm upgrade进行升级</p>
-<h2><span id="5-基于cisco-cli开发了一组命令-实现了配置管理功能-通过设计诊断命令-收集日志-显著提升了客户本地环境中定位microk8s问题的效率">5. 基于CISCO CLI开发了一组命令, 实现了配置管理功能; 通过设计诊断命令, 收集日志, 显著提升了客户本地环境中定位Microk8s问题的效率</span></h2><p><strong>背景</strong><br>客户安装虚拟设备后, 需要做必要的配置才可以连到云端, 比如配置网络; 所以我们设计了一个CLI, 客户通过CLI完成虚拟设备的配置<br>同时, 为了提高问题定位效率, 我们设计目标是, 问题都通过CLI命令或者分析日志文件解决, 尽可能不要远程会话</p>
-<p>客户的虚拟设备安装在本地网络, 遇到问题定位后很麻烦, 目标是让问题通过CLI或者分析日志就能解决，不需要远程remote session, 提高解决问题效率</p>
-<p><strong>配置功能包括哪些</strong><br>配置命令, 比如配置网络(IP, GATEWAY, DNS, 代理, 主机名), 配置时间NTP, 功能包括注册, 重启, 回滚</p>
-<p><strong>诊断命令设计</strong><br>诊断网络问题:<br>查看网络配置, 比如IP, 网关, 路由表, 代理, iptables规则<br>网络测试, ping, curl, nslookup</p>
-<p>诊断K8s问题:<br>journactl日志<br>microk8s inspect<br>查看资源, 比如pod, configmap, service</p>
-<p>系统日志<br>CPU, 内存, 磁盘, Network, 进程, 定时任务, 系统启动日志等</p>
-<p><strong>怎么实现注册的</strong><br>使用JWT注册方式</p>
-<ul>
-<li>客户在UI上拿到一个由服务平台维护的register_token</li>
-<li>用户在命令行中输入register_token注册，触发注册请求</li>
-<li>虚拟设备通过POST请求将CPU,内存,IP信息连同register_token一起发送给后端</li>
-<li>后端收到请求, 解析请求头的token, 验证token, 获取customerId</li>
-<li>校验通过后, 后端为虚拟设备生成一个uuid, 用于唯一标识这台设备, 再生成一个applianceToken</li>
-<li>后端把虚拟设备信息存到MySQL数据库, 把虚拟设备ID, Token, 还有消息队列的FQDN返回给虚拟设备</li>
-<li>虚拟设备成功收到响应后，保存applianceId, applianceToken, 用于后续通信<br>每天定时从服务平台同步Token, Token设置了两个月过期时间, 过期前10天，立刻请求服务平台刷新Token</li>
-</ul>
-<p><strong>JWT工作原理是什么</strong><br>JWT用于身份认证, 通过签名确保数据完整性和真实性<br>由三部分组成, Header, Payload, Signature, 工作原理:</p>
-<ul>
-<li>用户登录成功后，服务器生成一个JWT返回给客户端</li>
-<li>后续请求中, 客户端将JWT附加到HTTP请求头中, 发送给服务器</li>
-<li>服务器接收到JWT后, 验证其签名和有效性<br>优点: </li>
-<li>无状态, 服务器无需存储会话, 适合分布式系统</li>
-<li>跨平台, JWT基于JSON格式, 易于解析使用, 支持多种编程语言<br>局限性:</li>
-<li>无法主动失效</li>
-</ul>
-<p><strong>CLI怎么开发的</strong><br>虚拟设备安装后，客户需要登录到设备, 做网络配置，进行注册, 才能连到云端。<br>我们基于Cisco的开源框架实现了一个命令行工具，客户通过CLI完成网络配置，实现注册功能</p>
-<p><strong>开发了一组诊断命令，用于快速定位 OS、Kubernetes 和网络相关问题</strong><br>OS: 查cpu, 内存, 进程, disk<br>网络: IP, 路由, 网卡, iptables, Route<br>K8S: IMAGE, namespace, pod, configmap, ingress, deployment, services, volume, Microk8s日志<br>系统日志: 网络没有问题, 可以支持上传日志, 和Remote Shell</p>
-<p><strong>问题定位案例</strong><br>我们遇到一个客户反馈他们的虚拟设备重启后无法正常工作。经过日志分析发现，Microk8s的apiserver证书有效时间不正确，导致服务无法启动。尽管客户坚称虚拟机时间准确，但问题依旧存在。</p>
-<p>为了定位问题，我们回溯了每次虚拟设备启动的日志，发现某次启动时虚拟机的RTC时间比实际时间快了一个月。<br>为了验证这一假设，我们在本地环境中模拟了类似情况，确认Microk8s在每次重启后会根据当前虚拟机系统时间刷新apiserver证书，从而导致证书失效。最终确认问题是由于宿主机RTC时间错误引起的。</p>
-<p>与客户沟通时，我们提供了相关的日志截图，明确指出其环境中的RTC时间问题，并建议他们重启虚拟机以同步正确的时间。<br>为了避免类似问题再次发生，我们设计了一个定时任务来检测apiserver证书的有效性。如果证书失效，则自动刷新证书，确保服务不间断运行。<br>这样不仅解决了客户的即时问题，还通过自动化的机制提升了系统的稳定性和用户体验。</p>
-<h2><span id="其他问题">其他问题</span></h2><p><strong>怎么合作的</strong></p>
-<p><strong>项目还有什么可以优化的</strong></p>
-<ul>
-<li>优化固件升级方案, 使用EFI系统分区，为每个系统创建独立目录存放引导文件, 避免直接覆盖&#x2F;boot分区可能导致旧系统的引导文件丢失</li>
-<li>优化微服务的更新流程, 使用helm部署微服务, 支持滚动更新</li>
-<li>精简微服务基础镜像, 减少服务安装时间, 使用轻量级基础镜像, 多阶段构建, 移除不必要文件等手段, 进一步压缩微服务镜像, 加快安装速度</li>
-</ul>
-<p><strong>用什么技术开发的, 你做了哪些部分</strong><br>在On-premises网关设备的升级方案中，我设计并实现了基于Linux双系统分区的架构，解决了系统故障后无法回滚的问题。 涉及Linux启动, 分区, 升级相关技术</p>
-<p>使用Python开发了一个控制模块，利用AWS IoT消息队列实现在线升级功能，并通过心跳检测机制解决了微服务之间的同步问题。</p>
-<p>将微服务从虚拟设备固件中解耦，使用Microk8s Ingress作为统一访问入口，成功将虚拟设备镜像从4.5G压缩至2.7G，客户安装时间缩短了40%。</p>
-<p>基于CISCO CLI开发了一组命令，用于配置管理和问题诊断，通过日志收集和分析工具，显著提升了客户在本地环境中定位Microk8s和网络问题的效率</p>
-<p><strong>这个项目采用了什么样的软件开发流程</strong></p>
-<ul>
-<li>两周为一个Sprint版本迭代, 明确交付需求. 每周例行团队会议, 同步进度</li>
-<li>Jira和GitHub issues管理任务, 代码review</li>
-<li>持续集成与交付, Github Actions作为CI&#x2F;CD工具</li>
-</ul>
-<h1><span id="项目2-forward-proxy-service">项目2: Forward Proxy Service</span></h1><p>Forward Proxy Service是一个部署在服务网关上的正向代理, 为客户终端上云提供统一出口. 该服务解决了客户在防火墙策略配置上的痛点, 同时实现了一个Air Gap（终端网络隔离, 代理上云）的解决方案. Forward Proxy单个服务实例可支持高达3万个并发连接</p>
-<p><strong>背景</strong><br>解决客户痛点:<br>客户必须在自己的防火墙上手动配置大量的云端服务URL, 使得本地终端产品能够连接到云端服务; 由于不同产品需要连接到不同的云端服务URL, 并且客户环境中运行了大量的终端, 让客户为这些终端逐一指定防火墙策略是非常困难的<br>解决方案:<br>通过FPS, 所有本地终端产品可以通过单一代理服务访问后端服务, 客户只需要在防火墙上配置允许通过FPS的URL规则, 无需为每个本地终端单独设置规则, 显著简化了防火墙策略配置工作量</p>
-<p><strong>Air Gap</strong><br>对于银行这种敏感的客户, 其内部网络与外部网络之间是隔离的, 即所谓的Air Gap环境, 这种情况终端无法直接连接到云端服务。<br>为了让这些终端可以连到云端服务，设计了Forward Proxy Service解决方案,<br>客户把代理部署在DMZ区域, 所有终端设备的出站请求都经过这个代理进行转发, 通过代理上云.</p>
-<h3><span id="基于squid实现了正向代理-支持basic认证和白名单配置-通过acl限制终端访问-显著提升了系统安全性">基于Squid实现了正向代理, 支持Basic认证和白名单配置, 通过ACL限制终端访问, 显著提升了系统安全性</span></h3><p><strong>如何实现Basic认证</strong><br>Basic认证需要终端提供用户名和密码<br>用户名基于终端产品的GUID, 产品名称, 主机名生成，使用SHA1算法, 对用户名+APIKEY进行哈希之后生成密码<br>每个客户有一个全局APIKEY, 就是UUID<br>客户 可以通过UI重新生成APIKEY<br>新的APIKEY在30天内与旧的APIKEY共存，确保平滑过度</p>
-<p>将configmap挂载到磁盘, 通过一个线程定时读取文件与内存中配置比较，如果检测到变化, 就把新配置更新到内存, 再通过队列通知另一个线程处理<br>另一个线程从队列中消费, 读取内存中配置, 判断apikey变化后写到YAML文件</p>
-<p><strong>除了Basic认证, 还有哪些认证方式, 为什么选择Basic认证</strong><br>简单高校, 在企业内部网络安全性没有问题</p>
-<p>Digest认证(摘要认证), 对Basic认证一种改进, 通过哈希算法对user, passwd和随机数加密, 避免明文传输密码<br>Token认证, 请求头中携带一个token, 服务器通过验证token有效性确认用户身份<br>Kerberos认证, 基于票据认证协议, 配置复杂</p>
-<p><strong>白名单机制的背景是什么</strong><br>比如说客户某个终端感染了恶意软件，试图访问外部的恶意网站，白名单机制会直接阻止这些请求，防止客户防火墙没有正确配置导致的可疑请求泄露</p>
-<p><strong>白名单配置如何实现的</strong><br>利用Squid的ACL(Access Control List)功能实现了基于URL的访问控制, 限制终端设备只能访问授权的云端资源<br>我们预设了一个FQDN白名单, 支持域名和IP, 域名支持开头通配符，比如<code>*.trendmicro.com</code><br>客户可以通过UI添加或修改白名单, 白名单规则存储在ConfigMap, 通过挂载方式映射到Pod的文件系统中<br>我们在Pod中做了一个agent进程, 定期检查白名单配置, 检测到白名单更新时, 修改Squid配置文件, 重新加载Squid</p>
+<h2><span id="项目中团队成员组成">项目中团队成员组成</span></h2><p>10人团队:<br>1名项目经理, 负责整体项目规划, 识别需求, 管理进度<br>1名资深工程师, 为整个团队提供技术指导, 参与关键设计方案的讨论<br>3名开发, 我负责网关设备特性开发, 1位同事负责前端，1个同事负责后端<br>2名QA和OPS, 负责测试, 版本发布<br>其余几名同事负责其他微服务的开发</p>
+<h2><span id="你做了哪些部分-哪些是合作的-如何合作">你做了哪些部分, 哪些是合作的, 如何合作</span></h2><p>和团队资深开发讨论设计方案<br>和后端同事讨论虚拟设备和云端的通信方案, 比如消息格式, REST API<br>和QA合作, 每次实现一个新功能或修复BUG时, 向QA详细说明修改内容和测试方法, 从而提高测试效率<br>和TS合作,处理客户案例时, 积极和TS沟通客户的问题, 提供解决方案<br>Stunnel加密方案, Cloud proxy部分是别的团队做的</p>
+<h1><span id="项目2-forward-proxy-service">项目2: Forward Proxy Service</span></h1><h2><span id="简单介绍项目">简单介绍项目</span></h2><p>Forward Proxy Service是一个部署在服务网关上的正向代理服务, 为客户终端上云提供统一出口. 它解决了客户需逐一为每个终端配置防火墙策略的痛点, 同时实现了一个Air Gap（终端网络隔离, 通过代理上云）的解决方案. Forward Proxy单个服务实例支持3万个并发连接  </p>
+<h2><span id="基于squid搭建了支持basic认证和白名单配置的正向代理服务-通过acl规则拦截非法请求-增强了系统的安全性">基于Squid搭建了支持Basic认证和白名单配置的正向代理服务, 通过ACL规则拦截非法请求, 增强了系统的安全性</span></h2><p><strong>如何实现Basic认证</strong><br>Basic认证就是用户名密码认证, 通过HTTP头 Proxy-Authorization携带用户名密码<br>每个客户有一个APIKEY(UUID), 对user+apikey做SHA1算法加密得到密码, </p>
+<p><strong>为什么需要白名单, 如何实现的</strong><br>比如说客户某个终端感染了恶意软件，试图访问外部的恶意网站，白名单机制会直接阻止这些请求，防止客户防火墙没有配置策略导致可疑请求泄露.<br>利用Squid的ACL(Access Control List)功能实现了基于URL的访问控制, 预设了一个FQDN的白名单, 支持域名和IP, 域名支持开头通配符，比如<code>*.trendmicro.com</code><br>客户可以通过UI添加白名单, 白名单规则存储在ConfigMap, ConfigMap挂载到Pod文件系统上<br>我们在Pod中做了一个agent进程, 检测到白名单配置更新时, 修改Squid配置文件, 重新加载Squid</p>
 <p><strong>为什么选择Squid, 有没有其他方案</strong><br>选择Squid, 是综合考虑开发难度, 成熟度, 社区支持, 功能需求<br>Squid是一个老牌的正向代理, 在企业场景中经过了长期验证, 成熟稳定, 社区支持好<br>Squid支持正向代理、基于 URL 的访问控制、Basic 认证, 配置简单, 无需插件<br>Squid能够支持数万的并发连接, 符合我们需要<br>没有选Nginx, 因为需要额外模块实现正向代理, ACL, 配置较复杂</p>
 <p><strong>单个服务实例支持高达3万个并发连接, 如何保证这种并发能力的</strong><br>事件驱动模型: 通过异步非阻塞方式处理多个连接, 基于epoll和非阻塞IO, 一个进程处理上万连接<br>多进程架构： 通过多进程架构进一步并发能力。 主进程监听客户端连接, 将连接分发给多个工作进程, 充分利用多CPU计算能力<br>内存优化: 使用内存池减少频繁内存分配释放, 对HTTP响应进行缓存</p>
 <p><strong>惊群现象是什么，怎么保证每个新连接只会一个工作进程处理</strong><br>多个进程都在等待同一个事件, 一旦事件发生, 所有进程都会唤醒, 但实际上只有一个进程能成功处理该事件, 其他进程则会阻塞或重新等待, 导致不必要的性能损失<br>Squid启用SO_REUSEPORT, 由内核自动将新连接分配给监听同一个端口的不同进程</p>
 <p>Nginx中通过accept_mutex防止惊群现象, 每个工作进程都有机会获得锁, 一旦某个工作进程持有锁，其他进程不会尝试接收新连接, 知道进程释放锁<br>Nginx启动时分配一块共享内存区, 工作进程都可以访问这块内存，工作进程通过原子操作CAS获得锁</p>
-<h3><span id="深入分析并迅速解决客户网络不通的问题-涉及http隧道和tls握手原理">深入分析并迅速解决客户网络不通的问题, 涉及HTTP隧道和TLS握手原理</span></h3><p><strong>为啥代理不用HTTPS的呢</strong><br>因为虚拟设备是临时性的，随时会被客户重装，如果用HTTPS, 每次部署都要分发一个HTTPS证书, 后期还有更新维护证书, 引入不必要的开发维护成本<br>HTTPS加密解密有性能消耗, 这个性能消耗是不必要的</p>
-<p><strong>说一下HTTP隧道的原理</strong><br>HTTP隧道常用于两台网络受限的机器之间建立网络连接。 客户端通过HTTP CONNECT请求与代理建立隧道, 从而访问HTTPS, 流程:</p>
+<h3><span id="分析并迅速解决客户网络不通的问题-涉及http隧道和tls握手原理">分析并迅速解决客户网络不通的问题, 涉及HTTP隧道和TLS握手原理</span></h3><p><strong>为啥代理不用HTTPS的呢</strong><br>因为HTTP就可以跑TLS流量, 没必要用HTTPS代理<br>用HTTPS还有生成HTTPS证书, 维护证书, 引入不必要复杂性</p>
+<p><strong>说一下HTTP隧道的原理</strong><br>HTTP隧道解决一个问题, HTTP proxy怎么代理HTTPS的流量, 它的流程是:</p>
 <ul>
 <li>客户端和代理服务器三次握手, 建立TCP连接</li>
 <li>客户端发送HTTP CONNECT请求给代理, 告诉代理自己需要连接的目标服务器</li>
@@ -477,24 +398,23 @@
 <li>代理返回200 Connection Established给客户端, 告诉客户端整个隧道已经建立</li>
 <li>隧道建立后, 代理服务器只负责在客户端和服务间之间转发数据，不解析或修改数据。这保证了 HTTPS 数据的安全性，即使代理也无法解密 TLS 加密的内容（因为代理不知道密钥, 没有服务器的私钥)</li>
 </ul>
-<p><strong>说一下HTTPS的原理</strong><br>HTTPS是基于HTTP的安全协议, 通过在HTTP和TCP层加入了TLS协议实现数据加密, TLS握手步骤:</p>
+<p><strong>说一下TLS握手的原理</strong><br>HTTPS是基于HTTP的安全协议, 通过在HTTP和TCP层加入了TLS协议实现数据加密, TLS握手步骤:</p>
 <ul>
 <li>客户端发送ClientHello，包含支持的TLS版本, 加密套件, 客户端随机数</li>
 <li>服务器返回serverHello，选择双方都支持的TLS版本和加密套件，并附带自己的随机数和证书</li>
-<li>客户端校验服务器证书, 如果校验失败终止连接</li>
-<li>否则根据选定的加密算法(RSA或DH算法)，客户端和服务端协商一个共享的对称密钥</li>
+<li>客户端校验服务器证书, 如果校验通过</li>
+<li>就根据选定的加密算法(RSA或DH算法)，客户端和服务端协商一个对称的会话密钥</li>
 <li>最后双方使用协商出的对称密钥进行加密通信</li>
 </ul>
-<p><strong>详细描述下客户网络不通的问题, 如何利用这些原理解决网络问题的</strong><br>难点: 出现网络不通问题时, 可能有多个故障点, 包括终端设备, 虚拟设备, 客户防火墙, 目标服务器等. 客户网络环境是不确定的, 这增加了问题定位难度</p>
-<p>我们遇到典型案例包括：<br>案例: TLS握手失败<br>客户终端通过Forward Proxy代理访问云端服务时网络不通. 从Squid日志中看到请求状态码为200 OK，但响应数据包大小仅为40多个字节，远小于正常预期值<br>让终端同事配合复现问题, 在网关设备上用tcpdump抓包, 发现TLS握手过程中, client hello发送了，但是没有收到server hello, 这说明TLS握手存在问题<br>用wireshark查包内容，发现客户端和目标服务器使用的TLS加密套件不匹配, 导致TLS握手失败</p>
-<p>案例: 客户防火墙开启了HTTPS监控, 做了中间人, 导致证书校验不通过<br>当防火墙作为中间人拦截HTTPS流量时，它会用自己的证书替换原始服务器的证书, 我们网关设备不会信任客户防火墙证书, 所以无法建立连接<br>我们在CLI上开发了一个诊断命令行, 通过curl打印请求详细信息，如果证书是一个IP或者防火墙厂商，说明客户防火墙做了中间人, 让客户关闭这个功能</p>
-<p>案例: 访问特定FQDN时出现超时或返回502 Bad Gateway<br>原因是客户防火墙配置有问题, 没有放行这个FQDN, 如果丢弃报文就是超时，拒绝就会返回5XX错误</p>
+<p><strong>详细描述下客户网络不通的问题, 如何利用这些原理解决网络问题的</strong><br>难点:<br>网络不通问题时, 可能有多个故障点, 包括终端设备, 网关设备, 客户防火墙, 目标服务器等.<br>每个客户网络环境都是不确定的, 这增加了问题定位难度</p>
+<p>我们遇到典型案例包括：<br>案例1: 端点访问云端失败, Squid代理日志显示 200 OK, 但抓包发现TLS握手失败, 没有发Server Hello<br>客户终端通过Forward Proxy代理访问云端服务时网络不通. 从Squid日志中看到请求状态码为200 OK，但响应数据包大小仅为40多个字节，远小于正常预期值<br>让终端同事配合复现问题, 在网关设备上用tcpdump抓包, 发现TLS握手过程中, client hello发送了，但是没有收到server hello, 这说明TLS握手存在问题<br>用wireshark查包内容，发现客户端和目标服务器使用的TLS加密套件不匹配, 导致TLS握手失败</p>
+<p>案例2: 有的客户防火墙开启了HTTPS监控, 做了中间人, 导致证书校验不通过<br>当防火墙作为中间人拦截HTTPS流量时，它会用自己的证书替换原始服务器的证书, 我们网关设备不会信任客户防火墙证书, 所以无法建立连接<br>我们在CLI上开发了一个诊断命令行, 通过curl打印请求详细信息，如果证书是一个IP或者防火墙厂商，说明客户防火墙做了中间人, 让客户关闭这个功能</p>
+<p>案例3: 访问特定FQDN时出现超时或返回5XX错误(502 Bad Gateway, 503 Service Unavaliable)<br>原因是客户防火墙配置有问题, 没有放行这个FQDN, 如果丢弃报文就是超时，拒绝就会返回5XX错误</p>
+<p>访问了白名单之外的FQDN, 返回 403<br>代理认证不通过, 返回407<br>访问的FQDN被反火枪阻挡, 5XX错误 (超时或拒绝)</p>
 <h3><span id="设计了一个基于stunnel的加密通信方案-显著减少了因客户防火墙配置异常导致的网络问题-极大提升了用户体验">设计了一个基于Stunnel的加密通信方案, 显著减少了因客户防火墙配置异常导致的网络问题, 极大提升了用户体验</span></h3><p><strong>背景</strong><br>在本地终端访问是云端资源时，涉及到大量的FQDN（例如 *.trendmicro.com）。<br>然而，一些客户的防火墙比较老旧，不支持基于FQDN的通配符匹配。<br>这些客户必须手动逐个配置每个FQDN，这不仅繁琐，而且容易遗漏或出错，导致网络被防火墙阻挡，严重影响用户体验。</p>
-<p><strong>方案</strong><br>针对这个问题，我们设计了一种基于Stunnel的加密通信方案. Stunnel是一个开源软件，提供TLS加密服务; 我们使用Stunnel绕过客户防火墙的限制。<br>部署架构: 在客户防火墙内部署Squid + Stunnel Client, 在防火墙外部部署Stunnel Server + Squid, 客户终端将代理设置为防火墙内部的Squid。</p>
+<p><strong>方案</strong><br>针对这个问题，我们设计了一种基于Stunnel的加密通信方案. Stunnel是一个开源软件，提供TLS加密服务; 我们使用Stunnel绕过客户防火墙的限制。<br>部署架构: 在客户防火墙内部署Squid + Stunnel Client, 在防火墙外部部署Stunnel Server + Squid</p>
 <p>由于流量都通过Stunnel加密通道传输，客户不再需要在防火墙山上给逐一指定目标服务器的FQDN，只需允许通往Stunnel服务器443端口的流量即可<br>避免了防火墙通过明文HTTP CONNECT报文或TLS握手过程中的Client Hello报文中的SNI字段识别目标服务器的问题。</p>
-<p><strong>效果</strong><br>极大简化客户防火墙配置, 减少了网络问题</p>
 <p><strong>为什么不能只用Squid？</strong><br>如果仅在防火墙外部部署Squid, 防火墙可以通过分析HTTP CONNECT报文识别目标服务器，从而对特定域名进行拦截<br>TLS握手过程中Client Hello报文中的SNI字段也会暴露目标服务器信息，导致防火墙能够识别并拦截特定域名</p>
-<p><strong>如何协作的</strong><br>墙外的Stunnel Server + Squid：由其他团队负责部署和维护，确保外部流量的安全性和稳定性。</p>
 <p><strong>有哪些改进的地方</strong><br>尽管Stunnel提供了强大的加密功能，但在高并发场景下可能会出现性能瓶颈。<br>优化措施是水平扩展：通过增加更多的Stunnel实例（SG）来分散负载，提高系统的整体处理能力。</p>
 <p><strong>Squid日志和监控</strong><br>为了确保系统的稳定运行，我们实施了以下日志记录和监控措施：</p>
 <ul>
@@ -521,7 +441,7 @@
 </ul>
 <p><strong>自定义网桥是如何实现框式形态仿真的？</strong><br>在框式设备仿真中，单板间的通信需要使用特定的172.16网段, Docker默认的docker0网桥使用的是172.17<br>为了避免修改客户Docker配置或重启服务，我们创建了一个自定义网桥，指定其IP段为172.16，将所有单板容器连接到这个网桥上。 通过这种方式，容器间可以直接通过172.16 IP段通信，模拟了真实设备的网络环境。</p>
 <p>Docker间通信原理是，每个容器通过一对虚拟以太网接口（veth对）与宿主机上的自定义网桥通信<br>veth pair由两个虚拟网络接口组成，一端位于宿主机的网络命名空间（network namespace），另一端位于容器的网络命名空间。<br>当容器启动时，Docker会自动创建veth pair，并将其一端连接到容器内部的eth0接口，另一端连接到宿主机上的自定义网桥。<br>这样，容器内的网络流量可以通过自定义网桥在不同容器之间传输，实现高效的局域网通信。</p>
-<h2><span id="将redis驱动接口从短连接优化为长连接-接口平均读写时间从2ms缩短为01ms-显著提升了测试效率">将Redis驱动接口从短连接优化为长连接, 接口平均读写时间从2ms缩短为0.1ms, 显著提升了测试效率</span></h2><p><strong>将Redis驱动接口从短连接优化为长连接</strong><br>在项目初期，驱动接口通过Redis短连接实现，导致频繁建立和关闭连接。特别是在设备管理子卡初始化代码中，需要查询大量属性时，影响测试效率<br>为了解决这个问题，我们将短连接优化为长连接。 通过互斥锁, 让一个进程的所有线程共用一个长连接。 最终将驱动接口的平均一次读写时间从2ms缩短到0.1ms，显著提升了性能。<br>pthread_mutex</p>
+<h2><span id="将redis驱动接口从短连接优化为长连接-接口平均读写时间从2ms缩短为01ms-显著提升了测试效率">将Redis驱动接口从短连接优化为长连接, 接口平均读写时间从2ms缩短为0.1ms, 显著提升了测试效率</span></h2><p><strong>将Redis驱动接口从短连接优化为长连接</strong><br>在项目初期，驱动接口通过Redis短连接实现，导致频繁建立和关闭连接。特别是在设备管理子卡初始化代码中，需要查询大量属性时，影响测试效率<br>为了解决这个问题，我们将短连接优化为长连接。 通过互斥锁, 让一个进程的所有线程共用一个长连接。 最终将驱动接口的平均一次读写时间从2ms缩短到0.1ms，显著提升了性能。</p>
 <p><strong>如何测量和验证平均一次读写时间从2ms缩短至0.1ms的效果？</strong><br>在测试环境, 直接修改C代码, 用time_t计算时间差,</p>
 <h2><span id="其他问题">其他问题</span></h2><p><strong>举一个问题定位案例</strong><br>当时遇到一个Redis key被意外删除, 导致驱动接口行为不符合预期的问题 </p>
 <p>我们通过常规的查看日志, tcpdump抓包方法, 没有找到原因.<br>我当时看过REDIS的单机数据库实现, 想到既然Redis是基于内存的数据库，字符串键肯定在进程中的某个内存地址处，key丢失时这个地址的内容肯定被改写<br>所以我只需要GDB打个断点，看下调用栈不就搞定了<br>后来发现是REDIS配置项maxmemory过低, 只给了1M, 导致Redis认为空间不够就随机淘汰了一些key, 修改了这个配置项后问题得到了解决</p>
@@ -533,35 +453,61 @@
 <li>优化请求速度，有些驱动函数会一次性读写多个key，用mset, mget命令代替get, set, 减少客户端和Redis的通信次数</li>
 </ul>
 <p><strong>Redis挂了怎么办, 可靠性怎么考虑</strong><br>每个单板1个容器，作为redis client; 1个管理容器，安装redis数据库<br>如果Redis挂了，管理容器会检测到异常，并依次重启管理容器和各个单板容器。<br>由于这是仿真环境大部分驱动数据是易失性的，无需持久化或集群支持; 对于需要持久化数据, 通过写文件和Docker Volume方式存储</p>
-<h1><span id="项目最大难点">项目最大难点</span></h1><ul>
-<li>VA升级(无缝, 配置和服务同步)</li>
-<li>网络问题定位, 针对客户防火墙问题优化</li>
+<h1><span id="技能描述">技能描述</span></h1><h2><span id="docker网络模式及容器间通信的原理">Docker网络模式及容器间通信的原理</span></h2><p>Bridge模式是默认的网络模式，为单个主机上的容器提供网络通信服务。当容器启动时，Docker会自动创建一个虚拟网桥docker0，<br>并通过veth对将容器连接到这个网桥上。每个容器都会获得一个独立的IP地址，并且可以通过网桥进行相互通信<br>Overlay网络则是用于多主机环境下容器间的通信。它通过在网络层建立一个虚拟网络<br>比如说使用VXLAN技术封装数据包以跨越多个主机传输</p>
+<h2><span id="nginx-ingress">Nginx Ingress</span></h2><p>Nginx Ingress解决的问题是从集群外部如何访问集群内的某个服务<br>它的原理是, 在Microk8s里运行了一个Nginx Ingress Controller, 监听k8s中的Ingress资源，当检测到Ingress资源更新时, 动态更新Nginx配置文件<br>外部流量先到达Nginx, 再基于域名和URL将请求转发到Service, 最终把请求转发到具体的Pod</p>
+<h2><span id="coredns原理">CoreDNS原理</span></h2><p>为Kubernetes集群内部的DNS解析提供服务，使得服务之间能够通过域名互相通信<br>Kubernetes集群中, CoreDNS是运行在kube-system这个namespace下的Pod<br>（同一个namespace的服务，直接用名称访问, 不同Namespace下的需要通过svc.namespaceX访问）<br>ClusterFirst, 优先使用CoreDNS的, 无法解析回退到宿主机<br>ClusterFirstWithHostNet, 使用宿主机网络Pod, 仍使用CoreDNS<br>Default 使用宿主机的DNS</p>
+<h2><span id="calico网络模式">Calico网络模式</span></h2><p>k8s中, 主要解决Pod间通信问题, 支持三种模式, BGP, VXLAN, IPIP<br>在BGP模式下，Calico 使用标准的 BGP 协议来动态地学习和分发路由信息。<br>每个节点作为一个 BGP 路由器，直接与其他节点交换路由信息，从而允许容器之间的直接通信，无需额外的封装或隧道技术。这种方式减少了网络开销，提高了性能。<br>底层网络不支持BGP, 需跨越不同网络时, 使用VXLAN和IPIP模式, VXLAN 把原始二层帧封装在UDP报文, 实现不同网络Pod通信; IPIP模式在原始IP包外面再封装一层IP包, 实现跨子网通信</p>
+<h1><span id="其他项目问题">其他项目问题</span></h1><h2><span id="说下linux启动流程">说下Linux启动流程</span></h2><ul>
+<li>系统加电, BIOS开机自检, 自检完成后, 根据预设的启动顺序查找可启动设备（如硬盘、USB）</li>
+<li>BIOS 找到第一个可启动设备后, 控制权交给引导程序 GRUB2</li>
+<li>GRUB 将选定的内核镜像vmlinuz加载到内存, 挂载临时根文件系统 initramfs</li>
+<li>内核初始化硬件设备, 通过initramfs加载必要模块, 挂载真实的根文件系统</li>
+<li>执行用户空间第一个进程systemd, 由systemd负责启动其他进程</li>
 </ul>
-<h1><span id="一些概念">一些概念</span></h1><h2><span id="什么是混合云架构">什么是混合云架构</span></h2><p>混合云架构是一种计算环境, 结合了本地部署和公有云资源, 这种架构可以减少成本, 提高系统的响应速度和服务可靠性<br>以我们的服务网关项目为例, 客户的终端直接请求本地部署的服务网关, 不需要从云端获取数据，这样有很多好处，比如：</p>
+<h2><span id="grub什么原理">GRUB什么原理</span></h2><p>GRUB（GRand Unified Bootloader), Linux系统中广泛使用的引导加载程序, 负责加载操作系统内核到内存并启动<br>划分3阶段, Stage 1, Stage 1.5, Stage 2, 其中Stage 2是GRUB的核心部分，包含用户界面、配置文件解析器以及加载内核和initrd的工具。<br>当选择了启动菜单中的某个条目后, GRUB会将指定的kernel和initrd加载到内存中, 内核被加载到内存后, 控制权转移给内核, 继续启动流程</p>
+<h2><span id="initramfs是什么">initramfs是什么</span></h2><p>initramfs是一个临时根文件系统, 用于内核启动初期提供必要驱动程序, 让内核能够挂载真正根文件系统<br>因为内核本身不会包含所有的驱动程序, 实际根文件系统可能位于复杂存储设备上(比如LVM), 这些设备需要特定驱动才能访问呢</p>
+<h2><span id="怎么保证消息不丢失">怎么保证消息不丢失</span></h2><p>生产者角度</p>
 <ul>
-<li>有效节省了客户带宽，并且降低了我们的公有云费用</li>
-<li>服务在客户本地网络完成, 这样减少了网络延迟，提高了响应和客户体验。</li>
-<li>还有安全性考虑, 比如像银行这样对安全要求高的客户, 终端不能直接访问外网，需要通过虚拟设备代理上网，防止内部网络直接暴露给外网, 同时实现集中的访问控制</li>
+<li>要有重试机制; 云端在业务代码中判断超时后重试发送多次</li>
+<li>另外有补偿机制, 将任务记录到数据库, 通过cronjob检查数据中未收到响应的任务, 进行补偿重试(重试3次, 每次间隔5分钟)<br>中间件角度</li>
+<li>开启持久会话(cleanSession&#x3D;false), 客户端断开链接后, 消息也不会丢失</li>
+<li>设置Qos 1(至少一次传递), 消息会被保留直到确认或超时<br>消费端角度</li>
+<li>收到消息后并处理完成后, 发送ACK给消息队列, 让消息队列及时清除消息</li>
 </ul>
-<h2><span id="支持xx多平台部署-这些平台差异是什么-遇到什么问题">支持XX多平台部署, 这些平台差异是什么, 遇到什么问题</span></h2><h2><span id="你们的microk8s集群是指什么-为什么不用高可用集群-高可用集群是什么样的">你们的Microk8s集群是指什么? 为什么不用高可用集群? 高可用集群是什么样的?</span></h2><p>我们的服务网关使用的集群是多个独立运行的Microk8s节点组成，每个节点都可以独立工作，比如一个节点负责处理上万个终端请求。</p>
-<p>我们没有采用高可用的多主多从架构。 因为高可用方案需要配置多个主节点和工作节点, 配置和运维复杂, 导致客户资源浪费<br>我们的方案简单灵活，每个Microk8s节点独立工作, 配置简单, 易于扩展。</p>
-<p>使用高可用集群的目的是避免单点故障，保证服务连续性。 采用多主节点架构。<br>每个主节点运行控制平面组件，包括apiserver, schedular, controller-manager, 当主节点或工作节点故障后，系统能自动检测并切换到备用节点</p>
-<h2><span id="xdr是什么意思">XDR是什么意思</span></h2><p>Extended Detection and Response 扩展检测和响应，是一种安全解决方案。 为企业客户提供全面的安全防护，从终端设备到云端服务的安全防护。<br>比如说我们的Service Gateway, 部署在企业网络，为本地终端提供一些核心的XDR服务，例如：</p>
+<h2><span id="如何避免消息重复消费">如何避免消息重复消费</span></h2><p>幂等设计, 无论消息被处理多少次, 结果都是相同的<br>过期字典, 每次消费时先检查taskId是否在过期字典中; 如果ID存在说明消息重复; 否则消费消息之后，把taskId添加到过期字典。</p>
+<h2><span id="如果升级版本有问题-怎么最小化用户影响">如果升级版本有问题, 怎么最小化用户影响</span></h2><p>设计灰度升级方案, 我们的服务网关部署在全球多个地区(比如日本,欧洲,新加坡)。<br>为了防止升级失败对所有客户造成影响, 我们首先选择客户较少的地区发布, 先指定少量客户升级(通过launchDarklyKey API), 再让整个地区的升级<br>对于有多台虚拟设备的客户, 也采用分批升级。 首次只升级一半设备, 等下一个周期后先判断这些设备是否升级成功, 如果升级成功再升级剩余一半</p>
+<h2><span id="jwt注册流程">JWT注册流程</span></h2><ul>
+<li>客户在UI上拿到一个由服务平台维护的register_token</li>
+<li>用户在命令行中输入register_token注册，触发注册请求</li>
+<li>虚拟设备通过POST请求将CPU,内存,IP信息连同register_token一起发送给后端</li>
+<li>后端收到请求, 解析请求头的token, 验证token, 获取customerId</li>
+<li>校验通过后, 后端为虚拟设备生成一个uuid, 用于唯一标识这台设备, 再生成一个applianceToken</li>
+<li>后端把虚拟设备信息存到MySQL数据库, 把虚拟设备ID, Token, 还有消息队列的FQDN返回给虚拟设备</li>
+<li>虚拟设备成功收到响应后，保存applianceId, applianceToken, 用于后续通信<br>每天定时从服务平台同步Token, Token设置了两个月过期时间, 过期前10天，立刻请求服务平台刷新Token</li>
+</ul>
+<h2><span id="jwt工作原理是什么">JWT工作原理是什么</span></h2><p>JWT用于身份认证, 通过签名确保数据完整性和真实性<br>由三部分组成, Header, Payload, Signature, 工作原理:</p>
 <ul>
-<li>ActiveUpdate 主动式更新, 更新最新的威胁情报库</li>
-<li>WebReputation 评估用户访问的网站安全性，防止恶意网站的威胁</li>
-<li>ForwardProxy 为客户终端上云提供了统一出口, 同时为终端提供了一个AirGap的解决方案. AirGap是值终端网络隔离,代理上云</li>
+<li>用户登录成功后，服务器生成一个JWT返回给客户端</li>
+<li>后续请求中, 客户端将JWT附加到HTTP请求头中, 发送给服务器</li>
+<li>服务器接收到JWT后, 验证其签名和有效性<br>优点: </li>
+<li>无状态, 服务器无需存储会话, 适合分布式系统</li>
+<li>跨平台, JWT基于JSON格式, 易于解析使用, 支持多种编程语言<br>局限性:</li>
+<li>无法主动失效</li>
 </ul>
-<h2><span id="activeupdate">ActiveUpdate</span></h2><p>我们的Active Update服务运行在本地的服务网关上, 定期从远程的服务器下载最新的病毒库，扫描引擎等文件。<br>通过这种方式, 客户的终端产品可以直接访问本地的服务获取更新，不必直接连接到远程服务器. 这样好处是显著减少了客户的带宽压力<br>比如有两万个终端需要下载同一份病毒库，使用本地的ActiveUpdate服务可以避免对客户网络造成冲击, 提高响应速度，减少成本。</p>
-<h2><span id="webreputation">WebReputation</span></h2><p>WebReputation是一个用于评估网页安全性的服务。 通过给访问的网站打分帮助用户避免安全威胁。<br>比如说，像Google, MS这种知名网站给一个高分加到白名单里; 恶意站点, 或者和白名单相似的可疑网站, 会给一个低分<br>这个数据是动态更新的，依赖公司的爬虫服务, 加上和第三方购买的一些数据</p>
 <h2><span id="jwt和session">JWT和Session</span></h2><p>JWT无状态的token, 服务端不需保存; Session是有状态的, 需要存储Session识别用户<br>JWT是无状态的，它更易于扩展, 但是难以撤销, 通常通过HTTP头传输， Session依赖于cookie传输Session ID</p>
-<p>Cookie和Session认证问题</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">1、用户向服务器发送用户名和密码。</span><br><span class="line">2、服务器验证通过后，在当前对话（session）里面保存相关数据，比如用户角色、登录时间等等。</span><br><span class="line">3、服务器向用户返回一个 session_id，写入用户的 Cookie。</span><br><span class="line">4、用户随后的每一次请求，都会通过 Cookie，将 session_id 传回服务器。</span><br><span class="line">5、服务器收到 session_id，找到前期保存的数据，由此得知用户的身份。</span><br></pre></td></tr></table></figure>
-
-<p>JWT 的原理是，服务器认证以后，生成一个JSON WEB TOKEN，发回给用户，用户与服务端通信的时候，都要发回这个TOKEN。服务器完全只靠这个对象认定用户身份。<br>为了防止用户篡改数据，服务器在生成这个对象的时候，会加上签名</p>
-<p>Header.Payload.Signature</p>
-<p><strong>DeployMent</strong><br>AWS云, 每个site一个EKS<br>site: US, EU, SG, AU, IN, JP, UAE<br>site: US-EAST-1<br>vpc cidr: 10.131.44.0&#x2F;22<br>subnets:<br>xdr-app-tgw-private-1a	10.131.45.0&#x2F;24<br>xdr-app-tgw-private-1b	10.131.46.0&#x2F;24<br>xdr-app-tgw-private-1c	10.131.47.0&#x2F;24<br>xdr-app-tgw-public-1a	10.131.44.0&#x2F;25<br>xdr-app-tgw-public-1b	10.131.44.128&#x2F;25<br>routes:<br>rtb-03eb993eb0a0df54b<br>0.0.0.0&#x2F;0	nat-0d7fa27334ad10a4a<br>10.0.0.0&#x2F;8	tgw-0c4d0ec54e6f330f1<br>10.131.44.0&#x2F;22	local</p>
-<p><strong>Cost</strong><br>2022-11</p>
+<h2><span id="cookie和session认证问题">Cookie和Session认证问题</span></h2><p>1、用户向服务器发送用户名和密码。<br>2、服务器验证通过后，在当前对话（session）里面保存相关数据，比如用户角色、登录时间等等。<br>3、服务器向用户返回一个 session_id，写入用户的 Cookie。<br>4、用户随后的每一次请求，都会通过 Cookie，将 session_id 传回服务器。<br>5、服务器收到 session_id，找到前期保存的数据，由此得知用户的身份。</p>
+<h1><span id="简历中的技术名词">简历中的技术名词</span></h1><h2><span id="为什么采用混合云架构">为什么采用混合云架构?</span></h2><p>混合云指的是将私有云环境与公有云服务相结合的一种云计算模型，我们的服务网关采用了混合云架构, 由一个云端的管理平台和一组部署在客户本地的网关设备组成<br>在客户的私有云环境中, 我们通过Microk8s集群为客户终端提供服务, 减少了客户的公网带宽消耗<br>但是, 如果我们只有私有云, 网关设备的更新会变得难以实现，所以我们通过公有云上部署一个管理平台，实现网关设备的升级</p>
+<h2><span id="microk8s集群是指什么-你们为什么不用高可用集群">Microk8s集群是指什么? 你们为什么不用高可用集群?</span></h2><p>我们的Microk8s集群是由多个独立运行的Microk8s示例组成的集群，每个节点处理各自终端的请求<br>没有使用高可用集群, 主要是几个方面考虑：<br>一个是实现的复杂性增加, 实现高可用集群, 需要引入额外的负载均衡器, 涉及到如何管理和部署这些LB, 还需要分配一个VIP, 增加了复杂性.<br>另一个是资源消耗, 高可用集群一般要求至少三个主节点以及多个工作节点, 消耗更多的资源, 以及更高的维护成本</p>
+<h2><span id="如果是高可用集群-你准备怎么部署">如果是高可用集群, 你准备怎么部署?</span></h2><p>高可用集群, 需要部署至少三个主节点, 加上多个工作节点, 前置负载均衡器(LB), 负载均衡器可以使用HAProxy或者LVS<br>每个LB上配置keepalived管理VIP, 客户终端通过VIP访问服务网关</p>
+<h2><span id="xdr是什么意思">XDR是什么意思</span></h2><p>Extended Detection and Response 扩展检测和响应，是一种安全解决方案。<br>它在EDR（端点检测与响应）的基础上进行了扩展，不仅关注端点的安全，还整合了网络、云端, 邮件等多个层面的数据进行威胁检测和响应, 为企业客户提供全面的安全防护</p>
+<h2><span id="localactiveupdate">LocalActiveUpdate</span></h2><p>LAU是一种容器化的服务, 部署在我们的服务网关上, 为趋势科技的本地终端产品（如Apex One、DDI和DSM等）提供最新的威胁情报库更新。<br>LAU服务定期从云端服务器下载最新的病毒库和扫描引擎等组件, 把这些更新内容存储在本地服务器上，客户终端只需从本地获取更新, 这样大大减轻了网络负担</p>
+<h2><span id="webreputation">WebReputation</span></h2><p>WebReputation是一个用于评估网页安全性的服务。 通过给访问的网站打分帮助用户避免安全威胁。<br>比如说，像Google, MS这样网站会给予高分, 并列入白名单; 恶意站点, 和白名单相似的可疑网站, 会给一个低分<br>这些数据来源于公司的爬虫服务, 还有从三方购买的一些数据</p>
+<h2><span id="fps中-逐一为端点配置防火墙策略痛点指的是什么">FPS中, 逐一为端点配置防火墙策略痛点指的是什么</span></h2><p>客户必须在自己的防火墙上手动配置大量的云端服务URL, 使得本地终端产品能够连接到云端服务; 由于<br>客户的本地终端需要访问很多云端服务的URL, 客户环境中运行了大量的终端设备, 让客户为这些终端逐一指定防火墙策略是非常麻烦的,<br>而且万一配置出现遗漏, 本地终端发出恶意请求, 导致安全问题<br>解决方案: 通过FPS, 所有本地终端产品可以通过单一代理服务访问后端服务, 客户只需要在防火墙上配置允许通过FPS的URL规则, 无需为每个本地终端单独设置规则, 显著简化了防火墙策略配置工作量</p>
+<h2><span id="air-gap是啥意思">Air Gap是啥意思</span></h2><p>对于银行这种敏感的客户, 其内部网络与外部网络之间是隔离的, 即所谓的Air Gap环境, 他们的终端设备无法直接连到外网<br>为了让这些终端也可以连到云，我们设计了Forward Proxy解决方案, 客户把我们的代理部署在DMZ区域, 让所有终端设备的出站请求都经过我们代理进行转发, 通过代理上云</p>
+<h2><span id="什么是云计算">什么是云计算</span></h2><p>云计算是一种通过互联网提供计算资源和服务的技术, 允许用户按需访问和使用资源，无需购买维护硬件设备<br>为企业部署服务提供了灵活性, 可扩展性, 只需要为使用的资源付费, 降低成本</p>
+<h2><span id="公有云和私有云">公有云和私有云</span></h2><p>公有云是由第三方云服务提供商提供的云计算环境, 比如AWS, Azure, 阿里云, 按需付费, 无需购买硬件设备，自建数据中心, 提高了部署的灵活性, 降低了成本<br>私有云是专门为单个组织构建的云计算环境, 位于组织的数据中心内，也可以托管给第三方服务商，使用VMware, Hyper-V实现资源虚拟化, 私有云适合那些对安全性要求较高的企业, 比如金融医疗行业</p>
+<h2><span id="基础设施即服务iaas-平台即服务paas-软件即服务saas">基础设施即服务(IaaS), 平台即服务(PaaS),  软件即服务(SaaS)</span></h2><p>SaaS模式, 通过互联网我提供软件应用, 用户无需安装软件, 而是直接使用服务. 比如Office 365, 用户通过浏览器直接使用, 所有更新支持由微软提供<br>PaaS模式, 提供一个开发和部署环境, 用户需要关注自己业务逻辑, 开发应用软件, 但是无需关注底层硬件和操作系统<br>IaaS模式, 提供虚拟化计算资源, 用户需要自行管理OS, 中间件, 应用软件, 比如 Amazon EC2</p>
+<h1><span id="云服务费用">云服务费用</span></h1><p><strong>DeployMent</strong><br>AWS云, 每个site一个EKS, site: US, EU, SG, AU, IN, JP, UAE<br><strong>Cost monthly</strong></p>
 <ul>
 <li>RDS 8500$</li>
 <li>EC2 2500$</li>
@@ -571,92 +517,6 @@
 <li>Cloudwatch&#x2F;S3 300$</li>
 <li>IOT 300$</li>
 </ul>
-<p>LAULAU (Local Active Update) service here is a containerized service which can be run on Service Gateway Virtual Appliance to play as a local AU server for TrendMicro on-premise products, like Apex One, DDI and DSM  etc.</p>
-<p>Ability to regularly download components (pattern&#x2F;engine) from specified global AU (per product type).<br>Allow point products to download components from it by AU&#x2F;iAUSDK protocol on demand or by schedule by given service URL (per product type).<br>Support multiple point products (in different product type) concurrently.<br>Report all component version&#x2F;last update etc info back to V1 SG app.<br>Report the count of component downloading per product back to V1 SG app.</p>
-<h2><span id="sg-introduction">SG introduction:</span></h2><p>A Service Gateway installed in the local network acts as a relay between Trend Micro Vision One and other products, such as on-premises Trend Micro or third-party products.<br>This allows use of Trend Micro cloud services while reducing Internet traffic and sharing threat intelligence.</p>
-<p>A Service Gateway consists of a cloud-based inventory list in the console app and a locally-based virtual appliance.</p>
-<ul>
-<li><p>Service Gateway Management<br>Service Gateway Management provides status information on the connected Service Gateway virtual appliances, including appliance details, service statuses, and connected endpoints.<br>Service Gateway Management also allows you to manage the connected Service Gateway virtual appliances.</p>
-</li>
-<li><p>Service Gateway virtual appliance<br>The Service Gateway virtual appliance attached to the local network provides services like ActiveUpdate, Smart Protection Services, and Suspicious Object List synchronization to on-premises Trend Micro products.<br>The Service Gateway also supports log forwarding and integration of third-party applications with Trend Micro Vision One.</p>
-</li>
-</ul>
-<p>Service</p>
-<p>Description</p>
-<p>AWS</p>
-<p>Azure (ADDA)</p>
-<p>Owner Team</p>
-<p>ActiveUpdate</p>
-<p>Serves on-premises Trend Micro products as a local ActiveUpdate server to reduce outgoing internet traffic.</p>
-<p>O</p>
-<p>O</p>
-<p>Service Gateway</p>
-<p>Forward proxy</p>
-<p>Allows agents on endpoints with no direct access to the internet to use the service gateway as a proxy to reach Trend Micro Vision One.</p>
-<p>O</p>
-<p>O</p>
-<p>Service Gateway</p>
-<p>Nessus Pro</p>
-<p>Sends device information and vulnerability data from the Nessus Pro server to Trend Micro Vision One.</p>
-<p>O</p>
-<p>SASE</p>
-<p>On-premises directory connection</p>
-<p>Once enabled, the Service Gateway can help send data from on-premises directory servers to Trend Vision One. This service is required to set up “Active Directory (on-premises)”, and “OpenLDAP” in Third-Party Integration</p>
-<p>O</p>
-<p>O</p>
-<p>Active Directory</p>
-<p>Rapid7 - Nexpose</p>
-<p>When enabled, the Service Gateway can send device and vulnerability data from the Rapid7 server to Trend Vision One.</p>
-<p>O</p>
-<p>SASE</p>
-<p>Tenable Security Center Connector</p>
-<p>Once enabled, the Service Gateway sends device information and vulnerability data from the Tenable Security Center server to Trend Vision One.</p>
-<p>O</p>
-<p>SASE</p>
-<p>Smart Protection Services</p>
-<p>Leverages file reputation and web reputation technology to detect security risks. On-premises Trend Micro products can perform queries against the Service Gateway virtual appliance, which provides Smart Protection either through the local Smart Protection Server on the virtual appliance or as a reverse proxy.</p>
-<p>O</p>
-<p>O</p>
-<p>SG SPS Team</p>
-<p>Suspicious Object List synchronization</p>
-<p>Supports the sharing of Suspicious Object lists between Trend Micro Vision One and on-premises Trend Micro products.</p>
-<p>O</p>
-<p>O</p>
-<p>Threat Intel</p>
-<p>Syslog Connector</p>
-<p>Enables sharing data from Trend Micro Vision One with your local syslog server.</p>
-<p>O</p>
-<p>O</p>
-<p>TPI</p>
-<p>Third-party intelligence synchronization</p>
-<p>Shares threat intelligence from Trend Micro Vision One with third-party applications or retrieves threat intelligence from third-party applications.</p>
-<p>O</p>
-<p>O</p>
-<p>TPI</p>
-<p>TippingPoint</p>
-<p>Log forwarding</p>
-<p>Supports forwarding logs to Trend Micro Vision One for correlation and analysis.</p>
-<p>O</p>
-<p>O</p>
-<p>Service Gateway</p>
-<p>TippingPoint policy management</p>
-<p>Allows the Network Intrusion Prevention app to modify TippingPoint policy configurations to mitigate CVEs.</p>
-<p>O</p>
-<p>TippingPoint</p>
-<p>Zero Trust Secure Access On-Premises Gateway</p>
-<p>Zero Trust Secure Access Internet Access is a forward proxy service that protects end users from malicious activity on the internet. In addition to the Cloud Gateway, the on-premises gateway also provides a flexible option to deploy one or more local on-premises gateways in your organization’s network as a hybrid protection solution.</p>
-<p>O</p>
-<p>ZTSA</p>
-<p>Generic Caching Service</p>
-<p>Saves previously requested internet content for on-premises Trend Micro products to speed up access to data and reduce demand on bandwidth of your business.</p>
-<p>O</p>
-<p>Service Gateway</p>
-<p>Third-Party Log Collection Service</p>
-<p>Supports sending logs collected from your local devices to Trend Vision One for correlation and analysis.</p>
-<p>O</p>
-<p>File Security Virtual Appliance</p>
-<p>Scan valuableScan valuable files for malware files for malware</p>
-<p>O</p>
 
     </div>
 
@@ -777,7 +637,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目: Trend Micro - Service Gateway</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">简单介绍项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及分区设计, 升级包构建, 系统配置同步, GRUB启动项配置等关键环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了40%维护成本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">2. 通过定制initramfs进入紧急模式, 预先将升级包备份到内存后再重建磁盘分区, 实现了从单系统分区到双系统的无缝迁移, 大幅提升了用户体验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">3. 开发了一个控制模块，通过消息队列实现在线升级功能, 引入心跳检测解决微服务同步的问题; 设计了预下载机制, 用户等待时间减少了90%, 同时提升了升级的稳定性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">4.优化了微服务的集成方案, 将微服务从虚拟设备固件中解耦, 并使用Microk8s Ingress提供统一的访问入口, 将虚拟设备镜像从4.5G压缩至2.7G, 客户安装时间缩短了40%</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">5. 基于CISCO CLI开发了一组命令, 实现了配置管理功能; 通过设计诊断命令, 收集日志, 显著提升了客户本地环境中定位Microk8s问题的效率</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">其他问题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目2: Forward Proxy Service</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">基于Squid实现了正向代理, 支持Basic认证和白名单配置, 通过ACL限制终端访问, 显著提升了系统安全性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">深入分析并迅速解决客户网络不通的问题, 涉及HTTP隧道和TLS握手原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">设计了一个基于Stunnel的加密通信方案, 显著减少了因客户防火墙配置异常导致的网络问题, 极大提升了用户体验</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目3: Matrix仿真平台</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">通过Redis键空间通知机制, 模拟了单板插拔的仿真, 并通过自定义网桥模拟框式形态的仿真, 扩展了仿真平台的测试范围</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">将Redis驱动接口从短连接优化为长连接, 接口平均读写时间从2ms缩短为0.1ms, 显著提升了测试效率</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">其他问题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目最大难点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">一些概念</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">什么是混合云架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">支持XX多平台部署, 这些平台差异是什么, 遇到什么问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你们的Microk8s集群是指什么? 为什么不用高可用集群? 高可用集群是什么样的?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">XDR是什么意思</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">ActiveUpdate</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">WebReputation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT和Session</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">SG introduction:</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目: Trend Micro - Service Gateway</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">简单介绍项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">1.为On-premises网关设备设计了基于Linux双系统分区的升级方案, 涉及升级包构建, 网络配置同步, GRUB启动项设置等环节. 此方案解决了系统故障后无法回滚的问题, 并删除了1GB的增量升级代码, 降低了90%维护成本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">2. 通过定制initramfs进入紧急模式, 预先将升级包备份到内存后再重建磁盘分区, 实现了从单系统分区到双系统的无缝迁移, 大幅提升了用户体验</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">3. 开发了一个运行在网关设备上的控制模块, 利用AWS IoT消息队列实现在线升级等功能, 并通过心跳检测方法解决微服务同步的问题; 引入预下载机制提高升级的稳定性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">4.优化了微服务的集成方案, 将微服务从虚拟设备固件中解耦, 并使用Microk8s Ingress提供统一的访问入口, 将虚拟设备镜像从4.5G压缩至2.7G, 客户安装时间缩短了40%</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">5. 怎么使用诊断命令定位网络问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">项目中还有什么优化的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">项目中团队成员组成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">你做了哪些部分, 哪些是合作的, 如何合作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目2: Forward Proxy Service</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">简单介绍项目</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">基于Squid搭建了支持Basic认证和白名单配置的正向代理服务, 通过ACL规则拦截非法请求, 增强了系统的安全性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">分析并迅速解决客户网络不通的问题, 涉及HTTP隧道和TLS握手原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">设计了一个基于Stunnel的加密通信方案, 显著减少了因客户防火墙配置异常导致的网络问题, 极大提升了用户体验</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">项目3: Matrix仿真平台</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">通过Redis键空间通知机制, 模拟了单板插拔的仿真, 并通过自定义网桥模拟框式形态的仿真, 扩展了仿真平台的测试范围</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">将Redis驱动接口从短连接优化为长连接, 接口平均读写时间从2ms缩短为0.1ms, 显著提升了测试效率</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">其他问题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">技能描述</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Docker网络模式及容器间通信的原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Nginx Ingress</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">CoreDNS原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Calico网络模式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">其他项目问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">说下Linux启动流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">GRUB什么原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">initramfs是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">怎么保证消息不丢失</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如何避免消息重复消费</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如果升级版本有问题, 怎么最小化用户影响</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT注册流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT工作原理是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">JWT和Session</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Cookie和Session认证问题</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">简历中的技术名词</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为什么采用混合云架构?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Microk8s集群是指什么? 你们为什么不用高可用集群?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">如果是高可用集群, 你准备怎么部署?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">XDR是什么意思</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">LocalActiveUpdate</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">WebReputation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">FPS中, 逐一为端点配置防火墙策略痛点指的是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Air Gap是啥意思</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">什么是云计算</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">公有云和私有云</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">基础设施即服务(IaaS), 平台即服务(PaaS),  软件即服务(SaaS)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">云服务费用</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -849,12 +709,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">874k</span>
+    <span title="站点总字数">867k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">13:15</span>
+    <span title="站点阅读时长">13:08</span>
 </div>
 
 <!--
