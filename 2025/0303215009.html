@@ -24,12 +24,12 @@
     var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="前言我们在企业客户网络中部署了一些On-Premises的服务网关, 服务网关上部署了Squid代理软件, 为客户本地终端访问云服务提供正向代理然而，对于使用较旧防火墙的客户来说，这些防火墙不支持基于FQDN(完全合格域名)的通配符匹配。这意味着当本地终端尝试访问云端资源时，用户必须逐一配置FQDN, 这种配置过程不仅繁琐，而且容易因为遗漏某些FQDN导致连接被防火墙阻止，造成网络中断，严重影响用">
+  <meta name="description" content="前言在我们的业务场景中，客户终端需要访问部署在云端的各种服务，这些云端服务分布在不同的域名下。 例如, 一个典型的客户需要访问数十个甚至上百个不同的FQDN来满足他的业务需求然而, 许多客户的防火墙不支持通配符的FQDN白名单配置, 这意味者他们必须手动配置每个具体的FQDN，这种配置非常麻烦，而且一旦配置错误会导致网络不通，严重影响用户体验, 增加运维负担为了解决这个问题，我设计了一个基于Stu">
 <meta property="og:type" content="article">
 <meta property="og:title" content="基于Stunnel加密通信方案设计, 突破防火墙限制">
 <meta property="og:url" content="https://pcj600.github.io/2025/0303215009.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
-<meta property="og:description" content="前言我们在企业客户网络中部署了一些On-Premises的服务网关, 服务网关上部署了Squid代理软件, 为客户本地终端访问云服务提供正向代理然而，对于使用较旧防火墙的客户来说，这些防火墙不支持基于FQDN(完全合格域名)的通配符匹配。这意味着当本地终端尝试访问云端资源时，用户必须逐一配置FQDN, 这种配置过程不仅繁琐，而且容易因为遗漏某些FQDN导致连接被防火墙阻止，造成网络中断，严重影响用">
+<meta property="og:description" content="前言在我们的业务场景中，客户终端需要访问部署在云端的各种服务，这些云端服务分布在不同的域名下。 例如, 一个典型的客户需要访问数十个甚至上百个不同的FQDN来满足他的业务需求然而, 许多客户的防火墙不支持通配符的FQDN白名单配置, 这意味者他们必须手动配置每个具体的FQDN，这种配置非常麻烦，而且一旦配置错误会导致网络不通，严重影响用户体验, 增加运维负担为了解决这个问题，我设计了一个基于Stu">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://pcj600.github.io/2025/0303215009/direct.png">
 <meta property="og:image" content="https://pcj600.github.io/2025/0303215009/image_direct0.png">
@@ -44,7 +44,7 @@
 <meta property="og:image" content="https://pcj600.github.io/2025/0303215009/stunnel_benchmark.png">
 <meta property="og:image" content="https://pcj600.github.io/2025/0303215009/final.png">
 <meta property="article:published_time" content="2025-03-03T13:50:09.000Z">
-<meta property="article:modified_time" content="2025-03-27T11:45:47.961Z">
+<meta property="article:modified_time" content="2025-04-14T13:43:54.203Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="Project">
 <meta property="article:tag" content="Stunnel">
@@ -149,7 +149,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">187</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">185</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -261,7 +261,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>6.2k</span>
+              <span>6.4k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -280,11 +280,17 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1><span id="前言">前言</span></h1><p>我们在企业客户网络中部署了一些On-Premises的服务网关, 服务网关上部署了Squid代理软件, 为客户本地终端访问云服务提供正向代理<br>然而，对于使用较旧防火墙的客户来说，这些防火墙不支持基于FQDN(完全合格域名)的通配符匹配。这意味着当本地终端尝试访问云端资源时，用户必须逐一配置FQDN, 这种配置过程不仅繁琐，而且容易因为遗漏某些FQDN导致连接被防火墙阻止，造成网络中断，严重影响用户体验。<br>针对这个问题, 我们设计了一种基于Stunnel的加密通信方案, 绕过客户防火墙限制。 客户仅需配置Stunnel服务器的FQDN, 无需为每个目标服务器的FQDN进行单独设置, 从而简化了防火墙配置流程，提升了用户体验。</p>
+        <h1><span id="前言">前言</span></h1><p>在我们的业务场景中，客户终端需要访问部署在云端的各种服务，这些云端服务分布在不同的域名下。 例如, 一个典型的客户需要访问数十个甚至上百个不同的FQDN来满足他的业务需求<br>然而, 许多客户的防火墙不支持通配符的FQDN白名单配置, 这意味者他们必须手动配置每个具体的FQDN，这种配置非常麻烦，而且一旦配置错误会导致网络不通，严重影响用户体验, 增加运维负担<br>为了解决这个问题，我设计了一个基于Stunnel的加密通信方案, 以简化客户的防火墙配置:</p>
+<ul>
+<li>我们在客户的网关设备上部署了Stunnel，用于将Squid代理的所有HTTP流量进行TLS加密</li>
+<li>Stunnel作为透明加密层，接收来自Squid的流量，并将其封装到TLS隧道中，将加密后流量发送给云端的一个Cloud Proxy.</li>
+<li>Cloud Proxy是一个HTTPS代理, 负责解密网关设备传来的TLS流量，将解密后的请求转发到真正的后端服务</li>
+</ul>
+<p>这种方案下，客户只需在防火墙配置Cloud Proxy这一个FQDN即可，无需逐一配置所有目标服务的FQDN，这个方案大幅简化了客户的防火墙配置，同时有效减少了网络不通问题</p>
 <h1><span id="stunnel是什么-被设计用来解决什么问题">Stunnel是什么, 被设计用来解决什么问题</span></h1><p>Stunnel是一款开源软件，其主要功能是为应用程序或服务提供TLS&#x2F;SSL加密支持。 它的设计初衷是为了增强那些本身不支持加密功能的传统应用程序或服务的安全性<br>通过Stunnel, 可以在严格的防火墙规则下实现安全的加密通信，同时有效绕过可能存在的网络访问限制。</p>
-<h1><span id="为什么需要stunnel">为什么需要Stunnel ?</span></h1><h2><span id="直接通过墙内的squid代理出去不行吗">直接通过墙内的Squid代理出去不行吗？</span></h2><p><img data-src="/2025/0303215009/direct.png"></p>
 <span id="more"></span>
 
+<h1><span id="为什么需要stunnel">为什么需要Stunnel ?</span></h1><h2><span id="直接通过墙内的squid代理出去不行吗">直接通过墙内的Squid代理出去不行吗？</span></h2><p><img data-src="/2025/0303215009/direct.png"></p>
 <p>演示一下, 创建两台Linux虚拟机</p>
 <ul>
 <li>客户端 (192.168.52.200)</li>
@@ -305,8 +311,9 @@
 <li>代理收到请求后, 和目标服务器建立TCP隧道连接, 并返回200 Connection Established给客户端, 告诉客户端隧道已经成功建立</li>
 <li>隧道建立后, 代理仅负责转发数据而不解析或修改内容，确保了HTTPS数据的安全性，即使对于代理而言也无法解密TLS加密的内容</li>
 </ul>
-<h2><span id="在墙外部署squid代理行不行呢">在墙外部署Squid代理行不行呢 ?</span></h2><p><img data-src="/2025/0303215009/squid-outof-firewall.png"></p>
-<p>这种方案仍然会存在问题, 这里演示一下, 准备两台虚拟机, 一台云服务器</p>
+<h2><span id="在墙外只部署http代理行不行">在墙外只部署HTTP代理行不行 ?</span></h2><p><img data-src="/2025/0303215009/squid-outof-firewall.png"></p>
+<p>不可以, 因为根据HTTP隧道的工作原理, 虽然HTTPS请求本身是加密的, 但是初始的HTTP CONNECT报文仍然是明文传输的。<br>在这个明文报文中，会暴露目标服务器的FQDN, 导致请求被客户的防火墙过滤, 造成网络不通。</p>
+<p>以下搭建环境演示:</p>
 <ul>
 <li>客户端 (192.168.52.200)</li>
 <li>墙内代理 (192.168.52.204)</li>
@@ -516,7 +523,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Stunnel是什么, 被设计用来解决什么问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">为什么需要Stunnel ?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">直接通过墙内的Squid代理出去不行吗？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">HTTP tunnel(HTTP隧道)的概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">在墙外部署Squid代理行不行呢 ?</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">基于Stunnel加密通信方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置墙外的云服务器(部署 Stunnel Server + Squid Server)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置墙内的机器(部署 Squid + Stunnel Client)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试墙内到墙外的数据是否加密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为啥不直接用HTTPS代理 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">方案的缺点是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">Stunnel是什么, 被设计用来解决什么问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">为什么需要Stunnel ?</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">直接通过墙内的Squid代理出去不行吗？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">HTTP tunnel(HTTP隧道)的概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">在墙外只部署HTTP代理行不行 ?</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">基于Stunnel加密通信方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置墙外的云服务器(部署 Stunnel Server + Squid Server)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">配置墙内的机器(部署 Squid + Stunnel Client)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">测试墙内到墙外的数据是否加密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">为啥不直接用HTTPS代理 ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">方案的缺点是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">参考</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -532,7 +539,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">187</span>
+          <span class="site-state-item-count">185</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -588,12 +595,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">865k</span>
+    <span title="站点总字数">829k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">13:07</span>
+    <span title="站点阅读时长">12:34</span>
 </div>
 
 <!--
