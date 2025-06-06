@@ -24,21 +24,22 @@
     var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="问题描述客户有一台基于Hyper-V创建的RHEL9虚拟机, 安装了MicroK8s, 启动正常。虚拟机重启后, kubectl报错: Unable to connect to the server: x509: certificate has expired or is not yet valid 定位过程这个报错说明MicroK8s apiserver证书的有效时间不对。 首先简单了解下Mic">
+  <meta name="description" content="环境初始化准备3台机器: Rocky Linux 9 x86_64，IP地址如下：  192.168.149.220 192.168.149.221 192.168.149.222  每台机器上安装JDK 1.8及以上版本，并配置好环境变量 1yum install -y java-1.8.0-openjdk-devel 配置环境变量，编辑&#x2F;etc&#x2F;profile文件，添加以下">
 <meta property="og:type" content="article">
-<meta property="og:title" content="[MicroK8s] Unable to connect to the server: x509: certificate has expired or is not yet valid 问题定位案例">
-<meta property="og:url" content="https://pcj600.github.io/2024/0905201723.html">
+<meta property="og:title" content="Nacos 2.5.0 集群部署">
+<meta property="og:url" content="https://pcj600.github.io/2025/0606102212.html">
 <meta property="og:site_name" content="PC&#39;s Blog">
-<meta property="og:description" content="问题描述客户有一台基于Hyper-V创建的RHEL9虚拟机, 安装了MicroK8s, 启动正常。虚拟机重启后, kubectl报错: Unable to connect to the server: x509: certificate has expired or is not yet valid 定位过程这个报错说明MicroK8s apiserver证书的有效时间不对。 首先简单了解下Mic">
+<meta property="og:description" content="环境初始化准备3台机器: Rocky Linux 9 x86_64，IP地址如下：  192.168.149.220 192.168.149.221 192.168.149.222  每台机器上安装JDK 1.8及以上版本，并配置好环境变量 1yum install -y java-1.8.0-openjdk-devel 配置环境变量，编辑&#x2F;etc&#x2F;profile文件，添加以下">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-09-05T12:17:23.000Z">
-<meta property="article:modified_time" content="2025-06-03T08:15:45.268Z">
+<meta property="og:image" content="https://pcj600.github.io/2020/0228210741/ge1.png">
+<meta property="article:published_time" content="2025-06-06T02:22:12.000Z">
+<meta property="article:modified_time" content="2025-06-06T02:24:18.470Z">
 <meta property="article:author" content="PC">
-<meta property="article:tag" content="troubleshooting">
-<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="PC,博客,Blog,Hexo">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pcj600.github.io/2020/0228210741/ge1.png">
 
-<link rel="canonical" href="https://pcj600.github.io/2024/0905201723.html">
+<link rel="canonical" href="https://pcj600.github.io/2025/0606102212.html">
 
 
 <script id="page-configurations">
@@ -51,7 +52,7 @@
   };
 </script>
 
-  <title>[MicroK8s] Unable to connect to the server: x509: certificate has expired or is not yet valid 问题定位案例 | PC's Blog</title>
+  <title>Nacos 2.5.0 集群部署 | PC's Blog</title>
   
 
 
@@ -200,7 +201,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0905201723.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0606102212.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -213,7 +214,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          [MicroK8s] Unable to connect to the server: x509: certificate has expired or is not yet valid 问题定位案例
+          Nacos 2.5.0 集群部署
         </h1>
 
         <div class="post-meta">
@@ -223,16 +224,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2024-09-05 20:17:23" itemprop="dateCreated datePublished" datetime="2024-09-05T20:17:23+08:00">2024-09-05</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
-                </span>
+              <time title="创建时间：2025-06-06 10:22:12" itemprop="dateCreated datePublished" datetime="2025-06-06T10:22:12+08:00">2025-06-06</time>
             </span>
 
           
@@ -248,7 +240,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>2.7k</span>
+              <span>2.1k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -267,38 +259,33 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2><span id="问题描述">问题描述</span></h2><p>客户有一台基于Hyper-V创建的RHEL9虚拟机, 安装了MicroK8s, 启动正常。<br>虚拟机重启后, kubectl报错: <code>Unable to connect to the server: x509: certificate has expired or is not yet valid</code></p>
-<h2><span id="定位过程">定位过程</span></h2><p>这个报错说明MicroK8s apiserver证书的有效时间不对。 首先简单了解下Microk8s证书（以下内容 by ChatGPT）</p>
+        <h2><span id="环境初始化">环境初始化</span></h2><p>准备3台机器: Rocky Linux 9 x86_64，IP地址如下：</p>
+<ul>
+<li>192.168.149.220</li>
+<li>192.168.149.221</li>
+<li>192.168.149.222</li>
+</ul>
+<p>每台机器上安装JDK 1.8及以上版本，并配置好环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y java-1.8.0-openjdk-devel</span><br></pre></td></tr></table></figure>
+<p>配置环境变量，编辑&#x2F;etc&#x2F;profile文件，添加以下内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk</span><br><span class="line">export CLASSPATH=.:$JAVA_HOME/jre/lib/rt.jar:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar</span><br><span class="line">export PATH=$PATH:$JAVA_HOME/bin</span><br></pre></td></tr></table></figure>
+<p>保存后，执行source &#x2F;etc&#x2F;profile使配置生效。</p>
 <span id="more"></span>
-<ul>
-<li>在 MicroK8s 中，ca.crt 和 server.crt 是位于 &#x2F;var&#x2F;snap&#x2F;microk8s&#x2F;current&#x2F;certs&#x2F; 目录下的两个重要证书，作用如下：</li>
-<li>ca.crt：这是集群的根证书颁发机构（CA）证书，用于签署其他所有的证书，包括 API 服务器证书、客户端证书、节点证书等。它是建立集群内部所有组件之间信任的基础  。</li>
-<li>server.crt：这个证书是 Kubernetes API 服务器使用的 TLS 证书，它包括了 API 服务器服务的 DNS 名称和 IP 地址。当使用 kubectl 请求 API 服务器时，会使用到这个证书来确保通信的安全性  。</li>
-<li>当你使用 kubectl 请求 API 服务器时，kubectl 会使用 ca.crt 中的 CA 证书来验证 server.crt 的有效性。如果 server.crt 证书尚未过期，且由受信任的 CA 签发，kubectl 将接受该证书并继续通信 。</li>
-<li>如果遇到证书过期或即将过期的问题，可以使用 MicroK8s 的 refresh-certs 命令来刷新证书 。这个命令会帮助更新 CA 证书和重新生成 API 服务器证书，以及其他相关的证书 。</li>
-</ul>
-<p>回到问题，先通过<code>openssl</code>查看apiserver证书有效时间：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -<span class="keyword">in</span> /var/snap/microk8s/current/certs/server.crt -text -noout | grep Not</span><br><span class="line">Not Before: Oct 4 00:01:28 2024 GMT</span><br><span class="line">Not After : Oct 4 00:01:28 2025 GMT</span><br></pre></td></tr></table></figure>
-<p>再查看当前系统时间：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">timedatectl</span><br><span class="line">      Local time: Thu 2024-09-05 06:52:02 UTC</span><br><span class="line">  Universal time: Thu 2024-09-05 06:52:02 UTC</span><br><span class="line">        RTC time: Thu 2024-09-05 06:52:03</span><br><span class="line">       Time zone: America/New_York (EDT, -0400)</span><br><span class="line">     NTP enabled: <span class="built_in">yes</span></span><br><span class="line">NTP synchronized: <span class="built_in">yes</span></span><br></pre></td></tr></table></figure>
-<p>发现问题：<strong>当前系统时间是09-05, 而证书有效开始时间是10-04，是一个未来的时间，所以报<code>certificate is not yet valid</code></strong></p>
-<p>我测了几次，发现每次VM重启后，microk8s都会根据当时系统时间重新生成一次apiserver证书。(只重启k8s不重启机器，不会生成新的证书)</p>
-<p>客户环境的证书有效开始时间是10-04，又配置了NTP，这说明重新生成证书的那个时刻，系统时间就是10-04，随后NTP服务启动，系统时间又被改对了而已。 通过启动日志确认这一点：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dmesg -T | grep rtc <span class="comment">#(或者查/var/log/message)</span></span><br><span class="line">[Thu Sep 5 06:46:09 2024] rtc_cmos 00:01: setting system clock to 2024-10-04T00:01:04 UTC</span><br></pre></td></tr></table></figure>
-<p>从启动日志中，发现VM的RTC时间果然是10-04，比正确时间快了接近一个月。 总结下这个问题发生的过程：</p>
-<ul>
-<li>Hyper-V没有正确同步VM的RTC时间，VM重启的时刻RTC时间为10-04，这个未来的时间被同步给了系统时间。</li>
-<li>MicroK8s重新生成apiserver证书，证书有效时间设置为系统时间10-04</li>
-<li>chronyd服务启动, 系统时间又被NTP server同步成了正确的时间09-05</li>
-<li>当前系统时间(09-05)早于证书有效时间(10-04)，所以kubectl报错 <code>certificate is not yet valid</code></li>
-</ul>
-<p>至于Hyper-V为什么没有正确同步虚拟机的RTC时间，这个需要Microsoft的支持。 下面给出一个workaround规避这个问题：</p>
-<h2><span id="解决方法">解决方法</span></h2><p>每次启动判断下MicroK8s证书时间是否有效，如果是一个未来的时间，就重新刷下MicroK8s证书。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">CERT_FILE=<span class="string">&quot;/var/snap/microk8s/current/certs/server.crt&quot;</span></span><br><span class="line">not_before=$(<span class="built_in">date</span> -d <span class="string">&quot;<span class="subst">$(openssl x509 -noout -dates -in <span class="string">&quot;<span class="variable">$CERT_FILE</span>&quot;</span> | grep <span class="string">&quot;notBefore&quot;</span> | cut -d= -f2)</span>&quot;</span> +%s)</span><br><span class="line">current_time=$(($(date +%s) + <span class="number">300</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ ! -z <span class="string">&quot;<span class="variable">$not_before</span>&quot;</span> ] &amp;&amp; [ <span class="string">&quot;<span class="variable">$current_time</span>&quot;</span> -lt <span class="string">&quot;<span class="variable">$not_before</span>&quot;</span> ]; <span class="keyword">then</span></span><br><span class="line">	microk8s refresh-certs --cert server.crt</span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
-<p>注：RTC时间可以不用手动设置，因为配置了NTP server之后一段时间会自动同步</p>
-<p>可以添加一个systemd service, 使用<code>systemctl enable</code>命令，每次启动的时候执行。service配置文件如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[Unit]</span><br><span class="line">Description=Refresh k8s certs if cert is not yet valid</span><br><span class="line">After=chronyd.service</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line">Type=oneshot</span><br><span class="line">ExecStart=/path/to/your_script.sh</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br></pre></td></tr></table></figure>
 
+<h2><span id="安装nacos">安装Nacos</span></h2><p>下载Nacos：在每台机器上分别下载Nacos 2.5.0 安装包</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mkdir -p /usr/local/nacos</span><br><span class="line">cd /usr/local/nacos</span><br><span class="line">wget https://github.com/alibaba/nacos/releases/download/2.5.0/nacos-server-2.5.0.tar.gz</span><br><span class="line">tar -xvf nacos-server-2.5.0.tar.gz</span><br></pre></td></tr></table></figure>
+<p>配置Nacos<br>在每台机器的Nacos安装目录的conf目录下，添加集群配置文件cluster.conf（如果该文件不存在，可以将cluster.conf.example复制一份并重命名为cluster.conf），内容为三台机器的IP和端口，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">192.168.149.220:8848</span><br><span class="line">192.168.149.221:8848</span><br><span class="line">192.168.149.222:8848</span><br></pre></td></tr></table></figure>
+<p>Nacos支持使用MySQL数据库存储数据，在每台机器的conf&#x2F;application.properties文件中，修改数据库配置，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">spring.sql.init.platform=mysql</span><br><span class="line">db.num=1</span><br><span class="line">db.url.0=jdbc:mysql://&#123;mysql_host&#125;:3306/nacos?useUnicode=true&amp;characterEncoding=utf8</span><br><span class="line">db.user=&#123;mysql_user&#125;</span><br><span class="line">db.password=&#123;mysql_password&#125;</span><br><span class="line">将&#123;mysql_host&#125;、&#123;mysql_user&#125;和&#123;mysql_password&#125;替换为实际的MySQL数据库地址、用户名和密码  ( [安装MySQL方法](https://pcj600.github.io/2024/0916144756.html))</span><br></pre></td></tr></table></figure>
+<p>初始化nacos数据库</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CREATE DATABASE nacos COLLATE utf8mb4_general_ci;</span><br></pre></td></tr></table></figure>
+<p>再创建nacos数据表，从Nacos的GitHub仓库获取2.5.0版本对应的数据库初始化脚本，脚本文件为mysql-schema.sql</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">USE nacos;</span><br><span class="line">SOURCE /path/to/mysql-schema.sql;</span><br></pre></td></tr></table></figure>
+<h2><span id="启动nacos集群">启动Nacos集群</span></h2><p>1.启动Nacos节点：在每台机器的Nacos安装目录的bin目录下，执行启动命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sh startup.sh</span><br></pre></td></tr></table></figure>
+<p>2.验证集群状态：通过浏览器访问其中任意一台Nacos节点的管理页面，例如<a target="_blank" rel="noopener external nofollow noreferrer" href="http://192.168.149.220:8848/nacos%EF%BC%8C%E8%BE%93%E5%85%A5%E7%94%A8%E6%88%B7%E5%90%8D%E5%92%8C%E5%AF%86%E7%A0%81%EF%BC%88%E9%BB%98%E8%AE%A4%E7%94%A8%E6%88%B7%E5%90%8D%E5%92%8C%E5%AF%86%E7%A0%81%E5%9D%87%E4%B8%BAnacos%EF%BC%89%EF%BC%8C%E6%9F%A5%E7%9C%8B%E9%9B%86%E7%BE%A4%E7%8A%B6%E6%80%81%EF%BC%8C%E7%A1%AE%E4%BF%9D%E4%B8%89%E4%B8%AA%E8%8A%82%E7%82%B9%E9%83%BD%E6%AD%A3%E5%B8%B8%E8%BF%90%E8%A1%8C%E3%80%82">http://192.168.149.220:8848/nacos，输入用户名和密码（默认用户名和密码均为nacos），查看集群状态，确保三个节点都正常运行。</a><br><img data-src="/2020/0228210741/ge1.png"><br>设置Nacos开机自启动<br>每台机器上创建 systemd 服务文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/systemd/system/nacos.service</span><br><span class="line">编辑服务文件`nacos.service`</span><br><span class="line">[Unit]</span><br><span class="line">Description=Nacos Server</span><br><span class="line">After=network.target</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line">Type=forking</span><br><span class="line">User=root</span><br><span class="line">Group=root</span><br><span class="line">ExecStart=/usr/local/nacos/nacos/bin/startup.sh</span><br><span class="line">ExecStop=/usr/local/nacos/nacos/bin/shutdown.sh</span><br><span class="line">Restart=on-failure</span><br><span class="line">LimitNOFILE=65536</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br><span class="line">重新加载配置，启动nacos, 设置开机自启动</span><br><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl enable nacos</span><br><span class="line">systemctl start nacos</span><br></pre></td></tr></table></figure>
     </div>
 
     
@@ -333,7 +320,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://pcj600.github.io/2024/0905201723.html" title="[MicroK8s] Unable to connect to the server: x509: certificate has expired or is not yet valid 问题定位案例">https://pcj600.github.io/2024/0905201723.html</a>
+    <a href="https://pcj600.github.io/2025/0606102212.html" title="Nacos 2.5.0 集群部署">https://pcj600.github.io/2025/0606102212.html</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
@@ -343,10 +330,6 @@
 
 
       <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/troubleshooting/" rel="tag"><i class="fa fa-tag"></i> troubleshooting</a>
-              <a href="/tags/Kubernetes/" rel="tag"><i class="fa fa-tag"></i> Kubernetes</a>
-          </div>
 
         
 
@@ -354,13 +337,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2024/0904203111.html" rel="prev" title="Microk8s ingress启动失败, 10254端口被占用问题定位">
-      <i class="fa fa-chevron-left"></i> Microk8s ingress启动失败, 10254端口被占用问题定位
+    <a href="/2025/0603163025.html" rel="prev" title="EMQX 社区版单机和集群部署">
+      <i class="fa fa-chevron-left"></i> EMQX 社区版单机和集群部署
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2024/0912211401.html" rel="next" title="iptables单个multiport规则最多只能指定15个端口问题的解决方法">
-      iptables单个multiport规则最多只能指定15个端口问题的解决方法 <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -419,7 +399,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">问题描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">定位过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">解决方法</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">环境初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">安装Nacos</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">启动Nacos集群</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

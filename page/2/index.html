@@ -133,7 +133,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">188</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">189</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -192,6 +192,109 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0320222352.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0320222352.html" class="post-title-link" itemprop="url">kubeadm+keepalived+HAproxy搭建高可用kubernetes集群(三主三从两LB)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-03-20 22:23:52" itemprop="dateCreated datePublished" datetime="2025-03-20T22:23:52+08:00">2025-03-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>38k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>34 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="集群规划"><a href="#集群规划" class="headerlink" title="集群规划"></a>集群规划</h1><p>8台Linux虚拟机, Rocky Linux 9.5 x86_64 </p>
+<ul>
+<li>主节点(3个): 2CPU, 3G内存, 20G硬盘</li>
+<li>工作节点(2个): 2CPU, 3G内存, 20G硬盘</li>
+<li>LB(2个): 1CPU, 2G内存, 10G硬盘</li>
+</ul>
+<p><img data-src="/2025/0320222352/image1.png"></p>
+<p>各个机器IP、主机名、角色如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">192.168.52.91 k8s-master1 主节点1</span><br><span class="line">192.168.52.92 k8s-master2 主节点2</span><br><span class="line">192.168.52.93 k8s-master3 主节点3</span><br><span class="line"></span><br><span class="line">192.168.52.101 k8s-slave1 从节点1</span><br><span class="line">192.168.52.102 k8s-slave2 从节点2</span><br><span class="line">192.168.52.103 k8s-slave3 从节点3</span><br><span class="line"></span><br><span class="line">192.168.52.80 k8s-lb1 HAProxy</span><br><span class="line">192.168.52.81 k8s-lb2 HAProxy</span><br><span class="line">192.168.52.88 www.petertest.com Virtual IP(VIP)</span><br></pre></td></tr></table></figure>
+
+<p>以下分步搭建kubernetes集群</p>
+<ul>
+<li>搭建一主一从集群</li>
+<li>添加负载均衡(HAProxy)</li>
+<li>搭建三主三从集群(三主三从两LB)</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0320222352.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1076,102 +1179,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0205201812.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2025/0205201812.html" class="post-title-link" itemprop="url">RabbitMQ入门教程</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2025-02-05 20:18:12" itemprop="dateCreated datePublished" datetime="2025-02-05T20:18:12+08:00">2025-02-05</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/RabbitMQ/" itemprop="url" rel="index"><span itemprop="name">RabbitMQ</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>19k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>17 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><a href="https://pcj600.github.io/2024/1218212631.html">Linux安装RabbitMQ</a><br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.rabbitmq.com/tutorials/tutorial-one-python">官方教程</a></p>
-<h2 id="1-Hello-RabbitMQ"><a href="#1-Hello-RabbitMQ" class="headerlink" title="1. Hello RabbitMQ"></a>1. Hello RabbitMQ</h2><p>使用Python pika客户端, 写一个简单的生产者和消费者</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Producer ------&gt; Queue -----&gt; Consumer</span><br></pre></td></tr></table></figure>
-<h3 id="编写Producer-send-py"><a href="#编写Producer-send-py" class="headerlink" title="编写Producer(send.py)"></a>编写Producer(send.py)</h3><p>先连接Broker, 建立connection和channel</p>
-<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pika</span><br><span class="line"></span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(<span class="string">&#x27;localhost&#x27;</span>))</span><br><span class="line">channel = connection.channel()</span><br></pre></td></tr></table></figure>
-<p>接着声明一个队列; 在RabbitMQ中，消息不是直接发送到队列，而是先发送到交换机(exchange), 由交换机发送到队列。</p>
-<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">channel.queue_declare(queue=<span class="string">&#x27;hello&#x27;</span>)</span><br></pre></td></tr></table></figure>
-<p>使用basic_publish发送消息。 这里使用默认交换机(‘’), routing_key参数指定为队列名称</p>
-<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">channel.basic_publish(exchange=<span class="string">&#x27;&#x27;</span>, routing_key=<span class="string">&#x27;hello&#x27;</span>, body=<span class="string">&#x27;Hello World!&#x27;</span>)</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2025/0205201812.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1243,7 +1250,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">188</span>
+          <span class="site-state-item-count">189</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1299,12 +1306,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">835k</span>
+    <span title="站点总字数">837k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12:39</span>
+    <span title="站点阅读时长">12:41</span>
 </div>
 
 <!--
