@@ -24,6 +24,41 @@
       </tags>
   </entry>
   <entry>
+    <title>记一次UDP sendto函数错误解决</title>
+    <url>/2020/0329142613.html</url>
+    <content><![CDATA[<h3><span id="问题描述">问题描述</span></h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
+<ul>
+<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
+</li>
+<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
+</li>
+</ul>
+<span id="more"></span>
+
+<h3><span id="解决过程">解决过程</span></h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
+<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
+<h4><span id="总结">总结：</span></h4><ul>
+<li><p>变量使用之前最好初始化。</p>
+</li>
+<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>troubleshooting</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>标准IO库的缓冲模式</title>
     <url>/2020/0322220956.html</url>
     <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>有时候，代码中明明执行了printf语句打印到终端，却没有看到输出的内容。</p>
@@ -75,41 +110,6 @@
       </categories>
       <tags>
         <tag>Linux</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>记一次UDP sendto函数错误解决</title>
-    <url>/2020/0329142613.html</url>
-    <content><![CDATA[<h3><span id="问题描述">问题描述</span></h3><p>在编写使用select函数的TCP和UDP回射程序，出现UDP的sendto错误，现象如下：</p>
-<ul>
-<li><p>服务端正常启动后，调用select函数监听TCP和UDP套接字, 可以正常处理TCP请求。</p>
-</li>
-<li><p>UDP客户端可以连接到服务端，但接收标准输入后无回显，阻塞于recvfrom。</p>
-</li>
-</ul>
-<span id="more"></span>
-
-<h3><span id="解决过程">解决过程</span></h3><p>经排查，发现服务端处理UDP请求的代码有问题，如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span> <span class="title">SA</span>;</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len);</span><br><span class="line">	sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>udp_echo函数，先用recvfrom读取UDP客户端发送的字符串，再使用sendto将该字符串送回客户端。代码中没有判断recvfrom, sendto函数的返回值，为了获取出错信息改写如下:</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">udp_echo</span><span class="params">(<span class="type">int</span> udpfd)</span> &#123;</span><br><span class="line">	<span class="type">int</span> n;</span><br><span class="line">	<span class="type">char</span> recvline[MAXLINE];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">cliaddr</span>;</span></span><br><span class="line">	<span class="type">socklen_t</span> len;</span><br><span class="line">	<span class="keyword">if</span>((n = recvfrom(udpfd, recvline, MAXLINE, <span class="number">0</span>, (SA*)&amp;cliaddr, &amp;len)) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">		err_sys(<span class="string">&quot;recvfrom error&quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span>(sendto(udpfd, recvline, n, <span class="number">0</span>, (SA*)&amp;cliaddr, len) != n) &#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">&quot;error: %s\n&quot;</span>, strerror(errno));</span><br><span class="line">		err_sys(<span class="string">&quot;sendto error&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>再运行程序，输出如下:<br>$ error: Invalid argument<br>$ sendto error</p>
-<p>错误原因在于cliaddr参数没有初始化。<strong>sockaddr_in结构体在使用之前，需要先使用bzero&#x2F;memset函数初始化为0</strong>，否则出现赋值不完整导致参数无效。</p>
-<h4><span id="总结">总结：</span></h4><ul>
-<li><p>变量使用之前最好初始化。</p>
-</li>
-<li><p>注意判断函数的返回值，可以使用包裹函数。</p>
-</li>
-</ul>
-]]></content>
-      <categories>
-        <category>troubleshooting</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>C</tag>
       </tags>
   </entry>
   <entry>
@@ -362,32 +362,6 @@
       </categories>
       <tags>
         <tag>Redis</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>GDB加载so库符号失败的解决方法</title>
-    <url>/2020/0621173409.html</url>
-    <content><![CDATA[<h2><span id="问题现象">问题现象</span></h2><p>gdb调试core文件或进程时，出现加载so库符号失败，错误信息如下</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">warning: Could not load shared library symbols for ../libadd.so</span><br><span class="line">Do you need &quot;set solib-search-path&quot; or &quot;set sysroot&quot;?</span><br></pre></td></tr></table></figure>
-<p>执行<strong>info sharedlibrary</strong>，查看Syms Read字段为No,  表示对应so库符号加载失败。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">pwd</span> /home/gdb</span></span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  No          ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  No          ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">0  0x00007fba2c57266b <span class="keyword">in</span> ?? ()</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">1  0x00007ffc6f703ff0 <span class="keyword">in</span> ?? ()</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-
-<h2><span id="解决方法">解决方法</span></h2><p>设置gdb的<strong>solib-search-path</strong>选项， 指定加载失败的so的搜索路径即可。</p>
-<p>solib-search-path可以指定多个路径。在linux上，路径之间用冒号分隔，命令如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-search-path /var:/home</span><br><span class="line">Reading symbols from ../libadd.so...done.</span><br><span class="line">Loaded symbols for ../libadd.so</span><br><span class="line">Reading symbols from ../../var/libsub.so...done.</span><br><span class="line">Loaded symbols for ../../var/libsub.so</span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  Yes         ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  Yes         ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line">#0  0x00007fba2c57266b in add (a=1, b=2) at add.c:5</span><br><span class="line">#1  0x0000000000400600 in ?? ()</span><br></pre></td></tr></table></figure>
-
-<p>或者设置gdb的<strong>solib-absolute-prefix</strong>选项，指定被搜索so文件路径的前缀， 与solib-search-path区别在于solib-absolute-prefix只能有一个，使用如下gdb指令：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-absolute-prefix /</span><br><span class="line">(gdb) set sysroot /					# sysroot是solib-absolute-prefix的别名</span><br></pre></td></tr></table></figure>
-
-<h2><span id="参考资料">参考资料</span></h2><p><a href="https://visualgdb.com/gdbreference/commands/set_solib-search-path">https://visualgdb.com/gdbreference/commands/set_solib-search-path</a></p>
-]]></content>
-      <categories>
-        <category>GDB</category>
-      </categories>
-      <tags>
-        <tag>GDB</tag>
       </tags>
   </entry>
   <entry>
@@ -853,6 +827,32 @@
       </categories>
       <tags>
         <tag>CSAPP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>GDB加载so库符号失败的解决方法</title>
+    <url>/2020/0621173409.html</url>
+    <content><![CDATA[<h2><span id="问题现象">问题现象</span></h2><p>gdb调试core文件或进程时，出现加载so库符号失败，错误信息如下</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">warning: Could not load shared library symbols for ../libadd.so</span><br><span class="line">Do you need &quot;set solib-search-path&quot; or &quot;set sysroot&quot;?</span><br></pre></td></tr></table></figure>
+<p>执行<strong>info sharedlibrary</strong>，查看Syms Read字段为No,  表示对应so库符号加载失败。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash"><span class="built_in">pwd</span> /home/gdb</span></span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  No          ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  No          ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">0  0x00007fba2c57266b <span class="keyword">in</span> ?? ()</span></span><br><span class="line"><span class="meta prompt_">#</span><span class="language-bash">1  0x00007ffc6f703ff0 <span class="keyword">in</span> ?? ()</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+
+<h2><span id="解决方法">解决方法</span></h2><p>设置gdb的<strong>solib-search-path</strong>选项， 指定加载失败的so的搜索路径即可。</p>
+<p>solib-search-path可以指定多个路径。在linux上，路径之间用冒号分隔，命令如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-search-path /var:/home</span><br><span class="line">Reading symbols from ../libadd.so...done.</span><br><span class="line">Loaded symbols for ../libadd.so</span><br><span class="line">Reading symbols from ../../var/libsub.so...done.</span><br><span class="line">Loaded symbols for ../../var/libsub.so</span><br><span class="line">(gdb) info sharedlibrary</span><br><span class="line">From                To                  Syms Read   Shared Object Library</span><br><span class="line">0x00007fba2c572570  0x00007fba2c57267b  Yes         ../libadd.so</span><br><span class="line">0x00007fba2c370570  0x00007fba2c37066b  Yes         ../../var/libsub.so</span><br><span class="line">(gdb) bt</span><br><span class="line">#0  0x00007fba2c57266b in add (a=1, b=2) at add.c:5</span><br><span class="line">#1  0x0000000000400600 in ?? ()</span><br></pre></td></tr></table></figure>
+
+<p>或者设置gdb的<strong>solib-absolute-prefix</strong>选项，指定被搜索so文件路径的前缀， 与solib-search-path区别在于solib-absolute-prefix只能有一个，使用如下gdb指令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">(gdb) set solib-absolute-prefix /</span><br><span class="line">(gdb) set sysroot /					# sysroot是solib-absolute-prefix的别名</span><br></pre></td></tr></table></figure>
+
+<h2><span id="参考资料">参考资料</span></h2><p><a href="https://visualgdb.com/gdbreference/commands/set_solib-search-path">https://visualgdb.com/gdbreference/commands/set_solib-search-path</a></p>
+]]></content>
+      <categories>
+        <category>GDB</category>
+      </categories>
+      <tags>
+        <tag>GDB</tag>
       </tags>
   </entry>
   <entry>
@@ -3838,6 +3838,147 @@
       </tags>
   </entry>
   <entry>
+    <title>2022 Trend Micro 社招面经</title>
+    <url>/2022/0320205239.html</url>
+    <content><![CDATA[<h2><span id="个人信息">个人信息</span></h2><ul>
+<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
+<li>2022-02-25 官网投递简历，职位：Linux开发</li>
+</ul>
+<h2><span id="面试流程">面试流程</span></h2><span id="more"></span>
+
+<h3><span id="机试">机试</span></h3><p>时间：2022-02-27 19:00:00</p>
+<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
+<ul>
+<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
+</li>
+<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
+</li>
+</ul>
+<h3><span id="技术一面">技术一面</span></h3><p>时间：2022-03-03 12:00:00</p>
+<p>线上面试，用的微软Teams，二对一，80min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>问项目（30min）</p>
+<ul>
+<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
+<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
+<li>举一个项目中你遇到的难题，如何解决的</li>
+<li>你的项目中为什么用Redis，不用MySQL</li>
+<li>……</li>
+</ul>
+</li>
+<li><p>1道编程题 （15min）</p>
+<ul>
+<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
+</ul>
+</li>
+<li><p>技术问题（25min）</p>
+<ul>
+<li>给每个中国人分一个IP地址，够分吗</li>
+<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
+<li>后台服务变慢，谈谈你的定位思路</li>
+<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
+<li>Redis过期键的实现原理，过期时间怎么存储的</li>
+<li>Redis缓存逐出策略</li>
+<li>全中国人的数据能放到一张MySQL表里吗</li>
+<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
+<li>Linux下如何定时备份一个文件</li>
+</ul>
+</li>
+<li><p>其它问题（10min）</p>
+<ul>
+<li>同事对你的评价</li>
+<li>你的缺点是什么</li>
+<li>同事觉得你有什么阴暗面</li>
+<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
+</ul>
+</li>
+</ul>
+<h3><span id="技术二面">技术二面</span></h3><p>时间：2022-03-04 12:15:00</p>
+<p>现场面试，二对一，50min</p>
+<ul>
+<li><p>中文自我介绍</p>
+</li>
+<li><p>简单问项目（10min）</p>
+</li>
+<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
+</li>
+<li><p>你在项目组里还负责了哪些项目和工作</p>
+</li>
+<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
+</li>
+<li><p>你平时用到的开发工具和编程语言</p>
+</li>
+<li><p>说下你的团队成员组成</p>
+</li>
+<li><p>说说你最近在看的书</p>
+</li>
+<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
+<ul>
+<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
+</ul>
+</li>
+<li><p>项目中遇到别人不配合你的工作怎么办</p>
+</li>
+<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
+</li>
+<li><p>评价你同事的水平</p>
+</li>
+<li><p>有没有感觉有技术能力比较弱的同事</p>
+</li>
+<li><p>你还有什么问题（问团队成员组成）</p>
+</li>
+</ul>
+<h3><span id="hr面">HR面</span></h3><p>时间：2022-03-04 13:30:00</p>
+<p>现场面试，一对一，30min</p>
+<ul>
+<li><p>自我介绍</p>
+</li>
+<li><p>为什么选择我们公司，选择这个职位</p>
+</li>
+<li><p>你为什么离职</p>
+</li>
+<li><p>你当初考虑XX公司的原因是什么</p>
+</li>
+<li><p>你有考虑过内部转岗吗</p>
+</li>
+<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
+</li>
+<li><p>你同事对你的评价</p>
+</li>
+<li><p>说说你的优点</p>
+</li>
+<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
+</li>
+</ul>
+<h2><span id="面试感受">面试感受</span></h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
+<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
+<h2><span id="总结和反思">总结和反思</span></h2><ul>
+<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
+<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
+<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
+<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
+</ul>
+<h2><span id="参考资料">参考资料</span></h2><p>以下是准备面试过程中的一些参考资料：</p>
+<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
+<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
+<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
+<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
+<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
+<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
+<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
+<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
+<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
+]]></content>
+      <categories>
+        <category>interview</category>
+      </categories>
+      <tags>
+        <tag>interview</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis发布与订阅源码分析</title>
     <url>/2022/0129204852.html</url>
     <content><![CDATA[<h2><span id="前言">前言</span></h2><p>通过阅读Redis源码，配合GDB和抓包等调试手段，分析Redis发布订阅的实现原理，思考相关问题。</p>
@@ -4093,168 +4234,6 @@
       </tags>
   </entry>
   <entry>
-    <title>2022 Trend Micro 社招面经</title>
-    <url>/2022/0320205239.html</url>
-    <content><![CDATA[<h2><span id="个人信息">个人信息</span></h2><ul>
-<li>985&#x2F;211本科，2年Linux C&#x2F;C++经验</li>
-<li>2022-02-25 官网投递简历，职位：Linux开发</li>
-</ul>
-<h2><span id="面试流程">面试流程</span></h2><span id="more"></span>
-
-<h3><span id="机试">机试</span></h3><p>时间：2022-02-27 19:00:00</p>
-<p>两道编程题，要求1小时内完成，机试用的是牛客网链接，没有自动补全。题目如下，非常简单：</p>
-<ul>
-<li><p><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock/">LeetCode 121 买卖股票的最佳时机</a> —— 双指针</p>
-</li>
-<li><p><a href="https://leetcode-cn.com/problems/number-of-islands/">LeetCode 200 岛屿数量</a> —— DFS、BFS</p>
-</li>
-</ul>
-<h3><span id="技术一面">技术一面</span></h3><p>时间：2022-03-03 12:00:00</p>
-<p>线上面试，用的微软Teams，二对一，80min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>问项目（30min）</p>
-<ul>
-<li>简单介绍项目（项目名称、背景、目标客户、完成基本事情、做了多久、项目规模、用到技术点）</li>
-<li>问实现细节（背景、难点、如何解决、成果、为什么用这个方案、优化点）</li>
-<li>举一个项目中你遇到的难题，如何解决的</li>
-<li>你的项目中为什么用Redis，不用MySQL</li>
-<li>……</li>
-</ul>
-</li>
-<li><p>1道编程题 （15min）</p>
-<ul>
-<li>编写程序，生成长度为N的随机字符串，求最长的合法字母子串</li>
-</ul>
-</li>
-<li><p>技术问题（25min）</p>
-<ul>
-<li>给每个中国人分一个IP地址，够分吗</li>
-<li>TCP相比UDP来说是可靠的，这种说法对吗</li>
-<li>后台服务变慢，谈谈你的定位思路</li>
-<li>Linux进程内存布局（Text, Data, BSS, Stack, Heap …）</li>
-<li>Redis过期键的实现原理，过期时间怎么存储的</li>
-<li>Redis缓存逐出策略</li>
-<li>全中国人的数据能放到一张MySQL表里吗</li>
-<li>MySQL中，人名用什么类型存储，住址用什么类型存储</li>
-<li>Linux下如何定时备份一个文件</li>
-</ul>
-</li>
-<li><p>其它问题（10min）</p>
-<ul>
-<li>同事对你的评价</li>
-<li>你的缺点是什么</li>
-<li>同事觉得你有什么阴暗面</li>
-<li>你还有什么要问的？（问前期负责哪些工作内容）</li>
-</ul>
-</li>
-</ul>
-<h3><span id="技术二面">技术二面</span></h3><p>时间：2022-03-04 12:15:00</p>
-<p>现场面试，二对一，50min</p>
-<ul>
-<li><p>中文自我介绍</p>
-</li>
-<li><p>简单问项目（10min）</p>
-</li>
-<li><p>什么是僵尸进程，什么条件会出现？（没答好，把僵尸进程和孤儿进程混为一谈了~）</p>
-</li>
-<li><p>你在项目组里还负责了哪些项目和工作</p>
-</li>
-<li><p>你为什么说离职是因为学不到新技术呢（挖离职原因）</p>
-</li>
-<li><p>你平时用到的开发工具和编程语言</p>
-</li>
-<li><p>说下你的团队成员组成</p>
-</li>
-<li><p>说说你最近在看的书</p>
-</li>
-<li><p>你的机试两题都做对了，平时是经常刷题吗？来简单做1道题吧 （15min，没做出来…）</p>
-<ul>
-<li><a href="https://leetcode-cn.com/problems/pile-box-lcci/">Hard 堆箱子</a>   —— 动态规划、最长上升子序列</li>
-</ul>
-</li>
-<li><p>项目中遇到别人不配合你的工作怎么办</p>
-</li>
-<li><p>你在项目中怎么合作的，怎么跨部门合作的</p>
-</li>
-<li><p>评价你同事的水平</p>
-</li>
-<li><p>有没有感觉有技术能力比较弱的同事</p>
-</li>
-<li><p>你还有什么问题（问团队成员组成）</p>
-</li>
-</ul>
-<h3><span id="hr面">HR面</span></h3><p>时间：2022-03-04 13:30:00</p>
-<p>现场面试，一对一，30min</p>
-<ul>
-<li><p>自我介绍</p>
-</li>
-<li><p>为什么选择我们公司，选择这个职位</p>
-</li>
-<li><p>你为什么离职</p>
-</li>
-<li><p>你当初考虑XX公司的原因是什么</p>
-</li>
-<li><p>你有考虑过内部转岗吗</p>
-</li>
-<li><p>你的期望薪酬（问薪酬结构，福利待遇）</p>
-</li>
-<li><p>你同事对你的评价</p>
-</li>
-<li><p>说说你的优点</p>
-</li>
-<li><p>你还有什么问题？（问晋升机制，职位空缺原因）</p>
-</li>
-</ul>
-<h2><span id="面试感受">面试感受</span></h2><p>趋势的面试效率很高，从投递简历到拿到offer在2周内完成</p>
-<p>全程接触的面试官、HR都很nice，整个过程是一个平等的对话交流，体验很好</p>
-<h2><span id="总结和反思">总结和反思</span></h2><ul>
-<li>永远不要等自己觉得完全准备好了再投递简历。本身面试运气成分就很大，而且机会稍纵即逝，等你觉得完全准备好了，可能岗位都已经没HC了</li>
-<li>遇到不会的技术问题不要不懂装懂，可以说自己的项目没涉及这方面。因为面试官看你一知半解就会把你问到不会为止~</li>
-<li>对算法题的重视程度不够（一道常见DP都没做出来~）。如果是短期准备面试，刷题方法可参考：<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></li>
-<li>八股文没怎么准备。背八股文就像考前突击应试，虽然大家都很讨厌做这个事，但不得不承认它的确对面试有帮助。。。</li>
-</ul>
-<h2><span id="参考资料">参考资料</span></h2><p>以下是准备面试过程中的一些参考资料：</p>
-<p>【1】<a href="https://zhuanlan.zhihu.com/p/349940945">Leetcode面试高频题分类刷题总结</a></p>
-<p>【2】<a href="https://github.com/huihut/interview">C&#x2F;C++ 技术面试（八股文）</a></p>
-<p>【3】<a href="https://github.com/0voice/interview_internal_reference">2021年最新总结，阿里，腾讯，百度，美团，头条等技术面试题目，以及答案</a></p>
-<p>【3】<a href="https://cloud.tencent.com/developer/article/1785952">10 个 GitHub 上最火的程序员简历项目</a></p>
-<p>【4】<a href="https://blog.csdn.net/icecoola_/article/details/78677435">程序员自我介绍</a></p>
-<p>【5】<a href="https://yongluo2013.github.io/questions-for-english-interview/">外企面试最常见的36个英文问题</a></p>
-<p>【6】<a href="https://www.zhihu.com/question/60591411">面试时问到我的项目经历，是在问我什么呢？</a></p>
-<p>【7】<a href="https://zhuanlan.zhihu.com/p/87908851">HR面试70问</a></p>
-<p>【8】<a href="https://github.com/formulahendry/955.WLB">955.WLB</a></p>
-]]></content>
-      <categories>
-        <category>interview</category>
-      </categories>
-      <tags>
-        <tag>interview</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>tar打包时去掉目录前缀的方法</title>
-    <url>/2022/0604205633.html</url>
-    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
-<h2><span id="如果我打包时不想带上文件路径怎么操作">如果我打包时不想带上文件路径，怎么操作？</span></h2><span id="more"></span>
-
-<p>利用-C参数，方法如下：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
-
-<p>tar用法参考手册：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>tar</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Kubernetes删除namespace失败, 陷入Terminating状态解决方法</title>
     <url>/2022/1106205828.html</url>
     <content><![CDATA[<h2><span id="先尝试强制删除deployment和pod等资源">先尝试强制删除deployment和pod等资源</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n $&#123;ns&#125; delete deployment --all --force</span><br><span class="line">kubectl -n $&#123;ns&#125; delete pod --all --force</span><br></pre></td></tr></table></figure>
@@ -4278,6 +4257,27 @@
       </categories>
       <tags>
         <tag>Kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>tar打包时去掉目录前缀的方法</title>
+    <url>/2022/0604205633.html</url>
+    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>tar命令打包时，默认会带上文件路径，举例如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tree</span></span><br><span class="line">.</span><br><span class="line">├── dir1</span><br><span class="line">│   └── file1.txt</span><br><span class="line">└── dir2</span><br><span class="line">    ├── dir3</span><br><span class="line">    │   └── file3.txt</span><br><span class="line">    └── file2.txt</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar zcf hello.tar.gz ./*</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:20 ./dir1/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir1/file1.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 ./dir2/file2.txt</span><br><span class="line">drwxr-xr-x root/root         0 2022-06-03 23:30 ./dir2/dir3/</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 ./dir2/dir3/file3.txt</span><br></pre></td></tr></table></figure>
+<h2><span id="如果我打包时不想带上文件路径怎么操作">如果我打包时不想带上文件路径，怎么操作？</span></h2><span id="more"></span>
+
+<p>利用-C参数，方法如下：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar -zcf hello.tar.gz -C dir1/ file1.txt -C ../dir2/ file2.txt -C dir3/ file3.txt</span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">tar tvf hello.tar.gz</span></span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file1.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:20 file2.txt</span><br><span class="line">-rw-r--r-- root/root         0 2022-06-03 23:30 file3.txt</span><br></pre></td></tr></table></figure>
+
+<p>tar用法参考手册：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar --help</span><br><span class="line">Local file selection:</span><br><span class="line">-C, --directory=DIR        change to directory DIR</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>tar</tag>
       </tags>
   </entry>
   <entry>
@@ -4428,24 +4428,6 @@
       </tags>
   </entry>
   <entry>
-    <title>crontab执行失败返回127的原因和解决方法</title>
-    <url>/2023/0508212643.html</url>
-    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
-<h2><span id="解决方法">解决方法</span></h2><p>添加PATH，在脚本里添加如下：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-<h2><span id="参考资料">参考资料</span></h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-      <tags>
-        <tag>Linux</tag>
-        <tag>troubleshooting</tag>
-        <tag>crontab</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>pip3只下载不安装以及离线安装的方法</title>
     <url>/2023/0508213050.html</url>
     <content><![CDATA[<h3><span id="只下载不安装">只下载不安装</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip3 download kubernetes -d $&#123;folder&#125;</span><br></pre></td></tr></table></figure>
@@ -4463,6 +4445,24 @@
       </categories>
       <tags>
         <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>crontab执行失败返回127的原因和解决方法</title>
+    <url>/2023/0508212643.html</url>
+    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>用<code>crontab</code>执行自己编写的Shell脚本报错，<code>iptables</code>命令返回127(command not found) ，在后台手动执行脚本是正常的。</p>
+<h2><span id="解决方法">解决方法</span></h2><p>添加PATH，在脚本里添加如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=/usr/sbin/:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+<h2><span id="参考资料">参考资料</span></h2><p><a href="https://blog.csdn.net/qq_36588424/article/details/127549734">https://blog.csdn.net/qq_36588424&#x2F;article&#x2F;details&#x2F;127549734</a></p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+        <tag>troubleshooting</tag>
+        <tag>crontab</tag>
       </tags>
   </entry>
   <entry>
@@ -5784,35 +5784,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>掌握夜市委托，出货快人一步</title>
-    <url>/2024/0519204136.html</url>
-    <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
-<span id="more"></span>
-
-<p><img data-src="/2024/0519204136/image1.png"></p>
-<p>4月25日，场内新增的申购份额有3318万份，但成交额只有228万，只有不到10%的套利党成功出货。我当天成功出掉一组拖拉机，直接白捡 (1.099-0.924)&#x2F;0.924<em>100</em>7&#x3D;132元</p>
-<p>那么，如何成为这顺利吃肉的10%呢？这里我给大家分享两个知识点，教大家今后如何在赌场里捞这种钱。</p>
-<h2><span id="1-利用夜市委托规则提前占座">1. 利用夜市委托规则，提前占座</span></h2><p>首先，我们要明白A股的交易规则是“价格优先，时间优先”。<font color="red"><strong>价格优先意味着低价卖出的申报会优先成交；而时间优先则意味着在价格相同时，谁挂单早谁就先成交。</strong></font></p>
-<p><strong>那么，什么是夜市委托呢？简单说，就是在前一个交易日晚上清算后，提前进行第二个交易日的委托</strong>。这样，你就可以在其他人还在睡梦中时，就已经占好了位置，等待开盘后的成交。</p>
-<p>夜市委托的开始时间因券商而异，以我常用的华B来说，通常在前一个交易日的17点30分左右开始。</p>
-<p>接下来，以黄金LOF（161116）为例，来说说夜市委托的具体操作：</p>
-<ul>
-<li><p>在24日19点左右（具体时间因券商而异）, 你能查到22日申购的份额到达持仓, 成本价0.924。<font color="red">*<em>到达持仓后立刻挂跌停单，跌停价为24日收盘价1.221的90%，再四舍五入到小数点后三位。比如, 1.221</em>0.9&#x3D;1.0989，你的卖出价就设为1.099</font>**。注意，这里价格千万不能输错，多一分钱你卖不掉，少一分钱算无效单！</p>
-</li>
-<li><p><font color="red"><strong>在25日14点57分前，手动撤掉所有未卖出的委托单。等到17点30分，找一个安静的地方坐下来，拿出手机，使出单身二十多年的手速，疯狂刷跌停单，跌停价输入1.099*0.9&#x3D;0.989</strong></font>。直到系统不再提示”此时间段不允许委托”，再把其他账号一个个全都挂上去。</p>
-</li>
-</ul>
-<h2><span id="2-选择不拥挤的券商人多的地方你别去">2. 选择不拥挤的券商，人多的地方你别去</span></h2><p>某些网红券商因为聚集了大量的套利用户，交易通道极其拥堵，出货机会渺茫。根据朋友们的反馈，用了华B的很多都顺利出货了，而用了YH的很多都没跑掉。如果你没有跑掉，那再高的溢价都是镜花水月，你的所有操作，就是白忙活，纯纯给券商贡献利润。</p>
-<h2><span id="最后做个交易记录小结">最后做个交易记录小结</span></h2><p>4.22日起连续申购3天，到4.29日全部卖出，盈利合计252元。<br><img data-src="/2024/0519204136/image2.png"></p>
-]]></content>
-      <categories>
-        <category>investment</category>
-      </categories>
-      <tags>
-        <tag>investment</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>iptables规则转换为nftables的方法</title>
     <url>/2024/0521205000.html</url>
     <content><![CDATA[<p>使用预装的<code>iptables-translate</code>程序即可，例如：</p>
@@ -5857,6 +5828,35 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>troubleshooting</tag>
         <tag>Kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>掌握夜市委托，出货快人一步</title>
+    <url>/2024/0519204136.html</url>
+    <content><![CDATA[<p>4月22日，黄金LOF（161116）开放申购，限额100元，场内溢价42%，22日场内申购的份额在25日可以卖出。</p>
+<span id="more"></span>
+
+<p><img data-src="/2024/0519204136/image1.png"></p>
+<p>4月25日，场内新增的申购份额有3318万份，但成交额只有228万，只有不到10%的套利党成功出货。我当天成功出掉一组拖拉机，直接白捡 (1.099-0.924)&#x2F;0.924<em>100</em>7&#x3D;132元</p>
+<p>那么，如何成为这顺利吃肉的10%呢？这里我给大家分享两个知识点，教大家今后如何在赌场里捞这种钱。</p>
+<h2><span id="1-利用夜市委托规则提前占座">1. 利用夜市委托规则，提前占座</span></h2><p>首先，我们要明白A股的交易规则是“价格优先，时间优先”。<font color="red"><strong>价格优先意味着低价卖出的申报会优先成交；而时间优先则意味着在价格相同时，谁挂单早谁就先成交。</strong></font></p>
+<p><strong>那么，什么是夜市委托呢？简单说，就是在前一个交易日晚上清算后，提前进行第二个交易日的委托</strong>。这样，你就可以在其他人还在睡梦中时，就已经占好了位置，等待开盘后的成交。</p>
+<p>夜市委托的开始时间因券商而异，以我常用的华B来说，通常在前一个交易日的17点30分左右开始。</p>
+<p>接下来，以黄金LOF（161116）为例，来说说夜市委托的具体操作：</p>
+<ul>
+<li><p>在24日19点左右（具体时间因券商而异）, 你能查到22日申购的份额到达持仓, 成本价0.924。<font color="red">*<em>到达持仓后立刻挂跌停单，跌停价为24日收盘价1.221的90%，再四舍五入到小数点后三位。比如, 1.221</em>0.9&#x3D;1.0989，你的卖出价就设为1.099</font>**。注意，这里价格千万不能输错，多一分钱你卖不掉，少一分钱算无效单！</p>
+</li>
+<li><p><font color="red"><strong>在25日14点57分前，手动撤掉所有未卖出的委托单。等到17点30分，找一个安静的地方坐下来，拿出手机，使出单身二十多年的手速，疯狂刷跌停单，跌停价输入1.099*0.9&#x3D;0.989</strong></font>。直到系统不再提示”此时间段不允许委托”，再把其他账号一个个全都挂上去。</p>
+</li>
+</ul>
+<h2><span id="2-选择不拥挤的券商人多的地方你别去">2. 选择不拥挤的券商，人多的地方你别去</span></h2><p>某些网红券商因为聚集了大量的套利用户，交易通道极其拥堵，出货机会渺茫。根据朋友们的反馈，用了华B的很多都顺利出货了，而用了YH的很多都没跑掉。如果你没有跑掉，那再高的溢价都是镜花水月，你的所有操作，就是白忙活，纯纯给券商贡献利润。</p>
+<h2><span id="最后做个交易记录小结">最后做个交易记录小结</span></h2><p>4.22日起连续申购3天，到4.29日全部卖出，盈利合计252元。<br><img data-src="/2024/0519204136/image2.png"></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -6728,30 +6728,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
-    <url>/2024/0916170317.html</url>
-    <content><![CDATA[<h2><span id="环境">环境</span></h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
-<h2><span id="安装mysqlclient报错">安装mysqlclient报错</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
-<p>报错：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2><span id="解决方法">解决方法</span></h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm -i mysql84-community-release-el9-1.noarch.rpm</span><br><span class="line">yum install -y python3-devel mysql-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
-<p><code>pip list</code> 命令查看已安装的mysqlclient信息</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip list  | grep mysqlclient</span><br><span class="line">mysqlclient         2.2.4</span><br></pre></td></tr></table></figure>
-
-<h2><span id="参考">参考</span></h2><p><a href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
-]]></content>
-      <categories>
-        <category>Django</category>
-      </categories>
-      <tags>
-        <tag>Django</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>在RHEL9上安装MySQL</title>
     <url>/2024/0916144756.html</url>
     <content><![CDATA[<h2><span id="安装并启动mysql">安装并启动MySQL</span></h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">dnf install -y mysql-server</span><br><span class="line">systemctl start mysqld.service</span><br></pre></td></tr></table></figure>
@@ -7097,6 +7073,30 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> django.utils.deprecation <span class="keyword">import</span> MiddlewareMixin</span><br><span class="line"><span class="keyword">from</span> django.shortcuts <span class="keyword">import</span> HttpResponse, redirect</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">AuthMiddleWare</span>(<span class="title class_ inherited__">MiddlewareMixin</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">process_request</span>(<span class="params">self, request</span>):</span><br><span class="line">        <span class="comment"># 注意：对于无需登录就应该访问的页面，不要做鉴权，否则会循环重定向</span></span><br><span class="line">        <span class="keyword">if</span> request.path_info == <span class="string">&quot;/login/&quot;</span>:</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">        info_dict = request.session.get(<span class="string">&quot;info&quot;</span>)</span><br><span class="line">        <span class="built_in">print</span>(info_dict)</span><br><span class="line">        <span class="keyword">if</span> info_dict:</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="keyword">return</span> redirect(<span class="string">&quot;/login/&quot;</span>)</span><br><span class="line">		</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">process_response</span>(<span class="params">self,request, response</span>):</span><br><span class="line">        <span class="built_in">print</span>(<span class="string">&#x27;M1 gone&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> response</span><br></pre></td></tr></table></figure>
 <p>settings.py</p>
 <figure class="highlight py"><table><tr><td class="code"><pre><span class="line">MIDDLEWARE = [</span><br><span class="line">	<span class="string">&#x27;app01.middleware.auth.M1&#x27;</span>,</span><br><span class="line">	<span class="string">&#x27;app01.middleware.auth.M2&#x27;</span>,</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Django</category>
+      </categories>
+      <tags>
+        <tag>Django</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Rocky Linux 9安装mysqlclient库报错的解决方法</title>
+    <url>/2024/0916170317.html</url>
+    <content><![CDATA[<h2><span id="环境">环境</span></h2><p>VMware Rocky Linux 9.4 MySQL 8.0</p>
+<h2><span id="安装mysqlclient报错">安装mysqlclient报错</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install python3-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+<p>报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Downloading http://mirrors.aliyun.com/pypi/packages/37/fb/d9a8f763c84f1e789c027af0ffc7dbf94c9a38db961484f253f0552cbb47/mysqlclient-2.2.1.tar.gz (89 kB)</span><br><span class="line">     |████████████████████████████████| 89 kB 80.1 MB/s</span><br><span class="line">  Installing build dependencies ... done</span><br><span class="line">  Getting requirements to build wheel ... error</span><br><span class="line">  ERROR: Command errored out with exit status 1:</span><br><span class="line">   command: /usr/bin/python3 /usr/lib/python3.9/site-packages/pip/_vendor/pep517/in_process/_in_process.py get_requires_for_build_wheel /tmp/tmp5fvp1dau</span><br><span class="line">       cwd: /tmp/pip-install-1nnewfot/mysqlclient_93347d191d2942c8b2bb37681a22fd09</span><br><span class="line">  Exception: Can not find valid pkg-config name.</span><br><span class="line">  Specify MYSQLCLIENT_CFLAGS and MYSQLCLIENT_LDFLAGS env vars manually</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2><span id="解决方法">解决方法</span></h2><p>需要先安装mysql-devel这个RPM包，再用pip安装mysqlclient，操作如下：<br>在 <a href="https://dev.mysql.com/downloads/repo/yum/">https://dev.mysql.com/downloads/repo/yum/</a> 找到MySQL 8.0版本对应的<code>mysql84-community-release-el9-1.noarch.rpm</code>，把这个RPM包拷到VM里手动安装</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">rpm -i mysql84-community-release-el9-1.noarch.rpm</span><br><span class="line">yum install -y python3-devel mysql-devel</span><br><span class="line">pip3 install mysqlclient</span><br></pre></td></tr></table></figure>
+<p><code>pip list</code> 命令查看已安装的mysqlclient信息</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">pip list  | grep mysqlclient</span><br><span class="line">mysqlclient         2.2.4</span><br></pre></td></tr></table></figure>
+
+<h2><span id="参考">参考</span></h2><p><a href="https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu">https://stackoverflow.com/questions/76585758/mysqlclient-cannot-install-via-pip-cannot-find-pkg-config-name-in-ubuntu</a></p>
 ]]></content>
       <categories>
         <category>Django</category>
@@ -8169,39 +8169,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Docker安装教程</title>
-    <url>/2024/1017195632.html</url>
-    <content><![CDATA[<h1><span id="在rocky-linux-9上安装docker">在Rocky Linux 9上安装Docker</span></h1><h2><span id="添加docker-repo-更新源-安装docker-ce">添加docker repo, 更新源, 安装docker-ce</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
-
-<h2><span id="启动docker">启动docker</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<span id="more"></span>
-
-<h2><span id="查看docker版本">查看docker版本</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
-
-<h2><span id="下载镜像">下载镜像</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
-
-<h1><span id="在centos7上安装docker">在Centos7上安装Docker</span></h1><h2><span id="移除旧版本docker">移除旧版本Docker</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
-
-<h2><span id="安装依赖">安装依赖</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
-
-<h2><span id="添加docker存储库">添加Docker存储库</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
-<h2><span id="安装docker">安装Docker</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
-
-<h2><span id="启动docker服务">启动Docker服务</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
-
-<h2><span id="查看docker版本">查看Docker版本</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
-
-<h2><span id="参考">参考</span></h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
-]]></content>
-      <categories>
-        <category>Docker</category>
-      </categories>
-      <tags>
-        <tag>Docker</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>MySQL进阶</title>
     <url>/2024/1016215805.html</url>
     <content><![CDATA[<h2><span id="体系结构">体系结构</span></h2><p>连接层 -&gt; 服务层 -&gt; 引擎层 —&gt; 存储层</p>
@@ -8926,6 +8893,39 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>Docker安装教程</title>
+    <url>/2024/1017195632.html</url>
+    <content><![CDATA[<h1><span id="在rocky-linux-9上安装docker">在Rocky Linux 9上安装Docker</span></h1><h2><span id="添加docker-repo-更新源-安装docker-ce">添加docker repo, 更新源, 安装docker-ce</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line">sed -i &#x27;s+https://download.docker.com+https://mirrors.tuna.tsinghua.edu.cn/docker-ce+&#x27; /etc/yum.repos.d/docker-ce.repo # 使用国内源</span><br><span class="line">dnf update</span><br><span class="line">dnf install -y docker-ce</span><br></pre></td></tr></table></figure>
+
+<h2><span id="启动docker">启动docker</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2><span id="查看docker版本">查看docker版本</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker version</span><br><span class="line">Client: Docker Engine - Community</span><br><span class="line"> Version:           27.3.1</span><br></pre></td></tr></table></figure>
+
+<h2><span id="下载镜像">下载镜像</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull rockylinux:9.3</span><br></pre></td></tr></table></figure>
+
+<h1><span id="在centos7上安装docker">在Centos7上安装Docker</span></h1><h2><span id="移除旧版本docker">移除旧版本Docker</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum remove docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine</span><br></pre></td></tr></table></figure>
+
+<h2><span id="安装依赖">安装依赖</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br></pre></td></tr></table></figure>
+
+<h2><span id="添加docker存储库">添加Docker存储库</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<h2><span id="安装docker">安装Docker</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+
+<h2><span id="启动docker服务">启动Docker服务</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+
+<h2><span id="查看docker版本">查看Docker版本</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker --version</span><br><span class="line">Docker version 25.0.2, build 29cf629</span><br></pre></td></tr></table></figure>
+
+<h2><span id="参考">参考</span></h2><p><a href="https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html">https://www.rockylinux.cn/notes/zai-rocky-linux-9-1-shang-an-zhuang-docker-ce.html</a></p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+      <tags>
+        <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL8.0如何重置密码</title>
     <url>/2024/1017202436.html</url>
     <content><![CDATA[<h2><span id="测试环境">测试环境</span></h2><ul>
@@ -9521,32 +9521,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>Nginx文件下载服务器搭建</title>
-    <url>/2024/1117153133.html</url>
-    <content><![CDATA[<h1><span id="nginx文件下载服务器搭建">Nginx文件下载服务器搭建</span></h1><p>80端口启动下载服务器, 下载<code>/var/www/downloads</code>目录下的文件，<code>nginx.conf</code>如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    location /downloads/ &#123;</span><br><span class="line">        root /var/www/downloads;</span><br><span class="line">        autoindex on; # 显示目录</span><br><span class="line">        autoindex_localtime on;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>浏览器中访问，可以查到文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://192.168.52.200/</span><br><span class="line">Index of /</span><br><span class="line">../</span><br><span class="line">1.txt     17-Nov-2024 14:52      0</span><br><span class="line">2.txt     13-Nov-2024 21:44      0</span><br></pre></td></tr></table></figure>
-<span id="more"></span>
-
-<h2><span id="添加登录认证">添加登录认证</span></h2><p>有时我们需要对用户身份进行认证。这里采用basic认证, 方法如下:<br><br>先生成密码文件，用户名admin, 密码123456</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo -n &quot;admin:&quot; &gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">openssl passwd &gt;&gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line"># 输入密码123456</span><br></pre></td></tr></table></figure>
-<p>查看密码文件</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">admin:$1$6ptGV8Fm$781jZKRgxV8wB.HtyTSdk.</span><br></pre></td></tr></table></figure>
-<p>修改nginx.conf，添加auth配置</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line"></span><br><span class="line">    auth_basic &quot;Restricted site&quot;;</span><br><span class="line">    auth_basic_user_file /etc/nginx/conf.d/.nginx_http_passwd;</span><br><span class="line">    # ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>重启Nginx，通过浏览器测试，此时会要求用户输入用户名和密码。</p>
-<h2><span id="参考">参考</span></h2><p><a href="https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html">https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html</a></p>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-      <tags>
-        <tag>Nginx</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Nginx中的location配置</title>
     <url>/2024/1117141829.html</url>
     <content><![CDATA[<p>Nginx的location配置，用于定义请求的URI和服务器响应之间的对应关系。</p>
@@ -9620,6 +9594,32 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    # 精确匹配</span><br><span class="line">    location = / &#123;</span><br><span class="line">        # 配置...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    # 前缀匹配</span><br><span class="line">    location /static/ &#123;</span><br><span class="line">        # 配置...</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    # 正则匹配</span><br><span class="line">    location ~* \.(jpg|jpeg|png)$ &#123;</span><br><span class="line">        # 配置...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h2><span id="参考">参考</span></h2><p>【1】<a href="https://juejin.cn/post/6908623305129852942">https://juejin.cn/post/6908623305129852942</a><br>【2】<a href="https://juejin.cn/post/7048952689601806366">https://juejin.cn/post/7048952689601806366</a></p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>Nginx</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Nginx文件下载服务器搭建</title>
+    <url>/2024/1117153133.html</url>
+    <content><![CDATA[<h1><span id="nginx文件下载服务器搭建">Nginx文件下载服务器搭建</span></h1><p>80端口启动下载服务器, 下载<code>/var/www/downloads</code>目录下的文件，<code>nginx.conf</code>如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    location /downloads/ &#123;</span><br><span class="line">        root /var/www/downloads;</span><br><span class="line">        autoindex on; # 显示目录</span><br><span class="line">        autoindex_localtime on;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>浏览器中访问，可以查到文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">http://192.168.52.200/</span><br><span class="line">Index of /</span><br><span class="line">../</span><br><span class="line">1.txt     17-Nov-2024 14:52      0</span><br><span class="line">2.txt     13-Nov-2024 21:44      0</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h2><span id="添加登录认证">添加登录认证</span></h2><p>有时我们需要对用户身份进行认证。这里采用basic认证, 方法如下:<br><br>先生成密码文件，用户名admin, 密码123456</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">echo -n &quot;admin:&quot; &gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">openssl passwd &gt;&gt; /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line"># 输入密码123456</span><br></pre></td></tr></table></figure>
+<p>查看密码文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cat /etc/nginx/conf.d/.nginx_http_passwd</span><br><span class="line">admin:$1$6ptGV8Fm$781jZKRgxV8wB.HtyTSdk.</span><br></pre></td></tr></table></figure>
+<p>修改nginx.conf，添加auth配置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line"></span><br><span class="line">    auth_basic &quot;Restricted site&quot;;</span><br><span class="line">    auth_basic_user_file /etc/nginx/conf.d/.nginx_http_passwd;</span><br><span class="line">    # ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>重启Nginx，通过浏览器测试，此时会要求用户输入用户名和密码。</p>
+<h2><span id="参考">参考</span></h2><p><a href="https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html">https://zhuleichina.github.io/2019/12/12/%E5%9F%BA%E4%BA%8Enginx%E7%9A%84%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%8B%E8%BD%BD%E6%9C%8D%E5%8A%A1%E5%99%A8.html</a></p>
 ]]></content>
       <categories>
         <category>Nginx</category>
@@ -10658,20 +10658,6 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>VMware虚拟机CPU不支持AVX指令集，但物理CPU支持</title>
-    <url>/2024/1210195546.html</url>
-    <content><![CDATA[<p>解决方法：<br>把虚拟机关机，编辑虚拟机的CPU设置，将CPU虚拟化设置改为硬件模式，再重启虚拟机后，问题解决。</p>
-<p>参考：<a href="https://blog.csdn.net/hzgnet2021/article/details/134925349">https://blog.csdn.net/hzgnet2021/article/details/134925349</a></p>
-]]></content>
-      <categories>
-        <category>VMware</category>
-      </categories>
-      <tags>
-        <tag>troubleshooting</tag>
-        <tag>VMware</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>给Squid代理添加HTTP basic认证</title>
     <url>/2024/1208150716.html</url>
     <content><![CDATA[<p>HTTP basic认证是一种简单的认证机制，要求用户在请求资源前提供有效的用户名和密码。</p>
@@ -10719,6 +10705,20 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Squid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VMware虚拟机CPU不支持AVX指令集，但物理CPU支持</title>
+    <url>/2024/1210195546.html</url>
+    <content><![CDATA[<p>解决方法：<br>把虚拟机关机，编辑虚拟机的CPU设置，将CPU虚拟化设置改为硬件模式，再重启虚拟机后，问题解决。</p>
+<p>参考：<a href="https://blog.csdn.net/hzgnet2021/article/details/134925349">https://blog.csdn.net/hzgnet2021/article/details/134925349</a></p>
+]]></content>
+      <categories>
+        <category>VMware</category>
+      </categories>
+      <tags>
+        <tag>troubleshooting</tag>
+        <tag>VMware</tag>
       </tags>
   </entry>
   <entry>
@@ -11418,22 +11418,108 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 
 <h1><span id="字典树">字典树</span></h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">struct TrieNode &#123;</span><br><span class="line">    vector&lt;TrieNode *&gt; children;</span><br><span class="line">	bool isWordEnd;</span><br><span class="line">    TrieNode() &#123;</span><br><span class="line">        children.resize(26, nullptr);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">void insert(string word) &#123;</span><br><span class="line">    TrieNode *cur = root;</span><br><span class="line">    for (char ch: word) &#123;</span><br><span class="line">        int idx = ch - &#x27;a&#x27;;</span><br><span class="line">        if (cur-&gt;children[idx] == nullptr) &#123;</span><br><span class="line">            cur-&gt;children[idx] = new TrieNode(ch);</span><br><span class="line">        &#125;</span><br><span class="line">        cur = cur-&gt;children[idx];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">bool startsWith(string prefix) &#123;</span><br><span class="line">    TrieNode *cur = root;</span><br><span class="line">    for (char ch: prefix) &#123;</span><br><span class="line">        int idx = ch - &#x27;a&#x27;;</span><br><span class="line">        if (cur-&gt;children[idx] == nullptr) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        cur = cur-&gt;children[idx];</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h1><span id="单调栈-树状数组">单调栈、树状数组</span></h1><h1><span id="leetcode-python-cheetsheet">LeetCode python CheetSheet</span></h1><h1><span id="自定义排序">自定义排序</span></h1><p>Python匿名函数</p>
-<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="comment"># intervals: List[List[int]])</span></span><br><span class="line">intervals.sort(key=<span class="keyword">lambda</span> p: p[<span class="number">0</span>])</span><br><span class="line">intervals.sort(key=<span class="keyword">lambda</span> p: p[<span class="number">0</span>], reverse=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
-<p>Python命名函数排序</p>
-<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">compare</span>(<span class="params">x, y</span>):</span><br><span class="line">	s1 = <span class="built_in">str</span>(x) + <span class="built_in">str</span>(y)</span><br><span class="line">	s2 = <span class="built_in">str</span>(y) + <span class="built_in">str</span>(x)</span><br><span class="line">	<span class="keyword">if</span> s1 &gt; s2:</span><br><span class="line">		<span class="keyword">return</span> -<span class="number">1</span></span><br><span class="line">	<span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">nums.sort(key=cmp_to_key(compare))</span><br></pre></td></tr></table></figure>
+<h1><span id="单调栈-树状数组">单调栈、树状数组</span></h1><h1><span id="leetcode-python-cheetsheet">LeetCode python CheetSheet</span></h1><h1><span id="列表">列表</span></h1><ul>
+<li><p>初始化</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">v = [1,2,3] </span><br><span class="line">v = [0] * 5 # [0,0,0,0,0]</span><br></pre></td></tr></table></figure></li>
+<li><p>二维列表初始化<br>5行4列, 初始值为0</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">v = [[0 for _ in range(4)] for _ in range(5)]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>末尾追加一个元素</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&gt;&gt;&gt; v.append(4)</span><br><span class="line">&gt;&gt;&gt; v</span><br><span class="line">[1, 2, 3, 4]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>末尾删除一个元素</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&gt;&gt;&gt; v.pop()</span><br><span class="line">&gt;&gt;&gt; v</span><br><span class="line">[1,2,3]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>指定位置插入元素(insert)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&gt;&gt;&gt; v.insert(0, -1) </span><br><span class="line">[-1, 1, 2, 3, 4]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除指定位置的元素(del)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&gt;&gt;&gt; del v[0]</span><br><span class="line">[1, 2, 3, 4]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除指定位置的元素, 并获取被移除元素(pop)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&gt;&gt;&gt; v</span><br><span class="line">[1,3,5,7]</span><br><span class="line">&gt;&gt;&gt; e = v.pop(1)</span><br><span class="line">&gt;&gt;&gt; e</span><br><span class="line">3</span><br><span class="line">&gt;&gt;&gt; v</span><br><span class="line">[1,5,7]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除第一个匹配的元素(remove)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&gt;&gt;&gt; v.remove(2)</span><br><span class="line">[1, 3, 4]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除所有匹配元素</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">&gt;&gt;&gt; v = [1,2,2,3,4,5]</span><br><span class="line">&gt;&gt;&gt; v = [x for x in v if x != 2]</span><br><span class="line">&gt;&gt;&gt; print(v)</span><br><span class="line">[1,3,4,5]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>正向遍历列表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">for item in v:</span><br><span class="line">    print(item)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>倒序遍历列表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">for item in reversed(v):</span><br><span class="line">    print(item)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>按下标遍历列表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">for index in range(len(v)):</span><br><span class="line">    print(v[index])</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>按下标倒序遍历列表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">for idx in range(len(v)-1, -1, -1):</span><br><span class="line">	print(v[idx])</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>正向遍历索引和值</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">for idx, val in enumerate(list):</span><br><span class="line">	print(idx, val)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>注: Python range函数</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">range(start, stop[, step])</span><br><span class="line">* 从start开始, 到stop结束(不包括stop), step为步长, 默认值1)</span><br></pre></td></tr></table></figure>
 
-<h1><span id="遍历list">遍历list</span></h1><p>enumerate正向遍历索引和值</p>
-<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> index,value <span class="keyword">in</span> <span class="built_in">enumerate</span>(<span class="built_in">list</span>):</span><br></pre></td></tr></table></figure>
-<p>range逆序遍历 (起始索引(含)，结束索引(不含), 步长)</p>
-<figure class="highlight py"><table><tr><td class="code"><pre><span class="line"><span class="keyword">for</span> idx <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(nums)-<span class="number">1</span>, -<span class="number">1</span>, -<span class="number">1</span>):</span><br><span class="line">	nums[idx] = ...</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>一个列表追加到另一个列表</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">a = [1,2,3]</span><br><span class="line">b = [4,5,6]</span><br><span class="line">a.extend(b)</span><br><span class="line">print(a)</span><br><span class="line">[1,2,3,4,5,6]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>列表排序</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">v.sort()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>倒序排序</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">v.sort(reverse=True)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>列表排序并去重</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">v = [3,3,2,2,1,1]</span><br><span class="line">sorted_v = sorted(set(v))</span><br><span class="line">print(sorted_v)</span><br><span class="line">[1,2,3]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>自定义排序</p>
+</li>
+</ul>
+<p>lambda表达式</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">points = [[1,3],[-2,2],[5,8],[0,1]]</span><br><span class="line">sorted_points = sorted(points, key=lambda p: p[0]**2 + p[1]**2)</span><br><span class="line">print(sorted_points)</span><br></pre></td></tr></table></figure>
 
-<h1><span id="小根堆">小根堆</span></h1><p>Python heapq默认是小根堆</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class Solution:</span><br><span class="line">    def findKthLargest(self, nums: List[int], k: int) -&gt; int:</span><br><span class="line">        min_heap = []</span><br><span class="line">        for i in range(k):</span><br><span class="line">            heapq.heappush(min_heap, nums[i])</span><br><span class="line">        for i in range(k, len(nums), 1):</span><br><span class="line">            heapq.heappush(min_heap, nums[i])</span><br><span class="line">            heapq.heappop(min_heap)</span><br><span class="line">        return min_heap[0]</span><br></pre></td></tr></table></figure>
+<p>普通函数</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">points = [[1,3],[-2,2],[5,8],[0,1]]</span><br><span class="line">def get_distance_squared(point):</span><br><span class="line">    return point[0] ** 2 + point[1] ** 2</span><br><span class="line">sorted_points = sorted(points, key=get_distance_squared)</span><br><span class="line">print(get_distance_squared)</span><br></pre></td></tr></table></figure>
 
-<h1><span id="集合set">集合(set)</span></h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">s = set()</span><br><span class="line">s.add(e)</span><br><span class="line">if e in s:</span><br><span class="line">	...</span><br></pre></td></tr></table></figure>
 
-<h1><span id="队列">队列</span></h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from collections import deque</span><br><span class="line">d = deque()</span><br><span class="line">d = deque([1, 2, 3])</span><br><span class="line"></span><br><span class="line">d.append(4)</span><br><span class="line">d.appendleft(0)</span><br><span class="line">removed_element = d.pop()</span><br><span class="line">removed_element = d.popleft()</span><br><span class="line">d[0]</span><br><span class="line">d[-1]</span><br><span class="line">d.remove(2)</span><br></pre></td></tr></table></figure>]]></content>
+<h1><span id="链表">链表</span></h1><ul>
+<li>翻转链表<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">class ListNode:</span><br><span class="line">    def __init__(self, val=0, next=None):</span><br><span class="line">        self.val = val</span><br><span class="line">        self.next = next</span><br><span class="line">		</span><br><span class="line">head = ListNode(1)</span><br><span class="line">head.next = ListNode(2)</span><br><span class="line">head.next.next = ListNode(3)</span><br><span class="line"></span><br><span class="line">def reverse_list(head):</span><br><span class="line">	prev = None</span><br><span class="line">	curr = head</span><br><span class="line">	while curr:</span><br><span class="line">		next_temp = curr.next</span><br><span class="line">		curr.next = prev</span><br><span class="line">		prev = curr</span><br><span class="line">		curr = next_temp</span><br><span class="line">	return prev</span><br><span class="line"></span><br><span class="line">new_head = reverse_list(head)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1><span id="队列deque">队列(deque)</span></h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from collections import deque</span><br><span class="line">dq = deque()     # 创建队列</span><br><span class="line">dq.append(x)     # 添加到右端</span><br><span class="line">dq.appendleft(x) # 添加到左端</span><br><span class="line">x = dq.pop()     # 删除右端</span><br><span class="line">x = dq.popleft() # 删除左端</span><br><span class="line">not dq           # 判断是否为空</span><br><span class="line">len(dq)          # 获取长度</span><br><span class="line">dq[0]            # 查看左端</span><br><span class="line">dq[-1]           # 查看右端</span><br><span class="line">dq.clear()       # 清空 </span><br></pre></td></tr></table></figure>
+
+<h1><span id="线程安全队列queuequeue">线程安全队列(queue.Queue)</span></h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">from queue import Queue</span><br><span class="line">q = Queue()</span><br><span class="line">q.put(1)</span><br><span class="line">q.put(2)</span><br><span class="line">while not q.empty():</span><br><span class="line">	item = q.get()</span><br></pre></td></tr></table></figure>
+
+<h1><span id="优先级队列heapq">优先级队列(heapq)</span></h1><p>默认最小堆</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">import heapq</span><br><span class="line">heap = []</span><br><span class="line">heap.heappush(heap, 3)</span><br><span class="line">heap.heappush(heap, 1)</span><br><span class="line">heap.heappush(heap, 2)</span><br><span class="line">print(heap.heappop(heap))</span><br></pre></td></tr></table></figure>
+<p>注: 如果要模拟最大堆可以把数值取反后压入堆中</p>
+<ul>
+<li>求第k大的数<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">def findKthLargest(nums: List[int], k: int) -&gt; int:</span><br><span class="line">	heap = []</span><br><span class="line">	for x in nums:</span><br><span class="line">		heapq.heappush(heap, -x)</span><br><span class="line">	for i in range(k-1):</span><br><span class="line">		heapq.heappop(heap)</span><br><span class="line">	return -heapq.heappop(heap)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1><span id="集合">集合</span></h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">s = &#123;1,2,3&#125;</span><br><span class="line">s.add(x) # 添加元素</span><br><span class="line">s.remove(x) # 删除元素x, 若不存在则报错</span><br><span class="line">s.discard(x) # 删除元素x, 若不存在则忽略</span><br><span class="line">s.clear() # 清空集合</span><br><span class="line">if x in s: # 判断x是否在集合中</span><br></pre></td></tr></table></figure>
+
+<h1><span id="字典">字典</span></h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">dic = &#123;&#125;</span><br><span class="line">person = &#123;&#x27;name&#x27;: Alice, &#x27;age&#x27;: 18&#125;</span><br><span class="line">person[&#x27;name&#x27;]</span><br></pre></td></tr></table></figure>
+<ul>
+<li>访问值<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">person.get(&#x27;name&#x27;, &#x27;Unknown&#x27;) # 获取key对应值, 如不存在返回None</span><br><span class="line">person[&#x27;name&#x27;] # 访问值</span><br></pre></td></tr></table></figure></li>
+<li>删除键值对<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">del person[&#x27;name&#x27;]</span><br></pre></td></tr></table></figure></li>
+<li>遍历字典<br>遍历key<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">for key in person:</span><br><span class="line">	print(key)</span><br><span class="line">for key in person.keys():</span><br><span class="line">	print(key)</span><br><span class="line">for val in person.values():</span><br><span class="line">	print(val)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1><span id="字符串">字符串</span></h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">upper() 转大写</span><br><span class="line">lower() 转小写</span><br></pre></td></tr></table></figure>
+<p>查找</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">text = &#x27;hello world&#x27;</span><br><span class="line">text.find(&#x27;world&#x27;) # 输出6, 未找到返回-1</span><br><span class="line">text.replace(&#x27;world&#x27;, &#x27;Python&#x27;)</span><br></pre></td></tr></table></figure>
+<p>分割和连接</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">text = &quot;apple,banana,cherry&quot;</span><br><span class="line">print(text.split(&quot;,&quot;))  # 输出: [&#x27;apple&#x27;, &#x27;banana&#x27;, &#x27;cherry&#x27;]</span><br><span class="line"></span><br><span class="line">words = [&quot;hello&quot;, &quot;world&quot;]</span><br><span class="line">print(&quot;-&quot;.join(words))  # 输出: hello-world</span><br></pre></td></tr></table></figure>
+<p>去除空白字符</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">text = &quot;   hello world   &quot;</span><br><span class="line">print(text.strip())  # 输出: hello world</span><br><span class="line">print(text.lstrip()) # 输出: hello world   </span><br><span class="line">print(text.rstrip()) # 输出:    hello world</span><br></pre></td></tr></table></figure>
+<p>format格式化字符串</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">str = &#x27;My name is &#123;&#125; and I am &#123;&#125; years old.&#x27;.format(name, age)</span><br><span class="line">str2 = f&#x27;My name is &#123;name&#125; and I am &#123;age&#125; years old&#x27;</span><br></pre></td></tr></table></figure>
+<p>是否包含子串</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">text = &#x27;hello world&#x27;</span><br><span class="line">print(&#x27;world&#x27; in text)</span><br></pre></td></tr></table></figure>
+<p>整数转字符串</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">str(123)</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>LeetCode</category>
       </categories>
@@ -11455,6 +11541,25 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <li>黄金近两年涨了40%多，这个收益很不错了。 记得早些时候我还写了篇文章说黄金投资价值不如股票，现在看脸被打肿了。 一个人无法赚到他认知以外的钱，这句话说的太TM对了</li>
 </ul>
 <p>说了这些，希望大家把视野打开，了解到投资不只是A股。时刻保持开放的心态，持续学习，提高自己的姿势水平</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>离谱！货币基金集体涨停 | 一个五十块的羊毛</title>
+    <url>/2025/0125201724.html</url>
+    <content><![CDATA[<p>昨天(1月24号)下午，多个货币基金集体涨停。<br><img data-src="/2025/0125201724/image1.jpg"></p>
+<span id="more"></span>
+
+<p>目前货币基金的年化为1.5%左右。10%的溢价买入，需要7年才能解套。 出现溢价的原因据说是一些自媒体宣传，逆回购+货币基金可以一鱼两吃赚更多利息，吸引了一些不明真相的韭菜接盘，也是活久见了！</p>
+<p>当天我打算在华BAO上申购，却发现不是代办券商，而且资金前一天做了逆回购，无法取出。 无奈之下，我登录了尘封多年的华TAI账户，用零钱申购了一笔511670。</p>
+<p>货币基金申购是T+2日到账，也就是节后的2月5号，到时很难有利润。 如果我们提前找一些小规模的货币ETF或债券ETF进行埋伏，平时没有炒作就持有赚利息，遇上了炒作一天赚10%岂不是非常哇塞？后面我准备实践一下这个策略。</p>
+<p>最后分享一个五十块的羊毛，只要你是华TAI证券的用户就可以参与。 邀请2个新用户注册APP, 可获得2张6.88%的理财券。</p>
+<p>路径: 涨乐APP -&gt; 左上角 活动中心 -&gt; 第二个活动 -&gt; 点邀请。可以用你本人的其他2个手机号注册，也算新用户。<br><img data-src="/2025/0125201724/image2.jpg"><br>两张6.88券，每张1万额度，计息14天，收益约53元。</p>
 ]]></content>
       <categories>
         <category>investment</category>
@@ -12340,7 +12445,7 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
 <h1><span id="stunnel是什么-被设计用来解决什么问题">Stunnel是什么, 被设计用来解决什么问题</span></h1><p>Stunnel是一款开源软件，其主要功能是为应用程序或服务提供TLS&#x2F;SSL加密支持。 它的设计初衷是为了增强那些本身不支持加密功能的传统应用程序或服务的安全性<br>通过Stunnel, 可以在严格的防火墙规则下实现安全的加密通信，同时有效绕过可能存在的网络访问限制。</p>
 <span id="more"></span>
 
-<h1><span id="为什么需要stunnel">为什么需要Stunnel ?</span></h1><h2><span id="直接通过墙内的squid代理出去不行吗">直接通过墙内的Squid代理出去不行吗？</span></h2><p><img data-src="/2025/0303215009/direct.png"></p>
+<h1><span id="为什么要使用stunnel">为什么要使用Stunnel ?</span></h1><h2><span id="直接通过墙内的squid代理出去为什么不行">直接通过墙内的Squid代理出去为什么不行 ?</span></h2><p><img data-src="/2025/0303215009/direct.png"></p>
 <p>演示一下, 创建两台Linux虚拟机</p>
 <ul>
 <li>客户端 (192.168.52.200)</li>
@@ -12497,6 +12602,26 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>华宝油气成功吃肉 | 周四申购两只转债 | 办一张香港银行卡</title>
+    <url>/2025/0311202939.html</url>
+    <content><![CDATA[<p>华宝油气(162411)昨晚到账，今天开盘卖出，每台拖拉机赚33<br><img data-src="/2025/0311202939/image1.jpg"></p>
+<p>我拖了两天, 第二天的份额今晚已经到账, 明天大概率继续吃肉</p>
+<span id="more"></span>
+
+<p>不明白拖拉机的朋友, 可以看我写的这篇文章：<a href="https://pcj600.github.io/2024/0322200351.html">标普500LOF又来送钱！明天一拖七拖拉机开起来！</a> 最近监管力度加大, 万一兔五可能随时停摆, 需要低佣账户尽量趁早</p>
+<p>开本周四(3月13号)有两只可转债申购，积极参与。参与可转债打新的条件是股票交易满2年, 账户日均资金10万。开户不久的朋友要记得先刷一手股票,满两年后就能交易可转债了，我当年就因为开户的时候只买了ETF没买股票, 结果错过了去年一波可转债行情，非常难受<br><img data-src="/2025/0311202939/image2.jpg"></p>
+<p>最近还真有点忙，被裁员，改简历，拟面试，找工作，回顾自己五年的打杂生涯, 感觉就像一头拉磨的驴，似乎没有尽头……</p>
+<p>趁着没离职的空档，我约了一个中银香港的号，这个周末准备去趟深圳办卡。开港卡的好处有很多, 除了买港美股, 还能参与港股打新。2020年的港股打新绝对是个赚钱的好机会，可惜我当时认知不足，全程没有参与。今年我有种预感, 港股打新可能会迎来一波热潮，看看毛戈平, 布鲁可, 蜜雪冰城的上市表现就知道了。对我来说，最重要的是看到机会后第一时间参与进去玩，至于最后结果如何并不重要：）</p>
+<p>等我顺利办完港卡后，回来给大家写一篇攻略分享下经验</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Linux双系统分区升级方案设计</title>
     <url>/2025/0313201413.html</url>
     <content><![CDATA[<h1><span id="背景">背景</span></h1><p>早期，客户的On-premises网关设备（基于CentOS 7）采用增量升级方案进行固件更新。 这种方案存在两个主要问题：</p>
@@ -12575,6 +12700,19 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       <tags>
         <tag>Linux</tag>
         <tag>Project</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>中了1手正帆转债</title>
+    <url>/2025/0319203849.html</url>
+    <content><![CDATA[<p><img data-src="/2025/0319203849/image1.jpg"></p>
+<p>运气不差！</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -12965,6 +13103,67 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>理解Kubernetes中CoreDNS域名解析与DNS策略</title>
+    <url>/2025/0325230650.html</url>
+    <content><![CDATA[<h1><span id="coredns是什么">CoreDNS是什么</span></h1><p>CoreDNS是一个灵活可扩展的DNS服务器，使用Go语言编写，旨在提供快速、灵活的DNS服务</p>
+<h1><span id="为什么需要coredns">为什么需要CoreDNS</span></h1><p>CoreDNS为Kubernetes集群内部的DNS解析提供服务，使得服务之间能够通过域名互相通信<br>Kubernetes集群中, CoreDNS是运行在kube-system这个namespace下的Pod</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n kube-system get pod coredns-66f779496c-b7mmz</span><br><span class="line">NAME                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-66f779496c-b7mmz   1/1     Running   4 (28m ago)   4d23h</span><br></pre></td></tr></table></figure>
+
+<h1><span id="k8s集群中的域名是如何解析的">k8s集群中的域名是如何解析的</span></h1><p>比如服务a访问服务b:</p>
+<ul>
+<li>如果a和b在同一个namespace下, 可以直接在pod a中, 通过<code>curl b</code>来访问b</li>
+<li>如果a和b不在同一个namespace下, 在pod a中需要通过<code>curl b.namespaceb</code>来访问b</li>
+</ul>
+<p>以下动手测试</p>
+<span id="more"></span>
+
+<h2><span id="测试同一个namespace下的服务间域名解析">测试同一个namespace下的服务间域名解析</span></h2><p>创建一个名为foo的namespace, 再创建两个Flask服务(svca, svcb)</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl get all -n foo</span><br><span class="line">NAME                        READY   STATUS    RESTARTS   AGE</span><br><span class="line">pod/svca-78f6c85d4-sd97h    1/1     Running   0          43s</span><br><span class="line">pod/svcb-5fccb7d86b-mkqg7   1/1     Running   0          43s</span><br><span class="line"></span><br><span class="line">NAME           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE</span><br><span class="line">service/svca   ClusterIP   10.98.115.242    &lt;none&gt;        8000/TCP   24s</span><br><span class="line">service/svcb   ClusterIP   10.111.107.194   &lt;none&gt;        8000/TCP   23s</span><br><span class="line"></span><br><span class="line">NAME                   READY   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">deployment.apps/svca   1/1     1            1           24s</span><br><span class="line">deployment.apps/svcb   1/1     1            1           23s</span><br></pre></td></tr></table></figure>
+
+<p>进入pod a, 通过<code>curl http://svcb</code> 访问 b</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl exec -it pod/svca-78f6c85d4-sd97h -n foo -- sh</span><br><span class="line"></span><br><span class="line"># curl http://svcb:8000</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
+
+<h2><span id="测试不同namespace下的服务间域名解析">测试不同namespace下的服务间域名解析</span></h2><p>两个服务(svca, svcb), svca在foo命名空间, svcb在bar命名空间, 在pod a中访问b, 使用<code>curl http://svcb.bar</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl exec -it pod/svca-78f7c85d4-sd97h -n foo -- sh</span><br><span class="line"># curl http://svcb.bar:8000</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
+
+<h2><span id="为什么同一namespace下-直接访问服务名ltservice-namegt就可以-不同namespace下-必须带上namespaceltservice-namegtltnamespacegt">为什么同一Namespace下, 直接访问服务名<code>&lt;service-name&gt;</code>就可以, 不同Namespace下, 必须带上namespace(<code>&lt;service-name&gt;.&lt;namespace&gt;</code>) ?</span></h2><p>进入pod a, 查看<code>/etc/resolve.conf</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">search foo.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">nameserver 10.96.0.10</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
+
+<p>这里的DNS Server(10.96.0.10)是kube-dns的ClusterIP</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get svc</span><br><span class="line">NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE</span><br><span class="line">kube-dns   ClusterIP   10.96.0.10   &lt;none&gt;        53/UDP,53/TCP,9153/TCP   9d</span><br></pre></td></tr></table></figure>
+
+<p>查看<code>/etc/resolv.conf</code>, 其中的关键点在于search指令和ndots选项：</p>
+<ul>
+<li>search：这个指令定义了一系列的后缀，当DNS查询失败时，会依次尝试将这些后缀附加到原始查询域名后面，直到找到匹配项或所有后缀都已尝试过。</li>
+<li>ndots：如果一个域名中包含的点（.）数量小于ndots值，则该域名会被认为是“不完整”的域名。在这种情况下，DNS 客户端会尝试将 &#x2F;etc&#x2F;resolv.conf 中的 search 路径逐一追加到该域名后进行解析。如果域名中的点数大于或等于 ndots，则直接将其作为完整的域名进行查询。</li>
+</ul>
+<p>k8s集群中某个服务完整的域名格式是<code>&lt;service-name&gt;.&lt;namespace&gt;.svc.&lt;cluster-domain&gt;</code>, 验证一下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nslookup svcb.foo.svc.cluster.local 10.96.0.10</span><br><span class="line">Server:         10.96.0.10</span><br><span class="line">Address:        10.96.0.10#53</span><br><span class="line"></span><br><span class="line">Name:   svcb.foo.svc.cluster.local</span><br><span class="line">Address: 10.111.107.194</span><br></pre></td></tr></table></figure>
+
+<p><strong>同一命名空间下的服务访问</strong><br>CoreDNS会按照<code>svcb.foo.svc.cluster.local</code> -&gt; <code>svcb.svc.cluster.local</code> -&gt; <code>svcb.cluster.local</code>顺序解析, 可以看出第一次解析(<code>svcb.foo.svc.cluster.local</code>)就会成功</p>
+<p><strong>不同命名空间下的服务访问</strong><br>必须使用<code>&lt;service-name&gt;.&lt;namespace&gt;</code>的形式，例如<code>svcb.bar</code>, CoreDNS会按照 <code>svcb.bar.foo.svc.cluster.local</code> -&gt; <code>svcb.bar.svc.cluster.local</code> -&gt; <code>svcb.bar.cluster.local</code>, 可以看出第二次解析(<code>svcb.bar.svc.cluster.local</code>)就会成功</p>
+<h2><span id="访问外部域名是否走search域">访问外部域名是否走search域 ?</span></h2><p>测试一下, 进入pod, 使用nslookup指定coreDNS, 查询外部域名<code>www.trendmicro.com</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n bar exec -it svcb-5fccb7d86b-wj6nv -- sh</span><br><span class="line">sh-5.1# nslookup www.trendmicro.com 10.96.0.10</span><br><span class="line">Server:         10.96.0.10</span><br><span class="line">Address:        10.96.0.10#53</span><br><span class="line"></span><br><span class="line">Non-authoritative answer:</span><br><span class="line">www.trendmicro.com      canonical name = ion.trendmicro.com.edgekey.net.</span><br><span class="line">ion.trendmicro.com.edgekey.net  canonical name = e3576.a.akamaiedge.net.</span><br><span class="line">Name:   e3576.a.akamaiedge.net</span><br><span class="line">Address: 23.217.64.161</span><br><span class="line"></span><br><span class="line">抓包</span><br><span class="line"># tcpdump -i eth0 udp</span><br><span class="line">dropped privs to tcpdump</span><br><span class="line">tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span><br><span class="line">13:13:54.687483 IP svcb-5fccb7d86b-wj6nv.37345 &gt; kube-dns.kube-system.svc.cluster.local.domain: 44803+ A? www.trendmicro.com.bar.svc.cluster.local. (58)</span><br><span class="line">13:13:54.687791 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.37345: 44803 NXDomain*- 0/1/0 (151)</span><br><span class="line">13:13:54.688531 IP svcb-5fccb7d86b-wj6nv.47832 &gt; kube-dns.kube-system.svc.cluster.local.domain: 45213+ A? www.trendmicro.com.svc.cluster.local. (54)</span><br><span class="line">13:13:54.688671 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.47832: 45213 NXDomain*- 0/1/0 (147)</span><br><span class="line">13:13:54.688877 IP svcb-5fccb7d86b-wj6nv.56239 &gt; kube-dns.kube-system.svc.cluster.local.domain: 52750+ A? www.trendmicro.com.cluster.local. (50)</span><br><span class="line">13:13:54.689073 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.56239: 52750 NXDomain*- 0/1/0 (143)</span><br><span class="line">13:13:54.689225 IP svcb-5fccb7d86b-wj6nv.41094 &gt; kube-dns.kube-system.svc.cluster.local.domain: 46754+ A? www.trendmicro.com. (36)</span><br><span class="line">13:13:54.720336 IP svcb-5fccb7d86b-wj6nv.36285 &gt; kube-dns.kube-system.svc.cluster.local.domain: 55747+ PTR? 10.0.96.10.in-addr.arpa. (41)</span><br><span class="line">13:13:54.721011 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.36285: 55747*- 1/0/0 PTR kube-dns.kube-system.svc.cluster.local. (116)</span><br><span class="line">13:13:54.731442 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.41094: 46754 3/0/0 CNAME ion.trendmicro.com.edgekey.net., CNAME e3576.a.akamaiedge.net., A 23.208.168.135 (202)</span><br><span class="line">13:13:54.735385 IP svcb-5fccb7d86b-wj6nv.37844 &gt; kube-dns.kube-system.svc.cluster.local.domain: 29753+ AAAA? e3576.a.akamaiedge.net. (40)</span><br><span class="line">13:13:54.775441 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.37844: 29753 0/1/0 (131)</span><br><span class="line">————————————————</span><br></pre></td></tr></table></figure>
+<p>可以看出, 解析<code>www.trendmicro.com</code>走了search域, 有3次无用的DNS请求<br><code>www.trendmicro.com.bar.svc.cluster.local. -&gt; www.trendmicro.com.svc.cluster.local. -&gt;  www.trendmicro.com.cluster.local. -&gt; www.trendmicro.com.</code></p>
+<p>如果我们只用到了同namespace下的访问、或者跨namespace下的service访问, 可以把ndots默认值改成2, 减少DNS查询, 提高性能</p>
+<h1><span id="kubernetes-dns-策略">Kubernetes DNS 策略</span></h1><p>在Kubernetes中，dnsPolicy字段定义了Pod的DNS配置策略，提供了四种不同的策略：ClusterFirst、 ClusterFirstWithHostNet、 Default 和 None</p>
+<h3><span id="clusterfirst默认">ClusterFirst（默认）</span></h3><p>Kubernetes的默认DNS策略, Pod优先使用CoreDNS进行域名解析, 如果CoreDNS无法解析，回退到宿主机的DNS配置进行解析<br>这是最常见的配置, 适用于需要访问集群内其他服务的应用</p>
+<h3><span id="clusterfirstwithhostnet">ClusterFirstWithHostNet</span></h3><p>这个策略专为使用主机网络(hostNetwork: true）的Pod设计, 仍然优先使用CoreDNS进行解析<br>适用于需要直接监听宿主机上网络接口, 但仍需访问集群内其他服务的应用</p>
+<h3><span id="default">Default</span></h3><p>使用宿主机的DNS设置，完全不使用CoreDNS<br>适用于主要访问外部服务的应用, 避免CoreDNS解析外部域名带来的延迟问题</p>
+<h3><span id="none">None</span></h3><p>完全忽略Kubernetes和宿主机的DNS配置，要求用户自行指定DNS设置。 适用于对DNS配置有高度定制需求的应用. 配置示例如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: custom-dns-pod</span><br><span class="line">spec:</span><br><span class="line">  dnsPolicy: None</span><br><span class="line">  dnsConfig:</span><br><span class="line">    nameservers:</span><br><span class="line">      - 8.8.8.8</span><br><span class="line">      - 8.8.4.4</span><br><span class="line">    searches:</span><br><span class="line">      - ns1.svc.cluster.local</span><br><span class="line">      - mycompany.local</span><br><span class="line">    options:</span><br><span class="line">      - name: ndots</span><br><span class="line">        value: &quot;2&quot;</span><br><span class="line">      - name: edns0</span><br></pre></td></tr></table></figure>
+
+
+<h2><span id="参考">参考</span></h2><p>【1】 <a href="https://coredns.io/manual/toc/">https://coredns.io/manual/toc/</a><br>【2】 <a href="https://cloud.tencent.com/developer/article/2126510">https://cloud.tencent.com/developer/article/2126510</a></p>
+]]></content>
+      <categories>
+        <category>Kubernetes</category>
+      </categories>
+      <tags>
+        <tag>Kubernetes</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用Helm安装、 升级、 回滚Kubernetes应用</title>
     <url>/2025/0323210500.html</url>
     <content><![CDATA[<h1><span id="前言">前言</span></h1><p>在我之前做的项目里，我们对Microk8s微服务的更新是通过自制tar包的方式做的, tar包存储了镜像和YAML文件。 每次升级时，我们需要先删除所有的YAML资源，然后重新创建新的资源。 这种方式存在以下问题：</p>
@@ -13155,64 +13354,28 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
-    <title>理解Kubernetes中CoreDNS域名解析与DNS策略</title>
-    <url>/2025/0325230650.html</url>
-    <content><![CDATA[<h1><span id="coredns是什么">CoreDNS是什么</span></h1><p>CoreDNS是一个灵活可扩展的DNS服务器，使用Go语言编写，旨在提供快速、灵活的DNS服务</p>
-<h1><span id="为什么需要coredns">为什么需要CoreDNS</span></h1><p>CoreDNS为Kubernetes集群内部的DNS解析提供服务，使得服务之间能够通过域名互相通信<br>Kubernetes集群中, CoreDNS是运行在kube-system这个namespace下的Pod</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n kube-system get pod coredns-66f779496c-b7mmz</span><br><span class="line">NAME                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-66f779496c-b7mmz   1/1     Running   4 (28m ago)   4d23h</span><br></pre></td></tr></table></figure>
-
-<h1><span id="k8s集群中的域名是如何解析的">k8s集群中的域名是如何解析的</span></h1><p>比如服务a访问服务b:</p>
-<ul>
-<li>如果a和b在同一个namespace下, 可以直接在pod a中, 通过<code>curl b</code>来访问b</li>
-<li>如果a和b不在同一个namespace下, 在pod a中需要通过<code>curl b.namespaceb</code>来访问b</li>
-</ul>
-<p>以下动手测试</p>
+    <title>华盛通交易现金券变现方法</title>
+    <url>/2025/0329204736.html</url>
+    <content><![CDATA[<h2><span id="现金券">现金券</span></h2><p>100港币<em>4张 + 50港币</em>4张 + 5美元*5张 &#x3D; 600港币 + 25美元</p>
+<h2><span id="变现方法">变现方法</span></h2><p>我入金的是港币, 但交易美股时不需要把港币先换成美元再交易, 因为我们可以用港币融资美元直接交易, 融资当天借入当天还掉就行</p>
+<p>变现流程如下：</p>
 <span id="more"></span>
 
-<h2><span id="测试同一个namespace下的服务间域名解析">测试同一个namespace下的服务间域名解析</span></h2><p>创建一个名为foo的namespace, 再创建两个Flask服务(svca, svcb)</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl get all -n foo</span><br><span class="line">NAME                        READY   STATUS    RESTARTS   AGE</span><br><span class="line">pod/svca-78f6c85d4-sd97h    1/1     Running   0          43s</span><br><span class="line">pod/svcb-5fccb7d86b-mkqg7   1/1     Running   0          43s</span><br><span class="line"></span><br><span class="line">NAME           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE</span><br><span class="line">service/svca   ClusterIP   10.98.115.242    &lt;none&gt;        8000/TCP   24s</span><br><span class="line">service/svcb   ClusterIP   10.111.107.194   &lt;none&gt;        8000/TCP   23s</span><br><span class="line"></span><br><span class="line">NAME                   READY   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">deployment.apps/svca   1/1     1            1           24s</span><br><span class="line">deployment.apps/svcb   1/1     1            1           23s</span><br></pre></td></tr></table></figure>
-
-<p>进入pod a, 通过<code>curl http://svcb</code> 访问 b</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl exec -it pod/svca-78f6c85d4-sd97h -n foo -- sh</span><br><span class="line"></span><br><span class="line"># curl http://svcb:8000</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
-
-<h2><span id="测试不同namespace下的服务间域名解析">测试不同namespace下的服务间域名解析</span></h2><p>两个服务(svca, svcb), svca在foo命名空间, svcb在bar命名空间, 在pod a中访问b, 使用<code>curl http://svcb.bar</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl exec -it pod/svca-78f7c85d4-sd97h -n foo -- sh</span><br><span class="line"># curl http://svcb.bar:8000</span><br><span class="line">hello foo</span><br></pre></td></tr></table></figure>
-
-<h2><span id="为什么同一namespace下-直接访问服务名ltservice-namegt就可以-不同namespace下-必须带上namespaceltservice-namegtltnamespacegt">为什么同一Namespace下, 直接访问服务名<code>&lt;service-name&gt;</code>就可以, 不同Namespace下, 必须带上namespace(<code>&lt;service-name&gt;.&lt;namespace&gt;</code>) ?</span></h2><p>进入pod a, 查看<code>/etc/resolve.conf</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">search foo.svc.cluster.local svc.cluster.local cluster.local</span><br><span class="line">nameserver 10.96.0.10</span><br><span class="line">options ndots:5</span><br></pre></td></tr></table></figure>
-
-<p>这里的DNS Server(10.96.0.10)是kube-dns的ClusterIP</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># kubectl -n kube-system get svc</span><br><span class="line">NAME       TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE</span><br><span class="line">kube-dns   ClusterIP   10.96.0.10   &lt;none&gt;        53/UDP,53/TCP,9153/TCP   9d</span><br></pre></td></tr></table></figure>
-
-<p>查看<code>/etc/resolv.conf</code>, 其中的关键点在于search指令和ndots选项：</p>
-<ul>
-<li>search：这个指令定义了一系列的后缀，当DNS查询失败时，会依次尝试将这些后缀附加到原始查询域名后面，直到找到匹配项或所有后缀都已尝试过。</li>
-<li>ndots：如果一个域名中包含的点（.）数量小于ndots值，则该域名会被认为是“不完整”的域名。在这种情况下，DNS 客户端会尝试将 &#x2F;etc&#x2F;resolv.conf 中的 search 路径逐一追加到该域名后进行解析。如果域名中的点数大于或等于 ndots，则直接将其作为完整的域名进行查询。</li>
-</ul>
-<p>k8s集群中某个服务完整的域名格式是<code>&lt;service-name&gt;.&lt;namespace&gt;.svc.&lt;cluster-domain&gt;</code>, 验证一下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># nslookup svcb.foo.svc.cluster.local 10.96.0.10</span><br><span class="line">Server:         10.96.0.10</span><br><span class="line">Address:        10.96.0.10#53</span><br><span class="line"></span><br><span class="line">Name:   svcb.foo.svc.cluster.local</span><br><span class="line">Address: 10.111.107.194</span><br></pre></td></tr></table></figure>
-
-<p><strong>同一命名空间下的服务访问</strong><br>CoreDNS会按照<code>svcb.foo.svc.cluster.local</code> -&gt; <code>svcb.svc.cluster.local</code> -&gt; <code>svcb.cluster.local</code>顺序解析, 可以看出第一次解析(<code>svcb.foo.svc.cluster.local</code>)就会成功</p>
-<p><strong>不同命名空间下的服务访问</strong><br>必须使用<code>&lt;service-name&gt;.&lt;namespace&gt;</code>的形式，例如<code>svcb.bar</code>, CoreDNS会按照 <code>svcb.bar.foo.svc.cluster.local</code> -&gt; <code>svcb.bar.svc.cluster.local</code> -&gt; <code>svcb.bar.cluster.local</code>, 可以看出第二次解析(<code>svcb.bar.svc.cluster.local</code>)就会成功</p>
-<h2><span id="访问外部域名是否走search域">访问外部域名是否走search域 ?</span></h2><p>测试一下, 进入pod, 使用nslookup指定coreDNS, 查询外部域名<code>www.trendmicro.com</code></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kubectl -n bar exec -it svcb-5fccb7d86b-wj6nv -- sh</span><br><span class="line">sh-5.1# nslookup www.trendmicro.com 10.96.0.10</span><br><span class="line">Server:         10.96.0.10</span><br><span class="line">Address:        10.96.0.10#53</span><br><span class="line"></span><br><span class="line">Non-authoritative answer:</span><br><span class="line">www.trendmicro.com      canonical name = ion.trendmicro.com.edgekey.net.</span><br><span class="line">ion.trendmicro.com.edgekey.net  canonical name = e3576.a.akamaiedge.net.</span><br><span class="line">Name:   e3576.a.akamaiedge.net</span><br><span class="line">Address: 23.217.64.161</span><br><span class="line"></span><br><span class="line">抓包</span><br><span class="line"># tcpdump -i eth0 udp</span><br><span class="line">dropped privs to tcpdump</span><br><span class="line">tcpdump: verbose output suppressed, use -v[v]... for full protocol decode</span><br><span class="line">listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes</span><br><span class="line">13:13:54.687483 IP svcb-5fccb7d86b-wj6nv.37345 &gt; kube-dns.kube-system.svc.cluster.local.domain: 44803+ A? www.trendmicro.com.bar.svc.cluster.local. (58)</span><br><span class="line">13:13:54.687791 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.37345: 44803 NXDomain*- 0/1/0 (151)</span><br><span class="line">13:13:54.688531 IP svcb-5fccb7d86b-wj6nv.47832 &gt; kube-dns.kube-system.svc.cluster.local.domain: 45213+ A? www.trendmicro.com.svc.cluster.local. (54)</span><br><span class="line">13:13:54.688671 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.47832: 45213 NXDomain*- 0/1/0 (147)</span><br><span class="line">13:13:54.688877 IP svcb-5fccb7d86b-wj6nv.56239 &gt; kube-dns.kube-system.svc.cluster.local.domain: 52750+ A? www.trendmicro.com.cluster.local. (50)</span><br><span class="line">13:13:54.689073 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.56239: 52750 NXDomain*- 0/1/0 (143)</span><br><span class="line">13:13:54.689225 IP svcb-5fccb7d86b-wj6nv.41094 &gt; kube-dns.kube-system.svc.cluster.local.domain: 46754+ A? www.trendmicro.com. (36)</span><br><span class="line">13:13:54.720336 IP svcb-5fccb7d86b-wj6nv.36285 &gt; kube-dns.kube-system.svc.cluster.local.domain: 55747+ PTR? 10.0.96.10.in-addr.arpa. (41)</span><br><span class="line">13:13:54.721011 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.36285: 55747*- 1/0/0 PTR kube-dns.kube-system.svc.cluster.local. (116)</span><br><span class="line">13:13:54.731442 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.41094: 46754 3/0/0 CNAME ion.trendmicro.com.edgekey.net., CNAME e3576.a.akamaiedge.net., A 23.208.168.135 (202)</span><br><span class="line">13:13:54.735385 IP svcb-5fccb7d86b-wj6nv.37844 &gt; kube-dns.kube-system.svc.cluster.local.domain: 29753+ AAAA? e3576.a.akamaiedge.net. (40)</span><br><span class="line">13:13:54.775441 IP kube-dns.kube-system.svc.cluster.local.domain &gt; svcb-5fccb7d86b-wj6nv.37844: 29753 0/1/0 (131)</span><br><span class="line">————————————————</span><br></pre></td></tr></table></figure>
-<p>可以看出, 解析<code>www.trendmicro.com</code>走了search域, 有3次无用的DNS请求<br><code>www.trendmicro.com.bar.svc.cluster.local. -&gt; www.trendmicro.com.svc.cluster.local. -&gt;  www.trendmicro.com.cluster.local. -&gt; www.trendmicro.com.</code></p>
-<p>如果我们只用到了同namespace下的访问、或者跨namespace下的service访问, 可以把ndots默认值改成2, 减少DNS查询, 提高性能</p>
-<h1><span id="kubernetes-dns-策略">Kubernetes DNS 策略</span></h1><p>在Kubernetes中，dnsPolicy字段定义了Pod的DNS配置策略，提供了四种不同的策略：ClusterFirst、 ClusterFirstWithHostNet、 Default 和 None</p>
-<h3><span id="clusterfirst默认">ClusterFirst（默认）</span></h3><p>Kubernetes的默认DNS策略, Pod优先使用CoreDNS进行域名解析, 如果CoreDNS无法解析，回退到宿主机的DNS配置进行解析<br>这是最常见的配置, 适用于需要访问集群内其他服务的应用</p>
-<h3><span id="clusterfirstwithhostnet">ClusterFirstWithHostNet</span></h3><p>这个策略专为使用主机网络(hostNetwork: true）的Pod设计, 仍然优先使用CoreDNS进行解析<br>适用于需要直接监听宿主机上网络接口, 但仍需访问集群内其他服务的应用</p>
-<h3><span id="default">Default</span></h3><p>使用宿主机的DNS设置，完全不使用CoreDNS<br>适用于主要访问外部服务的应用, 避免CoreDNS解析外部域名带来的延迟问题</p>
-<h3><span id="none">None</span></h3><p>完全忽略Kubernetes和宿主机的DNS配置，要求用户自行指定DNS设置。 适用于对DNS配置有高度定制需求的应用. 配置示例如下:</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: custom-dns-pod</span><br><span class="line">spec:</span><br><span class="line">  dnsPolicy: None</span><br><span class="line">  dnsConfig:</span><br><span class="line">    nameservers:</span><br><span class="line">      - 8.8.8.8</span><br><span class="line">      - 8.8.4.4</span><br><span class="line">    searches:</span><br><span class="line">      - ns1.svc.cluster.local</span><br><span class="line">      - mycompany.local</span><br><span class="line">    options:</span><br><span class="line">      - name: ndots</span><br><span class="line">        value: &quot;2&quot;</span><br><span class="line">      - name: edns0</span><br></pre></td></tr></table></figure>
-
-
-<h2><span id="参考">参考</span></h2><p>【1】 <a href="https://coredns.io/manual/toc/">https://coredns.io/manual/toc/</a><br>【2】 <a href="https://cloud.tencent.com/developer/article/2126510">https://cloud.tencent.com/developer/article/2126510</a></p>
+<p>使用美股免佣卡, 华盛APP -&gt; 我的 -&gt; 卡券中心 -&gt; 美股买卖90天免佣额度卡 -&gt; 立即使用</p>
+<p>买入2股福特汽车, 重复4次, 用掉4张100港币</p>
+<p>买入1股福特汽车, 重复4次, 用掉4张50港币</p>
+<p>买入1股福特汽车, 重复5次, 用掉5张5美元</p>
+<p>一次性卖出所有福特汽车(17股) </p>
+<p>卖出后, 进入美股账户, 还掉融资金额</p>
+<p><img data-src="/2025/0329204736/image1.png"></p>
+<h2><span id="利润计算">利润计算</span></h2><p>现金券面值：600港币+25美元<br>交易手续费：每笔交易1美元平台费, 共14美元<br>价格波动+汇率损耗：14.33美元<br>利润：600港币 - 3.33美元</p>
+<h2><span id="其他利润">其他利润</span></h2><p>1股西方石油, 需要入金10000港币保持30天, 价值48美元<br>两人同行奖励, 每人200元港币<br>收益合计：800港币 + 45美元</p>
 ]]></content>
       <categories>
-        <category>Kubernetes</category>
+        <category>investment</category>
       </categories>
       <tags>
-        <tag>Kubernetes</tag>
+        <tag>investment</tag>
       </tags>
   </entry>
   <entry>
@@ -13408,6 +13571,42 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </tags>
   </entry>
   <entry>
+    <title>套利机会多的我都数不过来</title>
+    <url>/2025/0422205334.html</url>
+    <content><![CDATA[<h2><span id="明天操作计划">明天操作计划</span></h2><p>港股小盘(161124)，溢价67%，限购100元，一拖六</p>
+<p>原油基金(161129)，溢价60%，限购100元，一拖六</p>
+<p>黄金主题(161116)，溢价60%，限购100元，一拖六</p>
+<p>嘉实黄金(160719)，溢价10%，限购100元，一拖六</p>
+<p>黄金基金(164701)，溢价4%， 限购100元，一拖六</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>高溢价LOF基金套利, 应优先选择非网红券商</title>
+    <url>/2025/0427205610.html</url>
+    <content><![CDATA[<p>之前申购的几个高溢价LOF到达了场内, 我用的是网红券商(华B), 第一天到账后, 发现一笔都卖不出去<br><img data-src="/2025/0427205610/image1.jpg"></p>
+<p>当天看了成功出货的群友用的都是冷门券商, 我才突然醒悟: 对于60%超高溢价的基金, 头几笔申购应该用冷门券商申购, 这样可以大大增加出货的概率, 即使1个点申购费不打折, 又有什么关系呢? </p>
+<p>于是, 我找回了好久没用的华TAI账户, 并在当天组装了一套拖拉机申购了一笔。华TAI夜市委托是晚上8点钟开始, 我刚才准点挂了委托单, 希望这次能顺利出货让我赚点钱<br><img data-src="/2025/0427205610/image2.png"></p>
+<p>华TAI证券夜市委托注意事项：打开交易APP, 点击下方”交易”, 先查看持仓界面是否有显示</p>
+<ul>
+<li>如果持仓有显示, 下拉点击”批量卖出”</li>
+<li>如果持仓没有显示, 点击上方”场内基金” -&gt; 点击”我的持仓” -&gt; 选中港股小盘LOF -&gt; 输入委托价格和数量, 卖出</li>
+</ul>
+<p>套利原理是非常简单的, 但是操作有很多的细节, 我还是没有入门啊</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Docker 端口映射原理</title>
     <url>/2025/0330125855.html</url>
     <content><![CDATA[<p>在 Docker 中，默认情况下容器无法直接与外部网络通信。 为了使外部网络能够访问容器内的服务，Docker 提供了端口映射功能，通过将宿主机的端口映射到容器内的端口，外部可以通过宿主机的IP和端口访问容器内的服务</p>
@@ -13460,6 +13659,352 @@ TypeError: Can&#39;t instantiate abstract class BadType with ...
       </categories>
       <tags>
         <tag>Docker</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>网红券商出货高溢价基金, 可以试试信用账户</title>
+    <url>/2025/0506211304.html</url>
+    <content><![CDATA[<p>前几天刷了一些文章, 看到有人提示说, 信用账户的通道与普通账户是不一样的。我用华BAO的信用账户尝试了一下，发现确实可以。<br><img data-src="/2025/0506211304/image1.jpg"></p>
+<p>操作流程很简单，T日将基金划转到信用账户, T+1日卖出即可。</p>
+<p>不过呢, 我在手机上操作”一拖六”划转时遇到了问题, 提示只能划转一个账户。 当时我以为系统设定就是这样的，就没太在意。</p>
+<p>直到节后我看到有人留言说，所有账户都可以划转。于是我联系了客户经理，对方回复说: 目前手机端只支持划转一个账户, 后续版本可能会更新优化，电脑端是可以正常划转所有的六个账户。</p>
+<p>也就是说, 我本来可以赚六倍的, 难受啊~</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>中银香港开卡记录</title>
+    <url>/2025/0511212012.html</url>
+    <content><![CDATA[<h2><span id="为什么开港卡">为什么开港卡</span></h2><p>最近港股市场明显回暖, 开港卡可以参与打新, 还可以参与港美股投资</p>
+<h2><span id="准备工作">准备工作</span></h2><p>在出发前, 一定要先做好功课，可以多看看近期的开户文章和视频，了解整个开户流程。 以下是我准备的材料：</p>
+<span id="more"></span>
+
+<ul>
+<li>身份证</li>
+<li>港澳通行证, 提前去出入境管理局申请, 一周左右拿到</li>
+<li>国内住址证明, 我用的是最近三个月的信用卡账单, 电子版和纸质版都要准备好, 现场被要求发送电子版到邮箱</li>
+<li>银行流水证明, 去银行网点打印最近3个月的交易流水</li>
+<li>A股交易记录, 联系客户经理获取电子版并打印 (如果你交易记录比较多, 打印最近3个月就可以了。 有人反馈没用上, 但是我被当场要求出示)</li>
+<li>过关小票, 务必妥善保存</li>
+<li>提前打运营商电话, 说你要去香港, 需要开通漫游, 确保你在香港能收到短信, 有流量</li>
+<li>带一些港元现金备用 (我被要求当天在ATM存入1000港元用于账户激活)</li>
+<li>预订往返机票和酒店 (我约的网点在屯门市场, 从深圳湾入关)</li>
+<li>支付宝申请一个香港乘车码, 坐巴士直接扫码</li>
+<li>提前下载好银行的APP (如果连软件都不会下载, 建议不要去香港)</li>
+</ul>
+<p><img data-src="/2025/0511212012/image1.jpg"></p>
+<h2><span id="常见问题">常见问题</span></h2><p>Q1: 我没有信用卡账单, 怎么提供住址证明 ?<br>可以通过银行APP开一个地址证明; 或者打印最近三个月的水电费账单(需有公章, 并显示你的姓名和地址)</p>
+<p>Q2: 我没有A股交易记录怎么办 ?<br>建议先开个A股账户交易三个月之后再去香港; 或者去香港后, 尝试线上自助开户, 但坏处是卡片通过平邮寄送, 可能收不到卡 (线下开卡材料要求严格, 但可以当场拿卡)</p>
+<h2><span id="预约与办理">预约与办理</span></h2><p>去香港开卡前必须完成线上预约。 朋友推荐我去屯门市场分行办理, 屯门市场有很多银行, 我们只需要办中银和汇丰就可以了</p>
+<ul>
+<li>中银香港: 与内地中国银行同名账户之间的转账免手续费</li>
+<li>汇丰银行: 支持在内地ATM取现，通过兴业寰宇人生转账免手续费</li>
+</ul>
+<p>我原本计划在3月17日前往屯门市场分行，但由于该网点预约太火爆，没抢到名额，最后只能预约到附近的建荣街分行</p>
+<p>3月17号当天，我早上6点起来, 打车前往深圳湾口岸, 不到7点就顺利入关。 过关后找到B3X巴士, 用支付宝乘车码上车, 坐到终点站下车, 再跟着Google地图走到中银网点</p>
+<p>我是第一个到网点的, 当时还不到8点钟。 利用等待的时间, 我顺带完成了众安银行的自助开户</p>
+<p>银行营业时间是上午9点, 当时已经排了十几个人。 所有提前预约的都能进入网点办理, 而没有预约的客户, 只有最早到的2个人给办理了。 如果你人在香港但没有预约，也可以早点去网点碰碰运气。</p>
+<p>整个开户过程需要一个半小时，直接用中文和经理交流就可以了, 只需按客户经理指引操作即可。需要注意以下几点：</p>
+<ul>
+<li>被问及开户用途时, 简单回答”买港股”即可</li>
+<li>一定要记住自己设置的用户名和密码</li>
+<li>流动保安编码要当场设置好; 万一识别出错，你再来一趟香港就非常麻烦</li>
+</ul>
+<p>办好中银卡后, 我赶紧去汇丰取号, 但当时已排到50多号了, 实在办不下来, 只能放弃</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Golang 配置国内代理</title>
+    <url>/2025/0603162931.html</url>
+    <content><![CDATA[<h1><span id="使用-goproxy">使用 GOPROXY</span></h1><p>临时设置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export GOPROXY=https://goproxy.cn,direct</span><br></pre></td></tr></table></figure>
+<p>永久设置</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">go env -w GOPROXY=https://goproxy.cn,direct</span><br></pre></td></tr></table></figure>
+<p>再<code>go get</code>下载</p>
+]]></content>
+      <categories>
+        <category>Golang</category>
+      </categories>
+      <tags>
+        <tag>Golang</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Rocky Linux上安装Go</title>
+    <url>/2025/0603162811.html</url>
+    <content><![CDATA[<h1><span id="使用官方二进制包安装">使用官方二进制包安装</span></h1><h2><span id="1-下载-go-官方二进制包">1. 下载 Go 官方二进制包</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cd /tmp</span><br><span class="line">wget https://go.dev/dl/go1.22.3.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure>
+<h2><span id="2-解压并安装到-x2fusrx2flocal">2. 解压并安装到 &#x2F;usr&#x2F;local</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo rm -rf /usr/local/go   # 如果之前有旧版本先删除</span><br><span class="line">sudo tar -C /usr/local -xzf go1.22.3.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure>
+
+<h2><span id="3-设置环境变量">3. 设置环境变量</span></h2><p>编辑当前用户的 shell 配置文件（如 ~&#x2F;.bashrc），添加如下内容</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export PATH=$PATH:/usr/local/go/bin</span><br><span class="line">export GOPATH=$HOME/go</span><br><span class="line">export PATH=$PATH:$GOPATH/bin</span><br></pre></td></tr></table></figure>
+<p>保存并应用更改</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">source ~/.bashrc</span><br></pre></td></tr></table></figure>
+<h2><span id="4-验证安装是否成功">4. 验证安装是否成功</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">go version</span><br><span class="line">go version go1.22.3 linux/amd64</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h2><span id="5-测试">5. 测试</span></h2><p>写一个最简单的 Go 程序</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir -p ~/go/src/hello</span><br><span class="line">cd ~/go/src/hello</span><br><span class="line">vi hello.go</span><br></pre></td></tr></table></figure>
+<p>hello.go</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">package main</span><br><span class="line"></span><br><span class="line">import &quot;fmt&quot;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">    fmt.Println(&quot;Hello, Rocky Linux!&quot;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行程序</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">go run hello.go</span><br><span class="line">Hello, Rocky Linux!</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Golang</category>
+      </categories>
+      <tags>
+        <tag>Golang</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>黄金原油LOF再次吃肉, 一天一百块</title>
+    <url>/2025/0531212658.html</url>
+    <content><![CDATA[<p>黄金主题LOF（161116），溢价9.3%，限额100元<br>原油LOF易方达（161129），溢价4.9%，限额100元<br>一户约100元收益：</p>
+<span id="more"></span>
+<p><img data-src="/2025/0531212658/image1.jpg"></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Nacos 2.5.0 集群部署</title>
+    <url>/2025/0606102212.html</url>
+    <content><![CDATA[<h2><span id="环境初始化">环境初始化</span></h2><p>准备3台机器: Rocky Linux 9 x86_64，IP地址如下：</p>
+<ul>
+<li>192.168.149.220</li>
+<li>192.168.149.221</li>
+<li>192.168.149.222</li>
+</ul>
+<p>每台机器上安装JDK 1.8及以上版本，并配置好环境变量</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">yum install -y java-1.8.0-openjdk-devel</span><br></pre></td></tr></table></figure>
+<p>配置环境变量，编辑&#x2F;etc&#x2F;profile文件，添加以下内容：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk</span><br><span class="line">export CLASSPATH=.:$JAVA_HOME/jre/lib/rt.jar:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar</span><br><span class="line">export PATH=$PATH:$JAVA_HOME/bin</span><br></pre></td></tr></table></figure>
+<p>保存后，执行source &#x2F;etc&#x2F;profile使配置生效。</p>
+<span id="more"></span>
+
+<h2><span id="安装nacos">安装Nacos</span></h2><p>下载Nacos：在每台机器上分别下载Nacos 2.5.0 安装包</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">mkdir -p /usr/local/nacos</span><br><span class="line">cd /usr/local/nacos</span><br><span class="line">wget https://github.com/alibaba/nacos/releases/download/2.5.0/nacos-server-2.5.0.tar.gz</span><br><span class="line">tar -xvf nacos-server-2.5.0.tar.gz</span><br></pre></td></tr></table></figure>
+<p>配置Nacos<br>在每台机器的Nacos安装目录的conf目录下，添加集群配置文件cluster.conf（如果该文件不存在，可以将cluster.conf.example复制一份并重命名为cluster.conf），内容为三台机器的IP和端口，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">192.168.149.220:8848</span><br><span class="line">192.168.149.221:8848</span><br><span class="line">192.168.149.222:8848</span><br></pre></td></tr></table></figure>
+<p>Nacos支持使用MySQL数据库存储数据，在每台机器的conf&#x2F;application.properties文件中，修改数据库配置，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">spring.sql.init.platform=mysql</span><br><span class="line">db.num=1</span><br><span class="line">db.url.0=jdbc:mysql://&#123;mysql_host&#125;:3306/nacos?useUnicode=true&amp;characterEncoding=utf8</span><br><span class="line">db.user=&#123;mysql_user&#125;</span><br><span class="line">db.password=&#123;mysql_password&#125;</span><br><span class="line">将&#123;mysql_host&#125;、&#123;mysql_user&#125;和&#123;mysql_password&#125;替换为实际的MySQL数据库地址、用户名和密码  ( [安装MySQL方法](https://pcj600.github.io/2024/0916144756.html))</span><br></pre></td></tr></table></figure>
+<p>初始化nacos数据库</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">CREATE DATABASE nacos COLLATE utf8mb4_general_ci;</span><br></pre></td></tr></table></figure>
+<p>再创建nacos数据表，从Nacos的GitHub仓库获取2.5.0版本对应的数据库初始化脚本，脚本文件为mysql-schema.sql</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">USE nacos;</span><br><span class="line">SOURCE /path/to/mysql-schema.sql;</span><br></pre></td></tr></table></figure>
+<h2><span id="启动nacos集群">启动Nacos集群</span></h2><p>1.启动Nacos节点：在每台机器的Nacos安装目录的bin目录下，执行启动命令：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sh startup.sh</span><br></pre></td></tr></table></figure>
+<p>2.验证集群状态：通过浏览器访问其中任意一台Nacos节点的管理页面，例如<a href="http://192.168.149.220:8848/nacos%EF%BC%8C%E8%BE%93%E5%85%A5%E7%94%A8%E6%88%B7%E5%90%8D%E5%92%8C%E5%AF%86%E7%A0%81%EF%BC%88%E9%BB%98%E8%AE%A4%E7%94%A8%E6%88%B7%E5%90%8D%E5%92%8C%E5%AF%86%E7%A0%81%E5%9D%87%E4%B8%BAnacos%EF%BC%89%EF%BC%8C%E6%9F%A5%E7%9C%8B%E9%9B%86%E7%BE%A4%E7%8A%B6%E6%80%81%EF%BC%8C%E7%A1%AE%E4%BF%9D%E4%B8%89%E4%B8%AA%E8%8A%82%E7%82%B9%E9%83%BD%E6%AD%A3%E5%B8%B8%E8%BF%90%E8%A1%8C%E3%80%82">http://192.168.149.220:8848/nacos，输入用户名和密码（默认用户名和密码均为nacos），查看集群状态，确保三个节点都正常运行。</a><br><img data-src="/2025/0606102212/image1.png"><br>设置Nacos开机自启动<br>每台机器上创建 systemd 服务文件</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">vim /etc/systemd/system/nacos.service</span><br><span class="line">编辑服务文件`nacos.service`</span><br><span class="line">[Unit]</span><br><span class="line">Description=Nacos Server</span><br><span class="line">After=network.target</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line">Type=forking</span><br><span class="line">User=root</span><br><span class="line">Group=root</span><br><span class="line">ExecStart=/usr/local/nacos/nacos/bin/startup.sh</span><br><span class="line">ExecStop=/usr/local/nacos/nacos/bin/shutdown.sh</span><br><span class="line">Restart=on-failure</span><br><span class="line">LimitNOFILE=65536</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line">WantedBy=multi-user.target</span><br><span class="line">重新加载配置，启动nacos, 设置开机自启动</span><br><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl enable nacos</span><br><span class="line">systemctl start nacos</span><br></pre></td></tr></table></figure>]]></content>
+  </entry>
+  <entry>
+    <title>Chrony 时间同步</title>
+    <url>/2025/0611104527.html</url>
+    <content><![CDATA[<h2><span id="1-国内主流-ntp-服务器列表">1. 国内主流 NTP 服务器列表​​</span></h2><table>
+<thead>
+<tr>
+<th align="left">服务商</th>
+<th align="left">国内NTP服务器地址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">阿里云</td>
+<td align="left">ntp.aliyun.com</td>
+</tr>
+<tr>
+<td align="left">腾讯云</td>
+<td align="left">ntp.tencent.com</td>
+</tr>
+<tr>
+<td align="left">华为云</td>
+<td align="left">ntp.huaweicloud.com</td>
+</tr>
+<tr>
+<td align="left">清华大学</td>
+<td align="left">ntp.tencent.com</td>
+</tr>
+<tr>
+<td align="left">中国国家授时中心</td>
+<td align="left">cn.ntp.org.cn</td>
+</tr>
+</tbody></table>
+<h2><span id="2-配置-chrony-使用国内源">​​2. 配置 Chrony 使用国内源​​</span></h2><p>（1）修改配置文件 <code>/etc/chrony.conf​​</code>, ​​替换或添加以下内容​​：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 国内优选源（iburst表示快速初始同步）</span><br><span class="line">server ntp.aliyun.com iburst</span><br><span class="line">server ntp.tuna.tsinghua.edu.cn iburst</span><br><span class="line">server ntp.tencent.com iburst</span><br><span class="line"></span><br><span class="line"># 强制使用国内源（忽略配置文件中的其他server）</span><br><span class="line"># pool.ntp.org  # 注释掉默认的国外源</span><br><span class="line"></span><br><span class="line"># 调整同步参数</span><br><span class="line">makestep 1 3      # 允许前3次同步时间跳跃（立即修正）</span><br><span class="line">maxdistance 5     # 允许的最大时间偏差（秒）</span><br></pre></td></tr></table></figure>
+<p>​​（2）重启 Chrony 并验证​​</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 重载配置</span><br><span class="line">systemctl restart chronyd</span><br><span class="line"></span><br><span class="line"># 等待10秒后检查同步状态</span><br><span class="line">chronyc tracking</span><br><span class="line">chronyc sources -v</span><br><span class="line"></span><br><span class="line"># timedatectl 确认时间已同步</span><br><span class="line">timedatectl </span><br><span class="line">               Local time: Wed 2025-06-11 10:36:14 HKT</span><br><span class="line">           Universal time: Wed 2025-06-11 02:36:14 UTC</span><br><span class="line">                 RTC time: Wed 2025-06-11 02:36:14</span><br><span class="line">                Time zone: Asia/Hong_Kong (HKT, +0800)</span><br><span class="line">System clock synchronized: yes</span><br><span class="line">              NTP service: active</span><br></pre></td></tr></table></figure>
+<span id="more"></span>
+
+<h2><span id="3-手动立即同步命令">3. 手动立即同步命令​​</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 如果时间偏差较大，执行强制同步</span><br><span class="line">chronyd -q &quot;server ntp.aliyun.com iburst&quot; -t 3</span><br><span class="line"># 步进式强制修正（慎用：会突然跳变时间）</span><br><span class="line">chronyc makestep</span><br></pre></td></tr></table></figure>
+<h2><span id="4-测试时间源延迟">​​4. 测试时间源延迟​​</span></h2><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 测试各服务器响应时间</span><br><span class="line">chronyc sourcestats -v</span><br><span class="line"></span><br><span class="line"># 手动ping测试</span><br><span class="line">ping -c 4 ntp.aliyun.com</span><br></pre></td></tr></table></figure>
+<p>选择延迟较低的服务器​​（通常 &lt;50ms 为佳）。</p>
+]]></content>
+      <categories>
+        <category>NTP</category>
+      </categories>
+      <tags>
+        <tag>NTP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>中了1手海天酱油</title>
+    <url>/2025/0617212934.html</url>
+    <content><![CDATA[<p><img data-src="/2025/0617212934/image1.png"></p>
+<p>查看某立数据，认购80手可以稳中1手<br><img data-src="/2025/0617212934/haha.jpg"></p>
+<p>今年在港股二次上市的还有宁德时代（首日涨幅16%），恒瑞医药（首日涨幅25%）<br><img data-src="/2025/0617212934/image3.png"></p>
+<p>明天下午暗盘可以卖出，预计涨幅10-15%</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>EMQX 社区版单机和集群部署</title>
+    <url>/2025/0603163025.html</url>
+    <content><![CDATA[<p>EMQ 支持 Docker，宿主机，k8s部署；支持单机或集群部署。以下给出EMQX社区版单机和集群部署方法</p>
+<h2><span id="1-docker单机部署">1. Docker单机部署</span></h2><p>官方推荐最小配置：2核 4G</p>
+<h3><span id="下载容器镜像">下载容器镜像</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker pull emqx/emqx:5.3.2</span><br></pre></td></tr></table></figure>
+<h3><span id="启动容器">启动容器</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker run -d --name emqx \</span><br><span class="line">  -p 1883:1883 \</span><br><span class="line">  -p 8083:8083 \</span><br><span class="line">  -p 8883:8883 \</span><br><span class="line">  -p 8084:8084 \</span><br><span class="line">  -p 18083:18083 \</span><br><span class="line">  emqx/emqx:5.3.2</span><br><span class="line">EMQX 开放端口说明</span><br><span class="line">1883 MQTT端口</span><br><span class="line">8083 MQTT/WebSocket端口</span><br><span class="line">8883 MQTT/SSL端口</span><br><span class="line">8084 MQTT/WebSocket/SSL端口</span><br><span class="line">18083 Dashboard 管理端口</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
+
+<h3><span id="验证">验证</span></h3><p>访问 Dashboard, 打开<code>http://&#123;server_ip&#125;:18083</code>, 默认账号admin, 密码 public<br><img data-src="/2025/0603163025/image1.png"></p>
+<p>查看容器日志</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">docker logs -f emqx</span><br><span class="line">EMQX 5.3.2 is running now!</span><br></pre></td></tr></table></figure>
+
+
+<h2><span id="2-宿主机单机部署">2. 宿主机单机部署</span></h2><p>参考：<a href="https://blog.csdn.net/m0_65819602/article/details/135876464">https://blog.csdn.net/m0_65819602/article/details/135876464</a><br>测试环境: Rocky Linux 9.5 x86_64 2核 4G内存<br>以下通过RPM包方式安装部署，通过systemd启动</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">curl -s https://assets.emqx.com/scripts/install-emqx-rpm.sh | sudo bash</span><br><span class="line">yum install emqx -y</span><br><span class="line">systemctl start emqx</span><br></pre></td></tr></table></figure>
+<h2><span id="3-多宿主机集群部署">3. 多宿主机集群部署</span></h2><p>参考 <a href="https://docs.emqx.com/zh/emqx/v5.8/deploy/cluster/create-cluster.html#%E8%87%AA%E5%8A%A8%E9%9B%86%E7%BE%A4%E7%A4%BA%E4%BE%8B%EF%BC%88static-%E6%96%B9%E5%BC%8F%EF%BC%89">官方文档</a> 手动创建集群 小节</p>
+<p>示例：在两台独立的宿主机上通过静态节点发现方式部署EMQ集群<br>主机信息</p>
+<ul>
+<li>主机A: 192.168.149.210</li>
+<li>主机B: 192.168.149.211</li>
+</ul>
+<p>先参考 “宿主机单机部署”，在每个宿主机上部署EMQ<br>配置每台主机的EMQ<br>主机A <code>/etc/emqx/emqx.conf</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node &#123;</span><br><span class="line">  name = &quot;emqx@192.168.149.210&quot;</span><br><span class="line">  cookie = &quot;emqxsecretcookie&quot;</span><br><span class="line">  data_dir = &quot;/var/lib/emqx&quot;</span><br><span class="line">&#125;</span><br><span class="line">cluster &#123;</span><br><span class="line">  name = emqx</span><br><span class="line">  discovery_strategy = manual</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主机B <code>/etc/emqx/emqx.conf</code></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">node &#123;</span><br><span class="line">  name = &quot;emqx@192.168.149.211&quot;</span><br><span class="line">  cookie = &quot;emqxsecretcookie&quot;</span><br><span class="line">  data_dir = &quot;/var/lib/emqx&quot;</span><br><span class="line">&#125;</span><br><span class="line">cluster &#123;</span><br><span class="line">  name = emqx</span><br><span class="line">  discovery_strategy = manual</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注：</p>
+<ul>
+<li>node.name 填 emqx@fqdn, fqdn可以是hostname或IP</li>
+<li>cluster.name 填 emqx，和 node.name 前缀保持一致</li>
+<li>discovery_strategy 填 manual, 手动方式加入集群</li>
+<li>其余配置默认即可</li>
+</ul>
+<p>配置完成后，主机B执行如下命令，加入集群</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">emqx ctl cluster join emqx@192.168.149.210</span><br><span class="line">Join the cluster successfully.</span><br><span class="line">Cluster status: #&#123;running_nodes =&gt;</span><br><span class="line">                      [&#x27;emqx@192.168.149.210&#x27;,&#x27;emqx@192.168.149.211&#x27;],</span><br><span class="line">                  stopped_nodes =&gt; []&#125;</span><br></pre></td></tr></table></figure>
+<p>测试，登录dashboard, 查看集群节点创建成功<br><img data-src="/2025/0603163025/image2.png"></p>
+<h3><span id="节点退出集群">节点退出集群</span></h3><p>退出集群有以下两种方式：</p>
+<ul>
+<li>运行 cluster leave 命令：让本节点退出集群。它会通知集群中的其他节点，并停止参与集群操作，在离开之前会完成任何正在进行的任务。</li>
+<li>运行 cluster force-leave &lt;node@host&gt; 命令：在集群内移除节点。目标节点将被强制从集群中移除。当节点出现故障或无响应时，通常使用此命令。</li>
+</ul>
+<p>例如，在之前构建的集群中，如果<a href="mailto:&#101;&#x6d;&#x71;&#x78;&#x40;&#x31;&#57;&#50;&#x2e;&#x31;&#54;&#56;&#x2e;&#49;&#52;&#x39;&#46;&#50;&#49;&#x31;">&#101;&#x6d;&#x71;&#x78;&#x40;&#x31;&#57;&#50;&#x2e;&#x31;&#54;&#56;&#x2e;&#49;&#52;&#x39;&#46;&#50;&#49;&#x31;</a>想要离开集群，您可以在192.168.149.211上运行以下命令</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">emqx ctl cluster leave</span><br></pre></td></tr></table></figure>
+<p>或者在其他节点上运行以下命令来从集群中移除192.168.149.211</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">emqx ctl cluster force-leave emqx@192.168.149.211</span><br></pre></td></tr></table></figure>
+<p>查看集群状态</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">emqx_ctl cluster status</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>MQTT</category>
+      </categories>
+      <tags>
+        <tag>MQTT</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Rocky Linux上使用NVM安装Node.js 18</title>
+    <url>/2025/0711094600.html</url>
+    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>Rocky Linux 9 默认 yum 安装的 Node.js 版本是16，vite启动报错：<code>TypeError: crypto$2.getRandomValues is not a function</code> ，需安装更高版本的 Node.js</p>
+<h2><span id="使用nvm安装nodejs的好处">使用nvm安装Node.js的好处</span></h2><ul>
+<li>多版本管理，NVM 允许你安装多个不同版本的Node.js，而不需要卸载或全局替换。</li>
+<li>版本隔离，每个安装的Node.js 版本都会被NVM 隔离，不会相互干扰</li>
+<li>方便切换，使用 <code>nvm use</code> 命令，可以快速切换当前使用的Node.js 版本</li>
+<li>避免版本冲突，通过使用NVM，可以避免全局安装Node.js 导致的潜在版本冲突问题。</li>
+</ul>
+<span id="more"></span>
+
+<h2><span id="安装步骤">安装步骤</span></h2><h3><span id="1-安装nvmnode-version-manager">1. 安装NVM（Node Version Manager）</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 安装依赖</span><br><span class="line">sudo dnf install -y curl git</span><br><span class="line"></span><br><span class="line"># 下载并安装NVM</span><br><span class="line">curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash</span><br><span class="line"></span><br><span class="line"># 加载NVM到当前shell</span><br><span class="line">export NVM_DIR=&quot;$HOME/.nvm&quot;</span><br><span class="line">[ -s &quot;$NVM_DIR/nvm.sh&quot; ] &amp;&amp; \. &quot;$NVM_DIR/nvm.sh&quot;</span><br></pre></td></tr></table></figure>
+<h3><span id="2-安装nodejs-18">2. 安装Node.js 18</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 安装指定版本</span><br><span class="line">nvm install 18</span><br><span class="line"></span><br><span class="line"># 验证安装</span><br><span class="line">node -v  # 显示v18.20.8</span><br><span class="line">npm -v # 显示10.8.2</span><br></pre></td></tr></table></figure>
+
+<h3><span id="3-设置为默认版本可选">3. 设置为默认版本（可选）</span></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">nvm alias default 18</span><br><span class="line">nvm use default</span><br></pre></td></tr></table></figure>
+
+<h3><span id="4-配置环境变量持久化">4. 配置环境变量（持久化）</span></h3><p>以下内容添加到 ~&#x2F;.bashrc文件末尾：</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">export NVM_DIR=&quot;$HOME/.nvm&quot;</span><br><span class="line">[ -s &quot;$NVM_DIR/nvm.sh&quot; ] &amp;&amp; \. &quot;$NVM_DIR/nvm.sh&quot;  # 加载NVM</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>Node.js</category>
+      </categories>
+      <tags>
+        <tag>Node.js</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Gin框架输出JSON，默认会将&amp;转义为&#92;u0026, 如何将这个转义关闭</title>
+    <url>/2025/0717161351.html</url>
+    <content><![CDATA[<h2><span id="问题描述">问题描述</span></h2><p>在Gin框架中使用c.JSON()输出JSON时，默认会将特殊字符（如&amp;）转义为Unicode编码（如\u0026）。某些场景下会导致客户端获取的URL有问题。</p>
+<h2><span id="解决方案">解决方案</span></h2><p>使用 c.PureJSON()替代 c.JSON()</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">func GetPresignedURL(c *gin.Context) &#123;</span><br><span class="line">    resp := gin.H&#123;</span><br><span class="line">        &quot;presignedUrl&quot;: &quot;https://example.com?param=1&amp;key=2&quot;, // 含&amp;的URL</span><br><span class="line">    &#125;</span><br><span class="line">    c.PureJSON(http.StatusOK, resp) // 关闭转义</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Golang</category>
+      </categories>
+      <tags>
+        <tag>Golang</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>海天味业打新盈利8.67&amp;#37;</title>
+    <url>/2025/0622213820.html</url>
+    <content><![CDATA[<p>海天味业(6月19日)暗盘交易，开盘上涨12.4%，收盘涨幅3.86%。上市当天盘中一度破发，目前累计跌幅1.52%</p>
+<p>这是我中的第一支港股，中签了100股。暗盘交易当天，我发觉走势不妙，加上港股大盘很弱，果断在开盘5分钟后以40.1价格卖出，扣除认购和成交费用，盈利 318 HKD (+8.67%)</p>
+<p><img data-src="/2020/0228210741"></p>
+<p><img data-src="/2020/0228210741"></p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>价值基金LOF盘中涨停, 获利1348元</title>
+    <url>/2025/0623214429.html</url>
+    <content><![CDATA[<p>今天价值基金LOF(501310)被爆炒，盘中直接涨停。</p>
+<p>今年上半年的时候，我观察到很多港股LOF集体拉溢价，其中就包括501310。分析其持仓后, 发现与我的大盘红利持仓风格相近，于是我在4月份埋伏了一些港股LOF，今天成功获利，完成了一次卖出申购套利。</p>
+<p>由于工作原因无法实时盯盘，我在4月份失业期间编写了一个溢价通知程序，当基金出现溢价时自动通知到手机，省去了我盯盘的麻烦，目前运行还算稳定。</p>
+<span id="more"></span>
+<p><img data-src="/2020/0228210741/g"></p>
+<p>其实在上周五, 我就注意到这个狗基有炒作迹象, 当日成交量从56万放大到7000万，溢价率在3%左右。不过根据我多次经验判断，后续几乎100%会继续拉升，所以上周五我憋着没有卖。今天分了两批卖出：第一批在溢价5%时卖出半数仓位，第二批在涨停价清仓剩余部分。</p>
+<p><img data-src="/2020/0228210741/g"></p>
+<p>另外, 我持有的501307今天也跟随上涨，盘中最高涨幅达5%，但未能以涨停价全部卖出，期待金主们明天继续发力。</p>
+<h2><span id="收益计算">收益计算</span></h2><p>501310: (1.363+1.318) * 8400 - 16800 * 1.2586 *（1 + 0.0012）&#x3D; 1348元<br>501307：1.218 * 9100 - 1.1621 * 9100 *（1 + 0.0012）&#x3D; 496元<br>合计： 1348 + 496 &#x3D; 1844元</p>
+]]></content>
+      <categories>
+        <category>investment</category>
+      </categories>
+      <tags>
+        <tag>investment</tag>
       </tags>
   </entry>
 </search>

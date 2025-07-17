@@ -32,7 +32,7 @@
 <meta property="og:description" content="数组(vector)初始化123vector&lt;int&gt; v(size);vector&lt;int&gt; v(size, init_value);v.emplace_back(a.begin(), a.begin() + 3); # 用另一个vector的某一区间初始化vector   遍历数组123for (int i &#x3D; 0; i &lt; vec.size(); ++i) &amp;#">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-01-06T12:19:17.000Z">
-<meta property="article:modified_time" content="2025-02-25T12:35:42.769Z">
+<meta property="article:modified_time" content="2025-05-03T05:35:09.259Z">
 <meta property="article:author" content="PC">
 <meta property="article:tag" content="LeetCode">
 <meta name="twitter:card" content="summary">
@@ -125,17 +125,17 @@
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">37</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">41</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">49</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">53</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">185</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">204</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -247,14 +247,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>6.7k</span>
+              <span>9.7k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>6 分钟</span>
+              <span>9 分钟</span>
             </span>
 
         </div>
@@ -328,22 +328,108 @@
 
 <h1><span id="字典树">字典树</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">struct TrieNode &#123;</span><br><span class="line">    vector&lt;TrieNode *&gt; children;</span><br><span class="line">	bool isWordEnd;</span><br><span class="line">    TrieNode() &#123;</span><br><span class="line">        children.resize(26, nullptr);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">void insert(string word) &#123;</span><br><span class="line">    TrieNode *cur = root;</span><br><span class="line">    for (char ch: word) &#123;</span><br><span class="line">        int idx = ch - &#x27;a&#x27;;</span><br><span class="line">        if (cur-&gt;children[idx] == nullptr) &#123;</span><br><span class="line">            cur-&gt;children[idx] = new TrieNode(ch);</span><br><span class="line">        &#125;</span><br><span class="line">        cur = cur-&gt;children[idx];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">bool startsWith(string prefix) &#123;</span><br><span class="line">    TrieNode *cur = root;</span><br><span class="line">    for (char ch: prefix) &#123;</span><br><span class="line">        int idx = ch - &#x27;a&#x27;;</span><br><span class="line">        if (cur-&gt;children[idx] == nullptr) &#123;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">        cur = cur-&gt;children[idx];</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h1><span id="单调栈-树状数组">单调栈、树状数组</span></h1><h1><span id="leetcode-python-cheetsheet">LeetCode python CheetSheet</span></h1><h1><span id="自定义排序">自定义排序</span></h1><p>Python匿名函数</p>
-<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># intervals: List[List[int]])</span></span><br><span class="line">intervals.sort(key=<span class="keyword">lambda</span> p: p[<span class="number">0</span>])</span><br><span class="line">intervals.sort(key=<span class="keyword">lambda</span> p: p[<span class="number">0</span>], reverse=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
-<p>Python命名函数排序</p>
-<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">compare</span>(<span class="params">x, y</span>):</span><br><span class="line">	s1 = <span class="built_in">str</span>(x) + <span class="built_in">str</span>(y)</span><br><span class="line">	s2 = <span class="built_in">str</span>(y) + <span class="built_in">str</span>(x)</span><br><span class="line">	<span class="keyword">if</span> s1 &gt; s2:</span><br><span class="line">		<span class="keyword">return</span> -<span class="number">1</span></span><br><span class="line">	<span class="keyword">return</span> <span class="number">1</span></span><br><span class="line">nums.sort(key=cmp_to_key(compare))</span><br></pre></td></tr></table></figure>
+<h1><span id="单调栈-树状数组">单调栈、树状数组</span></h1><h1><span id="leetcode-python-cheetsheet">LeetCode python CheetSheet</span></h1><h1><span id="列表">列表</span></h1><ul>
+<li><p>初始化</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">v = [1,2,3] </span><br><span class="line">v = [0] * 5 # [0,0,0,0,0]</span><br></pre></td></tr></table></figure></li>
+<li><p>二维列表初始化<br>5行4列, 初始值为0</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v = [[0 for _ in range(4)] for _ in range(5)]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>末尾追加一个元素</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; v.append(4)</span><br><span class="line">&gt;&gt;&gt; v</span><br><span class="line">[1, 2, 3, 4]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>末尾删除一个元素</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; v.pop()</span><br><span class="line">&gt;&gt;&gt; v</span><br><span class="line">[1,2,3]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>指定位置插入元素(insert)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; v.insert(0, -1) </span><br><span class="line">[-1, 1, 2, 3, 4]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除指定位置的元素(del)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; del v[0]</span><br><span class="line">[1, 2, 3, 4]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除指定位置的元素, 并获取被移除元素(pop)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; v</span><br><span class="line">[1,3,5,7]</span><br><span class="line">&gt;&gt;&gt; e = v.pop(1)</span><br><span class="line">&gt;&gt;&gt; e</span><br><span class="line">3</span><br><span class="line">&gt;&gt;&gt; v</span><br><span class="line">[1,5,7]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除第一个匹配的元素(remove)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; v.remove(2)</span><br><span class="line">[1, 3, 4]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除所有匹配元素</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt; v = [1,2,2,3,4,5]</span><br><span class="line">&gt;&gt;&gt; v = [x for x in v if x != 2]</span><br><span class="line">&gt;&gt;&gt; print(v)</span><br><span class="line">[1,3,4,5]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>正向遍历列表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">for item in v:</span><br><span class="line">    print(item)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>倒序遍历列表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">for item in reversed(v):</span><br><span class="line">    print(item)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>按下标遍历列表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">for index in range(len(v)):</span><br><span class="line">    print(v[index])</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>按下标倒序遍历列表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">for idx in range(len(v)-1, -1, -1):</span><br><span class="line">	print(v[idx])</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>正向遍历索引和值</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">for idx, val in enumerate(list):</span><br><span class="line">	print(idx, val)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>注: Python range函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">range(start, stop[, step])</span><br><span class="line">* 从start开始, 到stop结束(不包括stop), step为步长, 默认值1)</span><br></pre></td></tr></table></figure>
 
-<h1><span id="遍历list">遍历list</span></h1><p>enumerate正向遍历索引和值</p>
-<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> index,value <span class="keyword">in</span> <span class="built_in">enumerate</span>(<span class="built_in">list</span>):</span><br></pre></td></tr></table></figure>
-<p>range逆序遍历 (起始索引(含)，结束索引(不含), 步长)</p>
-<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> idx <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(nums)-<span class="number">1</span>, -<span class="number">1</span>, -<span class="number">1</span>):</span><br><span class="line">	nums[idx] = ...</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>一个列表追加到另一个列表</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">a = [1,2,3]</span><br><span class="line">b = [4,5,6]</span><br><span class="line">a.extend(b)</span><br><span class="line">print(a)</span><br><span class="line">[1,2,3,4,5,6]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>列表排序</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v.sort()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>倒序排序</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">v.sort(reverse=True)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>列表排序并去重</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">v = [3,3,2,2,1,1]</span><br><span class="line">sorted_v = sorted(set(v))</span><br><span class="line">print(sorted_v)</span><br><span class="line">[1,2,3]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>自定义排序</p>
+</li>
+</ul>
+<p>lambda表达式</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">points = [[1,3],[-2,2],[5,8],[0,1]]</span><br><span class="line">sorted_points = sorted(points, key=lambda p: p[0]**2 + p[1]**2)</span><br><span class="line">print(sorted_points)</span><br></pre></td></tr></table></figure>
 
-<h1><span id="小根堆">小根堆</span></h1><p>Python heapq默认是小根堆</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">class Solution:</span><br><span class="line">    def findKthLargest(self, nums: List[int], k: int) -&gt; int:</span><br><span class="line">        min_heap = []</span><br><span class="line">        for i in range(k):</span><br><span class="line">            heapq.heappush(min_heap, nums[i])</span><br><span class="line">        for i in range(k, len(nums), 1):</span><br><span class="line">            heapq.heappush(min_heap, nums[i])</span><br><span class="line">            heapq.heappop(min_heap)</span><br><span class="line">        return min_heap[0]</span><br></pre></td></tr></table></figure>
+<p>普通函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">points = [[1,3],[-2,2],[5,8],[0,1]]</span><br><span class="line">def get_distance_squared(point):</span><br><span class="line">    return point[0] ** 2 + point[1] ** 2</span><br><span class="line">sorted_points = sorted(points, key=get_distance_squared)</span><br><span class="line">print(get_distance_squared)</span><br></pre></td></tr></table></figure>
 
-<h1><span id="集合set">集合(set)</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">s = set()</span><br><span class="line">s.add(e)</span><br><span class="line">if e in s:</span><br><span class="line">	...</span><br></pre></td></tr></table></figure>
 
-<h1><span id="队列">队列</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">from collections import deque</span><br><span class="line">d = deque()</span><br><span class="line">d = deque([1, 2, 3])</span><br><span class="line"></span><br><span class="line">d.append(4)</span><br><span class="line">d.appendleft(0)</span><br><span class="line">removed_element = d.pop()</span><br><span class="line">removed_element = d.popleft()</span><br><span class="line">d[0]</span><br><span class="line">d[-1]</span><br><span class="line">d.remove(2)</span><br></pre></td></tr></table></figure>
+<h1><span id="链表">链表</span></h1><ul>
+<li>翻转链表<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">class ListNode:</span><br><span class="line">    def __init__(self, val=0, next=None):</span><br><span class="line">        self.val = val</span><br><span class="line">        self.next = next</span><br><span class="line">		</span><br><span class="line">head = ListNode(1)</span><br><span class="line">head.next = ListNode(2)</span><br><span class="line">head.next.next = ListNode(3)</span><br><span class="line"></span><br><span class="line">def reverse_list(head):</span><br><span class="line">	prev = None</span><br><span class="line">	curr = head</span><br><span class="line">	while curr:</span><br><span class="line">		next_temp = curr.next</span><br><span class="line">		curr.next = prev</span><br><span class="line">		prev = curr</span><br><span class="line">		curr = next_temp</span><br><span class="line">	return prev</span><br><span class="line"></span><br><span class="line">new_head = reverse_list(head)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1><span id="队列deque">队列(deque)</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">from collections import deque</span><br><span class="line">dq = deque()     # 创建队列</span><br><span class="line">dq.append(x)     # 添加到右端</span><br><span class="line">dq.appendleft(x) # 添加到左端</span><br><span class="line">x = dq.pop()     # 删除右端</span><br><span class="line">x = dq.popleft() # 删除左端</span><br><span class="line">not dq           # 判断是否为空</span><br><span class="line">len(dq)          # 获取长度</span><br><span class="line">dq[0]            # 查看左端</span><br><span class="line">dq[-1]           # 查看右端</span><br><span class="line">dq.clear()       # 清空 </span><br></pre></td></tr></table></figure>
+
+<h1><span id="线程安全队列queuequeue">线程安全队列(queue.Queue)</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">from queue import Queue</span><br><span class="line">q = Queue()</span><br><span class="line">q.put(1)</span><br><span class="line">q.put(2)</span><br><span class="line">while not q.empty():</span><br><span class="line">	item = q.get()</span><br></pre></td></tr></table></figure>
+
+<h1><span id="优先级队列heapq">优先级队列(heapq)</span></h1><p>默认最小堆</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">import heapq</span><br><span class="line">heap = []</span><br><span class="line">heap.heappush(heap, 3)</span><br><span class="line">heap.heappush(heap, 1)</span><br><span class="line">heap.heappush(heap, 2)</span><br><span class="line">print(heap.heappop(heap))</span><br></pre></td></tr></table></figure>
+<p>注: 如果要模拟最大堆可以把数值取反后压入堆中</p>
+<ul>
+<li>求第k大的数<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">def findKthLargest(nums: List[int], k: int) -&gt; int:</span><br><span class="line">	heap = []</span><br><span class="line">	for x in nums:</span><br><span class="line">		heapq.heappush(heap, -x)</span><br><span class="line">	for i in range(k-1):</span><br><span class="line">		heapq.heappop(heap)</span><br><span class="line">	return -heapq.heappop(heap)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1><span id="集合">集合</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">s = &#123;1,2,3&#125;</span><br><span class="line">s.add(x) # 添加元素</span><br><span class="line">s.remove(x) # 删除元素x, 若不存在则报错</span><br><span class="line">s.discard(x) # 删除元素x, 若不存在则忽略</span><br><span class="line">s.clear() # 清空集合</span><br><span class="line">if x in s: # 判断x是否在集合中</span><br></pre></td></tr></table></figure>
+
+<h1><span id="字典">字典</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dic = &#123;&#125;</span><br><span class="line">person = &#123;&#x27;name&#x27;: Alice, &#x27;age&#x27;: 18&#125;</span><br><span class="line">person[&#x27;name&#x27;]</span><br></pre></td></tr></table></figure>
+<ul>
+<li>访问值<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">person.get(&#x27;name&#x27;, &#x27;Unknown&#x27;) # 获取key对应值, 如不存在返回None</span><br><span class="line">person[&#x27;name&#x27;] # 访问值</span><br></pre></td></tr></table></figure></li>
+<li>删除键值对<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">del person[&#x27;name&#x27;]</span><br></pre></td></tr></table></figure></li>
+<li>遍历字典<br>遍历key<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">for key in person:</span><br><span class="line">	print(key)</span><br><span class="line">for key in person.keys():</span><br><span class="line">	print(key)</span><br><span class="line">for val in person.values():</span><br><span class="line">	print(val)</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1><span id="字符串">字符串</span></h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">upper() 转大写</span><br><span class="line">lower() 转小写</span><br></pre></td></tr></table></figure>
+<p>查找</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">text = &#x27;hello world&#x27;</span><br><span class="line">text.find(&#x27;world&#x27;) # 输出6, 未找到返回-1</span><br><span class="line">text.replace(&#x27;world&#x27;, &#x27;Python&#x27;)</span><br></pre></td></tr></table></figure>
+<p>分割和连接</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">text = &quot;apple,banana,cherry&quot;</span><br><span class="line">print(text.split(&quot;,&quot;))  # 输出: [&#x27;apple&#x27;, &#x27;banana&#x27;, &#x27;cherry&#x27;]</span><br><span class="line"></span><br><span class="line">words = [&quot;hello&quot;, &quot;world&quot;]</span><br><span class="line">print(&quot;-&quot;.join(words))  # 输出: hello-world</span><br></pre></td></tr></table></figure>
+<p>去除空白字符</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">text = &quot;   hello world   &quot;</span><br><span class="line">print(text.strip())  # 输出: hello world</span><br><span class="line">print(text.lstrip()) # 输出: hello world   </span><br><span class="line">print(text.rstrip()) # 输出:    hello world</span><br></pre></td></tr></table></figure>
+<p>format格式化字符串</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">str = &#x27;My name is &#123;&#125; and I am &#123;&#125; years old.&#x27;.format(name, age)</span><br><span class="line">str2 = f&#x27;My name is &#123;name&#125; and I am &#123;age&#125; years old&#x27;</span><br></pre></td></tr></table></figure>
+<p>是否包含子串</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">text = &#x27;hello world&#x27;</span><br><span class="line">print(&#x27;world&#x27; in text)</span><br></pre></td></tr></table></figure>
+<p>整数转字符串</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">str(123)</span><br></pre></td></tr></table></figure>
     </div>
 
     
@@ -463,7 +549,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">数组(vector)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">遍历数组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">数组追加到另一个数组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">排序数组+去重</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">逆序排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">二维vector初始化</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">链表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">反转链表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">快慢指针找中间节点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">双向链表节点定义</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">队列(Queue)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">双端队列(Deque)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">优先级队列&#x2F;堆(priority_queue)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">求第k大的数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">自定义优先级</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">集合(unordered_set)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">哈希表(unordered_map)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">TreeMap</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">自定义优先级</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">字符串(String)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">是否包含子串</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">比较两个字符串的字典序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">整数转字符串</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">去除所有空格</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">末尾添加字符</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">排序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">自定义排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">拓扑排序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">并查集</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">字典树</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">单调栈、树状数组</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">LeetCode python CheetSheet</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">自定义排序</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">遍历list</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">小根堆</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">集合(set)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">队列</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">数组(vector)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">遍历数组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">数组追加到另一个数组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">排序数组+去重</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">逆序排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">二维vector初始化</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">链表</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">反转链表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">快慢指针找中间节点</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">双向链表节点定义</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">队列(Queue)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">双端队列(Deque)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">优先级队列&#x2F;堆(priority_queue)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">求第k大的数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">自定义优先级</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">集合(unordered_set)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">哈希表(unordered_map)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">TreeMap</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">自定义优先级</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">字符串(String)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">是否包含子串</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">比较两个字符串的字典序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">整数转字符串</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">去除所有空格</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">末尾添加字符</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">排序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">自定义排序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">拓扑排序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">并查集</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">字典树</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">单调栈、树状数组</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">LeetCode python CheetSheet</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">列表</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">链表</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">队列(deque)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">线程安全队列(queue.Queue)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">优先级队列(heapq)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">集合</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">字典</span></a></li><li class="nav-item nav-level-1"><a class="nav-link"><span class="nav-text">字符串</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -479,20 +565,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">185</span>
+          <span class="site-state-item-count">204</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">41</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">53</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -535,12 +621,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">829k</span>
+    <span title="站点总字数">844k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12:34</span>
+    <span title="站点阅读时长">12:47</span>
 </div>
 
 <!--
