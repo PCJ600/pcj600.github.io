@@ -133,7 +133,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">209</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">210</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -192,6 +192,102 @@
 
           <div class="content index posts-expand">
             
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0205201812.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/0205201812.html" class="post-title-link" itemprop="url">RabbitMQ入门教程</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-02-05 20:18:12" itemprop="dateCreated datePublished" datetime="2025-02-05T20:18:12+08:00">2025-02-05</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/RabbitMQ/" itemprop="url" rel="index"><span itemprop="name">RabbitMQ</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>19k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>17 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><a href="https://pcj600.github.io/2024/1218212631.html">Linux安装RabbitMQ</a><br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.rabbitmq.com/tutorials/tutorial-one-python">官方教程</a></p>
+<h2 id="1-Hello-RabbitMQ"><a href="#1-Hello-RabbitMQ" class="headerlink" title="1. Hello RabbitMQ"></a>1. Hello RabbitMQ</h2><p>使用Python pika客户端, 写一个简单的生产者和消费者</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Producer ------&gt; Queue -----&gt; Consumer</span><br></pre></td></tr></table></figure>
+<h3 id="编写Producer-send-py"><a href="#编写Producer-send-py" class="headerlink" title="编写Producer(send.py)"></a>编写Producer(send.py)</h3><p>先连接Broker, 建立connection和channel</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pika</span><br><span class="line"></span><br><span class="line">connection = pika.BlockingConnection(pika.ConnectionParameters(<span class="string">&#x27;localhost&#x27;</span>))</span><br><span class="line">channel = connection.channel()</span><br></pre></td></tr></table></figure>
+<p>接着声明一个队列; 在RabbitMQ中，消息不是直接发送到队列，而是先发送到交换机(exchange), 由交换机发送到队列。</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">channel.queue_declare(queue=<span class="string">&#x27;hello&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>使用basic_publish发送消息。 这里使用默认交换机(‘’), routing_key参数指定为队列名称</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">channel.basic_publish(exchange=<span class="string">&#x27;&#x27;</span>, routing_key=<span class="string">&#x27;hello&#x27;</span>, body=<span class="string">&#x27;Hello World!&#x27;</span>)</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2025/0205201812.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
       
   
   
@@ -1024,90 +1120,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/1217233035.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/1217233035.html" class="post-title-link" itemprop="url">判断SSH的公钥和私钥是否为一对的方法</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-12-17 23:30:35" itemprop="dateCreated datePublished" datetime="2024-12-17T23:30:35+08:00">2024-12-17</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/SSH/" itemprop="url" rel="index"><span itemprop="name">SSH</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>210</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2><span id="使用sshkey-gen命令判断">使用sshkey-gen命令判断</span></h2><p>使用ssh-keygen -y命令可以从私钥文件中提取公钥。例如: 你的私钥文件是id_rsa，执行如下命令:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -y -f id_rsa &gt; extracted_pubkey.pub</span><br></pre></td></tr></table></figure>
-<p>将提取的公钥保存到extracted_pubkey.pub文件。再和你的公钥文件比较，看文件内容是否相同</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">diff extracted_pubkey.pub id_rsa.pub</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1179,7 +1191,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">209</span>
+          <span class="site-state-item-count">210</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
