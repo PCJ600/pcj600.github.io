@@ -123,17 +123,17 @@
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">41</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">43</span></a>
 
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">53</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">55</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">207</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">218</span></a>
 
   </li>
         <li class="menu-item menu-item-sitemap">
@@ -196,7 +196,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0723222733.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0915151753.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -210,7 +210,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/0723222733.html" class="post-title-link" itemprop="url">自定义iptables链，阻止所有进入流量的方法</a>
+            <a href="/2024/0915151753.html" class="post-title-link" itemprop="url">Django基础</a>
         </h2>
 
         <div class="post-meta">
@@ -220,7 +220,102 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2024-07-23 22:27:33" itemprop="dateCreated datePublished" datetime="2024-07-23T22:27:33+08:00">2024-07-23</time>
+              <time title="创建时间：2024-09-15 15:17:53" itemprop="dateCreated datePublished" datetime="2024-09-15T15:17:53+08:00">2024-09-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Django/" itemprop="url" rel="index"><span itemprop="name">Django</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>47k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>43 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Django快速上手"><a href="#Django快速上手" class="headerlink" title="Django快速上手"></a>Django快速上手</h2><p>参考: <a href="https://pcj600.github.io/2024/0823230254.html">Django快速上手</a></p>
+<h2 id="再写几个页面"><a href="#再写几个页面" class="headerlink" title="再写几个页面"></a>再写几个页面</h2><p>编辑<code>demo1/urls.py</code>, 添加URL和视图函数映射</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">urlpatterns = [</span><br><span class="line">    path(<span class="string">&#x27;index/&#x27;</span>, views.index),</span><br><span class="line">	path(<span class="string">&#x27;user/list/&#x27;</span>, views.user_list),</span><br><span class="line">	path(<span class="string">&#x27;user/add/&#x27;</span>, views.user_add),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>编辑<code>app01/views.py</code>，添加几个函数</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> django.shortcuts <span class="keyword">import</span> render, HttpResponse</span><br><span class="line"></span><br><span class="line"><span class="comment"># Create your views here.</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;Hello World&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">user_list</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;User List&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">user_add</span>(<span class="params">request</span>):</span><br><span class="line">    <span class="keyword">return</span> HttpResponse(<span class="string">&quot;User add&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="templates模板的运用"><a href="#templates模板的运用" class="headerlink" title="templates模板的运用"></a>templates模板的运用</h2>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/0915151753.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0912211401.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/0912211401.html" class="post-title-link" itemprop="url">iptables单个multiport规则最多只能指定15个端口问题的解决方法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-09-12 21:14:01" itemprop="dateCreated datePublished" datetime="2024-09-12T21:14:01+08:00">2024-09-12</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -238,7 +333,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>726</span>
+              <span>1.3k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -257,14 +352,13 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="需求描述"><a href="#需求描述" class="headerlink" title="需求描述"></a>需求描述</h2><p>客户的Linux主机出现网络安全事件时, 需要先帮客户止血，再分析定位。</p>
-<p>打开止血功能后，需要阻止所有进入流量(22号端口除外，系统内部流量和出去流量不受影响)；关闭止血功能后，解除限制，且原有的iptables规则要保持不变，如何实现？</p>
-<h2 id="实现方法"><a href="#实现方法" class="headerlink" title="实现方法"></a>实现方法</h2><h3 id="阻止所有进入流量的方法-22号端口除外"><a href="#阻止所有进入流量的方法-22号端口除外" class="headerlink" title="阻止所有进入流量的方法(22号端口除外)"></a>阻止所有进入流量的方法(22号端口除外)</h3><ol>
-<li>先自定义一个链BLOCK_IN, 新增规则: 22号端口ACCEPT, 其余端口DROP, 如下：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">iptables -N BLOCK_IN 							 <span class="comment"># 创建一个自定义链，名字是BLOCK_IN</span></span><br><span class="line">iptables -A BLOCK_IN -p tcp --dport 22 -j ACCEPT <span class="comment"># 允许22号端口通过</span></span><br><span class="line">iptables -A BLOCK_IN -j DROP 					 <span class="comment"># 丢弃</span></span><br></pre></td></tr></table></figure></li>
-</ol>
+          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我想通过iptables允许以下这20个端口通过：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p tcp -i eth0 -m multiport --dports 22,80,443,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46 -j ACCEPT</span><br></pre></td></tr></table></figure>
+<p>执行后报错，<code>iptables: too many ports specified</code></p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>查看<a target="_blank" rel="noopener external nofollow noreferrer" href="https://linux.die.net/man/8/iptables">iptables官方文档</a>, 发现iptables单条multiports规则最多只支持15个端口。 原文如下： </p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2024/0723222733.html#more" rel="contents">
+              <a class="btn" href="/2024/0912211401.html#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -288,7 +382,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0717222317.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0905201723.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -302,7 +396,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/0717222317.html" class="post-title-link" itemprop="url">Linux LVM扩容方法实践</a>
+            <a href="/2024/0905201723.html" class="post-title-link" itemprop="url">[MicroK8s] Unable to connect to the server: x509: certificate has expired or is not yet valid 问题定位案例</a>
         </h2>
 
         <div class="post-meta">
@@ -312,273 +406,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2024-07-17 22:23:17" itemprop="dateCreated datePublished" datetime="2024-07-17T22:23:17+08:00">2024-07-17</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>769</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>VMware Centos环境，根分区为LVM，大小50G，现在需要对根分区扩容。我添加了一块500G的虚拟硬盘(<code>/dev/sdb</code>)，如何把这500G扩容到根分区？</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/0717222317.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0715222139.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/0715222139.html" class="post-title-link" itemprop="url">川大智胜果然开盘涨停，这就是A股的尿性！</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-15 22:21:39" itemprop="dateCreated datePublished" datetime="2024-07-15T22:21:39+08:00">2024-07-15</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/investment/" itemprop="url" rel="index"><span itemprop="name">investment</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>294</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>昨天特朗普被刺杀未遂，提前赢得了大选。今天A股的川大智胜(002253)开盘即涨停，毫无悬念。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/0715222139.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0714221353.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/0714221353.html" class="post-title-link" itemprop="url">标普印度基金关门，继续套利美元债LOF</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-14 22:13:53" itemprop="dateCreated datePublished" datetime="2024-07-14T22:13:53+08:00">2024-07-14</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/investment/" itemprop="url" rel="index"><span itemprop="name">investment</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>473</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>7月8号印度基金(164824)宣布暂停申购，7月11号标普信息科技(161128)也宣布关门。</p>
-<p>我算了一下这次的套利收益，每天都参与的情况下，单个账户收益达到1800+，10个账户就是1万8。</p>
-<p>再加上之前参与的全球芯片(501225), 标普500(161225), 黄金LOF(161116)，今年上半年每个账户的收益接近3000元。一家人几个账户每天参与几分钟，一万多零花钱就到手了，简直白捡钱！</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/0714221353.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0712221104.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/0712221104.html" class="post-title-link" itemprop="url">从Centos7升级到Rocky linux 9后，网卡连接显示Wired connection 1问题定位</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-12 22:11:04" itemprop="dateCreated datePublished" datetime="2024-07-12T22:11:04+08:00">2024-07-12</time>
+              <time title="创建时间：2024-09-05 20:17:23" itemprop="dateCreated datePublished" datetime="2024-09-05T20:17:23+08:00">2024-09-05</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -596,14 +424,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>941</span>
+              <span>2.7k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>2 分钟</span>
             </span>
 
         </div>
@@ -615,10 +443,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>从Centos7升级到Rocky9后, 发现网卡eth0的IP不正确。通过<code>nmcli</code>查看网卡连接，找不到name为eth0的连接，只显示’Wired connection 1’</p>
+          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>客户有一台基于Hyper-V创建的RHEL9虚拟机, 安装了MicroK8s, 启动正常。<br>虚拟机重启后, kubectl报错: <code>Unable to connect to the server: x509: certificate has expired or is not yet valid</code></p>
+<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><p>这个报错说明MicroK8s apiserver证书的有效时间不对。 首先简单了解下Microk8s证书（以下内容 by ChatGPT）</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2024/0712221104.html#more" rel="contents">
+              <a class="btn" href="/2024/0905201723.html#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -642,7 +471,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0710220944.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0904203111.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -656,7 +485,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/0710220944.html" class="post-title-link" itemprop="url">如何修复Rocky Linux 9 OpenSSH CVE-2024-6387漏洞</a>
+            <a href="/2024/0904203111.html" class="post-title-link" itemprop="url">Microk8s ingress启动失败, 10254端口被占用问题定位</a>
         </h2>
 
         <div class="post-meta">
@@ -666,7 +495,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2024-07-10 22:09:44" itemprop="dateCreated datePublished" datetime="2024-07-10T22:09:44+08:00">2024-07-10</time>
+              <time title="创建时间：2024-09-04 20:31:11" itemprop="dateCreated datePublished" datetime="2024-09-04T20:31:11+08:00">2024-09-04</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -674,7 +503,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
                 </span>
             </span>
 
@@ -684,14 +513,14 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>887</span>
+              <span>3.4k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="far fa-clock"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
+              <span>3 分钟</span>
             </span>
 
         </div>
@@ -703,11 +532,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>关于漏洞的详细说明，参考Rocky官方文档：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression">https://rockylinux.org/news/2024-07-01-openssh-sigalrm-regression</a></p>
-<h2 id="修复方法"><a href="#修复方法" class="headerlink" title="修复方法"></a>修复方法</h2><p>升级OpenSSH包到Rocky官方提供的修复版本 <code>openssh-8.7p1-38.1.el9_4.security.0.7</code> 即可。方法如下：</p>
+          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RHEL9 VM里安装了Microk8s，且使用了Nginx ingress Controller插件，443端口正常。 VM重启一次后，发现443端口没有LISTEN，不能对外提供服务。 </p>
+<h2 id="定位过程"><a href="#定位过程" class="headerlink" title="定位过程"></a>定位过程</h2><p>查看ingress pod状态，为CrashLoopBackOff</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl -n ingress get pods</span></span><br><span class="line">NAME                                      READY   STATUS             RESTARTS         AGE</span><br><span class="line">nginx-ingress-microk8s-controller-b6krf   0/1     CrashLoopBackOff   1102 (55s ago)   8d</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2024/0710220944.html#more" rel="contents">
+              <a class="btn" href="/2024/0904203111.html#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -731,7 +561,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0706220708.html">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0831132417.html">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.jpg">
@@ -745,7 +575,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2024/0706220708.html" class="post-title-link" itemprop="url">Win11右键默认显示更多选项的方法</a>
+            <a href="/2024/0831132417.html" class="post-title-link" itemprop="url">源码编译并安装Squid的方法</a>
         </h2>
 
         <div class="post-meta">
@@ -755,269 +585,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2024-07-06 22:07:08" itemprop="dateCreated datePublished" datetime="2024-07-06T22:07:08+08:00">2024-07-06</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Win/" itemprop="url" rel="index"><span itemprop="name">Win</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>349</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>win11系统默认右键菜单显示选项太少，每次需要点一下“显示更多选项”才能得到想要内容。比方说我用notepad++打开一个文档，在win11上要先点一下”显示更多选项“，再选择用notepad++打开，操作非常反人类。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/0706220708.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0704220535.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/0704220535.html" class="post-title-link" itemprop="url">使用arping检测IP地址是否冲突</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-04 22:05:35" itemprop="dateCreated datePublished" datetime="2024-07-04T22:05:35+08:00">2024-07-04</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>614</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="arping简介"><a href="#arping简介" class="headerlink" title="arping简介"></a>arping简介</h2><p>在Linux中，<code>arping</code>是一个用来发送ARP请求到一个相邻主机的工具，通常用于检测网络上的IP地址冲突。</p>
-<h2 id="使用arping检测IP地址是否冲突的方法"><a href="#使用arping检测IP地址是否冲突的方法" class="headerlink" title="使用arping检测IP地址是否冲突的方法"></a>使用arping检测IP地址是否冲突的方法</h2>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2024/0704220535.html#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0704220405.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/0704220405.html" class="post-title-link" itemprop="url">curl代理用户名或密码出现特殊字符时需要转义</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-04 22:04:05" itemprop="dateCreated datePublished" datetime="2024-07-04T22:04:05+08:00">2024-07-04</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/curl/" itemprop="url" rel="index"><span itemprop="name">curl</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>186</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>举例：使用代理<code>127.0.0.1:3128</code>访问百度, 用户名<code>peter</code>, 密码<code>123!</code></p>
-<p>密码中包含<code>！</code>特殊字符，需要转义。 查询<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.urlencoder.org/zh/">在线URL编码工具</a>, <code>%21</code>是<code>!</code>的URL编码，<code>curl</code>使用方法如下：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -x peter:123%21@127.0.0.1:3128 https://www.baidu.com</span><br></pre></td></tr></table></figure>
-
-<p>参考<br><a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.urlencoder.org/zh/">https://www.urlencoder.org/zh/</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0703220137.html">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="PC">
-      <meta itemprop="description" content="PC的博客">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="PC's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2024/0703220137.html" class="post-title-link" itemprop="url">Squid配置用户名密码的方法</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2024-07-03 22:01:37" itemprop="dateCreated datePublished" datetime="2024-07-03T22:01:37+08:00">2024-07-03</time>
+              <time title="创建时间：2024-08-31 13:24:17" itemprop="dateCreated datePublished" datetime="2024-08-31T13:24:17+08:00">2024-08-31</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1035,7 +603,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>1.1k</span>
+              <span>1.5k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -1054,18 +622,457 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>Centos7.9 Squid 3.5.20</p>
-<h2 id="步骤"><a href="#步骤" class="headerlink" title="步骤"></a>步骤</h2><p>1 使用<code>htpasswd</code>工具，生成用户名密码。 例如这里添加用户名peter, 密码123.</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install httpd-tools</span><br><span class="line">htpasswd -c /etc/squid/squid_user peter</span><br><span class="line">New password: 123</span><br><span class="line">Re-type new password: 123</span><br><span class="line">Adding password for user peter</span><br></pre></td></tr></table></figure>
-<p>检查密码文件<code>/etc/squid/squid_user</code>，可以找到刚才添加的用户<code>peter</code></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cat /etc/squid/squid_user</span><br><span class="line">peter:$XXXXXXXXXXXXXXXXXXX</span><br></pre></td></tr></table></figure>
-<p>对密码文件设置适当权限</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chown squid /etc/squid/squid_user</span><br></pre></td></tr></table></figure>
-<p>验证用户名和密码是否正确, 执行<code>basic_ncsa_auth</code>程序，输入<code>peter 123</code>，显示OK说明正确。</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/usr/lib64/squid/basic_ncsa_auth /etc/squid/squid_user</span><br><span class="line">peter 123</span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>RockyLinux9.4 yum包中的Squid版本是5.5, 不是最新的版本，我需要安装最新版本的Squid。</p>
+<h2 id="源码编译并安装Squid的步骤"><a href="#源码编译并安装Squid的步骤" class="headerlink" title="源码编译并安装Squid的步骤"></a>源码编译并安装Squid的步骤</h2><ul>
+<li>访问<a target="_blank" rel="noopener external nofollow noreferrer" href="https://www.squid-cache.org/Versions/">Squid官网</a>，查看最新的稳定版本为 6.10</li>
+<li>下载6.10版本的源码，各发行版编译安装Squid的方法参考<a target="_blank" rel="noopener external nofollow noreferrer" href="https://wiki.squid-cache.org/SquidFaq/CompilingSquid">官方文档</a></li>
+</ul>
+<p>下面给出我在RockyLinux9.4 VMware虚拟机上，编译安装Squid 6.10的过程：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/2024/0703220137.html#more" rel="contents">
+              <a class="btn" href="/2024/0831132417.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0827223326.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/0827223326.html" class="post-title-link" itemprop="url">前端基础</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-08-27 22:33:26" itemprop="dateCreated datePublished" datetime="2024-08-27T22:33:26+08:00">2024-08-27</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/draft/" itemprop="url" rel="index"><span itemprop="name">draft</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>29k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>26 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flask快速上手"><a href="#Flask快速上手" class="headerlink" title="Flask快速上手"></a>Flask快速上手</h1><p>FLask官方文档: <a target="_blank" rel="noopener external nofollow noreferrer" href="https://flask.palletsprojects.com/en/3.0.x/quickstart/#a-minimal-application">https://flask.palletsprojects.com/en/3.0.x/quickstart/#a-minimal-application</a></p>
+<h2 id="第一个Flask-App"><a href="#第一个Flask-App" class="headerlink" title="第一个Flask App"></a>第一个Flask App</h2><p>Linux上安装Flask</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pip3 install Flask</span><br><span class="line">flask --version | grep Flask</span><br><span class="line">Flask 3.0.3</span><br></pre></td></tr></table></figure>
+<p>写一个最小的Flask App, 添加web.py：</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</span><br><span class="line"></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/&#x27;</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>():</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;hello&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    app.run()</span><br></pre></td></tr></table></figure>
+<p>运行App</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">flask --app web run <span class="comment"># 只允许本地访问, 端口号默认5000</span></span><br><span class="line">flask --app web run --host=0.0.0.0 <span class="comment"># 允许从外部访问</span></span><br></pre></td></tr></table></figure>
+
+<p>Flask提供render_template方法, 返回一个HTML页面</p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/show/info&#x27;</span></span>)</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">index</span>():</span><br><span class="line">	<span class="comment"># 默认从当前项目目录的templates文件夹中寻找index.html文件</span></span><br><span class="line">	<span class="keyword">return</span> render_template(<span class="string">&quot;index.html&quot;</span>)</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/0827223326.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0823230254.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/0823230254.html" class="post-title-link" itemprop="url">Django快速上手</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-08-23 23:02:54" itemprop="dateCreated datePublished" datetime="2024-08-23T23:02:54+08:00">2024-08-23</time>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="更新软件包"><a href="#更新软件包" class="headerlink" title="更新软件包"></a>更新软件包</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dnf check-update</span><br><span class="line">dnf install dnf-utils</span><br></pre></td></tr></table></figure>
+<h2 id="安装Python3和pip"><a href="#安装Python3和pip" class="headerlink" title="安装Python3和pip"></a>安装Python3和pip</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dnf install python3 python3-pip</span><br></pre></td></tr></table></figure>
+<h2 id="通过pip安装Django"><a href="#通过pip安装Django" class="headerlink" title="通过pip安装Django"></a>通过pip安装Django</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip3 install Django</span><br></pre></td></tr></table></figure>
+
+<h2 id="验证Django安装是否成功"><a href="#验证Django安装是否成功" class="headerlink" title="验证Django安装是否成功"></a>验证Django安装是否成功</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">django-admin --version</span><br><span class="line">4.2.15</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/0823230254.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0820194846.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/0820194846.html" class="post-title-link" itemprop="url">如何查看Squid的DNS缓存</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-08-20 19:48:46" itemprop="dateCreated datePublished" datetime="2024-08-20T19:48:46+08:00">2024-08-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Squid/" itemprop="url" rel="index"><span itemprop="name">Squid</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>使用<code>squidclient mgr:ipcache</code>命令查看Squid的DNS缓存记录<br>如果squid端口不是3128, 需要指定端口号, <code>squidclient -p &#123;port&#125; mgr:ipcache</code></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/0820194846.html#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0820194607.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/0820194607.html" class="post-title-link" itemprop="url">awk 删除第一行并提取第一列</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-08-20 19:46:07" itemprop="dateCreated datePublished" datetime="2024-08-20T19:46:07+08:00">2024-08-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/awk/" itemprop="url" rel="index"><span itemprop="name">awk</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>676</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>例：用kubectl获取某个namespace下的所有pod</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># kubectl -n kube-system get pod</span><br><span class="line">NAME                                       READY   STATUS    RESTARTS      AGE</span><br><span class="line">coredns-64c6478b6c-wz58l                   1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-node-xq2hw                          1/1     Running   1 (32h ago)   15d</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2   1/1     Running   1 (32h ago)   15d</span><br><span class="line">metrics-server-679c5f986d-p5pcc            1/1     Running   0             32h</span><br></pre></td></tr></table></figure>
+
+<p>使用awk删除第一行并提取第一列，如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># kubectl -n kube-system get pod | awk &#x27;NR &gt; 1 &#123;print $1&#125;&#x27;</span><br><span class="line">coredns-64c6478b6c-wz58l</span><br><span class="line">calico-node-xq2hw</span><br><span class="line">calico-kube-controllers-6966456d6b-dkwj2</span><br><span class="line">metrics-server-679c5f986d-p5pcc</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2024/0819223418.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/0819223418.html" class="post-title-link" itemprop="url">CLISH logout后没有执行自定义脚本问题的解决方法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-08-19 22:34:18" itemprop="dateCreated datePublished" datetime="2024-08-19T22:34:18+08:00">2024-08-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/troubleshooting/" itemprop="url" rel="index"><span itemprop="name">troubleshooting</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>我有一个On-Premises Appliance使用了<a target="_blank" rel="noopener external nofollow noreferrer" href="https://clish.sourceforge.net/">CLISH</a>(思科命令行)，需要对logout操作记录auditlog。我在配置文件root-view.xml里添加了自定义脚本记录auditlog，但是脚本没有执行，auditlog没有记录。</p>
+<h2 id="解决思路"><a href="#解决思路" class="headerlink" title="解决思路"></a>解决思路</h2><p>Google没查到类似案例，毕竟这年头互联网公司谁还用这种命令行呢，只好把CLISH源代码下一份，捋下流程看看解决方法,  先给出我的root-view.xml配置：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2024/0819223418.html#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1088,7 +1095,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/21/">21</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/22/">22</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1156,20 +1163,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">207</span>
+          <span class="site-state-item-count">218</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">53</span>
+        <span class="site-state-item-count">55</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -1203,7 +1210,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2025</span>
+  <span itemprop="copyrightYear">2026</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
@@ -1212,12 +1219,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">856k</span>
+    <span title="站点总字数">884k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12:58</span>
+    <span title="站点阅读时长">13:23</span>
 </div>
 
 <!--

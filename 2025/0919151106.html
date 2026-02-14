@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="VLyEpKy1Jq3gcpFmB3W8Ql0f4f-G35UyYi1NJ8Towq0">
+  <meta name="baidu-site-verification" content="codeva-dRzuqywF6U">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"pcj600.github.io","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":true,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本文详细介绍如何在 K3s 环境中部署一个 3 节点的 Apache Kafka 4.0.0 集群（对应 Confluent Platform 8.0.0），使用 KRaft 模式消除对 ZooKeeper 的依赖。 镜像与版本选择​​confluentinc&#x2F;cp-kafka:8.0.0​​：Confluent 官方镜像，提供企业级特性Kafka 4.0.x 移除了对 ZooKeepe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在 k8s 上部署 Kafka 4.0 3节点集群">
+<meta property="og:url" content="https://pcj600.github.io/2025/0919151106.html">
+<meta property="og:site_name" content="PC&#39;s Blog">
+<meta property="og:description" content="本文详细介绍如何在 K3s 环境中部署一个 3 节点的 Apache Kafka 4.0.0 集群（对应 Confluent Platform 8.0.0），使用 KRaft 模式消除对 ZooKeeper 的依赖。 镜像与版本选择​​confluentinc&#x2F;cp-kafka:8.0.0​​：Confluent 官方镜像，提供企业级特性Kafka 4.0.x 移除了对 ZooKeepe">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-09-19T07:11:06.000Z">
+<meta property="article:modified_time" content="2026-02-14T09:53:41.483Z">
+<meta property="article:author" content="PC">
+<meta property="article:tag" content="Kafka">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://pcj600.github.io/2025/0919151106.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>在 k8s 上部署 Kafka 4.0 3节点集群 | PC's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">PC's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类<span class="badge">43</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签<span class="badge">55</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档<span class="badge">218</span></a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://pcj600.github.io/2025/0919151106.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="PC">
+      <meta itemprop="description" content="PC的博客">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="PC's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          在 k8s 上部署 Kafka 4.0 3节点集群
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-09-19 15:11:06" itemprop="dateCreated datePublished" datetime="2025-09-19T15:11:06+08:00">2025-09-19</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Kafka/" itemprop="url" rel="index"><span itemprop="name">Kafka</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>7.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>7 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文详细介绍如何在 K3s 环境中部署一个 3 节点的 Apache Kafka 4.0.0 集群（对应 Confluent Platform 8.0.0），使用 KRaft 模式消除对 ZooKeeper 的依赖。</p>
+<h2><span id="镜像与版本选择">镜像与版本选择</span></h2><p>​​confluentinc&#x2F;cp-kafka:8.0.0​​：Confluent 官方镜像，提供企业级特性<br>Kafka 4.0.x 移除了对 ZooKeeper 的依赖（KRaft 模式 GA），带来显著性能提升和运维简化</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull confluentinc/cp-kafka:8.0.0</span><br></pre></td></tr></table></figure>
+
+<h2><span id="kafka集群部署架构">Kafka集群部署架构</span></h2><ul>
+<li>3节点Kafka集群​​：利用 StatefulSet 的稳定网络标识（kafka-0、kafka-1、kafka-2）</li>
+<li>Pod反亲和性​​：确保3个副本分散在不同k3s节点（221、222、223）</li>
+<li>KRaft模式​​：无需ZooKeeper，简化部署架构</li>
+<li>数据持久化​​：每个节点使用独立PVC存储数据</li>
+</ul>
+<span id="more"></span>
+
+<h2><span id="k8s配置文件">k8s配置文件</span></h2><p>Kafka集群StatefulSet, Service配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br></pre></td><td class="code"><pre><span class="line"># kafka-cluster-3nodes.yaml</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: kafka-headless</span><br><span class="line">  namespace: kafka</span><br><span class="line">  labels:</span><br><span class="line">    app: kafka</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: kafka</span><br><span class="line">  ports:</span><br><span class="line">  - name: plaintext</span><br><span class="line">    port: 9092</span><br><span class="line">    targetPort: 9092</span><br><span class="line">  - name: controller</span><br><span class="line">    port: 9093</span><br><span class="line">    targetPort: 9093</span><br><span class="line">  clusterIP: None  # Headless Service用于Pod直接通信</span><br><span class="line">  publishNotReadyAddresses: true  # 允许访问未就绪的Pod</span><br><span class="line">---</span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: StatefulSet</span><br><span class="line">metadata:</span><br><span class="line">  name: kafka</span><br><span class="line">  namespace: kafka</span><br><span class="line">spec:</span><br><span class="line">  serviceName: kafka-headless  # 关联Headless Service</span><br><span class="line">  replicas: 3  # 3节点集群</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: kafka</span><br><span class="line">  updateStrategy:</span><br><span class="line">    type: RollingUpdate  # 滚动更新策略</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: kafka</span><br><span class="line">    spec:</span><br><span class="line">      affinity:</span><br><span class="line">        podAntiAffinity:</span><br><span class="line">          requiredDuringSchedulingIgnoredDuringExecution:</span><br><span class="line">          - labelSelector:</span><br><span class="line">              matchExpressions:</span><br><span class="line">              - key: app</span><br><span class="line">                operator: In</span><br><span class="line">                values:</span><br><span class="line">                - kafka</span><br><span class="line">            topologyKey: &quot;kubernetes.io/hostname&quot;  # 确保Pod分散在不同节点</span><br><span class="line">      containers:</span><br><span class="line">      - name: kafka</span><br><span class="line">        image: mydockerregistry.com:5000/confluentinc/cp-kafka:8.0.0</span><br><span class="line">        imagePullPolicy: IfNotPresent</span><br><span class="line">        command: [&quot;/bin/sh&quot;, &quot;-c&quot;]</span><br><span class="line">        args:</span><br><span class="line">          - |</span><br><span class="line">            export KAFKA_NODE_ID=$&#123;HOSTNAME##*-&#125;  # 从Pod名称提取节点ID</span><br><span class="line">            echo &quot;Starting Kafka with NODE_ID: $KAFKA_NODE_ID&quot;</span><br><span class="line">            exec /etc/confluent/docker/run</span><br><span class="line">        ports:</span><br><span class="line">          - name: plaintext</span><br><span class="line">            containerPort: 9092  # 客户端通信端口</span><br><span class="line">          - name: controller</span><br><span class="line">            containerPort: 9093  # 控制器通信端口</span><br><span class="line">          - name: external</span><br><span class="line">            containerPort: 31092  # 外部访问端口</span><br><span class="line">            hostPort: 31092  # 使用hostPort暴露到节点</span><br><span class="line">        env:</span><br><span class="line">          # 关键环境变量配置</span><br><span class="line">          - name: POD_NAME</span><br><span class="line">            valueFrom:</span><br><span class="line">              fieldRef:</span><br><span class="line">                fieldPath: metadata.name</span><br><span class="line">          - name: K8S_NODE_IP</span><br><span class="line">            valueFrom:</span><br><span class="line">              fieldRef:</span><br><span class="line">                fieldPath: status.hostIP  # 获取节点IP用于外部访问</span><br><span class="line">          - name: CLUSTER_ID</span><br><span class="line">            value: &quot;LTI4QjFBNTcwNTJENDM2Qk&quot;  # 集群唯一标识</span><br><span class="line">          - name: KAFKA_HEAP_OPTS</span><br><span class="line">            value: &quot;-Xms512m -Xmx512m&quot;  # JVM内存配置</span><br><span class="line">          - name: KAFKA_PROCESS_ROLES</span><br><span class="line">            value: &quot;broker,controller&quot;  # 节点同时担任broker和controller</span><br><span class="line">          - name: KAFKA_CONTROLLER_LISTENER_NAMES</span><br><span class="line">            value: &quot;CONTROLLER&quot;</span><br><span class="line">          - name: KAFKA_LISTENERS</span><br><span class="line">            value: &quot;PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:31092&quot;</span><br><span class="line">          - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP</span><br><span class="line">            value: &quot;CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT&quot;</span><br><span class="line">          - name: KAFKA_ADVERTISED_LISTENERS</span><br><span class="line">            # 内部使用Pod DNS，外部使用节点IP</span><br><span class="line">            value: &quot;PLAINTEXT://$(POD_NAME).kafka-headless.kafka:9092,EXTERNAL://$(K8S_NODE_IP):31092&quot;</span><br><span class="line">          - name: KAFKA_INTER_BROKER_LISTENER_NAME</span><br><span class="line">            value: &quot;PLAINTEXT&quot;</span><br><span class="line">          - name: KAFKA_CONTROLLER_QUORUM_VOTERS</span><br><span class="line">            # 配置3个控制器投票器</span><br><span class="line">            value: &quot;0@kafka-0.kafka-headless.kafka:9093,1@kafka-1.kafka-headless.kafka:9093,2@kafka-2.kafka-headless.kafka:9093&quot;</span><br><span class="line">          - name: KAFKA_LOG_DIRS</span><br><span class="line">            value: &quot;/var/lib/kafka/data&quot;</span><br><span class="line">          - name: KAFKA_MESSAGE_MAX_BYTES</span><br><span class="line">            value: &quot;10485760&quot;  # 10MB最大消息大小</span><br><span class="line">          - name: KAFKA_REPLICA_FETCH_MAX_BYTES</span><br><span class="line">            value: &quot;10485760&quot;</span><br><span class="line">        livenessProbe:</span><br><span class="line">          tcpSocket:</span><br><span class="line">            port: 9092  # 仅保留存活探针，去掉就绪探针</span><br><span class="line">          initialDelaySeconds: 60  # 给予足够启动时间</span><br><span class="line">          periodSeconds: 10</span><br><span class="line">          timeoutSeconds: 5</span><br><span class="line">          failureThreshold: 3</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: kafka-data</span><br><span class="line">          mountPath: /var/lib/kafka/data</span><br><span class="line">  volumeClaimTemplates:</span><br><span class="line">    - metadata:</span><br><span class="line">        name: kafka-data</span><br><span class="line">      spec:</span><br><span class="line">        accessModes: [ &quot;ReadWriteOnce&quot; ]</span><br><span class="line">        storageClassName: &quot;local-path&quot;  # 使用k3s默认的local-path存储类</span><br><span class="line">        resources:</span><br><span class="line">          requests:</span><br><span class="line">            storage: 4Gi  # 每个节点4GB存储</span><br></pre></td></tr></table></figure>
+
+<p>Kafka主题创建Job配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"># kafka-topics-create.yaml</span><br><span class="line">apiVersion: batch/v1</span><br><span class="line">kind: Job</span><br><span class="line">metadata:</span><br><span class="line">  name: kafka-topics-create</span><br><span class="line">  namespace: kafka</span><br><span class="line">spec:</span><br><span class="line">  backoffLimit: 100  # 允许重试多次</span><br><span class="line">  template:</span><br><span class="line">    spec:</span><br><span class="line">      restartPolicy: Never</span><br><span class="line">      containers:</span><br><span class="line">      - name: create-topics</span><br><span class="line">        image: mydockerregistry.com:5000/confluentinc/cp-kafka:8.0.0</span><br><span class="line">        command:</span><br><span class="line">          - sh</span><br><span class="line">          - -c</span><br><span class="line">          - |</span><br><span class="line">            # 等待所有Kafka节点就绪</span><br><span class="line">            KAFKA_NODES=&quot;kafka-0.kafka-headless.kafka:9092 kafka-1.kafka-headless.kafka:9092 kafka-2.kafka-headless.kafka:9092&quot;</span><br><span class="line">            </span><br><span class="line">            echo &quot;Waiting for all Kafka nodes to be ready...&quot;</span><br><span class="line">            for node in $KAFKA_NODES; do</span><br><span class="line">              until kafka-topics --list --bootstrap-server $node &gt; /dev/null 2&gt;&amp;1; do</span><br><span class="line">                echo &quot;Waiting for $node...&quot;</span><br><span class="line">                sleep 10</span><br><span class="line">              done</span><br><span class="line">            done</span><br><span class="line"></span><br><span class="line">            # 创建业务所需主题</span><br><span class="line">            kafka-topics --create --bootstrap-server kafka-0.kafka-headless.kafka:9092 --topic up.egw.telemetry \</span><br><span class="line">              --partitions 6 --replication-factor 3 --config retention.ms=3600000 --if-not-exists</span><br><span class="line">            kafka-topics --create --bootstrap-server kafka-0.kafka-headless.kafka:9092 --topic up.egw.model \</span><br><span class="line">              --partitions 6 --replication-factor 3 --config retention.ms=604800000 --if-not-exists</span><br><span class="line">            kafka-topics --create --bootstrap-server kafka-0.kafka-headless.kafka:9092 --topic up.egw.alert \</span><br><span class="line">              --partitions 6 --replication-factor 3 --config retention.ms=604800000 --if-not-exists</span><br><span class="line">            kafka-topics --create --bootstrap-server kafka-0.kafka-headless.kafka:9092 --topic up.egw.notify \</span><br><span class="line">              --partitions 6 --replication-factor 3 --config retention.ms=3600000 --if-not-exists</span><br><span class="line">            kafka-topics --create --bootstrap-server kafka-0.kafka-headless.kafka:9092 --topic down.egw.notify \</span><br><span class="line">              --partitions 6 --replication-factor 3 --config retention.ms=3600000 --if-not-exists</span><br><span class="line">            kafka-topics --create --bootstrap-server kafka-0.kafka-headless.kafka:9092 --topic audit \</span><br><span class="line">              --partitions 1 --replication-factor 3 --config retention.ms=604800000 --if-not-exists</span><br><span class="line">            echo &quot;All topics created&quot;</span><br></pre></td></tr></table></figure>
+
+<h2><span id="部署命令">部署命令</span></h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># 创建命名空间</span><br><span class="line">kubectl create ns kafka</span><br><span class="line"></span><br><span class="line"># 部署Kafka集群</span><br><span class="line">kubectl apply -f kafka-cluster-3nodes.yaml</span><br><span class="line"></span><br><span class="line"># 等待集群就绪后创建主题</span><br><span class="line">kubectl apply -f kafka-topics-create.yaml</span><br><span class="line"></span><br><span class="line"># 检查部署状态</span><br><span class="line">kubectl get pods -n kafka -w</span><br><span class="line">kubectl logs -n kafka -l app=kafka -f</span><br></pre></td></tr></table></figure>
+
+<h2><span id="部署遇到问题和解决方法">部署遇到问题和解决方法</span></h2><h3><span id="问题1-集群启动失败pod不ready-集群就绪探针阻碍初始化">问题1: 集群启动失败，Pod不Ready, 集群就绪探针阻碍初始化</span></h3><p>​​原因​​：Kafka KRaft 集群在初始化阶段需要节点互相发现才能监听端口，就绪探针会误判节点未就绪<br>​​解决方案​​：临时移除就绪探针，仅保留存活探针，并增加初始延迟</p>
+<h3><span id="问题2-所有kafka节点的外部地址external配置为同一个地址时-从外部订阅会失败-但发布正常">问题2: 所有Kafka节点的外部地址(EXTERNAL)配置为同一个地址时, 从外部订阅会失败, 但发布正常</span></h3><p>​​原因​​：Kafka 的 advertised.listeners必须与客户端实际连接地址严格匹配, 3个节点应该配3个独立外部地址<br>​​解决方案​​：为每个节点配置独立的外部访问地址 (仅临时测试用, 生产环境不提供外部地址)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># 使用hostPort为每个Pod暴露独立端口</span><br><span class="line">ports:</span><br><span class="line">- name: external</span><br><span class="line">  containerPort: 31092</span><br><span class="line">  hostPort: 31092  # 直接绑定到节点端口</span><br><span class="line"></span><br><span class="line"># 广告监听器使用节点IP和固定端口</span><br><span class="line">- name: KAFKA_ADVERTISED_LISTENERS</span><br><span class="line">  value: &quot;PLAINTEXT://$(POD_NAME).kafka-headless.kafka:9092,EXTERNAL://$(K8S_NODE_IP):31092&quot;</span><br></pre></td></tr></table></figure>
+
+<p>内部访问：使用 kafka-0.kafka-headless.kafka:9092等内部DNS<br>外部访问：使用 k8s节点IP:NodePort(31092)连接指定的broker</p>
+<h2><span id="部署脚本参考">部署脚本参考：</span></h2><p>完整脚本可查看 GitHub 仓库：<a target="_blank" rel="noopener external nofollow noreferrer" href="https://github.com/PCJ600/kafka-deploy">https://github.com/PCJ600/kafka-deploy</a></p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="PC 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.jpg" alt="PC 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>PC
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://pcj600.github.io/2025/0919151106.html" title="在 k8s 上部署 Kafka 4.0 3节点集群">https://pcj600.github.io/2025/0919151106.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>所有文章都欢迎转载, 注明出处即可.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Kafka/" rel="tag"><i class="fa fa-tag"></i> Kafka</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/0919102350.html" rel="prev" title="k8s 部署 EMQX 5.8.6 静态三节点集群">
+      <i class="fa fa-chevron-left"></i> k8s 部署 EMQX 5.8.6 静态三节点集群
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/0919164152.html" rel="next" title="Docker BuildKit 实现 Golang 编译加速">
+      Docker BuildKit 实现 Golang 编译加速 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">镜像与版本选择</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">Kafka集群部署架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">k8s配置文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">部署命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">部署遇到问题和解决方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">问题1: 集群启动失败，Pod不Ready, 集群就绪探针阻碍初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-text">问题2: 所有Kafka节点的外部地址(EXTERNAL)配置为同一个地址时, 从外部订阅会失败, 但发布正常</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link"><span class="nav-text">部署脚本参考：</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="PC"
+      src="/images/avatar.jpg">
+  <!-- <p class="site-author-name" itemprop="name">PC</p> -->
+  <div class="site-description" itemprop="description">PC的博客</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">218</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">55</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/pcj_888" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;pcj_888" rel="noopener external nofollow noreferrer" target="_blank"><i class="fab fa-weibo fa-fw"></i>CSDN</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">PC</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">884k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">13:23</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+-->
+
+        
+  <script async src="/js/busuanzi.js"></script>
+
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+<script src="/js/bookmark.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/shizuku.model.json"},"display":{"position":"right"},"mobile":{"show":true,"scale":0.5},"react":{"opacityDefault":0.7,"opacityOnHover":0.2}});</script></body>
+</html>
+
+<script type="text/javascript" src="/js/clicklove.js"></script>
